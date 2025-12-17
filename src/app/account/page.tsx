@@ -35,6 +35,11 @@ export default function AccountPage() {
     if (!posts) return 0;
     return posts.reduce((acc, post) => acc + (post.likeCount || 0), 0);
   }, [posts]);
+  
+  const totalComments = useMemo(() => {
+    if (!posts) return 0;
+    return posts.reduce((acc, post) => acc + (post.commentCount || 0), 0);
+  }, [posts]);
 
 
   const handleLogout = async () => {
@@ -113,6 +118,14 @@ export default function AccountPage() {
                     <div className="font-bold text-lg">{totalLikes}</div>
                 )}
                 <p className="text-sm text-muted-foreground">Likes</p>
+              </div>
+              <div>
+                {postsLoading ? (
+                  <div className="font-bold text-lg"><Skeleton className="h-6 w-8 mx-auto" /></div>
+                ) : (
+                  <div className="font-bold text-lg">{totalComments}</div>
+                )}
+                <p className="text-sm text-muted-foreground">Comments</p>
               </div>
           </div>
         </div>
