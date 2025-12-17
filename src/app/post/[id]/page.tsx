@@ -292,8 +292,8 @@ function CommentForm({ postId }: { postId: string }) {
     <div className="fixed bottom-0 left-0 right-0 bg-background border-t z-10 max-w-2xl mx-auto sm:px-4">
         <div className="p-4">
             <Form {...form}>
-                <form onSubmit={form.handleSubmit(onSubmit)} className="flex items-start space-x-3">
-                <Avatar className="h-8 w-8 mt-1">
+                <form onSubmit={form.handleSubmit(onSubmit)} className="flex items-center space-x-3">
+                <Avatar className="h-8 w-8">
                     <AvatarFallback>{getInitials(user?.displayName)}</AvatarFallback>
                 </Avatar>
                 <div className="flex-1">
@@ -305,7 +305,7 @@ function CommentForm({ postId }: { postId: string }) {
                         <FormControl>
                         <Textarea
                             placeholder="Post your reply"
-                            className="text-base border-none focus-visible:ring-0 shadow-none -ml-2 p-0"
+                            className="text-base border-none focus-visible:ring-0 shadow-none p-0"
                             rows={1}
                             {...field}
                         />
@@ -491,5 +491,7 @@ export default function PostDetailPage() {
     </AppLayout>
   );
 }
+
+    
 
     
