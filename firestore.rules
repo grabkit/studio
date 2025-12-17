@@ -56,12 +56,10 @@ service cloud.firestore {
       let existingData = resource.data;
       let diff = incomingData.likes.diff(existingData.likes);
 
-      // Check that only likes and likeCount are being changed.
-      let otherFieldsUnchanged = incomingData.keys().removeAll(['likes', 'likeCount']).size() == existingData.keys().removeAll(['likes', 'likeCount']).size()
-        && incomingData.content == existingData.content
+      // Check that only likes and likeCount are being changed, and that other core fields are immutable.
+      let otherFieldsUnchanged = incomingData.content == existingData.content
+        && incomingData.timestamp.toMillis() >= existingData.timestamp.toMillis()
         && incomingData.authorId == existingData.authorId;
-        // The ID is not part of the document data itself, but the document name.
-        // The timestamp can be different.
 
       // When liking, only the user's own UID is added
       let isLiking = diff.added().size() == 1 && diff.added()[0] == userId && diff.removed().size() == 0;
@@ -94,7 +92,7 @@ service cloud.firestore {
       allow list: if isSignedIn();
       allow create: if isSignedIn() && hasValidPostData(request.auth.uid);
       allow update: if isSignedIn() && (
-        (resource.data.authorId == request.auth.uid) || // Owner can update
+        (resource.data.authorId == request.auth.uid && !isLikingOrUnlikingPost(request.auth.uid)) || // Owner can update their own post content
         isLikingOrUnlikingPost(request.auth.uid) // Any user can like/unlike
       );
       allow delete: if isSignedIn() && resource.data.authorId == request.auth.uid;
