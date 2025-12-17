@@ -37,19 +37,6 @@ service cloud.firestore {
             && data.likes.size() == 0;
     }
     
-    // Validate an owner is updating their own post content, and nothing else.
-    function isOwnerUpdatingPostContent() {
-      let incoming = request.resource.data;
-      let existing = resource.data;
-      
-      return incoming.content != existing.content
-             && incoming.authorId == existing.authorId
-             && incoming.timestamp == existing.timestamp
-             // Ensure likes and likeCount are not changed in this operation
-             && incoming.likes.size() == existing.likes.size()
-             && incoming.likeCount == existing.likeCount;
-    }
-    
     // Validate that a user is ONLY liking or unliking a post.
     // Any signed-in user can perform this action on any post.
     function isLikingOrUnliking() {
@@ -85,6 +72,16 @@ service cloud.firestore {
         // The operation is valid if it's either a like or an unlike.
         return isLiking || isUnliking;
     }
+    
+    function isOnlyUpdatingContent() {
+      let incoming = request.resource.data;
+      let existing = resource.data;
+      return incoming.content != existing.content
+             && incoming.authorId == existing.authorId
+             && incoming.timestamp == existing.timestamp
+             && incoming.likeCount == existing.likeCount
+             && incoming.likes.size() == existing.likes.size();
+    }
 
     // RULES
     
@@ -105,7 +102,7 @@ service cloud.firestore {
       // 1. Any signed-in user is liking/unliking the post.
       // OR
       // 2. The owner of the post is updating its content.
-      allow update: if isSignedIn() && (isLikingOrUnliking() || (isOwner(resource.data.authorId) && isOwnerUpdatingPostContent()));
+      allow update: if isSignedIn() && (isLikingOrUnliking() || (isOwner(resource.data.authorId) && isOnlyUpdatingContent()));
     }
   }
 }
