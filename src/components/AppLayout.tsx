@@ -7,7 +7,7 @@ import TopBar from "./layout/TopBar";
 import BottomNav from "./layout/BottomNav";
 import { Loader2 } from "lucide-react";
 
-export default function AppLayout({ children }: { children: React.ReactNode }) {
+export default function AppLayout({ children, showTopBar = true }: { children: React.ReactNode, showTopBar?: boolean }) {
   const { user, isUserLoading } = useUser();
   const router = useRouter();
 
@@ -28,13 +28,11 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
 
   return (
     <div className="relative min-h-screen bg-background">
-      <TopBar />
-      <main className="mx-auto max-w-2xl px-0 pt-24 pb-28 sm:px-4">
+      {showTopBar && <TopBar />}
+      <main className={`mx-auto max-w-2xl px-0 ${showTopBar ? 'pt-24' : 'pt-8'} pb-28 sm:px-4`}>
         {children}
       </main>
       <BottomNav />
     </div>
   );
 }
-
-    

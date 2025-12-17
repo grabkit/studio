@@ -63,9 +63,23 @@ export default function AccountPage() {
   };
 
   return (
-    <AppLayout>
+    <AppLayout showTopBar={false}>
       <div className="px-4">
         {/* Profile Header */}
+        <div className="flex items-center justify-between mb-6">
+            <h2 className="text-2xl font-semibold font-headline">
+              {formatUserId(user?.uid)}
+            </h2>
+            <div className="flex items-center space-x-2">
+                <Button variant="ghost" size="icon">
+                    <Settings className="h-6 w-6" />
+                </Button>
+                <Button variant="ghost" size="icon" onClick={handleLogout}>
+                    <LogOut className="h-6 w-6 text-destructive" />
+                </Button>
+            </div>
+        </div>
+
         <div className="flex items-center space-x-5 mb-6">
           <Avatar className="h-20 w-20 md:h-24 md:w-24">
             <AvatarImage
@@ -76,49 +90,41 @@ export default function AccountPage() {
               {getInitials(user?.displayName)}
             </AvatarFallback>
           </Avatar>
-          <div className="flex flex-col space-y-2">
-            <h2 className="text-2xl font-semibold font-headline">
-              {formatUserId(user?.uid)}
-            </h2>
-            <div className="flex space-x-2">
-              <Button variant="secondary" size="sm" className="flex-1">Edit Profile</Button>
-              <Button variant="ghost" size="icon" onClick={handleLogout}>
-                <LogOut className="h-5 w-5 text-destructive" />
-              </Button>
-            </div>
+          <div className="flex-1 flex justify-around text-center">
+              <div>
+                {postsLoading ? (
+                    <div className="font-bold text-lg"><Skeleton className="h-6 w-8 mx-auto" /></div>
+                ) : (
+                    <div className="font-bold text-lg">{posts?.length ?? 0}</div>
+                )}
+                <p className="text-sm text-muted-foreground">Posts</p>
+              </div>
+              <div>
+                <p className="font-bold text-lg">1.2k</p>
+                <p className="text-sm text-muted-foreground">Followers</p>
+              </div>
+              <div>
+                <p className="font-bold text-lg">345</p>
+                <p className="text-muted-foreground">Following</p>
+              </div>
           </div>
         </div>
 
+
         {/* User Name and Bio */}
-        <div className="mb-6">
+        <div className="mb-4">
             <h1 className="font-bold text-base">{user?.displayName}</h1>
             <p className="text-sm text-muted-foreground">{user?.email}</p>
         </div>
 
-
-        {/* Stats */}
-        <div className="flex justify-around text-center border-y py-3 mb-4">
-          <div>
-            {postsLoading ? (
-                <div className="font-bold text-lg"><Skeleton className="h-6 w-8 mx-auto" /></div>
-            ) : (
-                <div className="font-bold text-lg">{posts?.length ?? 0}</div>
-            )}
-            <p className="text-sm text-muted-foreground">Posts</p>
-          </div>
-          <div>
-            <p className="font-bold text-lg">1.2k</p>
-            <p className="text-sm text-muted-foreground">Followers</p>
-          </div>
-          <div>
-            <p className="font-bold text-lg">345</p>
-            <p className="text-sm text-muted-foreground">Following</p>
-          </div>
+        <div className="mb-4">
+            <Button variant="secondary" size="sm" className="w-full">Edit Profile</Button>
         </div>
 
+
         {/* Tabs */}
-        <div className="flex justify-center border-b">
-            <button className="flex-1 text-center py-2 border-b-2 border-primary">
+        <div className="flex justify-center border-t">
+            <button className="flex-1 text-center py-2 border-t-2 border-primary">
                 <Grid3x3 className="mx-auto h-6 w-6 text-primary" />
             </button>
              <button className="flex-1 text-center py-2">
@@ -127,7 +133,7 @@ export default function AccountPage() {
         </div>
 
         {/* Posts Grid */}
-        <div className="grid grid-cols-3 gap-1 mt-4">
+        <div className="grid grid-cols-3 gap-1 mt-1">
             {postsLoading && Array.from({length: 6}).map((_, i) => (
                 <Skeleton key={i} className="aspect-square w-full" />
             ))}
