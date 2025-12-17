@@ -2,7 +2,7 @@
 
 import AppLayout from "@/components/AppLayout";
 import { useFirebase, useMemoFirebase, useUser } from "@/firebase";
-import { collection, query, orderBy, limit, doc, updateDoc, arrayUnion, arrayRemove, increment, writeBatch } from "firebase/firestore";
+import { collection, query, orderBy, limit, doc, writeBatch, arrayUnion, arrayRemove, increment } from "firebase/firestore";
 import { useCollection, type WithId } from "@/firebase/firestore/use-collection";
 import { Card, CardContent } from "@/components/ui/card";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
@@ -11,6 +11,9 @@ import { Skeleton } from "@/components/ui/skeleton";
 import type { Post } from "@/lib/types";
 import { Heart, MessageCircle, Repeat, Send } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { useToast } from "@/hooks/use-toast";
+import { FirestorePermissionError } from "@/firebase/errors";
+import { errorEmitter } from "@/firebase/error-emitter";
 
 
 const formatUserId = (uid: string | undefined) => {
@@ -26,16 +29,21 @@ const getInitials = (name: string | null | undefined) => {
 function PostItem({ post }: { post: WithId<Post> }) {
   const { user } = useUser();
   const { firestore } = useFirebase();
+  const { toast } = useToast();
 
   const hasLiked = user ? post.likes?.includes(user.uid) : false;
 
   const handleLike = async () => {
-    if (!user || !firestore) return;
+    if (!user || !firestore) {
+        toast({
+            variant: "destructive",
+            title: "Authentication Error",
+            description: "You must be logged in to like a post.",
+        });
+        return;
+    }
 
     const postRef = doc(firestore, 'posts', post.id);
-    
-    // Using a batch write for atomicity, though updateDoc itself is atomic for single docs.
-    // This is good practice if you were to update multiple documents at once.
     const batch = writeBatch(firestore);
 
     if (hasLiked) {
@@ -52,13 +60,20 @@ function PostItem({ post }: { post: WithId<Post> }) {
       });
     }
 
-    try {
-        await batch.commit();
-    } catch (error) {
-        console.error("Error updating likes: ", error);
-        // The global error handler in useCollection/useDoc will also catch permission errors,
-        // but it's good to log other potential errors here.
-    }
+    // Non-blocking write with error handling
+    batch.commit().catch((serverError) => {
+        const payload = {
+            likes: hasLiked ? arrayRemove(user.uid) : arrayUnion(user.uid),
+            likeCount: increment(hasLiked ? -1 : 1)
+        };
+        const permissionError = new FirestorePermissionError({
+            path: postRef.path,
+            operation: 'update',
+            requestResourceData: payload,
+        });
+        errorEmitter.emit('permission-error', permissionError);
+        console.error("Error updating likes: ", serverError);
+    });
   };
 
 
@@ -67,8 +82,8 @@ function PostItem({ post }: { post: WithId<Post> }) {
       <CardContent className="p-4">
         <div className="flex space-x-3">
           <Avatar className="h-10 w-10">
-            <AvatarImage src={post.authorPhotoURL || undefined} alt={post.authorName} />
-            <AvatarFallback>{getInitials(post.authorName)}</AvatarFallback>
+            {/* The user's name is not available on the post object, so we show initials */}
+            <AvatarFallback>{getInitials(post.authorId)}</AvatarFallback>
           </Avatar>
           <div className="flex-1 space-y-2">
             <div className="flex justify-between items-start">
@@ -85,7 +100,7 @@ function PostItem({ post }: { post: WithId<Post> }) {
             <div className="flex items-center space-x-6 pt-2 text-muted-foreground">
               <button onClick={handleLike} className="flex items-center space-x-1 hover:text-pink-500">
                 <Heart className={cn("h-4 w-4", hasLiked && "text-pink-500 fill-pink-500")} />
-                <span className="text-xs">{post.likeCount > 0 && post.likeCount}</span>
+                <span className="text-xs">{post.likeCount > 0 ? post.likeCount : ''}</span>
               </button>
               <button className="flex items-center space-x-1 hover:text-primary">
                 <MessageCircle className="h-4 w-4" />

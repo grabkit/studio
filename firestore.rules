@@ -10,7 +10,7 @@ service cloud.firestore {
     function isOwner(userId) {
       return request.auth.uid == userId;
     }
-
+    
     // Return true if the user's UID exists in a list
     function uidInList(list) {
       return request.auth.uid in list;
@@ -42,7 +42,6 @@ service cloud.firestore {
     function isLikingOrUnliking() {
         let incoming = request.resource.data;
         let existing = resource.data;
-        let likingUserUid = request.auth.uid;
         
         // --- Core data integrity check ---
         // Ensure that only `likes` and `likeCount` are being modified.
@@ -60,6 +59,7 @@ service cloud.firestore {
         // and the `likeCount` must be incremented by exactly 1.
         let isLiking = !uidInList(existing.likes)
                     && uidInList(incoming.likes)
+                    && incoming.likes.size() == existing.likes.size() + 1
                     && incoming.likeCount == existing.likeCount + 1;
 
         // --- Unlike action validation ---
@@ -67,6 +67,7 @@ service cloud.firestore {
         // and the `likeCount` must be decremented by exactly 1.
         let isUnliking = uidInList(existing.likes)
                       && !uidInList(incoming.likes)
+                      && incoming.likes.size() == existing.likes.size() - 1
                       && incoming.likeCount == existing.likeCount - 1;
 
         // The operation is valid if it's either a like or an unlike.
