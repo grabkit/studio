@@ -1,0 +1,131 @@
+/**
+ * Core Philosophy: This ruleset enforces a strict user-ownership model. All data is
+ * sandboxed within a user-specific data tree, meaning users can only access and
+ * modify their own information and content.
+ *
+ * Data Structure: The data is hierarchically organized under top-level collections.
+ * User profiles are stored in `/users/{userId}`, and all posts created by a user
+ * are stored in a nested subcollection at `/users/{userId}/posts/{postId}`.
+ *
+ * Key Security Decisions:
+ * - User Enumeration is Disabled: Listing documents from the top-level `/users`
+ *   collection is explicitly forbidden to protect user privacy.
+ * - Strict Ownership: All operations (read, write, delete) are gated by checks
+ *   that ensure the requesting user's UID matches the `userId` in the document path.
+ * - Path-Based Security: Authorization relies on the document path (`/users/{userId}/...`)
+ *   as the primary source of truth for ownership, which is fast and efficient.
+ *
+ * Denormalization for Authorization: The structure is inherently designed for efficient
+ * rules. By nesting posts under a user's path, we avoid costly `get()` calls to check
+ * for post ownership. The rules also enforce that the `authorId` field within a post
+ * document matches the `userId` from the path, ensuring data integrity and simple,
+ * performant authorization checks.
+ *
+ * Structural Segregation: User data is naturally segregated. There is no concept of a
+ * globally public collection; all posts are private to the user who created them,
+ * stored within their own document tree.
+ */
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    // Helper functions for authentication, ownership, and validation.
+
+    /**
+     * Checks if the user is authenticated.
+     */
+    function isSignedIn() {
+      return request.auth != null;
+    }
+
+    /**
+     * Checks if the currently authenticated user's UID matches the provided userId.
+     * This is the cornerstone of the user-ownership model.
+     */
+    function isOwner(userId) {
+      return isSignedIn() && request.auth.uid == userId;
+    }
+
+    /**
+     * Verifies ownership for an existing document. Used for update and delete
+     * operations to prevent acting on non-existent data.
+     */
+    function isExistingOwner(userId) {
+      return isOwner(userId) && resource != null;
+    }
+
+    /**
+     * Validates required relational fields on user profile creation.
+     * Ensures the document's internal `id` matches the document's path ID.
+     */
+    function hasValidUserData(userId) {
+      let incomingData = request.resource.data;
+      return incomingData.id == userId;
+    }
+
+    /**
+     * Enforces immutability of critical relational fields on user profile update.
+     * The user's unique `id` cannot be changed after creation.
+     */
+    function isUpdatingValidUserData() {
+      let incomingData = request.resource.data;
+      let existingData = resource.data;
+      return incomingData.id == existingData.id;
+    }
+
+    /**
+     * Validates required relational fields on post creation.
+     * Ensures the new post's `authorId` matches the owner's `userId` from the path,
+     * and the internal `id` matches the `postId` from the path.
+     */
+    function hasValidPostData(userId, postId) {
+      let incomingData = request.resource.data;
+      return incomingData.authorId == userId && incomingData.id == postId;
+    }
+
+    /**
+     * Enforces immutability of critical relational fields on post update.
+     * The post's `id` and `authorId` cannot be changed.
+     */
+    function isUpdatingValidPostData() {
+      let incomingData = request.resource.data;
+      let existingData = resource.data;
+      return incomingData.authorId == existingData.authorId
+          && incomingData.id == existingData.id;
+    }
+
+    /**
+     * @description Rules for a user's profile document.
+     * @path /users/{userId}
+     * @allow (get) An authenticated user can read their own profile. auth.uid: "user_abc", path: /users/user_abc
+     * @deny (list) No user can list all user profiles in the database.
+     * @allow (create) An authenticated user can create their own profile document. auth.uid: "user_abc", path: /users/user_abc
+     * @deny (update) An authenticated user cannot update another user's profile. auth.uid: "user_abc", path: /users/user_xyz
+     * @principle Restricts access to a user's own data tree and prevents user enumeration.
+     */
+    match /users/{userId} {
+      allow get: if isOwner(userId);
+      allow list: if false;
+      allow create: if isOwner(userId) && hasValidUserData(userId);
+      allow update: if isExistingOwner(userId) && isUpdatingValidUserData();
+      allow delete: if isExistingOwner(userId);
+    }
+
+    /**
+     * @description Rules for a user's posts, nested within their own document.
+     * @path /users/{userId}/posts/{postId}
+     * @allow (list) An authenticated user can list all of their own posts. auth.uid: "user_abc", path: /users/user_abc/posts
+     * @deny (get) An authenticated user cannot read another user's post. auth.uid: "user_abc", path: /users/user_xyz/posts/post_123
+     * @allow (create) An authenticated user can create a new post under their own profile. auth.uid: "user_abc", path: /users/user_abc/posts/post_123
+     * @deny (delete) An authenticated user cannot delete another user's post. auth.uid: "user_abc", path: /users/user_xyz/posts/post_123
+     * @principle Enforces strict document ownership within a user-specific subcollection.
+     */
+    match /users/{userId}/posts/{postId} {
+      allow get: if isOwner(userId);
+      allow list: if isOwner(userId);
+      allow create: if isOwner(userId) && hasValidPostData(userId, postId);
+      allow update: if isExistingOwner(userId) && isUpdatingValidPostData();
+      allow delete: if isExistingOwner(userId);
+    }
+  }
+}
