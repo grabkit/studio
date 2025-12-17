@@ -33,9 +33,8 @@ function PostItem({ post }: { post: WithId<Post> }) {
           </Avatar>
           <div className="flex-1 space-y-2">
             <div className="flex justify-between items-start">
-              <div className="flex flex-col">
-                <span className="font-semibold text-sm">{post.authorName}</span>
-                <span className="text-xs text-muted-foreground font-mono -mt-1">{formatUserId(post.authorId)}</span>
+              <div className="flex items-center">
+                <span className="text-sm font-semibold">{formatUserId(post.authorId)}</span>
               </div>
               <span className="text-xs text-muted-foreground">
                 {post.timestamp ? formatDistanceToNow(new Date(post.timestamp.toDate()), { addSuffix: true }) : ''}

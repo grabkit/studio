@@ -54,7 +54,7 @@ export default function AccountPage() {
                 {getInitials(user?.displayName)}
               </AvatarFallback>
             </Avatar>
-            <CardTitle className="font-headline text-3xl">{user?.displayName || "Anonymous User"}</CardTitle>
+            <CardTitle className="font-headline text-3xl">{formatUserId(user?.uid)}</CardTitle>
           </CardHeader>
           <CardContent className="space-y-4">
             <div className="flex items-center space-x-4 p-3 bg-secondary rounded-lg">
@@ -79,5 +79,3 @@ export default function AccountPage() {
     </AppLayout>
   );
 }
-
-    
