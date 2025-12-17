@@ -73,13 +73,13 @@ service cloud.firestore {
           (isOwner(resource.data.authorId) && request.resource.data.content != resource.data.content && request.resource.data.keys().hasOnly(['content'])) ||
           
           // Scenario 2: ANY user is liking/unliking the post. Ensures only 'likes' and 'likeCount' are modified.
-          ((request.resource.data.likeCount == resource.data.likeCount + 1 || request.resource.data.likeCount == resource.data.likeCount - 1) && request.resource.data.keys().hasAll(['likes', 'likeCount']) && request.resource.data.keys().size() == 2) ||
+          ((request.resource.data.likeCount == resource.data.likeCount + 1 || request.resource.data.likeCount == resource.data.likeCount - 1) && request.resource.data.keys().hasOnly(['likes', 'likeCount'])) ||
 
           // Scenario 3: The comment count is being incremented/decremented. Ensures only 'commentCount' is modified.
           ((request.resource.data.commentCount == resource.data.commentCount + 1 || request.resource.data.commentCount == resource.data.commentCount - 1) && request.resource.data.keys().hasOnly(['commentCount'])) ||
           
           // Scenario 4: ANY user is reposting/un-reposting the post. Ensures only 'reposts' and 'repostCount' are modified.
-          ((request.resource.data.repostCount == resource.data.repostCount + 1 || request.resource.data.repostCount == resource.data.repostCount - 1) && request.resource.data.keys().hasAll(['reposts', 'repostCount']) && request.resource.data.keys().size() == 2)
+          ((request.resource.data.repostCount == resource.data.repostCount + 1 || request.resource.data.repostCount == resource.data.repostCount - 1) && request.resource.data.keys().hasOnly(['reposts', 'repostCount']))
       );
     }
     
