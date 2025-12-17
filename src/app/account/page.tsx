@@ -13,6 +13,7 @@ import { useToast } from "@/hooks/use-toast";
 import type { Post } from "@/lib/types";
 import { Skeleton } from "@/components/ui/skeleton";
 import Link from "next/link";
+import React, { useMemo } from "react";
 
 export default function AccountPage() {
   const { user } = useUser();
@@ -29,6 +30,12 @@ export default function AccountPage() {
   }, [firestore, user]);
 
   const { data: posts, isLoading: postsLoading } = useCollection<Post>(userPostsQuery);
+
+  const totalLikes = useMemo(() => {
+    if (!posts) return 0;
+    return posts.reduce((acc, post) => acc + (post.likeCount || 0), 0);
+  }, [posts]);
+
 
   const handleLogout = async () => {
     try {
@@ -100,12 +107,12 @@ export default function AccountPage() {
                 <p className="text-sm text-muted-foreground">Posts</p>
               </div>
               <div>
-                <p className="font-bold text-lg">1.2k</p>
-                <p className="text-sm text-muted-foreground">Followers</p>
-              </div>
-              <div>
-                <p className="font-bold text-lg">345</p>
-                <p className="text-muted-foreground">Following</p>
+                 {postsLoading ? (
+                    <div className="font-bold text-lg"><Skeleton className="h-6 w-8 mx-auto" /></div>
+                ) : (
+                    <div className="font-bold text-lg">{totalLikes}</div>
+                )}
+                <p className="text-sm text-muted-foreground">Likes</p>
               </div>
           </div>
         </div>
