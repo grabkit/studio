@@ -1,8 +1,8 @@
 "use client";
 
 import AppLayout from "@/components/AppLayout";
-import { useFirebase, useMemoFirebase } from "@/firebase";
-import { collection, query, orderBy, limit } from "firebase/firestore";
+import { useFirebase, useMemoFirebase, useUser } from "@/firebase";
+import { collection, query, orderBy, limit, doc, updateDoc, arrayUnion, arrayRemove, increment } from "firebase/firestore";
 import { useCollection, type WithId } from "@/firebase/firestore/use-collection";
 import { Card, CardContent } from "@/components/ui/card";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
@@ -10,6 +10,7 @@ import { formatDistanceToNow } from "date-fns";
 import { Skeleton } from "@/components/ui/skeleton";
 import type { Post } from "@/lib/types";
 import { Heart, MessageCircle, Repeat, Send } from "lucide-react";
+import { cn } from "@/lib/utils";
 
 
 const formatUserId = (uid: string | undefined) => {
@@ -23,6 +24,30 @@ const getInitials = (name: string | null | undefined) => {
 };
 
 function PostItem({ post }: { post: WithId<Post> }) {
+  const { user } = useUser();
+  const { firestore } = useFirebase();
+
+  const hasLiked = user ? post.likes?.includes(user.uid) : false;
+
+  const handleLike = () => {
+    if (!user || !firestore) return;
+
+    const postRef = doc(firestore, 'posts', post.id);
+
+    if (hasLiked) {
+      updateDoc(postRef, {
+        likes: arrayRemove(user.uid),
+        likeCount: increment(-1)
+      });
+    } else {
+      updateDoc(postRef, {
+        likes: arrayUnion(user.uid),
+        likeCount: increment(1)
+      });
+    }
+  };
+
+
   return (
     <Card className="w-full shadow-none border-x-0 border-t-0 rounded-none">
       <CardContent className="p-4">
@@ -44,8 +69,9 @@ function PostItem({ post }: { post: WithId<Post> }) {
             <p className="text-foreground text-sm">{post.content}</p>
             
             <div className="flex items-center space-x-6 pt-2 text-muted-foreground">
-              <button className="flex items-center space-x-1 hover:text-pink-500">
-                <Heart className="h-4 w-4" />
+              <button onClick={handleLike} className="flex items-center space-x-1 hover:text-pink-500">
+                <Heart className={cn("h-4 w-4", hasLiked && "text-pink-500 fill-pink-500")} />
+                <span className="text-xs">{post.likeCount > 0 && post.likeCount}</span>
               </button>
               <button className="flex items-center space-x-1 hover:text-primary">
                 <MessageCircle className="h-4 w-4" />

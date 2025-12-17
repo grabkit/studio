@@ -67,10 +67,10 @@ export default function PostPage() {
     const newPost = {
       id: newPostRef.id,
       authorId: user.uid,
-      authorName: user.displayName || "Anonymous User",
-      authorPhotoURL: user.photoURL || "",
       content: values.content,
       timestamp: serverTimestamp(),
+      likes: [],
+      likeCount: 0,
     };
 
     setDoc(newPostRef, newPost)

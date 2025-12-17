@@ -44,14 +44,6 @@
           "type": "string",
           "description": "Reference to the User who created the post. (Relationship: User 1:N Post)"
         },
-        "authorName": {
-          "type": "string",
-          "description": "The display name of the post's author."
-        },
-        "authorPhotoURL": {
-          "type": "string",
-          "description": "The photo URL of the post's author."
-        },
         "content": {
           "type": "string",
           "description": "The text content of the post."
@@ -60,14 +52,26 @@
           "type": "string",
           "description": "Timestamp indicating when the post was created.",
           "format": "date-time"
+        },
+        "likes": {
+          "type": "array",
+          "description": "An array of user IDs that have liked the post.",
+          "items": {
+            "type": "string"
+          }
+        },
+        "likeCount": {
+          "type": "number",
+          "description": "The total number of likes for the post."
         }
       },
       "required": [
         "id",
         "authorId",
-        "authorName",
         "content",
-        "timestamp"
+        "timestamp",
+        "likes",
+        "likeCount"
       ]
     }
   },

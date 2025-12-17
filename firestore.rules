@@ -11,9 +11,9 @@
  *   collection is explicitly forbidden to protect user privacy.
  * - Public Read on Posts: All authenticated users can read documents from the
  *   top-level `/posts` collection.
- * - Strict Ownership on Writes: Only the author of a post can create, update, or
- *   delete it. This is enforced by checking `request.auth.uid` against the
- *   `authorId` field in the post document.
+ * - Strict Ownership on Writes: Only the author of a post can create or delete it.
+ * - Liking Posts: Any authenticated user can "like" a post, which adds their UID to the
+ *   `likes` array and increments `likeCount`. This is a controlled update.
  * - Data Integrity: Rules enforce that the `authorId` is correctly set and
  *   immutable, ensuring clear ownership.
  */
@@ -42,16 +42,35 @@ service cloud.firestore {
       return incomingData.id == existingData.id;
     }
 
-    // Validates incoming Post data on create/update.
+    // Validates incoming Post data on create.
     function hasValidPostData(userId) {
         let incomingData = request.resource.data;
-        return incomingData.authorId == userId;
+        return incomingData.authorId == userId
+            && incomingData.likeCount == 0
+            && incomingData.likes is list
+            && incomingData.likes.size() == 0;
     }
 
-    function isUpdatingValidPostData(userId) {
-        let incomingData = request.resource.data;
-        let existingData = resource.data;
-        return hasValidPostData(userId) && incomingData.id == existingData.id;
+    function isLikingOrUnlikingPost(userId) {
+      let incomingData = request.resource.data;
+      let existingData = resource.data;
+      let diff = incomingData.likes.diff(existingData.likes);
+
+      // Check that no other fields are being changed except for likes and likeCount
+      let otherFieldsUnchanged = incomingData.keys().removeAll(['likes', 'likeCount']).size() == existingData.keys().removeAll(['likes', 'likeCount']).size()
+        && incomingData.content == existingData.content
+        && incomingData.authorId == existingData.authorId
+        && incomingData.id == existingData.id;
+
+      // When liking, only the user's own UID is added
+      let isLiking = diff.added().size() == 1 && diff.added()[0] == userId && diff.removed().size() == 0;
+      let likeCountIncremented = incomingData.likeCount == existingData.likeCount + 1;
+
+      // When unliking, only the user's own UID is removed
+      let isUnliking = diff.removed().size() == 1 && diff.removed()[0] == userId && diff.added().size() == 0;
+      let likeCountDecremented = incomingData.likeCount == existingData.likeCount - 1;
+
+      return otherFieldsUnchanged && ((isLiking && likeCountIncremented) || (isUnliking && likeCountDecremented));
     }
 
 
@@ -73,7 +92,10 @@ service cloud.firestore {
       allow get: if isSignedIn();
       allow list: if isSignedIn();
       allow create: if isSignedIn() && hasValidPostData(request.auth.uid);
-      allow update: if isSignedIn() && resource.data.authorId == request.auth.uid && isUpdatingValidPostData(request.auth.uid);
+      allow update: if isSignedIn() && (
+        (resource.data.authorId == request.auth.uid) || // Owner can update
+        isLikingOrUnlikingPost(request.auth.uid) // Any user can like/unlike
+      );
       allow delete: if isSignedIn() && resource.data.authorId == request.auth.uid;
     }
   }
