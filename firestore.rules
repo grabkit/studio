@@ -75,12 +75,12 @@ service cloud.firestore {
 
     /**
      * Validates required relational fields on post creation.
-     * Ensures the new post's `authorId` matches the owner's `userId` from the path,
-     * and the internal `id` matches the `postId` from the path.
+     * Ensures the new post's `authorId` matches the owner's `userId` from the path.
+     * The ID check is removed because `addDoc` auto-generates the ID.
      */
-    function hasValidPostData(userId, postId) {
+    function hasValidPostDataOnCreate(userId) {
       let incomingData = request.resource.data;
-      return incomingData.authorId == userId && incomingData.id == postId;
+      return incomingData.authorId == userId;
     }
 
     /**
@@ -109,23 +109,23 @@ service cloud.firestore {
       allow create: if isOwner(userId) && hasValidUserData(userId);
       allow update: if isExistingOwner(userId) && isUpdatingValidUserData();
       allow delete: if isExistingOwner(userId);
-    }
 
-    /**
-     * @description Rules for a user's posts, nested within their own document.
-     * @path /users/{userId}/posts/{postId}
-     * @allow (list) An authenticated user can list all of their own posts. auth.uid: "user_abc", path: /users/user_abc/posts
-     * @deny (get) An authenticated user cannot read another user's post. auth.uid: "user_abc", path: /users/user_xyz/posts/post_123
-     * @allow (create) An authenticated user can create a new post under their own profile. auth.uid: "user_abc", path: /users/user_abc/posts/post_123
-     * @deny (delete) An authenticated user cannot delete another user's post. auth.uid: "user_abc", path: /users/user_xyz/posts/post_123
-     * @principle Enforces strict document ownership within a user-specific subcollection.
-     */
-    match /users/{userId}/posts/{postId} {
-      allow get: if isOwner(userId);
-      allow list: if isOwner(userId);
-      allow create: if isOwner(userId) && hasValidPostData(userId, postId);
-      allow update: if isExistingOwner(userId) && isUpdatingValidPostData();
-      allow delete: if isExistingOwner(userId);
+      /**
+       * @description Rules for a user's posts, nested within their own document.
+       * @path /users/{userId}/posts/{postId}
+       * @allow (list) An authenticated user can list all of their own posts. auth.uid: "user_abc", path: /users/user_abc/posts
+       * @deny (get) An authenticated user cannot read another user's post. auth.uid: "user_abc", path: /users/user_xyz/posts/post_123
+       * @allow (create) An authenticated user can create a new post under their own profile. auth.uid: "user_abc", path: /users/user_abc/posts/post_123
+       * @deny (delete) An authenticated user cannot delete another user's post. auth.uid: "user_abc", path: /users/user_xyz/posts/post_123
+       * @principle Enforces strict document ownership within a user-specific subcollection.
+       */
+      match /posts/{postId} {
+        allow get: if isOwner(userId);
+        allow list: if isOwner(userId);
+        allow create: if isOwner(userId) && hasValidPostDataOnCreate(userId);
+        allow update: if isExistingOwner(userId) && isUpdatingValidPostData();
+        allow delete: if isExistingOwner(userId);
+      }
     }
   }
 }
