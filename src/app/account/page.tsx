@@ -1,20 +1,33 @@
 "use client";
 
 import AppLayout from "@/components/AppLayout";
-import { useUser, useFirebase } from "@/firebase";
+import { useUser, useFirebase, useMemoFirebase } from "@/firebase";
 import { useRouter } from "next/navigation";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { LogOut, User, Mail, Shield } from "lucide-react";
-import { useToast } from "@/hooks/use-toast";
+import { collection, query, where } from "firebase/firestore";
+import { useCollection } from "@/firebase/firestore/use-collection";
+import { Settings, LogOut, Grid3x3, Bookmark } from "lucide-react";
 import { signOut } from "firebase/auth";
+import { useToast } from "@/hooks/use-toast";
+import type { Post } from "@/lib/types";
+import { Skeleton } from "@/components/ui/skeleton";
 
 export default function AccountPage() {
   const { user } = useUser();
-  const { auth } = useFirebase();
+  const { auth, firestore } = useFirebase();
   const router = useRouter();
   const { toast } = useToast();
+
+  const userPostsQuery = useMemoFirebase(() => {
+    if (!firestore || !user) return null;
+    return query(
+      collection(firestore, "posts"),
+      where("authorId", "==", user.uid)
+    );
+  }, [firestore, user]);
+
+  const { data: posts, isLoading: postsLoading } = useCollection<Post>(userPostsQuery);
 
   const handleLogout = async () => {
     try {
@@ -35,46 +48,96 @@ export default function AccountPage() {
 
   const getInitials = (name: string | null | undefined) => {
     if (!name) return "U";
-    return name.split(' ').map(n => n[0]).join('').substring(0, 2).toUpperCase();
+    return name
+      .split(" ")
+      .map((n) => n[0])
+      .join("")
+      .substring(0, 2)
+      .toUpperCase();
   };
 
   const formatUserId = (uid: string | undefined) => {
     if (!uid) return "blur??????";
     return `blur${uid.substring(uid.length - 6)}`;
-  }
+  };
 
   return (
     <AppLayout>
-      <div className="flex flex-col items-center">
-        <Card className="w-full max-w-md shadow-lg">
-          <CardHeader className="items-center text-center">
-            <Avatar className="h-24 w-24 mb-4">
-              <AvatarImage src={user?.photoURL || undefined} alt={user?.displayName || "User"} />
-              <AvatarFallback className="text-3xl font-headline bg-primary text-primary-foreground">
-                {getInitials(user?.displayName)}
-              </AvatarFallback>
-            </Avatar>
-            <CardTitle className="font-headline text-3xl">{formatUserId(user?.uid)}</CardTitle>
-          </CardHeader>
-          <CardContent className="space-y-4">
-            <div className="flex items-center space-x-4 p-3 bg-secondary rounded-lg">
-              <Mail className="h-5 w-5 text-muted-foreground" />
-              <span className="text-sm font-body text-foreground truncate">{user?.email || 'No email provided'}</span>
+      <div className="px-4">
+        {/* Profile Header */}
+        <div className="flex items-center space-x-5 mb-6">
+          <Avatar className="h-20 w-20 md:h-24 md:w-24">
+            <AvatarImage
+              src={user?.photoURL || undefined}
+              alt={user?.displayName || "User"}
+            />
+            <AvatarFallback className="text-3xl font-headline bg-primary text-primary-foreground">
+              {getInitials(user?.displayName)}
+            </AvatarFallback>
+          </Avatar>
+          <div className="flex flex-col space-y-2">
+            <h2 className="text-2xl font-semibold font-headline">
+              {formatUserId(user?.uid)}
+            </h2>
+            <div className="flex space-x-2">
+              <Button variant="secondary" size="sm" className="flex-1">Edit Profile</Button>
+              <Button variant="ghost" size="icon" onClick={handleLogout}>
+                <LogOut className="h-5 w-5 text-destructive" />
+              </Button>
             </div>
-             <div className="flex items-center space-x-4 p-3 bg-secondary rounded-lg">
-              <User className="h-5 w-5 text-muted-foreground" />
-              <span className="text-sm font-body text-foreground truncate">{user?.displayName || 'No name provided'}</span>
+          </div>
+        </div>
+
+        {/* User Name and Bio */}
+        <div className="mb-6">
+            <h1 className="font-bold text-base">{user?.displayName}</h1>
+            <p className="text-sm text-muted-foreground">{user?.email}</p>
+        </div>
+
+
+        {/* Stats */}
+        <div className="flex justify-around text-center border-y py-3 mb-4">
+          <div>
+            <p className="font-bold text-lg">{postsLoading ? <Skeleton className="h-6 w-8 mx-auto" /> : posts?.length ?? 0}</p>
+            <p className="text-sm text-muted-foreground">Posts</p>
+          </div>
+          <div>
+            <p className="font-bold text-lg">1.2k</p>
+            <p className="text-sm text-muted-foreground">Followers</p>
+          </div>
+          <div>
+            <p className="font-bold text-lg">345</p>
+            <p className="text-sm text-muted-foreground">Following</p>
+          </div>
+        </div>
+
+        {/* Tabs */}
+        <div className="flex justify-center border-b">
+            <button className="flex-1 text-center py-2 border-b-2 border-primary">
+                <Grid3x3 className="mx-auto h-6 w-6 text-primary" />
+            </button>
+             <button className="flex-1 text-center py-2">
+                <Bookmark className="mx-auto h-6 w-6 text-muted-foreground" />
+            </button>
+        </div>
+
+        {/* Posts Grid */}
+        <div className="grid grid-cols-3 gap-1 mt-4">
+            {postsLoading && Array.from({length: 6}).map((_, i) => (
+                <Skeleton key={i} className="aspect-square w-full" />
+            ))}
+            {posts?.map((post) => (
+              <div key={post.id} className="aspect-square bg-muted flex items-center justify-center">
+                  {/* For now, just a placeholder. Later can show image or text snippet */}
+              </div>
+            ))}
+        </div>
+         {!postsLoading && posts?.length === 0 && (
+             <div className="col-span-3 text-center py-16">
+                <h3 className="text-xl font-headline text-primary">No Posts Yet</h3>
+                <p className="text-muted-foreground">Start sharing your thoughts!</p>
             </div>
-            <div className="flex items-center space-x-4 p-3 bg-secondary rounded-lg">
-              <Shield className="h-5 w-5 text-muted-foreground" />
-              <span className="text-sm font-mono text-muted-foreground truncate">{formatUserId(user?.uid)}</span>
-            </div>
-            <Button variant="destructive" className="w-full font-headline" onClick={handleLogout}>
-              <LogOut className="mr-2 h-4 w-4" />
-              Log Out
-            </Button>
-          </CardContent>
-        </Card>
+        )}
       </div>
     </AppLayout>
   );
