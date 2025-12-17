@@ -24,22 +24,19 @@ export default function BottomNav() {
             <Link
               key={item.href}
               href={item.href}
+              aria-label={item.label}
               className={cn(
-                "flex flex-col items-center justify-center gap-1 w-20 transition-colors duration-200",
+                "flex flex-col items-center justify-center w-20 transition-colors duration-200",
                 isActive && item.href !== '/post' ? "text-primary" : "text-muted-foreground hover:text-primary",
                 item.href === '/post' && 'text-white'
               )}
             >
               <div className={cn(
-                "p-2 rounded-full",
+                "p-3 rounded-full",
                 item.href === '/post' && "bg-primary/50"
               )}>
-                <Icon className="h-6 w-6" fill={(isActive && item.href !== '/post') ? "currentColor" : "none"} />
+                <Icon className="h-7 w-7" fill={(isActive && item.href !== '/post') ? "currentColor" : "none"} />
               </div>
-              <span className={cn(
-                "text-xs font-medium font-headline",
-                isActive ? "font-bold" : "font-normal"
-                )}>{item.label}</span>
             </Link>
           );
         })}
