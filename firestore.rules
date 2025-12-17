@@ -1,121 +1,111 @@
-/**
- * Core Philosophy: This ruleset supports a public social media model. User profiles
- * are private, but posts are public to all authenticated users.
- *
- * Data Structure:
- * - User profiles: `/users/{userId}` (private to the owner)
- * - Posts: `/posts/{postId}` (publicly readable)
- *
- * Key Security Decisions:
- * - User Enumeration is Disabled: Listing documents from the top-level `/users`
- *   collection is explicitly forbidden to protect user privacy.
- * - Public Read on Posts: All authenticated users can read documents from the
- *   top-level `/posts` collection.
- * - Strict Ownership on Writes: Only the author of a post can create or delete it.
- * - Liking Posts: Any authenticated user can "like" a post, which adds their UID to the
- *   `likes` array and increments `likeCount`. This is a controlled update.
- * - Data Integrity: Rules enforce that the `authorId` is correctly set and
- *   immutable, ensuring clear ownership.
- */
 rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
 
-    // Helper functions
+    // HELPER FUNCTIONS
     function isSignedIn() {
       return request.auth != null;
     }
 
     function isOwner(userId) {
-      return isSignedIn() && request.auth.uid == userId;
+      return request.auth.uid == userId;
     }
 
-    // Validates the incoming User document on create/update.
-    function hasValidUserData(userId) {
-      let incomingData = request.resource.data;
-      return incomingData.id == userId;
+    // Return true if the user's UID exists in a list
+    function uidInList(list) {
+      return request.auth.uid in list;
     }
 
-    function isUpdatingValidUserData() {
-      let incomingData = request.resource.data;
-      let existingData = resource.data;
-      return incomingData.id == existingData.id;
+    // VALIDATION FUNCTIONS
+    
+    // Validate the incoming User document on create/update.
+    function isValidUser(userId) {
+      let data = request.resource.data;
+      return data.id == userId
+          && data.keys().hasOnly(['id', 'anonymousId', 'name', 'email']);
     }
 
-    // Validates incoming Post data on create.
-    function hasValidPostData(userId) {
-        let incomingData = request.resource.data;
-        return incomingData.authorId == userId
-            && incomingData.likeCount == 0
-            && incomingData.likes is list
-            && incomingData.likes.size() == 0;
-    }
-
-    // Validates the update is only for liking or unliking a post.
-    function isLikingOrUnlikingPost() {
-      let incomingData = request.resource.data;
-      let existingData = resource.data;
-      let likingUser = request.auth.uid;
-
-      // Ensure other fields are not being changed
-      let otherFieldsUnchanged = incomingData.content == existingData.content &&
-                                 incomingData.authorId == existingData.authorId &&
-                                 incomingData.timestamp == existingData.timestamp;
-      
-      let likesDiff = incomingData.likes.diff(existingData.likes);
-
-      // Liking: Only the current user's ID is added, and likeCount is incremented by 1.
-      let isLiking = likesDiff.added().size() == 1 &&
-                     likesDiff.added()[0] == likingUser &&
-                     likesDiff.removed().size() == 0 &&
-                     incomingData.likeCount == existingData.likeCount + 1;
-
-      // Unliking: Only the current user's ID is removed, and likeCount is decremented by 1.
-      let isUnliking = likesDiff.removed().size() == 1 &&
-                       likesDiff.removed()[0] == likingUser &&
-                       likesDiff.added().size() == 0 &&
-                       incomingData.likeCount == existingData.likeCount - 1;
-
-      return otherFieldsUnchanged && (isLiking || isUnliking);
+    // Validate incoming Post data on create. Ensures author is correct and defaults are set.
+    function isValidNewPost() {
+        let data = request.resource.data;
+        return data.authorId == request.auth.uid
+            && data.content is string
+            && data.content.size() > 0
+            && data.likeCount == 0
+            // Ensure `likes` is an empty list on creation
+            && data.likes is list
+            && data.likes.size() == 0;
     }
     
-    // Validates an owner is updating their own post content.
-    function isOwnerUpdatingContent() {
-      let incomingData = request.resource.data;
-      let existingData = resource.data;
+    // Validate an owner is updating their own post content, and nothing else.
+    function isOwnerUpdatingPostContent() {
+      let incoming = request.resource.data;
+      let existing = resource.data;
       
-      // Check that only content is changing and other fields are immutable.
-      return incomingData.content != existingData.content &&
-             incomingData.authorId == existingData.authorId &&
-             incomingData.timestamp == existingData.timestamp &&
-             incomingData.likes.size() == existingData.likes.size() &&
-             incomingData.likeCount == existingData.likeCount;
+      return incoming.content != existing.content
+             && incoming.authorId == existing.authorId
+             && incoming.timestamp == existing.timestamp
+             // Ensure likes and likeCount are not changed in this operation
+             && incoming.likes.size() == existing.likes.size()
+             && incoming.likeCount == existing.likeCount;
+    }
+    
+    // Validate that a user is ONLY liking or unliking a post.
+    // Any signed-in user can perform this action on any post.
+    function isLikingOrUnliking() {
+        let incoming = request.resource.data;
+        let existing = resource.data;
+        let likingUserUid = request.auth.uid;
+        
+        // --- Core data integrity check ---
+        // Ensure that only `likes` and `likeCount` are being modified.
+        // All other fields must remain the same.
+        let otherFieldsUnchanged = incoming.content == existing.content
+                              && incoming.authorId == existing.authorId
+                              && incoming.timestamp == existing.timestamp;
+                              
+        if (!otherFieldsUnchanged) {
+          return false;
+        }
+
+        // --- Like action validation ---
+        // To "like", the user's UID must be added to the `likes` array,
+        // and the `likeCount` must be incremented by exactly 1.
+        let isLiking = !uidInList(existing.likes)
+                    && uidInList(incoming.likes)
+                    && incoming.likeCount == existing.likeCount + 1;
+
+        // --- Unlike action validation ---
+        // To "unlike", the user's UID must be removed from the `likes` array,
+        // and the `likeCount` must be decremented by exactly 1.
+        let isUnliking = uidInList(existing.likes)
+                      && !uidInList(incoming.likes)
+                      && incoming.likeCount == existing.likeCount - 1;
+
+        // The operation is valid if it's either a like or an unlike.
+        return isLiking || isUnliking;
     }
 
-
-    /**
-     * @description Rules for user profiles. Only the owner can access their own profile.
-     */
+    // RULES
+    
     match /users/{userId} {
       allow get: if isOwner(userId);
-      allow list: if false; // Prevent listing all users
-      allow create: if isOwner(userId) && hasValidUserData(userId);
-      allow update: if isOwner(userId) && isUpdatingValidUserData();
+      allow list: if false; // Disable user enumeration for privacy.
+      allow create: if isOwner(userId) && isValidUser(userId);
+      allow update: if isOwner(userId) && isValidUser(userId);
       allow delete: if isOwner(userId);
     }
-
-    /**
-     * @description Rules for the global posts collection.
-     */
+    
     match /posts/{postId} {
-      allow get: if isSignedIn();
-      allow list: if isSignedIn();
-      allow create: if isSignedIn() && hasValidPostData(request.auth.uid);
-      allow update: if isSignedIn() && (
-        isLikingOrUnlikingPost() || // Any user can like/unlike
-        (isOwner(resource.data.authorId) && isOwnerUpdatingContent()) // Owner can update their post content
-      );
+      allow get, list: if isSignedIn();
+      allow create: if isSignedIn() && isValidNewPost();
       allow delete: if isSignedIn() && isOwner(resource.data.authorId);
+      
+      // An update is allowed if:
+      // 1. Any signed-in user is liking/unliking the post.
+      // OR
+      // 2. The owner of the post is updating its content.
+      allow update: if isSignedIn() && (isLikingOrUnliking() || (isOwner(resource.data.authorId) && isOwnerUpdatingPostContent()));
     }
   }
 }

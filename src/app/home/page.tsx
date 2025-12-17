@@ -2,7 +2,7 @@
 
 import AppLayout from "@/components/AppLayout";
 import { useFirebase, useMemoFirebase, useUser } from "@/firebase";
-import { collection, query, orderBy, limit, doc, updateDoc, arrayUnion, arrayRemove, increment } from "firebase/firestore";
+import { collection, query, orderBy, limit, doc, updateDoc, arrayUnion, arrayRemove, increment, writeBatch } from "firebase/firestore";
 import { useCollection, type WithId } from "@/firebase/firestore/use-collection";
 import { Card, CardContent } from "@/components/ui/card";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
@@ -29,21 +29,35 @@ function PostItem({ post }: { post: WithId<Post> }) {
 
   const hasLiked = user ? post.likes?.includes(user.uid) : false;
 
-  const handleLike = () => {
+  const handleLike = async () => {
     if (!user || !firestore) return;
 
     const postRef = doc(firestore, 'posts', post.id);
+    
+    // Using a batch write for atomicity, though updateDoc itself is atomic for single docs.
+    // This is good practice if you were to update multiple documents at once.
+    const batch = writeBatch(firestore);
 
     if (hasLiked) {
-      updateDoc(postRef, {
+      // User is unliking the post
+      batch.update(postRef, {
         likes: arrayRemove(user.uid),
         likeCount: increment(-1)
       });
     } else {
-      updateDoc(postRef, {
+      // User is liking the post
+      batch.update(postRef, {
         likes: arrayUnion(user.uid),
         likeCount: increment(1)
       });
+    }
+
+    try {
+        await batch.commit();
+    } catch (error) {
+        console.error("Error updating likes: ", error);
+        // The global error handler in useCollection/useDoc will also catch permission errors,
+        // but it's good to log other potential errors here.
     }
   };
 
