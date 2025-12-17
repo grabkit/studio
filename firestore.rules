@@ -56,11 +56,14 @@ service cloud.firestore {
       let existingData = resource.data;
       let diff = incomingData.likes.diff(existingData.likes);
 
-      // Check that no other fields are being changed except for likes and likeCount
+      // Check that only likes and likeCount are being changed.
+      // All other fields must remain the same.
       let otherFieldsUnchanged = incomingData.keys().removeAll(['likes', 'likeCount']).size() == existingData.keys().removeAll(['likes', 'likeCount']).size()
         && incomingData.content == existingData.content
         && incomingData.authorId == existingData.authorId
-        && incomingData.id == existingData.id;
+        && incomingData.id == existingData.id
+        && incomingData.timestamp == existingData.timestamp;
+
 
       // When liking, only the user's own UID is added
       let isLiking = diff.added().size() == 1 && diff.added()[0] == userId && diff.removed().size() == 0;
