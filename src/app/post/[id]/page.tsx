@@ -305,7 +305,8 @@ function CommentForm({ postId }: { postId: string }) {
                         <FormControl>
                         <Textarea
                             placeholder="Post your reply"
-                            className="text-base"
+                            className="text-base border-none focus-visible:ring-0 shadow-none -ml-2 p-0"
+                            rows={1}
                             {...field}
                         />
                         </FormControl>
