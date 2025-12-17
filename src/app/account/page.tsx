@@ -1,22 +1,24 @@
 "use client";
 
 import AppLayout from "@/components/AppLayout";
-import { useAuth } from "@/lib/firebase/auth";
+import { useUser, useFirebase } from "@/firebase";
 import { useRouter } from "next/navigation";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { LogOut, User, Mail, Shield } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
+import { signOut } from "firebase/auth";
 
 export default function AccountPage() {
-  const { user, logout } = useAuth();
+  const { user } = useUser();
+  const { auth } = useFirebase();
   const router = useRouter();
   const { toast } = useToast();
 
   const handleLogout = async () => {
     try {
-      await logout();
+      await signOut(auth);
       router.push("/auth");
       toast({
         title: "Logged Out",
@@ -77,3 +79,5 @@ export default function AccountPage() {
     </AppLayout>
   );
 }
+
+    

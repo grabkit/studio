@@ -5,7 +5,8 @@ import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
 import { useRouter } from "next/navigation";
-import { useAuth } from "@/lib/firebase/auth";
+import { useAuth as useFirebaseAuth, sendPasswordResetEmail } from "firebase/auth";
+import { useFirebase } from "@/firebase";
 import { useToast } from "@/hooks/use-toast";
 
 import { Button } from "@/components/ui/button";
@@ -38,6 +39,7 @@ import {
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
 import { Loader2 } from "lucide-react";
+import { createUserWithEmailAndPassword, signInWithEmailAndPassword, updateProfile } from "firebase/auth";
 
 const signUpSchema = z.object({
   name: z.string().min(2, { message: "Name must be at least 2 characters." }),
@@ -57,7 +59,7 @@ const forgotPasswordSchema = z.object({
 export default function AuthForm() {
   const [loading, setLoading] = useState(false);
   const [activeTab, setActiveTab] = useState("login");
-  const { signup, login, updateUserProfile, auth, sendPasswordReset } = useAuth();
+  const { auth } = useFirebase();
   const router = useRouter();
   const { toast } = useToast();
 
@@ -80,7 +82,7 @@ export default function AuthForm() {
   const onLogin = async (values: z.infer<typeof loginSchema>) => {
     setLoading(true);
     try {
-      await login(auth, values.email, values.password);
+      await signInWithEmailAndPassword(auth, values.email, values.password);
       router.push("/home");
     } catch (error: any) {
       toast({ variant: "destructive", title: "Login Failed", description: error.message });
@@ -92,9 +94,9 @@ export default function AuthForm() {
   const onSignUp = async (values: z.infer<typeof signUpSchema>) => {
     setLoading(true);
     try {
-      const userCredential = await signup(auth, values.email, values.password);
+      const userCredential = await createUserWithEmailAndPassword(auth, values.email, values.password);
       if (userCredential.user) {
-        await updateUserProfile(userCredential.user, { displayName: values.name });
+        await updateProfile(userCredential.user, { displayName: values.name });
       }
       router.push("/home");
     } catch (error: any) {
@@ -107,7 +109,7 @@ export default function AuthForm() {
   const onForgotPassword = async (values: z.infer<typeof forgotPasswordSchema>) => {
     setLoading(true);
     try {
-        await sendPasswordReset(auth, values.email);
+        await sendPasswordResetEmail(auth, values.email);
         toast({ title: "Password Reset Email Sent", description: "Check your inbox for password reset instructions." });
     } catch (error: any) {
         toast({ variant: "destructive", title: "Error", description: error.message });
@@ -217,6 +219,7 @@ export default function AuthForm() {
 }
 
 function ForgotPasswordDialog({form, onSubmit, loading}: {form: any, onSubmit: any, loading: boolean}) {
+    const { auth } = useFirebase();
     return (
         <AlertDialog>
             <AlertDialogTrigger asChild>
@@ -257,3 +260,5 @@ function ForgotPasswordDialog({form, onSubmit, loading}: {form: any, onSubmit: a
         </AlertDialog>
     );
 }
+
+    
