@@ -4,7 +4,7 @@ export interface Post {
     id: string;
     authorId: string;
     content: string;
-    timestamp: any; // Firestore ServerTimestamp
+    timestamp: Timestamp;
     likes: string[]; // Array of user IDs who liked the post
     likeCount: number;
     commentCount: number;
@@ -15,5 +15,5 @@ export interface Comment {
     postId: string;
     authorId: string;
     content: string;
-    timestamp: any; // Firestore ServerTimestamp
+    timestamp: Timestamp;
 }

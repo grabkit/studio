@@ -2,19 +2,37 @@
 
 import AppLayout from "@/components/AppLayout";
 import { useFirebase, useMemoFirebase, useUser } from "@/firebase";
-import { collection, query, orderBy, limit, doc, writeBatch, arrayUnion, arrayRemove, increment } from "firebase/firestore";
+import { collection, query, orderBy, limit, doc, writeBatch, arrayUnion, arrayRemove, increment, deleteDoc } from "firebase/firestore";
 import { useCollection, type WithId } from "@/firebase/firestore/use-collection";
 import { Card, CardContent } from "@/components/ui/card";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { formatDistanceToNow } from "date-fns";
 import { Skeleton } from "@/components/ui/skeleton";
 import type { Post } from "@/lib/types";
-import { Heart, MessageCircle, Repeat, Send } from "lucide-react";
+import { Heart, MessageCircle, Repeat, Send, MoreHorizontal, Edit, Trash2 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useToast } from "@/hooks/use-toast";
 import { FirestorePermissionError } from "@/firebase/errors";
 import { errorEmitter } from "@/firebase/error-emitter";
 import Link from "next/link";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
+import React, { useState } from "react";
+import { Button } from "@/components/ui/button";
 
 
 const formatUserId = (uid: string | undefined) => {
@@ -31,8 +49,10 @@ function PostItem({ post }: { post: WithId<Post> }) {
   const { user } = useUser();
   const { firestore } = useFirebase();
   const { toast } = useToast();
+  const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
 
   const hasLiked = user ? post.likes?.includes(user.uid) : false;
+  const isOwner = user?.uid === post.authorId;
 
   const handleLike = async () => {
     if (!user || !firestore) {
@@ -76,6 +96,26 @@ function PostItem({ post }: { post: WithId<Post> }) {
         console.error("Error updating likes: ", serverError);
     });
   };
+  
+  const handleDeletePost = async () => {
+    if (!firestore || !isOwner) return;
+    const postRef = doc(firestore, 'posts', post.id);
+    deleteDoc(postRef)
+      .then(() => {
+        toast({
+          title: "Post Deleted",
+          description: "Your post has been successfully deleted.",
+        });
+        setIsDeleteDialogOpen(false);
+      })
+      .catch((serverError) => {
+        const permissionError = new FirestorePermissionError({
+          path: postRef.path,
+          operation: 'delete',
+        });
+        errorEmitter.emit('permission-error', permissionError);
+      });
+  };
 
 
   return (
@@ -91,9 +131,30 @@ function PostItem({ post }: { post: WithId<Post> }) {
               <div className="flex items-center">
                 <span className="text-sm font-semibold">{formatUserId(post.authorId)}</span>
               </div>
-              <span className="text-xs text-muted-foreground">
-                {post.timestamp ? formatDistanceToNow(new Date(post.timestamp.toDate()), { addSuffix: true }) : ''}
-              </span>
+               <div className="flex items-center space-x-2">
+                 <span className="text-xs text-muted-foreground">
+                    {post.timestamp ? formatDistanceToNow(new Date(post.timestamp.toDate()), { addSuffix: true }) : ''}
+                 </span>
+                 {isOwner && (
+                    <DropdownMenu>
+                      <DropdownMenuTrigger asChild>
+                        <Button variant="ghost" size="icon" className="h-6 w-6">
+                            <MoreHorizontal className="h-4 w-4" />
+                        </Button>
+                      </DropdownMenuTrigger>
+                      <DropdownMenuContent align="end">
+                        <DropdownMenuItem>
+                          <Edit className="mr-2 h-4 w-4" />
+                          <span>Edit Post</span>
+                        </DropdownMenuItem>
+                        <DropdownMenuItem onClick={() => setIsDeleteDialogOpen(true)} className="text-destructive">
+                           <Trash2 className="mr-2 h-4 w-4" />
+                           <span>Delete Post</span>
+                        </DropdownMenuItem>
+                      </DropdownMenuContent>
+                    </DropdownMenu>
+                 )}
+               </div>
             </div>
             
             <p className="text-foreground text-sm">{post.content}</p>
@@ -117,6 +178,23 @@ function PostItem({ post }: { post: WithId<Post> }) {
           </div>
         </div>
       </CardContent>
+       <AlertDialog open={isDeleteDialogOpen} onOpenChange={setIsDeleteDialogOpen}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Are you sure?</AlertDialogTitle>
+            <AlertDialogDescription>
+              This action cannot be undone. This will permanently delete your
+              post and remove its data from our servers.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogAction onClick={handleDeletePost} className={cn(buttonVariants({variant: 'destructive'}))}>
+              Delete
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </Card>
   );
 }

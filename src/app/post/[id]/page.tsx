@@ -12,21 +12,23 @@ import {
   increment,
   arrayRemove,
   arrayUnion,
+  deleteDoc,
 } from "firebase/firestore";
 import { useCollection, type WithId } from "@/firebase/firestore/use-collection";
 import { useDoc } from "@/firebase/firestore/use-doc";
 import type { Post, Comment } from "@/lib/types";
-import { useParams } from "next/navigation";
+import { useParams, useRouter } from "next/navigation";
+import React, { useState } from "react";
 
 import AppLayout from "@/components/AppLayout";
 import { Card, CardContent } from "@/components/ui/card";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { formatDistanceToNow } from "date-fns";
 import { Skeleton } from "@/components/ui/skeleton";
-import { Button } from "@/components/ui/button";
+import { Button, buttonVariants } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { Form, FormControl, FormField, FormItem, FormMessage } from "@/components/ui/form";
-import { Heart, MessageCircle, Repeat, Send, Trash2 } from "lucide-react";
+import { Heart, MessageCircle, Repeat, Send, Trash2, MoreHorizontal, Edit } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useToast } from "@/hooks/use-toast";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -34,7 +36,23 @@ import * as z from "zod";
 import { useForm } from "react-hook-form";
 import { errorEmitter } from "@/firebase/error-emitter";
 import { FirestorePermissionError } from "@/firebase/errors";
-import React from "react";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
+
 
 const formatUserId = (uid: string | undefined) => {
   if (!uid) return "blur??????";
@@ -55,8 +73,11 @@ function PostDetailItem({ post }: { post: WithId<Post> }) {
   const { user } = useUser();
   const { firestore } = useFirebase();
   const { toast } = useToast();
+  const router = useRouter();
+  const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
 
   const hasLiked = user ? post.likes?.includes(user.uid) : false;
+  const isOwner = user?.uid === post.authorId;
 
   const handleLike = async () => {
     if (!user || !firestore) {
@@ -99,7 +120,28 @@ function PostDetailItem({ post }: { post: WithId<Post> }) {
     });
   };
 
+  const handleDeletePost = async () => {
+    if (!firestore || !isOwner) return;
+    const postRef = doc(firestore, 'posts', post.id);
+    deleteDoc(postRef)
+      .then(() => {
+        toast({
+          title: "Post Deleted",
+          description: "Your post has been successfully deleted.",
+        });
+        router.push('/home'); // Redirect to home after deletion
+      })
+      .catch((serverError) => {
+        const permissionError = new FirestorePermissionError({
+          path: postRef.path,
+          operation: 'delete',
+        });
+        errorEmitter.emit('permission-error', permissionError);
+      });
+  };
+
   return (
+    <>
     <Card className="w-full shadow-none rounded-none border-x-0 border-t-0">
       <CardContent className="p-4">
         <div className="flex space-x-3">
@@ -113,13 +155,34 @@ function PostDetailItem({ post }: { post: WithId<Post> }) {
                   {formatUserId(post.authorId)}
                 </span>
               </div>
-              <span className="text-xs text-muted-foreground">
-                {post.timestamp
-                  ? formatDistanceToNow(new Date(post.timestamp.toDate()), {
-                      addSuffix: true,
-                    })
-                  : ""}
-              </span>
+              <div className="flex items-center space-x-2">
+                 <span className="text-xs text-muted-foreground">
+                    {post.timestamp
+                    ? formatDistanceToNow(new Date(post.timestamp.toDate()), {
+                        addSuffix: true,
+                        })
+                    : ""}
+                 </span>
+                {isOwner && (
+                    <DropdownMenu>
+                        <DropdownMenuTrigger asChild>
+                        <Button variant="ghost" size="icon" className="h-6 w-6">
+                            <MoreHorizontal className="h-4 w-4" />
+                        </Button>
+                        </DropdownMenuTrigger>
+                        <DropdownMenuContent align="end">
+                        <DropdownMenuItem>
+                            <Edit className="mr-2 h-4 w-4" />
+                            <span>Edit Post</span>
+                        </DropdownMenuItem>
+                        <DropdownMenuItem onClick={() => setIsDeleteDialogOpen(true)} className="text-destructive">
+                            <Trash2 className="mr-2 h-4 w-4" />
+                            <span>Delete Post</span>
+                        </DropdownMenuItem>
+                        </DropdownMenuContent>
+                    </DropdownMenu>
+                )}
+              </div>
             </div>
 
             <p className="text-foreground text-base">{post.content}</p>
@@ -149,6 +212,24 @@ function PostDetailItem({ post }: { post: WithId<Post> }) {
         </div>
       </CardContent>
     </Card>
+    <AlertDialog open={isDeleteDialogOpen} onOpenChange={setIsDeleteDialogOpen}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Are you sure?</AlertDialogTitle>
+            <AlertDialogDescription>
+              This action cannot be undone. This will permanently delete your
+              post and remove its data from our servers.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogAction onClick={handleDeletePost} className={cn(buttonVariants({variant: 'destructive'}))}>
+              Delete
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+    </>
   );
 }
 
@@ -346,7 +427,7 @@ export default function PostDetailPage() {
         <div className="text-center py-10">
           <h2 className="text-2xl font-headline text-primary">Post not found</h2>
           <p className="text-muted-foreground mt-2">
-            This post may have been deleted.
+            This post may have been deleted or you do not have permission to view it.
           </p>
         </div>
       </AppLayout>
@@ -371,4 +452,3 @@ export default function PostDetailPage() {
     </AppLayout>
   );
 }
- 
