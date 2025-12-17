@@ -51,25 +51,45 @@ service cloud.firestore {
             && incomingData.likes.size() == 0;
     }
 
-    function isLikingOrUnlikingPost(userId) {
+    // Validates the update is only for liking or unliking a post.
+    function isLikingOrUnlikingPost() {
       let incomingData = request.resource.data;
       let existingData = resource.data;
-      let diff = incomingData.likes.diff(existingData.likes);
+      let likingUser = request.auth.uid;
 
-      // Check that only likes and likeCount are being changed, and that other core fields are immutable.
-      let otherFieldsUnchanged = incomingData.content == existingData.content
-        && incomingData.timestamp.toMillis() >= existingData.timestamp.toMillis()
-        && incomingData.authorId == existingData.authorId;
+      // Ensure other fields are not being changed
+      let otherFieldsUnchanged = incomingData.content == existingData.content &&
+                                 incomingData.authorId == existingData.authorId &&
+                                 incomingData.timestamp == existingData.timestamp;
+      
+      let likesDiff = incomingData.likes.diff(existingData.likes);
 
-      // When liking, only the user's own UID is added
-      let isLiking = diff.added().size() == 1 && diff.added()[0] == userId && diff.removed().size() == 0;
-      let likeCountIncremented = incomingData.likeCount == existingData.likeCount + 1;
+      // Liking: Only the current user's ID is added, and likeCount is incremented by 1.
+      let isLiking = likesDiff.added().size() == 1 &&
+                     likesDiff.added()[0] == likingUser &&
+                     likesDiff.removed().size() == 0 &&
+                     incomingData.likeCount == existingData.likeCount + 1;
 
-      // When unliking, only the user's own UID is removed
-      let isUnliking = diff.removed().size() == 1 && diff.removed()[0] == userId && diff.added().size() == 0;
-      let likeCountDecremented = incomingData.likeCount == existingData.likeCount - 1;
+      // Unliking: Only the current user's ID is removed, and likeCount is decremented by 1.
+      let isUnliking = likesDiff.removed().size() == 1 &&
+                       likesDiff.removed()[0] == likingUser &&
+                       likesDiff.added().size() == 0 &&
+                       incomingData.likeCount == existingData.likeCount - 1;
 
-      return otherFieldsUnchanged && ((isLiking && likeCountIncremented) || (isUnliking && likeCountDecremented));
+      return otherFieldsUnchanged && (isLiking || isUnliking);
+    }
+    
+    // Validates an owner is updating their own post content.
+    function isOwnerUpdatingContent() {
+      let incomingData = request.resource.data;
+      let existingData = resource.data;
+      
+      // Check that only content is changing and other fields are immutable.
+      return incomingData.content != existingData.content &&
+             incomingData.authorId == existingData.authorId &&
+             incomingData.timestamp == existingData.timestamp &&
+             incomingData.likes.size() == existingData.likes.size() &&
+             incomingData.likeCount == existingData.likeCount;
     }
 
 
@@ -92,10 +112,10 @@ service cloud.firestore {
       allow list: if isSignedIn();
       allow create: if isSignedIn() && hasValidPostData(request.auth.uid);
       allow update: if isSignedIn() && (
-        (resource.data.authorId == request.auth.uid && !isLikingOrUnlikingPost(request.auth.uid)) || // Owner can update their own post content
-        isLikingOrUnlikingPost(request.auth.uid) // Any user can like/unlike
+        isLikingOrUnlikingPost() || // Any user can like/unlike
+        (isOwner(resource.data.authorId) && isOwnerUpdatingContent()) // Owner can update their post content
       );
-      allow delete: if isSignedIn() && resource.data.authorId == request.auth.uid;
+      allow delete: if isSignedIn() && isOwner(resource.data.authorId);
     }
   }
 }
