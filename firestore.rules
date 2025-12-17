@@ -43,7 +43,9 @@ service cloud.firestore {
         return data.authorId == request.auth.uid
             && data.postId == postId
             && data.content is string
-            && data.content.size() > 0;
+            && data.content.size() > 0
+            && data.timestamp == request.time
+            && data.id is string;
     }
     
     // RULES
