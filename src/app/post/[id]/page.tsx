@@ -142,7 +142,7 @@ function PostDetailItem({ post }: { post: WithId<Post> }) {
 
   return (
     <>
-    <Card className="w-full shadow-none rounded-none border-x-0 border-t-0">
+    <Card className="w-full shadow-none rounded-none border-x-0 border-t-0 border-b">
       <CardContent className="p-4">
         <div className="flex space-x-3">
           <Avatar className="h-10 w-10">
@@ -187,7 +187,18 @@ function PostDetailItem({ post }: { post: WithId<Post> }) {
 
             <p className="text-foreground text-base">{post.content}</p>
 
-            <div className="flex items-center space-x-6 pt-2 text-muted-foreground">
+            <div className="border-t border-b -mx-4 my-2 px-4 py-2 text-muted-foreground flex items-center justify-around">
+                <div className="flex items-center space-x-2">
+                    <span className="font-bold text-foreground">{post.likeCount}</span>
+                    <span>Likes</span>
+                </div>
+                 <div className="flex items-center space-x-2">
+                    <span className="font-bold text-foreground">{post.commentCount}</span>
+                    <span>Replies</span>
+                </div>
+            </div>
+
+            <div className="flex items-center space-x-6 pt-2 text-muted-foreground justify-around">
               <button
                 onClick={handleLike}
                 className="flex items-center space-x-1 hover:text-pink-500"
@@ -195,12 +206,10 @@ function PostDetailItem({ post }: { post: WithId<Post> }) {
                 <Heart
                   className={cn("h-5 w-5", hasLiked && "text-pink-500 fill-pink-500")}
                 />
-                <span className="text-sm">{post.likeCount > 0 ? post.likeCount : ""}</span>
               </button>
-              <div className="flex items-center space-x-1">
+              <button className="flex items-center space-x-1 hover:text-primary">
                 <MessageCircle className="h-5 w-5" />
-                <span className="text-sm">{post.commentCount > 0 ? post.commentCount : ""}</span>
-              </div>
+              </button>
               <button className="flex items-center space-x-1 hover:text-green-500">
                 <Repeat className="h-5 w-5" />
               </button>
@@ -280,35 +289,37 @@ function CommentForm({ postId }: { postId: string }) {
   };
 
   return (
-    <div className="p-4 border-t">
-      <Form {...form}>
-        <form onSubmit={form.handleSubmit(onSubmit)} className="flex items-start space-x-3">
-          <Avatar className="h-8 w-8 mt-1">
-            <AvatarFallback>{getInitials(user?.displayName)}</AvatarFallback>
-          </Avatar>
-          <div className="flex-1">
-          <FormField
-            control={form.control}
-            name="content"
-            render={({ field }) => (
-              <FormItem>
-                <FormControl>
-                  <Textarea
-                    placeholder="Post your reply"
-                    className="text-base"
-                    {...field}
-                  />
-                </FormControl>
-                <FormMessage />
-              </FormItem>
-            )}
-          />
-          </div>
-          <Button type="submit" disabled={form.formState.isSubmitting} size="sm">
-            Reply
-          </Button>
-        </form>
-      </Form>
+    <div className="fixed bottom-0 left-0 right-0 bg-background border-t z-10 max-w-2xl mx-auto sm:px-4">
+        <div className="p-4">
+            <Form {...form}>
+                <form onSubmit={form.handleSubmit(onSubmit)} className="flex items-start space-x-3">
+                <Avatar className="h-8 w-8 mt-1">
+                    <AvatarFallback>{getInitials(user?.displayName)}</AvatarFallback>
+                </Avatar>
+                <div className="flex-1">
+                <FormField
+                    control={form.control}
+                    name="content"
+                    render={({ field }) => (
+                    <FormItem>
+                        <FormControl>
+                        <Textarea
+                            placeholder="Post your reply"
+                            className="text-base"
+                            {...field}
+                        />
+                        </FormControl>
+                        <FormMessage />
+                    </FormItem>
+                    )}
+                />
+                </div>
+                <Button type="submit" disabled={form.formState.isSubmitting} size="sm">
+                    Reply
+                </Button>
+                </form>
+            </Form>
+        </div>
     </div>
   );
 }
@@ -461,10 +472,9 @@ export default function PostDetailPage() {
             </Button>
             <h2 className="text-lg font-bold mx-auto -translate-x-4">Post</h2>
         </div>
-        <div className="pt-14">
+        <div className="pt-14 pb-40">
             <PostDetailItem post={post} />
-            <CommentForm postId={post.id} />
-            <div className="border-t">
+            <div>
                 {areCommentsLoading && <div className="p-4 text-center">Loading comments...</div>}
                 {comments?.map((comment) => (
                 <CommentItem key={comment.id} comment={comment} postAuthorId={post.authorId} />
@@ -476,6 +486,9 @@ export default function PostDetailPage() {
                 )}
             </div>
         </div>
+        <CommentForm postId={post.id} />
     </AppLayout>
   );
 }
+
+    
