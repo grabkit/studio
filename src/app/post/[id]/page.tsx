@@ -28,7 +28,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { Button, buttonVariants } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { Form, FormControl, FormField, FormItem, FormMessage } from "@/components/ui/form";
-import { Heart, MessageCircle, Repeat, Send, Trash2, MoreHorizontal, Edit } from "lucide-react";
+import { Heart, MessageCircle, Repeat, Send, Trash2, MoreHorizontal, Edit, ArrowLeft } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useToast } from "@/hooks/use-toast";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -399,6 +399,7 @@ function PostPageSkeleton() {
 export default function PostDetailPage() {
   const { firestore } = useFirebase();
   const params = useParams();
+  const router = useRouter();
   const id = params.id as string;
 
   const postRef = useMemoFirebase(() => {
@@ -418,16 +419,34 @@ export default function PostDetailPage() {
   const { data: comments, isLoading: areCommentsLoading } = useCollection<Comment>(commentsQuery);
 
   if (isPostLoading) {
-    return <AppLayout><PostPageSkeleton /></AppLayout>;
+    return (
+      <AppLayout showTopBar={false} showBottomNav={false}>
+        <div className="fixed top-0 left-0 right-0 z-10 flex items-center p-2 bg-background border-b h-14">
+          <Button variant="ghost" size="icon" onClick={() => router.back()}>
+              <ArrowLeft />
+          </Button>
+          <h2 className="text-lg font-bold mx-auto">Post</h2>
+        </div>
+        <div className="pt-14">
+            <PostPageSkeleton />
+        </div>
+      </AppLayout>
+    );
   }
-
+  
   if (!post) {
     return (
-      <AppLayout>
-        <div className="text-center py-10">
+      <AppLayout showTopBar={false} showBottomNav={false}>
+        <div className="fixed top-0 left-0 right-0 z-10 flex items-center p-2 bg-background border-b h-14">
+          <Button variant="ghost" size="icon" onClick={() => router.back()}>
+              <ArrowLeft />
+          </Button>
+          <h2 className="text-lg font-bold mx-auto">Post</h2>
+        </div>
+        <div className="text-center py-20 pt-32">
           <h2 className="text-2xl font-headline text-primary">Post not found</h2>
           <p className="text-muted-foreground mt-2">
-            This post may have been deleted or you do not have permission to view it.
+            This post may have been deleted.
           </p>
         </div>
       </AppLayout>
@@ -435,20 +454,28 @@ export default function PostDetailPage() {
   }
 
   return (
-    <AppLayout>
-      <PostDetailItem post={post} />
-      <CommentForm postId={post.id} />
-      <div className="border-t">
-        {areCommentsLoading && <div className="p-4 text-center">Loading comments...</div>}
-        {comments?.map((comment) => (
-          <CommentItem key={comment.id} comment={comment} postAuthorId={post.authorId} />
-        ))}
-         {!areCommentsLoading && comments?.length === 0 && (
-          <div className="text-center py-10">
-            <p className="text-muted-foreground">No comments yet. Be the first to reply!</p>
-          </div>
-        )}
-      </div>
+    <AppLayout showTopBar={false} showBottomNav={false}>
+        <div className="fixed top-0 left-0 right-0 z-10 flex items-center p-2 bg-background border-b h-14 max-w-2xl mx-auto sm:px-4">
+            <Button variant="ghost" size="icon" onClick={() => router.back()}>
+                <ArrowLeft />
+            </Button>
+            <h2 className="text-lg font-bold mx-auto -translate-x-4">Post</h2>
+        </div>
+        <div className="pt-14">
+            <PostDetailItem post={post} />
+            <CommentForm postId={post.id} />
+            <div className="border-t">
+                {areCommentsLoading && <div className="p-4 text-center">Loading comments...</div>}
+                {comments?.map((comment) => (
+                <CommentItem key={comment.id} comment={comment} postAuthorId={post.authorId} />
+                ))}
+                {!areCommentsLoading && comments?.length === 0 && (
+                <div className="text-center py-10">
+                    <p className="text-muted-foreground">No comments yet. Be the first to reply!</p>
+                </div>
+                )}
+            </div>
+        </div>
     </AppLayout>
   );
 }

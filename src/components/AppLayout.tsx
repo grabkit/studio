@@ -6,8 +6,17 @@ import { useEffect } from "react";
 import TopBar from "./layout/TopBar";
 import BottomNav from "./layout/BottomNav";
 import { Loader2 } from "lucide-react";
+import { cn } from "@/lib/utils";
 
-export default function AppLayout({ children, showTopBar = true }: { children: React.ReactNode, showTopBar?: boolean }) {
+export default function AppLayout({
+  children,
+  showTopBar = true,
+  showBottomNav = true,
+}: {
+  children: React.ReactNode;
+  showTopBar?: boolean;
+  showBottomNav?: boolean;
+}) {
   const { user, isUserLoading } = useUser();
   const router = useRouter();
 
@@ -29,10 +38,16 @@ export default function AppLayout({ children, showTopBar = true }: { children: R
   return (
     <div className="relative min-h-screen bg-background">
       {showTopBar && <TopBar />}
-      <main className={`mx-auto max-w-2xl px-0 ${showTopBar ? 'pt-24' : 'pt-8'} pb-28 sm:px-4`}>
+      <main
+        className={cn(
+          "mx-auto max-w-2xl px-0 sm:px-4",
+          showTopBar ? "pt-24" : "pt-8",
+          showBottomNav ? "pb-28" : "pb-8"
+        )}
+      >
         {children}
       </main>
-      <BottomNav />
+      {showBottomNav && <BottomNav />}
     </div>
   );
 }
