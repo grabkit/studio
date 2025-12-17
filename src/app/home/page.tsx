@@ -1,7 +1,7 @@
 "use client";
 
 import AppLayout from "@/components/AppLayout";
-import { useFirebase, useUser } from "@/firebase";
+import { useFirebase, useUser, useMemoFirebase } from "@/firebase";
 import { collection, query, orderBy, limit } from "firebase/firestore";
 import { useCollection, type WithId } from "@/firebase/firestore/use-collection";
 import { Card, CardContent, CardHeader } from "@/components/ui/card";
@@ -40,7 +40,7 @@ function PostItem({ post }: { post: WithId<Post> }) {
       <CardContent>
         <p className="text-foreground">{post.content}</p>
         <p className="text-xs text-muted-foreground mt-2">
-          {formatDistanceToNow(new Date(post.timestamp), { addSuffix: true })}
+          {formatDistanceToNow(new Date(post.timestamp.toDate()), { addSuffix: true })}
         </p>
       </CardContent>
     </Card>
@@ -70,14 +70,16 @@ function PostSkeleton() {
 
 
 export default function HomePage() {
-  const { firestore } = useFirebase();
-  const { user } = useUser();
+  const { firestore, user } = useFirebase();
 
-  const postsQuery = firestore && user ? query(
-    collection(firestore, `users/${user.uid}/posts`),
-    orderBy("timestamp", "desc"),
-    limit(20)
-  ) : null;
+  const postsQuery = useMemoFirebase(() => {
+    if (!firestore || !user) return null;
+    return query(
+      collection(firestore, `users/${user.uid}/posts`),
+      orderBy("timestamp", "desc"),
+      limit(20)
+    );
+  }, [firestore, user]);
 
   const { data: posts, isLoading } = useCollection<Post>(postsQuery);
 
