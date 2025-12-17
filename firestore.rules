@@ -57,17 +57,13 @@ service cloud.firestore {
         // --- Like action validation ---
         // To "like", the user's UID must be added to the `likes` array,
         // and the `likeCount` must be incremented by exactly 1.
-        let isLiking = !uidInList(existing.likes)
-                    && uidInList(incoming.likes)
-                    && incoming.likes.size() == existing.likes.size() + 1
+        let isLiking = incoming.likes == existing.likes.append(request.auth.uid)
                     && incoming.likeCount == existing.likeCount + 1;
 
         // --- Unlike action validation ---
         // To "unlike", the user's UID must be removed from the `likes` array,
         // and the `likeCount` must be decremented by exactly 1.
-        let isUnliking = uidInList(existing.likes)
-                      && !uidInList(incoming.likes)
-                      && incoming.likes.size() == existing.likes.size() - 1
+        let isUnliking = incoming.likes == existing.likes.removeAll([request.auth.uid])
                       && incoming.likeCount == existing.likeCount - 1;
 
         // The operation is valid if it's either a like or an unlike.
@@ -81,7 +77,7 @@ service cloud.firestore {
              && incoming.authorId == existing.authorId
              && incoming.timestamp == existing.timestamp
              && incoming.likeCount == existing.likeCount
-             && incoming.likes.size() == existing.likes.size();
+             && incoming.likes == existing.likes;
     }
 
     // RULES
