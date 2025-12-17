@@ -33,9 +33,10 @@ service cloud.firestore {
             && data.content.size() > 0
             && data.likeCount == 0
             && data.commentCount == 0
-            // Ensure `likes` is an empty list on creation
-            && data.likes is list
-            && data.likes.size() == 0;
+            && data.repostCount == 0
+            // Ensure `likes` and `reposts` are empty lists on creation
+            && data.likes is list && data.likes.size() == 0
+            && data.reposts is list && data.reposts.size() == 0;
     }
     
     // Validate a new comment.
@@ -72,10 +73,13 @@ service cloud.firestore {
           (isOwner(resource.data.authorId) && request.resource.data.content != resource.data.content && request.resource.data.keys().hasOnly(['content'])) ||
           
           // Scenario 2: ANY user is liking/unliking the post. This rule has a potential flaw for batch updates, but is acceptable for this implementation.
-          (request.resource.data.likeCount == resource.data.likeCount + 1 || request.resource.data.likeCount == resource.data.likeCount - 1) && request.resource.data.keys().hasAll(['likes', 'likeCount']) ||
+          (request.resource.data.likeCount == resource.data.likeCount + 1 || request.resource.data.likeCount == resource.data.likeCount - 1) && (request.resource.data.keys().hasAll(['likes', 'likeCount'])) ||
 
           // Scenario 3: The comment count is being incremented/decremented.
-          (request.resource.data.commentCount == resource.data.commentCount + 1 || request.resource.data.commentCount == resource.data.commentCount - 1)
+          (request.resource.data.commentCount == resource.data.commentCount + 1 || request.resource.data.commentCount == resource.data.commentCount - 1) ||
+          
+          // Scenario 4: ANY user is reposting/un-reposting the post.
+          (request.resource.data.repostCount == resource.data.repostCount + 1 || request.resource.data.repostCount == resource.data.repostCount - 1) && (request.resource.data.keys().hasAll(['reposts', 'repostCount']))
       );
     }
     

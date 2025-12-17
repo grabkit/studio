@@ -8,6 +8,8 @@ export interface Post {
     likes: string[]; // Array of user IDs who liked the post
     likeCount: number;
     commentCount: number;
+    reposts: string[]; // Array of user IDs who reposted
+    repostCount: number;
 }
 
 export interface Comment {

@@ -77,6 +77,7 @@ function PostDetailItem({ post }: { post: WithId<Post> }) {
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
 
   const hasLiked = user ? post.likes?.includes(user.uid) : false;
+  const hasReposted = user ? post.reposts?.includes(user.uid) : false;
   const isOwner = user?.uid === post.authorId;
 
   const handleLike = async () => {
@@ -117,6 +118,45 @@ function PostDetailItem({ post }: { post: WithId<Post> }) {
           requestResourceData: payload,
       });
       errorEmitter.emit('permission-error', permissionError);
+    });
+  };
+
+  const handleRepost = async () => {
+    if (!user || !firestore) {
+        toast({
+            variant: "destructive",
+            title: "Authentication Error",
+            description: "You must be logged in to repost.",
+        });
+        return;
+    }
+
+    const postRef = doc(firestore, 'posts', post.id);
+    const batch = writeBatch(firestore);
+
+    if (hasReposted) {
+      batch.update(postRef, {
+        reposts: arrayRemove(user.uid),
+        repostCount: increment(-1)
+      });
+    } else {
+      batch.update(postRef, {
+        reposts: arrayUnion(user.uid),
+        repostCount: increment(1)
+      });
+    }
+
+    batch.commit().catch((serverError) => {
+        const payload = {
+            reposts: hasReposted ? arrayRemove(user.uid) : arrayUnion(user.uid),
+            repostCount: increment(hasReposted ? -1 : 1)
+        };
+        const permissionError = new FirestorePermissionError({
+            path: postRef.path,
+            operation: 'update',
+            requestResourceData: payload,
+        });
+        errorEmitter.emit('permission-error', permissionError);
     });
   };
 
@@ -187,7 +227,7 @@ function PostDetailItem({ post }: { post: WithId<Post> }) {
 
             <p className="text-foreground text-base">{post.content}</p>
 
-            <div className="border-t border-b -mx-4 my-2 px-4 py-2 text-muted-foreground flex items-center justify-around">
+            <div className="border-t border-b -mx-4 my-2 px-4 py-2 text-sm text-muted-foreground flex items-center justify-around">
                 <div className="flex items-center space-x-2">
                     <span className="font-bold text-foreground">{post.likeCount}</span>
                     <span>Likes</span>
@@ -195,6 +235,10 @@ function PostDetailItem({ post }: { post: WithId<Post> }) {
                  <div className="flex items-center space-x-2">
                     <span className="font-bold text-foreground">{post.commentCount}</span>
                     <span>Replies</span>
+                </div>
+                 <div className="flex items-center space-x-2">
+                    <span className="font-bold text-foreground">{post.repostCount}</span>
+                    <span>Reposts</span>
                 </div>
             </div>
 
@@ -210,8 +254,8 @@ function PostDetailItem({ post }: { post: WithId<Post> }) {
               <button className="flex items-center space-x-1 hover:text-primary">
                 <MessageCircle className="h-5 w-5" />
               </button>
-              <button className="flex items-center space-x-1 hover:text-green-500">
-                <Repeat className="h-5 w-5" />
+              <button onClick={handleRepost} className="flex items-center space-x-1 hover:text-green-500">
+                <Repeat className={cn("h-5 w-5", hasReposted && "text-green-500")} />
               </button>
               <button className="flex items-center space-x-1 hover:text-primary">
                 <Send className="h-5 w-5" />
@@ -305,7 +349,7 @@ function CommentForm({ postId }: { postId: string }) {
                         <FormControl>
                         <Textarea
                             placeholder="Post your reply"
-                            className="text-base border-none focus-visible:ring-0 shadow-none p-0"
+                            className="text-base border-none focus-visible:ring-0 shadow-none p-0 -ml-2"
                             rows={1}
                             {...field}
                         />
@@ -491,7 +535,3 @@ export default function PostDetailPage() {
     </AppLayout>
   );
 }
-
-    
-
-    
