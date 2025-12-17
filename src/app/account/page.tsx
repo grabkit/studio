@@ -36,6 +36,11 @@ export default function AccountPage() {
     return name.split(' ').map(n => n[0]).join('').substring(0, 2).toUpperCase();
   };
 
+  const formatUserId = (uid: string | undefined) => {
+    if (!uid) return "blur??????";
+    return `blur${uid.substring(uid.length - 6)}`;
+  }
+
   return (
     <AppLayout>
       <div className="flex flex-col items-center">
@@ -60,7 +65,7 @@ export default function AccountPage() {
             </div>
             <div className="flex items-center space-x-4 p-3 bg-secondary rounded-lg">
               <Shield className="h-5 w-5 text-muted-foreground" />
-              <span className="text-sm font-mono text-muted-foreground truncate">{user?.uid}</span>
+              <span className="text-sm font-mono text-muted-foreground truncate">{formatUserId(user?.uid)}</span>
             </div>
             <Button variant="destructive" className="w-full font-headline" onClick={handleLogout}>
               <LogOut className="mr-2 h-4 w-4" />
