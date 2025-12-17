@@ -1,3 +1,4 @@
+
 "use client";
 
 import { useFirebase, useMemoFirebase, useUser } from "@/firebase";
@@ -15,6 +16,7 @@ import {
 import { useCollection, type WithId } from "@/firebase/firestore/use-collection";
 import { useDoc } from "@/firebase/firestore/use-doc";
 import type { Post, Comment } from "@/lib/types";
+import { useParams } from "next/navigation";
 
 import AppLayout from "@/components/AppLayout";
 import { Card, CardContent } from "@/components/ui/card";
@@ -313,9 +315,10 @@ function PostPageSkeleton() {
 }
 
 
-export default function PostDetailPage({ params }: { params: { id: string } }) {
+export default function PostDetailPage() {
   const { firestore } = useFirebase();
-  const id = params.id;
+  const params = useParams();
+  const id = params.id as string;
 
   const postRef = useMemoFirebase(() => {
     if (!firestore || !id) return null;
@@ -368,5 +371,4 @@ export default function PostDetailPage({ params }: { params: { id: string } }) {
     </AppLayout>
   );
 }
-
-    
+ 
