@@ -38,35 +38,16 @@ service cloud.firestore {
             && data.likes.size() == 0;
     }
     
-    // A user can update a post if they are the owner and only changing the content,
-    // OR if they are liking/unliking the post.
-    function isAllowedToUpdatePost(post) {
-      let data = request.resource.data;
-      let isOwnerUpdatingContent = isOwner(post.authorId)
-        && data.content != post.content
-        && data.keys().hasOnly(['content']);
-        
-      let isLikingOrUnliking = 
-          // Check that only likes and likeCount are changing
-          data.diff(post).affectedKeys().hasOnly(['likes', 'likeCount'])
-          // Check for a like action
-          && (data.likeCount == post.likeCount + 1 && data.likes == post.likes.append(request.auth.uid))
-          // Check for an unlike action
-          || (data.likeCount == post.likeCount - 1 && data.likes == post.likes.removeAll([request.auth.uid]));
-
-      return isOwnerUpdatingContent || isLikingOrUnliking;
-    }
-
-    function isValidNewComment(postId) {
+    // Validate a new comment.
+    // Ensures the user is the author, the post ID matches, content is valid,
+    // the document ID in the data matches the resource ID,
+    // and no extra fields are present.
+    function isValidNewComment(postId, commentId) {
         let data = request.resource.data;
         return data.authorId == request.auth.uid
             && data.postId == postId
-            && data.content is string
-            && data.content.size() > 0
-            && data.id is string
-            // IMPORTANT: We do not validate `timestamp` here because the client sends
-            // a `serverTimestamp()` sentinel value, which is resolved on the server.
-            // We just ensure no other unexpected fields are present.
+            && data.content is string && data.content.size() > 0
+            && data.id == commentId // Critical check: ensure data integrity
             && data.keys().hasOnly(['id', 'postId', 'authorId', 'content', 'timestamp']);
     }
     
@@ -100,7 +81,8 @@ service cloud.firestore {
     
     match /posts/{postId}/comments/{commentId} {
       allow read: if isSignedIn();
-      allow create: if isSignedIn() && isValidNewComment(postId);
+      // Pass the commentId from the path into the validation function
+      allow create: if isSignedIn() && isValidNewComment(postId, commentId);
       allow delete: if isSignedIn() && (isOwner(resource.data.authorId) || isOwner(get(/databases/$(database)/documents/posts/$(postId)).data.authorId));
     }
   }
