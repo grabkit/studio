@@ -44,7 +44,9 @@ service cloud.firestore {
             && data.postId == postId
             && data.content is string
             && data.content.size() > 0
-            && data.id is string;
+            && data.id is string
+            && data.timestamp == request.time
+            && data.keys().hasOnly(['id', 'postId', 'authorId', 'content', 'timestamp']);
     }
     
     // RULES
@@ -62,15 +64,17 @@ service cloud.firestore {
       allow create: if isSignedIn() && isValidNewPost();
       allow delete: if isSignedIn() && isOwner(resource.data.authorId);
       
-      allow update: if isSignedIn() &&
-          // Case 1: Owner is updating ONLY the content
+      // Allow updates only for specific, controlled scenarios.
+      allow update: if isSignedIn() && (
+          // Scenario 1: The owner is updating ONLY the content.
           (isOwner(resource.data.authorId) && request.resource.data.content != resource.data.content && request.resource.data.keys().hasOnly(['content'])) ||
           
-          // Case 2: ANY user is liking/unliking (incrementing/decrementing)
+          // Scenario 2: ANY user is liking/unliking the post.
           (request.resource.data.likeCount == resource.data.likeCount + 1 || request.resource.data.likeCount == resource.data.likeCount - 1) ||
 
-          // Case 3: Comment count is being updated
-          (request.resource.data.commentCount == resource.data.commentCount + 1 || request.resource.data.commentCount == resource.data.commentCount - 1);
+          // Scenario 3: The comment count is being incremented/decremented.
+          (request.resource.data.commentCount == resource.data.commentCount + 1 || request.resource.data.commentCount == resource.data.commentCount - 1)
+      );
     }
     
     match /posts/{postId}/comments/{commentId} {
