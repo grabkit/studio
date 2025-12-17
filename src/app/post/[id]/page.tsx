@@ -28,7 +28,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { Button, buttonVariants } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { Form, FormControl, FormField, FormItem, FormMessage } from "@/components/ui/form";
-import { Heart, MessageCircle, Send, Trash2, MoreHorizontal, Edit, ArrowLeft } from "lucide-react";
+import { Heart, MessageCircle, Send, Trash2, MoreHorizontal, Edit, ArrowLeft, Repeat } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useToast } from "@/hooks/use-toast";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -213,6 +213,9 @@ function PostDetailItem({ post }: { post: WithId<Post> }) {
               </button>
               <button className="flex items-center space-x-1 hover:text-primary">
                 <MessageCircle className="h-5 w-5" />
+              </button>
+              <button className="flex items-center space-x-1 hover:text-green-500">
+                <Repeat className={cn("h-5 w-5")} />
               </button>
               <button className="flex items-center space-x-1 hover:text-primary">
                 <Send className="h-5 w-5" />
