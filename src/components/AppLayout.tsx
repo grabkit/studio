@@ -29,7 +29,7 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
   return (
     <div className="relative min-h-screen bg-background">
       <TopBar />
-      <main className="mx-auto max-w-7xl px-4 pt-24 pb-28 sm:px-6 lg:px-8">
+      <main className="mx-auto max-w-2xl px-0 pt-24 pb-28 sm:px-4">
         {children}
       </main>
       <BottomNav />

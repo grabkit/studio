@@ -26,7 +26,6 @@
       },
       "required": [
         "id",
-        "anonymousId",
         "name",
         "email"
       ]
@@ -45,6 +44,14 @@
           "type": "string",
           "description": "Reference to the User who created the post. (Relationship: User 1:N Post)"
         },
+        "authorName": {
+          "type": "string",
+          "description": "The display name of the post's author."
+        },
+        "authorPhotoURL": {
+          "type": "string",
+          "description": "The photo URL of the post's author."
+        },
         "content": {
           "type": "string",
           "description": "The text content of the post."
@@ -58,6 +65,7 @@
       "required": [
         "id",
         "authorId",
+        "authorName",
         "content",
         "timestamp"
       ]
@@ -88,18 +96,14 @@
         }
       },
       {
-        "path": "/users/{userId}/posts/{postId}",
+        "path": "/posts/{postId}",
         "definition": {
           "entityName": "Post",
           "schema": {
             "$ref": "#/backend/entities/Post"
           },
-          "description": "Stores posts created by a specific user. The 'authorId' field within each post document matches the 'userId' in the path, enforcing ownership. Supports secure list operations.",
+          "description": "Stores all user posts in a global collection. Any authenticated user can read all posts, but can only create, update, or delete their own.",
           "params": [
-            {
-              "name": "userId",
-              "description": "The unique identifier for the user who created the post."
-            },
             {
               "name": "postId",
               "description": "The unique identifier for the post."
@@ -108,6 +112,6 @@
         }
       }
     ],
-    "reasoning": "The Firestore structure is designed to support a social media application similar to a threads app, focusing on user posts. It prioritizes authorization independence by using path-based ownership for posts ( `/users/{userId}/posts/{postId}`), eliminating the need for `get()` calls in security rules and enabling atomic operations. This structure inherently supports the QAPs: listing posts is secured by path-based ownership, limiting access to posts to authorized users (primarily the owner). Each user has their own collection of posts, ensuring secure `list` operations based on the user ID. The structure also supports efficient querying and retrieval of posts for a specific user. The system avoids custom claims (DBAC) and relies on Firebase Auth's `uid` for access control."
+    "reasoning": "The Firestore structure is designed for a public, social-media-style application. User profiles are stored in a `/users` collection, while all posts are stored in a single top-level `/posts` collection. This global `posts` collection allows any user to easily query and view all public posts. Security rules are configured to enforce that while all authenticated users can read posts, only the original author (`authorId` must match `request.auth.uid`) can write, update, or delete their own posts. This avoids complex queries and ensures efficient, secure data access for a public feed."
   }
 }

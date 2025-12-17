@@ -5,8 +5,8 @@ import { useRouter } from "next/navigation";
 import { useForm } from "react-hook-form";
 import * as z from "zod";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { collection, doc, serverTimestamp } from "firebase/firestore";
-import { useFirebase, useUser, addDocumentNonBlocking } from "@/firebase";
+import { collection, serverTimestamp, setDoc, doc } from "firebase/firestore";
+import { useFirebase, useUser } from "@/firebase";
 
 import {
   Sheet,
@@ -19,6 +19,8 @@ import { Textarea } from "@/components/ui/textarea";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Form, FormControl, FormField, FormItem } from "@/components/ui/form";
 import { Loader2 } from "lucide-react";
+import { errorEmitter } from "@/firebase/error-emitter";
+import { FirestorePermissionError } from "@/firebase/errors";
 
 const postSchema = z.object({
   content: z.string().min(1, "Post cannot be empty.").max(280, "Post cannot exceed 280 characters."),
@@ -54,31 +56,40 @@ export default function PostPage() {
     }
   }, [isOpen, router]);
 
-  const onSubmit = async (values: z.infer<typeof postSchema>) => {
+  const onSubmit = (values: z.infer<typeof postSchema>) => {
     if (!user || !firestore) return;
 
     setIsSubmitting(true);
     
-    const postsColRef = collection(firestore, `users/${user.uid}/posts`);
+    const postsColRef = collection(firestore, `posts`);
     const newPostRef = doc(postsColRef);
 
     const newPost = {
       id: newPostRef.id,
       authorId: user.uid,
+      authorName: user.displayName || "Anonymous User",
+      authorPhotoURL: user.photoURL || "",
       content: values.content,
       timestamp: serverTimestamp(),
     };
 
-    try {
-      await addDocumentNonBlocking(postsColRef, newPost);
-      form.reset();
-      setIsOpen(false);
-      // No navigation here, useEffect will handle it.
-    } catch (error) {
-      console.error("Error creating post:", error);
-    } finally {
-      setIsSubmitting(false);
-    }
+    setDoc(newPostRef, newPost)
+      .then(() => {
+        form.reset();
+        setIsOpen(false);
+      })
+      .catch((serverError) => {
+        const permissionError = new FirestorePermissionError({
+            path: newPostRef.path,
+            operation: 'create',
+            requestResourceData: newPost
+        });
+        errorEmitter.emit('permission-error', permissionError);
+        console.error("Error creating post:", serverError);
+      })
+      .finally(() => {
+        setIsSubmitting(false);
+      });
   };
 
 
