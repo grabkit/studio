@@ -29,7 +29,12 @@ export default function BottomNav() {
                 isActive ? "text-primary" : "text-muted-foreground hover:text-primary"
               )}
             >
-              <Icon className="h-6 w-6" fill={isActive ? "currentColor" : "none"} />
+              <div className={cn(
+                "p-2 rounded-full",
+                (isActive && item.href === '/post') && "bg-primary/50"
+              )}>
+                <Icon className="h-6 w-6" fill={(isActive && item.href !== '/post') ? "currentColor" : "none"} />
+              </div>
               <span className={cn(
                 "text-xs font-medium font-headline",
                 isActive ? "font-bold" : "font-normal"
