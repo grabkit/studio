@@ -98,7 +98,11 @@ export default function AccountPage() {
         {/* Stats */}
         <div className="flex justify-around text-center border-y py-3 mb-4">
           <div>
-            <p className="font-bold text-lg">{postsLoading ? <Skeleton className="h-6 w-8 mx-auto" /> : posts?.length ?? 0}</p>
+            {postsLoading ? (
+                <div className="font-bold text-lg"><Skeleton className="h-6 w-8 mx-auto" /></div>
+            ) : (
+                <p className="font-bold text-lg">{posts?.length ?? 0}</p>
+            )}
             <p className="text-sm text-muted-foreground">Posts</p>
           </div>
           <div>
