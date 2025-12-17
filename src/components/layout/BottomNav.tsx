@@ -26,7 +26,8 @@ export default function BottomNav() {
               href={item.href}
               className={cn(
                 "flex flex-col items-center justify-center gap-1 w-20 transition-colors duration-200",
-                isActive ? "text-primary" : "text-muted-foreground hover:text-primary"
+                isActive && item.href !== '/post' ? "text-primary" : "text-muted-foreground hover:text-primary",
+                item.href === '/post' && 'text-white'
               )}
             >
               <div className={cn(
