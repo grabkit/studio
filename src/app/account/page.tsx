@@ -7,11 +7,12 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
 import { collection, query, where } from "firebase/firestore";
 import { useCollection } from "@/firebase/firestore/use-collection";
-import { Settings, LogOut, Grid3x3, Bookmark } from "lucide-react";
+import { Settings, LogOut, Grid3x3, Bookmark, FileText } from "lucide-react";
 import { signOut } from "firebase/auth";
 import { useToast } from "@/hooks/use-toast";
 import type { Post } from "@/lib/types";
 import { Skeleton } from "@/components/ui/skeleton";
+import Link from "next/link";
 
 export default function AccountPage() {
   const { user } = useUser();
@@ -101,7 +102,7 @@ export default function AccountPage() {
             {postsLoading ? (
                 <div className="font-bold text-lg"><Skeleton className="h-6 w-8 mx-auto" /></div>
             ) : (
-                <p className="font-bold text-lg">{posts?.length ?? 0}</p>
+                <div className="font-bold text-lg">{posts?.length ?? 0}</div>
             )}
             <p className="text-sm text-muted-foreground">Posts</p>
           </div>
@@ -131,9 +132,11 @@ export default function AccountPage() {
                 <Skeleton key={i} className="aspect-square w-full" />
             ))}
             {posts?.map((post) => (
-              <div key={post.id} className="aspect-square bg-muted flex items-center justify-center">
-                  {/* For now, just a placeholder. Later can show image or text snippet */}
-              </div>
+              <Link key={post.id} href={`/post/${post.id}`}>
+                <div className="aspect-square bg-muted flex items-center justify-center hover:bg-accent transition-colors">
+                    <FileText className="h-8 w-8 text-muted-foreground" />
+                </div>
+              </Link>
             ))}
         </div>
          {!postsLoading && posts?.length === 0 && (
