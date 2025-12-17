@@ -14,6 +14,7 @@ import { cn } from "@/lib/utils";
 import { useToast } from "@/hooks/use-toast";
 import { FirestorePermissionError } from "@/firebase/errors";
 import { errorEmitter } from "@/firebase/error-emitter";
+import Link from "next/link";
 
 
 const formatUserId = (uid: string | undefined) => {
@@ -102,9 +103,10 @@ function PostItem({ post }: { post: WithId<Post> }) {
                 <Heart className={cn("h-4 w-4", hasLiked && "text-pink-500 fill-pink-500")} />
                 <span className="text-xs">{post.likeCount > 0 ? post.likeCount : ''}</span>
               </button>
-              <button className="flex items-center space-x-1 hover:text-primary">
+              <Link href={`/post/${post.id}`} className="flex items-center space-x-1 hover:text-primary">
                 <MessageCircle className="h-4 w-4" />
-              </button>
+                 <span className="text-xs">{post.commentCount > 0 ? post.commentCount : ''}</span>
+              </Link>
               <button className="flex items-center space-x-1 hover:text-green-500">
                 <Repeat className="h-4 w-4" />
               </button>

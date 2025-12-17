@@ -32,21 +32,20 @@ service cloud.firestore {
             && data.content is string
             && data.content.size() > 0
             && data.likeCount == 0
+            && data.commentCount == 0
             // Ensure `likes` is an empty list on creation
             && data.likes is list
             && data.likes.size() == 0;
     }
     
-    function isOnlyUpdatingContent() {
-      let incoming = request.resource.data;
-      let existing = resource.data;
-      return incoming.content != existing.content
-             && incoming.authorId == existing.authorId
-             && incoming.timestamp == existing.timestamp
-             && incoming.likeCount == existing.likeCount
-             && incoming.likes == existing.likes;
+    function isValidNewComment(postId) {
+        let data = request.resource.data;
+        return data.authorId == request.auth.uid
+            && data.postId == postId
+            && data.content is string
+            && data.content.size() > 0;
     }
-
+    
     // RULES
     
     match /users/{userId} {
@@ -62,16 +61,24 @@ service cloud.firestore {
       allow create: if isSignedIn() && isValidNewPost();
       allow delete: if isSignedIn() && isOwner(resource.data.authorId);
       
-      // An update is allowed if:
-      // 1. The user is the owner and ONLY updating the content.
-      // 2. OR, ANY signed-in user is incrementing/decrementing the like count by 1.
-      allow update: if isSignedIn() && (
-        (isOwner(resource.data.authorId) && isOnlyUpdatingContent()) ||
-        (
-          request.resource.data.likeCount == resource.data.likeCount + 1 ||
-          request.resource.data.likeCount == resource.data.likeCount - 1
-        )
-      );
+      allow update: if isSignedIn() &&
+          // Case 1: Owner is updating ONLY the content
+          (isOwner(resource.data.authorId) && request.resource.data.content != resource.data.content && request.resource.data.keys().hasOnly(['content'])) ||
+          
+          // Case 2: ANY user is liking a post (incrementing)
+          (request.resource.data.likeCount == resource.data.likeCount + 1 && uidInList(request.resource.data.likes) && !uidInList(resource.data.likes)) ||
+          
+          // Case 3: ANY user is unliking a post (decrementing)
+          (request.resource.data.likeCount == resource.data.likeCount - 1 && !uidInList(request.resource.data.likes) && uidInList(resource.data.likes)) ||
+
+          // Case 4: Comment count is being updated
+          (request.resource.data.commentCount == resource.data.commentCount + 1 || request.resource.data.commentCount == resource.data.commentCount - 1);
+    }
+    
+    match /posts/{postId}/comments/{commentId} {
+      allow read: if isSignedIn();
+      allow create: if isSignedIn() && isValidNewComment(postId);
+      allow delete: if isSignedIn() && (isOwner(resource.data.authorId) || isOwner(get(/databases/$(database)/documents/posts/$(postId)).data.authorId));
     }
   }
 }

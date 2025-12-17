@@ -1,0 +1,367 @@
+"use client";
+
+import { useFirebase, useMemoFirebase, useUser } from "@/firebase";
+import {
+  collection,
+  query,
+  orderBy,
+  doc,
+  serverTimestamp,
+  writeBatch,
+  increment,
+} from "firebase/firestore";
+import { useCollection, type WithId } from "@/firebase/firestore/use-collection";
+import { useDoc } from "@/firebase/firestore/use-doc";
+import type { Post, Comment } from "@/lib/types";
+
+import AppLayout from "@/components/AppLayout";
+import { Card, CardContent } from "@/components/ui/card";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { formatDistanceToNow } from "date-fns";
+import { Skeleton } from "@/components/ui/skeleton";
+import { Button } from "@/components/ui/button";
+import { Textarea } from "@/components/ui/textarea";
+import { Form, FormControl, FormField, FormItem, FormMessage } from "@/components/ui/form";
+import { Heart, MessageCircle, Repeat, Send, Trash2 } from "lucide-react";
+import { cn } from "@/lib/utils";
+import { useToast } from "@/hooks/use-toast";
+import { zodResolver } from "@hookform/resolvers/zod";
+import * as z from "zod";
+import { useForm } from "react-hook-form";
+import { errorEmitter } from "@/firebase/error-emitter";
+import { FirestorePermissionError } from "@/firebase/errors";
+import React from "react";
+
+const formatUserId = (uid: string | undefined) => {
+  if (!uid) return "blur??????";
+  return `blur${uid.substring(uid.length - 6)}`;
+};
+
+const getInitials = (name: string | null | undefined) => {
+  if (!name) return "U";
+  return name
+    .split(" ")
+    .map((n) => n[0])
+    .join("")
+    .substring(0, 2)
+    .toUpperCase();
+};
+
+function PostDetailItem({ post }: { post: WithId<Post> }) {
+  const { user } = useUser();
+  const { firestore } = useFirebase();
+  const { toast } = useToast();
+
+  const hasLiked = user ? post.likes?.includes(user.uid) : false;
+
+  const handleLike = async () => {
+    if (!user || !firestore) {
+      toast({
+        variant: "destructive",
+        title: "Authentication Error",
+        description: "You must be logged in to like a post.",
+      });
+      return;
+    }
+
+    const postRef = doc(firestore, "posts", post.id);
+    const batch = writeBatch(firestore);
+
+    if (hasLiked) {
+      batch.update(postRef, {
+        likes: firestore.FieldValue.arrayRemove(user.uid),
+        likeCount: increment(-1),
+      });
+    } else {
+      batch.update(postRef, {
+        likes: firestore.FieldValue.arrayUnion(user.uid),
+        likeCount: increment(1),
+      });
+    }
+
+    batch.commit().catch((serverError) => {
+      const payload = {
+          likes: hasLiked
+            ? firestore.FieldValue.arrayRemove(user.uid)
+            : firestore.FieldValue.arrayUnion(user.uid),
+          likeCount: increment(hasLiked ? -1 : 1),
+      };
+      const permissionError = new FirestorePermissionError({
+          path: postRef.path,
+          operation: 'update',
+          requestResourceData: payload,
+      });
+      errorEmitter.emit('permission-error', permissionError);
+    });
+  };
+
+  return (
+    <Card className="w-full shadow-none rounded-none border-x-0 border-t-0">
+      <CardContent className="p-4">
+        <div className="flex space-x-3">
+          <Avatar className="h-10 w-10">
+            <AvatarFallback>{getInitials(post.authorId)}</AvatarFallback>
+          </Avatar>
+          <div className="flex-1 space-y-2">
+            <div className="flex justify-between items-start">
+              <div className="flex items-center">
+                <span className="text-sm font-semibold">
+                  {formatUserId(post.authorId)}
+                </span>
+              </div>
+              <span className="text-xs text-muted-foreground">
+                {post.timestamp
+                  ? formatDistanceToNow(new Date(post.timestamp.toDate()), {
+                      addSuffix: true,
+                    })
+                  : ""}
+              </span>
+            </div>
+
+            <p className="text-foreground text-base">{post.content}</p>
+
+            <div className="flex items-center space-x-6 pt-2 text-muted-foreground">
+              <button
+                onClick={handleLike}
+                className="flex items-center space-x-1 hover:text-pink-500"
+              >
+                <Heart
+                  className={cn("h-5 w-5", hasLiked && "text-pink-500 fill-pink-500")}
+                />
+                <span className="text-sm">{post.likeCount > 0 ? post.likeCount : ""}</span>
+              </button>
+              <div className="flex items-center space-x-1">
+                <MessageCircle className="h-5 w-5" />
+                <span className="text-sm">{post.commentCount > 0 ? post.commentCount : ""}</span>
+              </div>
+              <button className="flex items-center space-x-1 hover:text-green-500">
+                <Repeat className="h-5 w-5" />
+              </button>
+              <button className="flex items-center space-x-1 hover:text-primary">
+                <Send className="h-5 w-5" />
+              </button>
+            </div>
+          </div>
+        </div>
+      </CardContent>
+    </Card>
+  );
+}
+
+const CommentFormSchema = z.object({
+  content: z.string().min(1, "Comment cannot be empty.").max(280),
+});
+
+function CommentForm({ postId }: { postId: string }) {
+  const { user } = useUser();
+  const { firestore } = useFirebase();
+  const { toast } = useToast();
+  const form = useForm<z.infer<typeof CommentFormSchema>>({
+    resolver: zodResolver(CommentFormSchema),
+    defaultValues: { content: "" },
+  });
+
+  const onSubmit = async (values: z.infer<typeof CommentFormSchema>) => {
+    if (!user || !firestore) {
+      toast({ variant: "destructive", title: "You must be logged in to comment." });
+      return;
+    }
+
+    const postRef = doc(firestore, "posts", postId);
+    const commentRef = doc(collection(firestore, "posts", postId, "comments"));
+
+    const newComment = {
+      id: commentRef.id,
+      postId: postId,
+      authorId: user.uid,
+      content: values.content,
+      timestamp: serverTimestamp(),
+    };
+    
+    const batch = writeBatch(firestore);
+    batch.set(commentRef, newComment);
+    batch.update(postRef, { commentCount: increment(1) });
+    
+    batch.commit()
+        .then(() => form.reset())
+        .catch(serverError => {
+            const permissionError = new FirestorePermissionError({
+                path: commentRef.path,
+                operation: 'create',
+                requestResourceData: newComment,
+            });
+            errorEmitter.emit('permission-error', permissionError);
+        });
+  };
+
+  return (
+    <div className="p-4 border-t">
+      <Form {...form}>
+        <form onSubmit={form.handleSubmit(onSubmit)} className="flex items-start space-x-3">
+          <Avatar className="h-8 w-8 mt-1">
+            <AvatarFallback>{getInitials(user?.displayName)}</AvatarFallback>
+          </Avatar>
+          <div className="flex-1">
+          <FormField
+            control={form.control}
+            name="content"
+            render={({ field }) => (
+              <FormItem>
+                <FormControl>
+                  <Textarea
+                    placeholder="Post your reply"
+                    className="text-base"
+                    {...field}
+                  />
+                </FormControl>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
+          </div>
+          <Button type="submit" disabled={form.formState.isSubmitting} size="sm">
+            Reply
+          </Button>
+        </form>
+      </Form>
+    </div>
+  );
+}
+
+function CommentItem({ comment, postAuthorId }: { comment: WithId<Comment>, postAuthorId?: string }) {
+  const { user } = useUser();
+  const { firestore } = useFirebase();
+
+  const canDelete = user && (user.uid === comment.authorId || user.uid === postAuthorId);
+
+  const handleDelete = () => {
+    if (!firestore || !canDelete) return;
+
+    const commentRef = doc(firestore, "posts", comment.postId, "comments", comment.id);
+    const postRef = doc(firestore, "posts", comment.postId);
+
+    const batch = writeBatch(firestore);
+    batch.delete(commentRef);
+    batch.update(postRef, { commentCount: increment(-1) });
+
+    batch.commit().catch(serverError => {
+        const permissionError = new FirestorePermissionError({
+            path: commentRef.path,
+            operation: 'delete',
+        });
+        errorEmitter.emit('permission-error', permissionError);
+    });
+  }
+
+  return (
+    <div className="flex space-x-3 p-4 border-b">
+       <Avatar className="h-8 w-8">
+        <AvatarFallback>{getInitials(comment.authorId)}</AvatarFallback>
+      </Avatar>
+      <div className="flex-1">
+        <div className="flex justify-between items-center">
+            <span className="font-semibold text-sm">{formatUserId(comment.authorId)}</span>
+            <div className="flex items-center space-x-2">
+                <span className="text-xs text-muted-foreground">
+                {comment.timestamp
+                    ? formatDistanceToNow(new Date(comment.timestamp.toDate()), {
+                        addSuffix: true,
+                    })
+                    : ""}
+                </span>
+                {canDelete && (
+                    <Button variant="ghost" size="icon" className="h-6 w-6" onClick={handleDelete}>
+                        <Trash2 className="h-4 w-4 text-muted-foreground" />
+                    </Button>
+                )}
+            </div>
+        </div>
+        <p className="text-sm text-foreground">{comment.content}</p>
+      </div>
+    </div>
+  );
+}
+
+function PostPageSkeleton() {
+  return (
+    <div>
+        <Card className="w-full shadow-none rounded-none border-x-0 border-t-0">
+          <CardContent className="p-4">
+            <div className="flex space-x-3">
+              <Skeleton className="h-10 w-10 rounded-full" />
+              <div className="flex-1 space-y-2">
+                <Skeleton className="h-4 w-[150px]" />
+                <Skeleton className="h-8 w-full mt-4" />
+                <Skeleton className="h-6 w-3/4" />
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+        <div className="p-4 border-b">
+            <div className="flex space-x-3">
+                <Skeleton className="h-8 w-8 rounded-full" />
+                <div className="flex-1 space-y-2">
+                    <Skeleton className="h-16 w-full" />
+                    <Skeleton className="h-8 w-20 ml-auto" />
+                </div>
+            </div>
+        </div>
+    </div>
+  );
+}
+
+
+export default function PostDetailPage({ params }: { params: { id: string } }) {
+  const { firestore } = useFirebase();
+
+  const postRef = useMemoFirebase(() => {
+    if (!firestore || !params.id) return null;
+    return doc(firestore, "posts", params.id);
+  }, [firestore, params.id]);
+
+  const commentsQuery = useMemoFirebase(() => {
+    if (!firestore || !params.id) return null;
+    return query(
+      collection(firestore, "posts", params.id, "comments"),
+      orderBy("timestamp", "asc")
+    );
+  }, [firestore, params.id]);
+
+  const { data: post, isLoading: isPostLoading } = useDoc<Post>(postRef);
+  const { data: comments, isLoading: areCommentsLoading } = useCollection<Comment>(commentsQuery);
+
+  if (isPostLoading) {
+    return <AppLayout><PostPageSkeleton /></AppLayout>;
+  }
+
+  if (!post) {
+    return (
+      <AppLayout>
+        <div className="text-center py-10">
+          <h2 className="text-2xl font-headline text-primary">Post not found</h2>
+          <p className="text-muted-foreground mt-2">
+            This post may have been deleted.
+          </p>
+        </div>
+      </AppLayout>
+    );
+  }
+
+  return (
+    <AppLayout>
+      <PostDetailItem post={post} />
+      <CommentForm postId={post.id} />
+      <div className="border-t">
+        {areCommentsLoading && <div className="p-4 text-center">Loading comments...</div>}
+        {comments?.map((comment) => (
+          <CommentItem key={comment.id} comment={comment} postAuthorId={post.authorId} />
+        ))}
+         {!areCommentsLoading && comments?.length === 0 && (
+          <div className="text-center py-10">
+            <p className="text-muted-foreground">No comments yet. Be the first to reply!</p>
+          </div>
+        )}
+      </div>
+    </AppLayout>
+  );
+}

@@ -71,6 +71,7 @@ export default function PostPage() {
       timestamp: serverTimestamp(),
       likes: [],
       likeCount: 0,
+      commentCount: 0,
     };
 
     setDoc(newPostRef, newPost)

@@ -63,6 +63,10 @@
         "likeCount": {
           "type": "number",
           "description": "The total number of likes for the post."
+        },
+        "commentCount": {
+          "type": "number",
+          "description": "The total number of comments on the post."
         }
       },
       "required": [
@@ -71,7 +75,44 @@
         "content",
         "timestamp",
         "likes",
-        "likeCount"
+        "likeCount",
+        "commentCount"
+      ]
+    },
+    "Comment": {
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "title": "Comment",
+      "type": "object",
+      "description": "Represents a comment on a post.",
+      "properties": {
+        "id": {
+          "type": "string",
+          "description": "Unique identifier for the comment."
+        },
+        "postId": {
+          "type": "string",
+          "description": "The ID of the post this comment belongs to."
+        },
+        "authorId": {
+          "type": "string",
+          "description": "The ID of the user who wrote the comment."
+        },
+        "content": {
+          "type": "string",
+          "description": "The text content of the comment."
+        },
+        "timestamp": {
+          "type": "string",
+          "description": "Timestamp indicating when the comment was created.",
+          "format": "date-time"
+        }
+      },
+      "required": [
+        "id",
+        "postId",
+        "authorId",
+        "content",
+        "timestamp"
       ]
     }
   },
@@ -114,8 +155,28 @@
             }
           ]
         }
+      },
+      {
+        "path": "/posts/{postId}/comments/{commentId}",
+        "definition": {
+          "entityName": "Comment",
+          "schema": {
+            "$ref": "#/backend/entities/Comment"
+          },
+          "description": "Stores comments for a specific post. This is a subcollection of a post document.",
+          "params": [
+            {
+              "name": "postId",
+              "description": "The ID of the parent post."
+            },
+            {
+              "name": "commentId",
+              "description": "The unique identifier for the comment."
+            }
+          ]
+        }
       }
     ],
-    "reasoning": "The Firestore structure is designed for a public, social-media-style application. User profiles are stored in a `/users` collection, while all posts are stored in a single top-level `/posts` collection. This global `posts` collection allows any user to easily query and view all public posts. Security rules are configured to enforce that while all authenticated users can read posts, only the original author (`authorId` must match `request.auth.uid`) can write, update, or delete their own posts. This avoids complex queries and ensures efficient, secure data access for a public feed."
+    "reasoning": "The Firestore structure is designed for a public, social-media-style application. User profiles are stored in a `/users` collection, while all posts are stored in a single top-level `/posts` collection. This global `posts` collection allows any user to easily query and view all public posts. Security rules are configured to enforce that while all authenticated users can read posts, only the original author (`authorId` must match `request.auth.uid`) can write, update, or delete their own posts. This avoids complex queries and ensures efficient, secure data access for a public feed. Comments are stored in a subcollection under each post for clear organization and efficient querying."
   }
 }
