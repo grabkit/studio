@@ -31,7 +31,7 @@ export default function BottomNav() {
             >
               <div className={cn(
                 "p-2 rounded-full",
-                (isActive && item.href === '/post') && "bg-primary/50"
+                item.href === '/post' && "bg-primary/50"
               )}>
                 <Icon className="h-6 w-6" fill={(isActive && item.href !== '/post') ? "currentColor" : "none"} />
               </div>
