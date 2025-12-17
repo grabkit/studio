@@ -37,39 +37,6 @@ service cloud.firestore {
             && data.likes.size() == 0;
     }
     
-    // Validate that a user is ONLY liking or unliking a post.
-    // Any signed-in user can perform this action on any post.
-    function isLikingOrUnliking() {
-        let incoming = request.resource.data;
-        let existing = resource.data;
-        
-        // --- Core data integrity check ---
-        // Ensure that only `likes` and `likeCount` are being modified.
-        // All other fields must remain the same.
-        let otherFieldsUnchanged = incoming.content == existing.content
-                              && incoming.authorId == existing.authorId
-                              && incoming.timestamp == existing.timestamp;
-                              
-        if (!otherFieldsUnchanged) {
-          return false;
-        }
-
-        // --- Like action validation ---
-        // To "like", the user's UID must be added to the `likes` array,
-        // and the `likeCount` must be incremented by exactly 1.
-        let isLiking = incoming.likes == existing.likes.append(request.auth.uid)
-                    && incoming.likeCount == existing.likeCount + 1;
-
-        // --- Unlike action validation ---
-        // To "unlike", the user's UID must be removed from the `likes` array,
-        // and the `likeCount` must be decremented by exactly 1.
-        let isUnliking = incoming.likes == existing.likes.removeAll([request.auth.uid])
-                      && incoming.likeCount == existing.likeCount - 1;
-
-        // The operation is valid if it's either a like or an unlike.
-        return isLiking || isUnliking;
-    }
-    
     function isOnlyUpdatingContent() {
       let incoming = request.resource.data;
       let existing = resource.data;
@@ -96,10 +63,15 @@ service cloud.firestore {
       allow delete: if isSignedIn() && isOwner(resource.data.authorId);
       
       // An update is allowed if:
-      // 1. Any signed-in user is liking/unliking the post.
-      // OR
-      // 2. The owner of the post is updating its content.
-      allow update: if isSignedIn() && (isLikingOrUnliking() || (isOwner(resource.data.authorId) && isOnlyUpdatingContent()));
+      // 1. The user is the owner and ONLY updating the content.
+      // 2. OR, ANY signed-in user is incrementing/decrementing the like count by 1.
+      allow update: if isSignedIn() && (
+        (isOwner(resource.data.authorId) && isOnlyUpdatingContent()) ||
+        (
+          request.resource.data.likeCount == resource.data.likeCount + 1 ||
+          request.resource.data.likeCount == resource.data.likeCount - 1
+        )
+      );
     }
   }
 }
