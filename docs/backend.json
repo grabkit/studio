@@ -67,17 +67,6 @@
         "commentCount": {
           "type": "number",
           "description": "The total number of comments on the post."
-        },
-        "reposts": {
-          "type": "array",
-          "description": "An array of user IDs that have reposted the post.",
-          "items": {
-            "type": "string"
-          }
-        },
-        "repostCount": {
-          "type": "number",
-          "description": "The total number of reposts for the post."
         }
       },
       "required": [
@@ -87,9 +76,7 @@
         "timestamp",
         "likes",
         "likeCount",
-        "commentCount",
-        "reposts",
-        "repostCount"
+        "commentCount"
       ]
     },
     "Comment": {

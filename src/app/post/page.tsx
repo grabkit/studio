@@ -72,8 +72,6 @@ export default function PostPage() {
       likes: [],
       likeCount: 0,
       commentCount: 0,
-      reposts: [],
-      repostCount: 0,
     };
 
     setDoc(newPostRef, newPost)

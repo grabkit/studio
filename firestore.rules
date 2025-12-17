@@ -33,10 +33,8 @@ service cloud.firestore {
             && data.content.size() > 0
             && data.likeCount == 0
             && data.commentCount == 0
-            && data.repostCount == 0
-            // Ensure `likes` and `reposts` are empty lists on creation
-            && data.likes is list && data.likes.size() == 0
-            && data.reposts is list && data.reposts.size() == 0;
+            // Ensure `likes` is an empty list on creation
+            && data.likes is list && data.likes.size() == 0;
     }
     
     // Validate a new comment.
@@ -76,10 +74,7 @@ service cloud.firestore {
           ((request.resource.data.likeCount == resource.data.likeCount + 1 || request.resource.data.likeCount == resource.data.likeCount - 1) && request.resource.data.keys().hasOnly(['likes', 'likeCount'])) ||
 
           // Scenario 3: The comment count is being incremented/decremented. Ensures only 'commentCount' is modified.
-          ((request.resource.data.commentCount == resource.data.commentCount + 1 || request.resource.data.commentCount == resource.data.commentCount - 1) && request.resource.data.keys().hasOnly(['commentCount'])) ||
-          
-          // Scenario 4: ANY user is reposting/un-reposting the post. Ensures only 'reposts' and 'repostCount' are modified.
-          ((request.resource.data.repostCount == resource.data.repostCount + 1 || request.resource.data.repostCount == resource.data.repostCount - 1) && request.resource.data.keys().hasOnly(['reposts', 'repostCount']))
+          ((request.resource.data.commentCount == resource.data.commentCount + 1 || request.resource.data.commentCount == resource.data.commentCount - 1) && request.resource.data.keys().hasOnly(['commentCount']))
       );
     }
     

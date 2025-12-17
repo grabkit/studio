@@ -53,7 +53,6 @@ function PostItem({ post }: { post: WithId<Post> }) {
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
 
   const hasLiked = user ? post.likes?.includes(user.uid) : false;
-  const hasReposted = user ? post.reposts?.includes(user.uid) : false;
   const isOwner = user?.uid === post.authorId;
 
   const handleLike = async () => {
@@ -95,45 +94,6 @@ function PostItem({ post }: { post: WithId<Post> }) {
     });
   };
 
-  const handleRepost = async () => {
-    if (!user || !firestore) {
-        toast({
-            variant: "destructive",
-            title: "Authentication Error",
-            description: "You must be logged in to repost.",
-        });
-        return;
-    }
-
-    const postRef = doc(firestore, 'posts', post.id);
-    const batch = writeBatch(firestore);
-
-    if (hasReposted) {
-      batch.update(postRef, {
-        reposts: arrayRemove(user.uid),
-        repostCount: increment(-1)
-      });
-    } else {
-      batch.update(postRef, {
-        reposts: arrayUnion(user.uid),
-        repostCount: increment(1)
-      });
-    }
-
-    batch.commit().catch((serverError) => {
-        const payload = {
-            reposts: hasReposted ? arrayRemove(user.uid) : arrayUnion(user.uid),
-            repostCount: increment(hasReposted ? -1 : 1)
-        };
-        const permissionError = new FirestorePermissionError({
-            path: postRef.path,
-            operation: 'update',
-            requestResourceData: payload,
-        });
-        errorEmitter.emit('permission-error', permissionError);
-    });
-  };
-  
   const handleDeletePost = async () => {
     if (!firestore || !isOwner) return;
     const postRef = doc(firestore, 'posts', post.id);
@@ -205,9 +165,8 @@ function PostItem({ post }: { post: WithId<Post> }) {
                 <MessageCircle className="h-4 w-4" />
                  <span className="text-xs">{post.commentCount > 0 ? post.commentCount : ''}</span>
               </Link>
-              <button onClick={handleRepost} className="flex items-center space-x-1 hover:text-green-500">
-                <Repeat className={cn("h-4 w-4", hasReposted && "text-green-500")} />
-                <span className="text-xs">{post.repostCount > 0 ? post.repostCount : ''}</span>
+              <button className="flex items-center space-x-1 hover:text-green-500">
+                <Repeat className={cn("h-4 w-4")} />
               </button>
               <button className="flex items-center space-x-1 hover:text-primary">
                 <Send className="h-4 w-4" />
