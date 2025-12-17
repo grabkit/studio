@@ -2,12 +2,12 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { Home, Plus, User, HomeIcon, UserIcon, PlusIcon } from "lucide-react";
+import { Home, User, HomeIcon, UserIcon, Plus } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 const navItems = [
   { href: "/home", label: "Home", icon: Home, activeIcon: HomeIcon },
-  { href: "/post", label: "Post", icon: Plus, activeIcon: PlusIcon },
+  { href: "/post", label: "Post", icon: Plus, activeIcon: Plus },
   { href: "/account", label: "Account", icon: User, activeIcon: UserIcon },
 ];
 
@@ -27,15 +27,14 @@ export default function BottomNav() {
               aria-label={item.label}
               className={cn(
                 "flex flex-col items-center justify-center w-20 transition-colors duration-200",
-                isActive && item.href !== '/post' ? "text-primary" : "text-muted-foreground hover:text-primary",
-                item.href === '/post' && 'text-white'
+                isActive && item.href !== '/post' ? "text-primary" : "text-muted-foreground hover:text-primary"
               )}
             >
               <div className={cn(
                 "p-3 rounded-full",
-                item.href === '/post' && "bg-primary/50"
+                item.href === '/post' && "bg-primary"
               )}>
-                <Icon className="h-7 w-7" fill={(isActive && item.href !== '/post') ? "currentColor" : "none"} />
+                <Icon className={cn("h-7 w-7", item.href === '/post' && "text-white")} fill={(isActive && item.href !== '/post') ? "currentColor" : "none"} />
               </div>
             </Link>
           );
