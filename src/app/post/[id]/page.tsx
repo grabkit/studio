@@ -9,6 +9,8 @@ import {
   serverTimestamp,
   writeBatch,
   increment,
+  arrayRemove,
+  arrayUnion,
 } from "firebase/firestore";
 import { useCollection, type WithId } from "@/firebase/firestore/use-collection";
 import { useDoc } from "@/firebase/firestore/use-doc";
@@ -69,12 +71,12 @@ function PostDetailItem({ post }: { post: WithId<Post> }) {
 
     if (hasLiked) {
       batch.update(postRef, {
-        likes: firestore.FieldValue.arrayRemove(user.uid),
+        likes: arrayRemove(user.uid),
         likeCount: increment(-1),
       });
     } else {
       batch.update(postRef, {
-        likes: firestore.FieldValue.arrayUnion(user.uid),
+        likes: arrayUnion(user.uid),
         likeCount: increment(1),
       });
     }
@@ -82,8 +84,8 @@ function PostDetailItem({ post }: { post: WithId<Post> }) {
     batch.commit().catch((serverError) => {
       const payload = {
           likes: hasLiked
-            ? firestore.FieldValue.arrayRemove(user.uid)
-            : firestore.FieldValue.arrayUnion(user.uid),
+            ? arrayRemove(user.uid)
+            : arrayUnion(user.uid),
           likeCount: increment(hasLiked ? -1 : 1),
       };
       const permissionError = new FirestorePermissionError({
@@ -313,19 +315,20 @@ function PostPageSkeleton() {
 
 export default function PostDetailPage({ params }: { params: { id: string } }) {
   const { firestore } = useFirebase();
+  const id = params.id;
 
   const postRef = useMemoFirebase(() => {
-    if (!firestore || !params.id) return null;
-    return doc(firestore, "posts", params.id);
-  }, [firestore, params.id]);
+    if (!firestore || !id) return null;
+    return doc(firestore, "posts", id);
+  }, [firestore, id]);
 
   const commentsQuery = useMemoFirebase(() => {
-    if (!firestore || !params.id) return null;
+    if (!firestore || !id) return null;
     return query(
-      collection(firestore, "posts", params.id, "comments"),
+      collection(firestore, "posts", id, "comments"),
       orderBy("timestamp", "asc")
     );
-  }, [firestore, params.id]);
+  }, [firestore, id]);
 
   const { data: post, isLoading: isPostLoading } = useDoc<Post>(postRef);
   const { data: comments, isLoading: areCommentsLoading } = useCollection<Comment>(commentsQuery);
@@ -365,3 +368,5 @@ export default function PostDetailPage({ params }: { params: { id: string } }) {
     </AppLayout>
   );
 }
+
+    
