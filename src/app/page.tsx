@@ -22,10 +22,10 @@ export default function SplashScreen() {
         alt="Blur Logo"
         width={120}
         height={40}
-        className="animate-pulse z-10"
+        className="z-10"
         priority
       />
-      <p className="text-sm text-muted-foreground mt-4 animate-pulse font-headline">Anonymous social network</p>
+      <p className="text-sm text-muted-foreground mt-4 font-headline">Anonymous social network</p>
     </div>
   );
 }
