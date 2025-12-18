@@ -66,48 +66,56 @@ export default function GetStartedPage() {
             {/* Outer Circle Images */}
             <div className="absolute inset-0 animate-rotate-around">
               <div className="absolute top-0 left-1/2 -translate-x-1/2 -translate-y-1/3">
-                  <Image
-                    src="https://picsum.photos/seed/1/50/50"
-                    alt="Profile 1"
-                    width={50}
-                    height={50}
-                    className="rounded-full shadow-md blur-[2px]"
-                    data-ai-hint="person face"
-                  />
+                  <div className="bg-primary rounded-full p-1 shadow-lg">
+                    <Image
+                      src="https://picsum.photos/seed/1/50/50"
+                      alt="Profile 1"
+                      width={50}
+                      height={50}
+                      className="rounded-full blur-[2px]"
+                      data-ai-hint="person face"
+                    />
+                  </div>
               </div>
                 <div className="absolute bottom-0 left-1/2 -translate-x-1/2 translate-y-1/4">
-                   <Image
-                    src="https://picsum.photos/seed/2/50/50"
-                    alt="Profile 2"
-                    width={50}
-                    height={50}
-                    className="rounded-full shadow-md blur-[2px]"
-                    data-ai-hint="man portrait"
-                  />
+                  <div className="bg-primary rounded-full p-1 shadow-lg">
+                    <Image
+                      src="https://picsum.photos/seed/2/50/50"
+                      alt="Profile 2"
+                      width={50}
+                      height={50}
+                      className="rounded-full blur-[2px]"
+                      data-ai-hint="man portrait"
+                    />
+                  </div>
                 </div>
             </div>
 
             {/* Inner Circle Images */}
             <div className="absolute inset-0 animate-rotate-around-reverse">
                 <div className="absolute top-1/2 left-[20%] -translate-y-1/2 -translate-x-1/2">
-                   <Image
-                    src="https://picsum.photos/seed/3/40/40"
-                    alt="Profile 3"
-                    width={40}
-                    height={40}
-                    className="rounded-full shadow-md blur-[2px]"
-                    data-ai-hint="woman portrait"
-                  />
+                   <div className="bg-primary rounded-full p-1 shadow-lg">
+                      <Image
+                        src="https://picsum.photos/seed/3/40/40"
+                        alt="Profile 3"
+                        width={40}
+                        height={40}
+                        className="rounded-full blur-[2px]"
+                        data-ai-hint="woman portrait"
+                      />
+                    </div>
                 </div>
                 <div className="absolute top-1/2 right-[12%] -translate-y-1/2">
-                   <Image
-                    src="https://picsum.photos/seed/4/40/40"
-                    alt="Profile 4"
-                    width={40}
-                    height={40}
-                    className="rounded-full shadow-md blur-[2px]"
-                    data-ai-hint="person portrait"
-                  />
+                  <div className="bg-primary rounded-full p-1 shadow-lg">
+                    <Image
+                      src="https://picsum.photos/seed/4/40/40"
+                      alt="Profile 4"
+                      width={40}
+                      height={40}
+                      className="rounded-full blur-[2px]"
+                      data-ai-hint="person portrait"
+                    />
+                  </div>
                 </div>
             </div>
 
