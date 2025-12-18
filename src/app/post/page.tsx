@@ -103,7 +103,7 @@ export default function PostPage() {
   return (
     <Sheet open={isOpen} onOpenChange={setIsOpen}>
       <SheetContent side="bottom" className="h-screen flex flex-col p-0">
-        <div className="z-10 flex items-center gap-2 p-2 border-b bg-background h-14">
+        <div className="z-10 flex items-center gap-2 p-2 border-b bg-background h-14 sticky top-0">
           <SheetClose asChild>
             <Button variant="ghost" size="icon">
                 <X className="h-4 w-4" />
