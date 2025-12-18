@@ -11,7 +11,7 @@ export default function GetStartedPage() {
       <div className="flex-shrink-0" />
       <div className="flex flex-col items-center justify-center flex-grow">
         <div className="relative w-[220px] h-[220px] flex items-center justify-center">
-            <div className="absolute inset-0">
+            <div className="absolute inset-0 animate-rotate-around">
               <Image
                 src="https://picsum.photos/seed/1/50/50"
                 alt="Profile 1"
@@ -21,7 +21,7 @@ export default function GetStartedPage() {
                 data-ai-hint="person face"
               />
             </div>
-             <div className="absolute inset-0 ">
+             <div className="absolute inset-0 animate-rotate-around" style={{ animationDirection: 'reverse' }}>
                <Image
                 src="https://picsum.photos/seed/2/50/50"
                 alt="Profile 2"
