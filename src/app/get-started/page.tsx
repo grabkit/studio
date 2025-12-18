@@ -98,7 +98,7 @@ export default function GetStartedPage() {
                     data-ai-hint="woman portrait"
                   />
                 </div>
-                <div className="absolute top-1/2 right-[10%] -translate-y-1/2">
+                <div className="absolute top-1/2 right-[11%] -translate-y-1/2">
                    <Image
                     src="https://picsum.photos/seed/4/40/40"
                     alt="Profile 4"
