@@ -11,18 +11,9 @@ import Autoplay from "embla-carousel-autoplay"
 
 
 const carouselItems = [
-  {
-    title: "Express Yourself, Anonymously.",
-    description: "Welcome to Blur. Share your thoughts and connect with others without revealing your identity."
-  },
-  {
-    title: "A Safe Space for Ideas.",
-    description: "Engage in discussions and share your perspective in a supportive environment."
-  },
-  {
-    title: "Join the Conversation.",
-    description: "Discover communities and topics that matter to you. Your voice is welcome here."
-  }
+    "Welcome to Blur. Share your thoughts and connect with others without revealing your identity.",
+    "Engage in discussions and share your perspective in a supportive environment.",
+    "Discover communities and topics that matter to you. Your voice is welcome here."
 ]
 
 export default function GetStartedPage() {
@@ -109,18 +100,18 @@ export default function GetStartedPage() {
         </div>
       </div>
       <div className="w-full max-w-sm">
-        <div className="mb-8 h-24">
+        <div className="mb-8 h-20">
+          <h2 className="font-headline text-2xl font-bold">Express Yourself, Anonymously.</h2>
             <Carousel
               plugins={[plugin.current]}
-              className="w-full"
+              className="w-full mt-2"
               onMouseEnter={plugin.current.stop}
               onMouseLeave={plugin.current.reset}
             >
               <CarouselContent>
-                {carouselItems.map((item, index) => (
+                {carouselItems.map((description, index) => (
                   <CarouselItem key={index}>
-                    <h2 className="font-headline text-2xl font-bold">{item.title}</h2>
-                    <p className="text-muted-foreground mt-2">{item.description}</p>
+                    <p className="text-muted-foreground">{description}</p>
                   </CarouselItem>
                 ))}
               </CarouselContent>
