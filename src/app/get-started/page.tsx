@@ -16,7 +16,7 @@ export default function GetStartedPage() {
               alt="Profile 1"
               width={50}
               height={50}
-              className="rounded-full absolute top-0 z-10 shadow-md"
+              className="rounded-full absolute top-0 left-1/2 -translate-x-1/2 -translate-y-1/2 z-10 shadow-md"
               data-ai-hint="person face"
             />
             {/* Bottom Image */}
@@ -25,7 +25,7 @@ export default function GetStartedPage() {
               alt="Profile 2"
               width={50}
               height={50}
-              className="rounded-full absolute bottom-0 z-10 shadow-md"
+              className="rounded-full absolute bottom-0 left-1/2 -translate-x-1/2 translate-y-1/2 z-10 shadow-md"
               data-ai-hint="man portrait"
             />
             <svg width="220" height="220" viewBox="0 0 220 220" className="absolute">
