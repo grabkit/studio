@@ -15,8 +15,8 @@ export default function SplashScreen() {
   }, [router]);
 
   return (
-    <div className="relative flex h-screen w-full items-center justify-center bg-primary radial-spotlight">
-      <h1 className="font-headline text-6xl font-bold text-primary-foreground animate-pulse z-10">
+    <div className="relative flex h-screen w-full items-center justify-center bg-background radial-spotlight">
+      <h1 className="font-headline text-6xl font-bold text-foreground animate-pulse z-10">
         Blur
       </h1>
     </div>
