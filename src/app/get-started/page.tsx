@@ -59,7 +59,7 @@ export default function GetStartedPage() {
 
             {/* Inner Circle Images */}
             <div className="absolute inset-0">
-                <div className="absolute top-1/2 left-0 -translate-y-1/2">
+                <div className="absolute top-1/2 left-0 -translate-y-1/2 translate-x-full">
                    <Image
                     src="https://picsum.photos/seed/3/40/40"
                     alt="Profile 3"
