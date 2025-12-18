@@ -10,11 +10,11 @@ export default function GetStartedPage() {
     <div className="flex h-screen flex-col items-center justify-between bg-background p-8 text-center">
       <div className="flex-shrink-0" />
       <div className="flex flex-col items-center justify-center flex-grow">
-        <div className="relative w-[260px] h-[260px] flex items-center justify-center">
-            <svg width="260" height="260" viewBox="0 0 260 260" className="absolute">
+        <div className="relative w-[320px] h-[320px] flex items-center justify-center">
+            <svg width="320" height="320" viewBox="0 0 320 320" className="absolute">
               <circle
-                cx="130"
-                cy="130"
+                cx="160"
+                cy="160"
                 r="100"
                 stroke="hsl(var(--border))"
                 strokeWidth="2"
@@ -22,9 +22,9 @@ export default function GetStartedPage() {
                 strokeDasharray="2"
               />
               <circle
-                cx="130"
-                cy="130"
-                r="130"
+                cx="160"
+                cy="160"
+                r="150"
                 stroke="hsl(var(--border))"
                 strokeWidth="1"
                 fill="none"
@@ -32,7 +32,7 @@ export default function GetStartedPage() {
               />
             </svg>
             <div className="absolute inset-0 animate-rotate-around">
-              <div className="absolute top-2.5 left-1/2 -translate-x-1/2 -translate-y-1/2">
+              <div className="absolute top-1/2 left-0 -translate-x-1/2">
                   <Image
                     src="https://picsum.photos/seed/1/50/50"
                     alt="Profile 1"
@@ -44,7 +44,7 @@ export default function GetStartedPage() {
               </div>
             </div>
              <div className="absolute inset-0 animate-rotate-around" style={{ animationDirection: 'reverse' }}>
-                <div className="absolute bottom-2.5 left-1/2 -translate-x-1/2 translate-y-1/2">
+                <div className="absolute top-1/2 right-0 translate-x-1/2">
                    <Image
                     src="https://picsum.photos/seed/2/50/50"
                     alt="Profile 2"
