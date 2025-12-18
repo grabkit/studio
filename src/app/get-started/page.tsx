@@ -31,6 +31,7 @@ export default function GetStartedPage() {
                 strokeDasharray="4"
               />
             </svg>
+            {/* Outer Circle Images */}
             <div className="absolute inset-0">
               <div className="absolute top-0 left-1/2 -translate-x-1/2 -translate-y-1/3">
                   <Image
@@ -55,6 +56,33 @@ export default function GetStartedPage() {
                   />
                 </div>
             </div>
+
+            {/* Inner Circle Images */}
+            <div className="absolute inset-0">
+                <div className="absolute top-1/2 left-0 -translate-y-1/2 translate-x-1/4">
+                   <Image
+                    src="https://picsum.photos/seed/3/40/40"
+                    alt="Profile 3"
+                    width={40}
+                    height={40}
+                    className="rounded-full shadow-md"
+                    data-ai-hint="woman portrait"
+                  />
+                </div>
+            </div>
+            <div className="absolute inset-0">
+                <div className="absolute top-1/2 right-0 -translate-y-1/2 -translate-x-1/4">
+                   <Image
+                    src="https://picsum.photos/seed/4/40/40"
+                    alt="Profile 4"
+                    width={40}
+                    height={40}
+                    className="rounded-full shadow-md"
+                    data-ai-hint="person portrait"
+                  />
+                </div>
+            </div>
+
              <h1 className="font-headline text-6xl font-bold text-primary z-10">
                 Blur
              </h1>
