@@ -252,7 +252,7 @@ export default function AuthForm() {
         </Form>
       )}
        <div className="text-center mt-6">
-            <Button variant="link" onClick={() => setAuthMode(authMode === 'login' ? 'signup' : 'login')} className="text-sm p-0 h-auto">
+            <Button variant="link" onClick={() => setAuthMode(authMode === 'login' ? 'signup' : 'login')} className="text-sm p-0 h-auto text-muted-foreground">
                 {authMode === 'login' ? "Don't have an account? Sign Up" : "Already have an account? Login"}
             </Button>
        </div>
@@ -268,7 +268,7 @@ function ForgotPasswordDialog({form, onSubmit, loading}: {form: UseFormReturn<an
     return (
         <AlertDialog>
             <AlertDialogTrigger asChild>
-                <Button variant="link" className="text-sm p-0 h-auto">Forgot Password?</Button>
+                <Button variant="link" className="text-sm p-0 h-auto text-muted-foreground">Forgot Password?</Button>
             </AlertDialogTrigger>
             <AlertDialogContent>
                 <Form {...form}>
