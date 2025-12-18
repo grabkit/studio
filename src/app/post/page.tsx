@@ -156,7 +156,7 @@ export default function PostPage() {
                                         checked={field.value}
                                         onCheckedChange={field.onChange}
                                     />
-                                    <Label htmlFor="comments-allowed" className="text-sm text-muted-foreground !mt-0">
+                                    <Label htmlFor="comments-allowed" className="text-sm text-muted-foreground">
                                         Replies
                                     </Label>
                                 </FormItem>
