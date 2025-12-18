@@ -133,7 +133,7 @@ export default function AuthForm() {
                       <FormControl>
                         <div className="relative">
                             <Mail className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-muted-foreground" />
-                            <Input type="email" placeholder="Email" {...field} className="h-12 text-base pl-10" />
+                            <Input type="email" placeholder="Email" {...field} className="h-12 text-base pl-10 rounded-full" />
                         </div>
                       </FormControl>
                       <FormMessage />
@@ -148,7 +148,7 @@ export default function AuthForm() {
                       <FormControl>
                         <div className="relative">
                             <Lock className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-muted-foreground" />
-                            <Input type="password" placeholder="Password" {...field} className="h-12 text-base pl-10" />
+                            <Input type="password" placeholder="Password" {...field} className="h-12 text-base pl-10 rounded-full" />
                         </div>
                       </FormControl>
                       <FormMessage />
@@ -169,7 +169,7 @@ export default function AuthForm() {
                   name="name"
                   render={({ field }) => (
                     <FormItem>
-                      <FormControl><Input placeholder="Name" {...field} className="h-12 text-base" /></FormControl>
+                      <FormControl><Input placeholder="Name" {...field} className="h-12 text-base rounded-full" /></FormControl>
                       <FormMessage />
                     </FormItem>
                   )}
@@ -182,7 +182,7 @@ export default function AuthForm() {
                         <FormControl>
                             <div className="relative">
                                 <Mail className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-muted-foreground" />
-                                <Input type="email" placeholder="Email" {...field} className="h-12 text-base pl-10" />
+                                <Input type="email" placeholder="Email" {...field} className="h-12 text-base pl-10 rounded-full" />
                             </div>
                         </FormControl>
                       <FormMessage />
@@ -197,7 +197,7 @@ export default function AuthForm() {
                         <FormControl>
                             <div className="relative">
                                 <Lock className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-muted-foreground" />
-                                <Input type="password" placeholder="Password" {...field} className="h-12 text-base pl-10" />
+                                <Input type="password" placeholder="Password" {...field} className="h-12 text-base pl-10 rounded-full" />
                             </div>
                         </FormControl>
                       <FormMessage />
