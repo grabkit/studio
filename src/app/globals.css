@@ -158,4 +158,11 @@
   .animate-blur-unblur {
     animation: blur-unblur 4s ease-in-out infinite;
   }
+
+  .half-blur {
+    backdrop-filter: blur(2px);
+    -webkit-backdrop-filter: blur(2px);
+    mask-image: linear-gradient(to bottom, transparent 50%, black 50%);
+    -webkit-mask-image: linear-gradient(to bottom, transparent 50%, black 50%);
+  }
 }
