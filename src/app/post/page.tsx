@@ -103,7 +103,7 @@ export default function PostPage() {
   return (
     <Sheet open={isOpen} onOpenChange={setIsOpen}>
       <SheetContent side="bottom" className="h-screen flex flex-col p-0">
-        <div className="sticky top-0 z-10 flex items-center gap-2 p-2 border-b bg-background h-14">
+        <div className="z-10 flex items-center gap-2 p-2 border-b bg-background h-14">
           <SheetClose asChild>
             <Button variant="ghost" size="icon">
                 <X className="h-4 w-4" />
@@ -114,8 +114,8 @@ export default function PostPage() {
         </div>
         
         <Form {...form}>
-            <form onSubmit={form.handleSubmit(onSubmit)} className="flex-grow flex flex-col pt-14">
-                <div className="flex-grow px-4 overflow-y-auto pt-4">
+            <form onSubmit={form.handleSubmit(onSubmit)} className="flex-grow flex flex-col">
+                <div className="flex-grow p-4 overflow-y-auto">
                     <div className="flex items-start space-x-4">
                         <Avatar>
                             <AvatarImage src={user?.photoURL || undefined} />
