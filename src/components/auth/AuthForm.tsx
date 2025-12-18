@@ -130,6 +130,7 @@ export default function AuthForm() {
                   name="email"
                   render={({ field }) => (
                     <FormItem>
+                      <FormLabel>Email</FormLabel>
                       <FormControl>
                         <div className="relative">
                             <Mail className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-muted-foreground" />
@@ -145,6 +146,7 @@ export default function AuthForm() {
                   name="password"
                   render={({ field }) => (
                     <FormItem>
+                      <FormLabel>Password</FormLabel>
                       <FormControl>
                         <div className="relative">
                             <Lock className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-muted-foreground" />
@@ -169,6 +171,7 @@ export default function AuthForm() {
                   name="name"
                   render={({ field }) => (
                     <FormItem>
+                        <FormLabel>Name</FormLabel>
                         <FormControl>
                             <div className="relative">
                                 <User className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-muted-foreground" />
@@ -184,6 +187,7 @@ export default function AuthForm() {
                   name="email"
                   render={({ field }) => (
                     <FormItem>
+                        <FormLabel>Email</FormLabel>
                         <FormControl>
                             <div className="relative">
                                 <Mail className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-muted-foreground" />
@@ -199,6 +203,7 @@ export default function AuthForm() {
                   name="password"
                   render={({ field }) => (
                     <FormItem>
+                        <FormLabel>Password</FormLabel>
                         <FormControl>
                             <div className="relative">
                                 <Lock className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-muted-foreground" />
