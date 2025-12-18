@@ -11,7 +11,7 @@ import Autoplay from "embla-carousel-autoplay"
 
 
 const carouselItems = [
-    "Welcome to Blur. Share your thoughts and connect with others without revealing your identity.",
+    "Welcome to Blur. Share your thoughts and connect with others without your identity.",
     "Engage in discussions and share your perspective in a supportive environment.",
     "Discover communities and topics that matter to you. Your voice is welcome here."
 ]
