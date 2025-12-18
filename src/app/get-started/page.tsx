@@ -95,7 +95,7 @@ export default function GetStartedPage() {
                     className="rounded-full"
                   />
                 </div>
-                <div className="absolute top-1/2 right-[25%] -translate-y-1/2 translate-x-1/2">
+                <div className="absolute top-1/2 right-[20%] -translate-y-1/2 translate-x-1/2">
                   <Image
                     src="https://picsum.photos/seed/4/40/40"
                     alt="Profile 4"
