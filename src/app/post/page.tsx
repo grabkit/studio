@@ -18,7 +18,7 @@ import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Form, FormControl, FormField, FormItem } from "@/components/ui/form";
-import { Loader2 } from "lucide-react";
+import { Loader2, X } from "lucide-react";
 import { errorEmitter } from "@/firebase/error-emitter";
 import { FirestorePermissionError } from "@/firebase/errors";
 
@@ -96,11 +96,17 @@ export default function PostPage() {
 
   return (
     <Sheet open={isOpen} onOpenChange={setIsOpen}>
-      <SheetContent side="bottom" className="h-screen flex flex-col">
-        <SheetHeader className="flex-row items-center justify-between">
-            <SheetTitle>Create Post</SheetTitle>
+      <SheetContent side="bottom" className="h-screen flex flex-col p-0">
+        <SheetHeader className="flex-row items-center justify-between p-4 border-b">
+          <Button variant="ghost" size="icon" onClick={() => setIsOpen(false)}>
+            <X className="h-5 w-5" />
+          </Button>
+          <SheetTitle className="text-base font-bold">Create Post</SheetTitle>
+          <Button onClick={form.handleSubmit(onSubmit)} disabled={isSubmitting} size="sm" className="w-24">
+             {isSubmitting ? <Loader2 className="h-4 w-4 animate-spin" /> : 'Publish'}
+          </Button>
         </SheetHeader>
-        <div className="flex-grow p-4 -mx-6 overflow-y-auto">
+        <div className="flex-grow p-4 overflow-y-auto">
             <div className="flex items-start space-x-4">
                 <Avatar>
                     <AvatarImage src={user?.photoURL || undefined} />
@@ -130,13 +136,6 @@ export default function PostPage() {
                     </Form>
                 </div>
             </div>
-        </div>
-        <div className="p-4 -mx-6 border-t flex justify-between items-center">
-          <Button variant="ghost" onClick={() => setIsOpen(false)}>Cancel</Button>
-          <Button onClick={form.handleSubmit(onSubmit)} disabled={isSubmitting}>
-             {isSubmitting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-            Publish
-          </Button>
         </div>
       </SheetContent>
     </Sheet>
