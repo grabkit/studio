@@ -21,13 +21,13 @@ export default function GetStartedPage() {
                 data-ai-hint="person face"
               />
             </div>
-             <div className="absolute inset-0 [animation-direction:reverse]">
+             <div className="absolute inset-0 ">
                <Image
                 src="https://picsum.photos/seed/2/50/50"
                 alt="Profile 2"
                 width={50}
                 height={50}
-                className="rounded-full absolute bottom-0 left-1/2 -translate-x-1/2 translate-y-1/2 z-10 shadow-md"
+                className="rounded-full absolute bottom-2.5 left-1/2 -translate-x-1/2 translate-y-1/2 z-10 shadow-md"
                 data-ai-hint="man portrait"
               />
             </div>
