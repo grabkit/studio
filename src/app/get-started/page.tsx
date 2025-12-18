@@ -100,11 +100,11 @@ export default function GetStartedPage() {
         </div>
       </div>
       <div className="w-full max-w-sm">
-        <div className="mb-8 h-20">
-          <h2 className="font-headline text-2xl font-bold">Express Yourself, Anonymously.</h2>
+        <div className="h-28">
+          <h2 className="font-headline text-2xl font-bold mb-4">Express Yourself, Anonymously.</h2>
             <Carousel
               plugins={[plugin.current]}
-              className="w-full mt-2"
+              className="w-full"
               onMouseEnter={plugin.current.stop}
               onMouseLeave={plugin.current.reset}
             >
