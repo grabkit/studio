@@ -30,7 +30,7 @@ import {
   AlertDialogTitle,
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
-import { Loader2, Mail, Lock } from "lucide-react";
+import { Loader2, Mail, Lock, User } from "lucide-react";
 import { createUserWithEmailAndPassword, signInWithEmailAndPassword, updateProfile } from "firebase/auth";
 import { cn } from "@/lib/utils";
 
@@ -169,7 +169,12 @@ export default function AuthForm() {
                   name="name"
                   render={({ field }) => (
                     <FormItem>
-                      <FormControl><Input placeholder="Name" {...field} className="h-12 text-base rounded-full bg-secondary" /></FormControl>
+                        <FormControl>
+                            <div className="relative">
+                                <User className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-muted-foreground" />
+                                <Input placeholder="Name" {...field} className="h-12 text-base pl-10 rounded-full bg-secondary" />
+                            </div>
+                        </FormControl>
                       <FormMessage />
                     </FormItem>
                   )}
