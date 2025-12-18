@@ -101,7 +101,7 @@
     opacity: 0.2;
     mask-image: linear-gradient(to bottom, white, transparent);
     -webkit-mask-image: linear-gradient(to bottom, white, transparent);
-    animation: move-grid 15s linear infinite;
+    animation: move-grid 2s linear infinite;
   }
 
   .radial-spotlight {
