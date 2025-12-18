@@ -39,7 +39,8 @@ export default function GetStartedPage() {
   }, [api])
 
   return (
-    <div className="flex h-screen flex-col items-center justify-center bg-background p-8 text-center overflow-x-hidden">
+    <div className="relative flex h-screen flex-col items-center justify-center bg-background p-8 text-center overflow-x-hidden">
+       <div className="background-grid"></div>
       <div className="flex flex-col items-center justify-center">
         <div className="relative w-[320px] h-[320px] flex items-center justify-center mb-16">
             <svg width="320" height="320" viewBox="0 0 320 320" className="absolute">
