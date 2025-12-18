@@ -8,6 +8,7 @@ import { useRouter } from "next/navigation";
 import { useAuth as useFirebaseAuth, sendPasswordResetEmail } from "firebase/auth";
 import { useFirebase } from "@/firebase";
 import { useToast } from "@/hooks/use-toast";
+import Image from "next/image";
 
 import { Button } from "@/components/ui/button";
 import {
@@ -118,9 +119,14 @@ export default function AuthForm() {
   return (
     <div className="w-full">
         <div className="text-center mb-8">
-            <h1 className="font-headline text-5xl font-bold text-primary">
-                Blur
-            </h1>
+            <div className="flex justify-center mb-4">
+              <Image 
+                src="https://blogger.googleusercontent.com/img/b/R29vZ2xl/AVvXsEh5r85BhL7rCkS72xpX_5xkFZ9y_fVMFXYp_zLN9eEAnEA_C61c1jCJFaG86d1W6_mtsla64B191MOWYEFhJAa-lyMikD80WyfBVKiQxyc71spJx3Oy2FgvfotsVVnNIXGRXunpHYYvGFoQ7V-URilBXwJzIV9zQLSO_PN9raerNaTAb0VuCYo9EBqiyVts/s320/New%20Project%2020%20%5BEFC25EE%5D.png" 
+                alt="Blur Logo"
+                width={120}
+                height={40}
+              />
+            </div>
             <p className="text-muted-foreground mt-2">
               {authMode === 'login' ? 'Welcome back! Sign in to continue.' : 'Create an account to get started.'}
             </p>
