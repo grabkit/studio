@@ -13,7 +13,7 @@ export default function GetStartedPage() {
                 cx="110"
                 cy="110"
                 r="100"
-                stroke="hsl(var(--primary))"
+                stroke="hsl(var(--border))"
                 strokeWidth="2"
                 fill="none"
               />
