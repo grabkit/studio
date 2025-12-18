@@ -78,6 +78,15 @@
   .animate-rotate-around-reverse {
     animation: rotate-around 40s linear infinite reverse;
   }
+
+  @keyframes move-grid {
+    from {
+      background-position: 0 0;
+    }
+    to {
+      background-position: 40px 40px;
+    }
+  }
   
   .background-grid {
     position: absolute;
@@ -92,6 +101,7 @@
     opacity: 0.2;
     mask-image: linear-gradient(to bottom, white, transparent);
     -webkit-mask-image: linear-gradient(to bottom, white, transparent);
+    animation: move-grid 15s linear infinite;
   }
 
   .radial-spotlight {
