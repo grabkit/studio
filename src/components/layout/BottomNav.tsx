@@ -27,7 +27,7 @@ export default function BottomNav() {
               aria-label={item.label}
               className={cn(
                 "flex flex-col items-center justify-center w-20 transition-colors duration-200",
-                isActive && item.href !== '/post' ? "text-primary" : "text-muted-foreground hover:text-primary"
+                isActive && item.href !== '/post' ? "text-foreground" : "text-muted-foreground hover:text-foreground"
               )}
             >
               <div className={cn(
