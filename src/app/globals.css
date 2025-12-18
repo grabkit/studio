@@ -62,4 +62,17 @@
   .bg-background-blur {
     @apply bg-background/80 backdrop-blur-lg;
   }
+  
+  @keyframes rotate-around {
+    from {
+      transform: rotate(0deg);
+    }
+    to {
+      transform: rotate(360deg);
+    }
+  }
+
+  .animate-rotate-around {
+    animation: rotate-around 20s linear infinite;
+  }
 }
