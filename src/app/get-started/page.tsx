@@ -42,8 +42,7 @@ export default function GetStartedPage() {
   return (
     <div className="relative flex h-screen flex-col items-center justify-center bg-background p-8 text-center overflow-hidden">
        <div className="background-grid"></div>
-      <div className="flex flex-col items-center justify-center">
-        <div className="relative w-[320px] h-[320px] flex items-center justify-center mb-16">
+      <div className="relative w-[320px] h-[320px] flex items-center justify-center mb-16 overflow-hidden">
             <svg width="320" height="320" viewBox="0 0 320 320" className="absolute">
               <circle
                 cx="160"
@@ -72,8 +71,7 @@ export default function GetStartedPage() {
                   alt="Profile 1"
                   width={50}
                   height={50}
-                  className="rounded-full blur-[2px]"
-                  data-ai-hint="person face"
+                  className="rounded-full"
                 />
               </div>
                 <div className="absolute bottom-0 left-1/2 -translate-x-1/2 translate-y-1/4">
@@ -82,8 +80,7 @@ export default function GetStartedPage() {
                     alt="Profile 2"
                     width={50}
                     height={50}
-                    className="rounded-full blur-[2px]"
-                    data-ai-hint="man portrait"
+                    className="rounded-full"
                   />
                 </div>
             </div>
@@ -96,8 +93,7 @@ export default function GetStartedPage() {
                     alt="Profile 3"
                     width={40}
                     height={40}
-                    className="rounded-full blur-[2px]"
-                    data-ai-hint="woman portrait"
+                    className="rounded-full"
                   />
                 </div>
                 <div className="absolute top-1/2 right-[12%] -translate-y-1/2">
@@ -106,8 +102,7 @@ export default function GetStartedPage() {
                     alt="Profile 4"
                     width={40}
                     height={40}
-                    className="rounded-full blur-[2px]"
-                    data-ai-hint="person portrait"
+                    className="rounded-full"
                   />
                 </div>
             </div>
@@ -119,7 +114,6 @@ export default function GetStartedPage() {
                 height={40}
                 className="z-10"
               />
-        </div>
       </div>
       <div className="w-full max-w-sm z-10">
         <div className="h-28">
