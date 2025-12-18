@@ -97,15 +97,15 @@ export default function PostPage() {
   return (
     <Sheet open={isOpen} onOpenChange={setIsOpen}>
       <SheetContent side="bottom" className="h-screen flex flex-col p-0">
-        <SheetHeader className="flex-row items-center justify-between p-4 border-b">
+        <div className="sticky top-0 z-10 flex flex-row items-center justify-between p-4 border-b bg-background">
           <Button variant="ghost" size="icon" onClick={() => setIsOpen(false)}>
             <X className="h-5 w-5" />
           </Button>
-          <SheetTitle className="text-base font-bold">Create Post</SheetTitle>
+          <h2 className="text-base font-bold">Create Post</h2>
           <Button onClick={form.handleSubmit(onSubmit)} disabled={isSubmitting} size="sm" className="w-24">
              {isSubmitting ? <Loader2 className="h-4 w-4 animate-spin" /> : 'Publish'}
           </Button>
-        </SheetHeader>
+        </div>
         <div className="flex-grow p-4 overflow-y-auto">
             <div className="flex items-start space-x-4">
                 <Avatar>
