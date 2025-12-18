@@ -15,6 +15,7 @@ import {
   SheetHeader,
   SheetTitle,
   SheetDescription,
+  SheetClose,
 } from "@/components/ui/sheet";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
@@ -105,9 +106,11 @@ export default function PostPage() {
     <Sheet open={isOpen} onOpenChange={setIsOpen}>
       <SheetContent side="bottom" className="h-screen flex flex-col p-0">
         <SheetHeader className="sticky top-0 z-10 flex flex-row items-center gap-2 p-2 border-b bg-background">
-          <Button variant="ghost" size="icon" onClick={() => setIsOpen(false)}>
-            <X className="h-5 w-5" />
-          </Button>
+          <SheetClose asChild>
+            <Button variant="ghost" size="icon">
+              <X className="h-5 w-5" />
+            </Button>
+          </SheetClose>
           <SheetTitle className="text-base font-bold">Create Post</SheetTitle>
           <SheetDescription className="sr-only">Create a new post by filling out the form below.</SheetDescription>
         </SheetHeader>
@@ -160,7 +163,7 @@ export default function PostPage() {
                                 </FormItem>
                             )}
                             />
-                        <Button type="submit" disabled={isSubmitting} size="lg" className="rounded-full w-32">
+                        <Button type="submit" disabled={isSubmitting} className="rounded-full w-32">
                             {isSubmitting ? <Loader2 className="h-4 w-4 animate-spin" /> : 'Publish'}
                         </Button>
                     </div>
