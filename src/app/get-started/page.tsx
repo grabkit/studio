@@ -1,4 +1,3 @@
-
 "use client";
 
 import { Button } from "@/components/ui/button";
@@ -42,7 +41,7 @@ export default function GetStartedPage() {
   return (
     <div className="relative flex h-screen flex-col items-center justify-center bg-background p-8 text-center overflow-hidden">
        <div className="background-grid"></div>
-      <div className="relative w-[320px] h-[320px] flex items-center justify-center mb-16 overflow-hidden">
+      <div className="relative w-[320px] h-[320px] flex items-center justify-center mb-16">
             <svg width="320" height="320" viewBox="0 0 320 320" className="absolute">
               <circle
                 cx="160"
@@ -65,7 +64,7 @@ export default function GetStartedPage() {
             </svg>
             {/* Outer Circle Images */}
             <div className="absolute inset-0 animate-rotate-around">
-              <div className="absolute top-0 left-1/2 -translate-x-1/2 -translate-y-1/3">
+              <div className="absolute top-0 left-1/2 -translate-x-1/2 -translate-y-1/4">
                 <Image
                   src="https://picsum.photos/seed/1/50/50"
                   alt="Profile 1"
@@ -87,7 +86,7 @@ export default function GetStartedPage() {
 
             {/* Inner Circle Images */}
             <div className="absolute inset-0 animate-rotate-around-reverse">
-                <div className="absolute top-1/2 left-[20%] -translate-y-1/2 -translate-x-1/2">
+                <div className="absolute top-1/2 left-[20%] -translate-y-1/2 -translate-x-1/4">
                   <Image
                     src="https://picsum.photos/seed/3/40/40"
                     alt="Profile 3"
@@ -96,7 +95,7 @@ export default function GetStartedPage() {
                     className="rounded-full"
                   />
                 </div>
-                <div className="absolute top-1/2 right-[12%] -translate-y-1/2">
+                <div className="absolute top-1/2 right-[12%] -translate-y-1/2 translate-x-1/4">
                   <Image
                     src="https://picsum.photos/seed/4/40/40"
                     alt="Profile 4"
