@@ -31,7 +31,7 @@ export default function GetStartedPage() {
                 strokeDasharray="4"
               />
             </svg>
-            <div className="absolute inset-0 animate-rotate-around">
+            <div className="absolute inset-0">
               <div className="absolute top-1/2 left-0 -translate-x-1/2">
                   <Image
                     src="https://picsum.photos/seed/1/50/50"
@@ -43,7 +43,7 @@ export default function GetStartedPage() {
                   />
               </div>
             </div>
-             <div className="absolute inset-0 animate-rotate-around" style={{ animationDirection: 'reverse' }}>
+             <div className="absolute inset-0">
                 <div className="absolute top-1/2 right-0 translate-x-1/2">
                    <Image
                     src="https://picsum.photos/seed/2/50/50"
