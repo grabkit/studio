@@ -116,7 +116,7 @@ export default function GetStartedPage() {
               </CarouselContent>
             </Carousel>
         </div>
-        <Button asChild size="lg" className="w-full font-headline text-lg rounded-full mt-8">
+        <Button asChild size="lg" className="w-full font-headline text-lg rounded-full mt-16">
           <Link href="/auth">
             Get Started
             <ArrowRight className="ml-2 h-5 w-5" />
