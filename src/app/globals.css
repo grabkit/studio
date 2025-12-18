@@ -73,6 +73,9 @@
   }
 
   .animate-rotate-around {
-    animation: rotate-around 20s linear infinite;
+    animation: rotate-around 40s linear infinite;
+  }
+  .animate-rotate-around-reverse {
+    animation: rotate-around 40s linear infinite reverse;
   }
 }
