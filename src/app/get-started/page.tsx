@@ -10,27 +10,16 @@ export default function GetStartedPage() {
     <div className="flex h-screen flex-col items-center justify-between bg-background p-8 text-center">
       <div className="flex-shrink-0" />
       <div className="flex flex-col items-center justify-center flex-grow">
-        <div className="relative w-[320px] h-[320px] flex items-center justify-center">
-            <svg width="320" height="320" viewBox="0 0 320 320" className="absolute">
+        <div className="relative w-[220px] h-[220px] flex items-center justify-center">
+            <svg width="220" height="220" viewBox="0 0 220 220" className="absolute">
               <circle
-                cx="160"
-                cy="160"
+                cx="110"
+                cy="110"
                 r="100"
                 stroke="hsl(var(--border))"
                 strokeWidth="2"
                 fill="none"
                 strokeDasharray="2"
-              />
-              <circle
-                cx="160"
-                cy="160"
-                r="150"
-                stroke="hsl(var(--border))"
-                strokeWidth="2"
-                fill="none"
-                strokeDasharray="2"
-                className="animate-rotate-around slow-rotation"
-                style={{ animationDirection: 'reverse' }}
               />
             </svg>
             <div className="absolute inset-0 animate-rotate-around">
