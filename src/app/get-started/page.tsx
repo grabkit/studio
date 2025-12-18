@@ -70,7 +70,7 @@ export default function GetStartedPage() {
                     alt="Profile 1"
                     width={50}
                     height={50}
-                    className="rounded-full shadow-md"
+                    className="rounded-full shadow-md blur-sm"
                     data-ai-hint="person face"
                   />
               </div>
@@ -80,7 +80,7 @@ export default function GetStartedPage() {
                     alt="Profile 2"
                     width={50}
                     height={50}
-                    className="rounded-full shadow-md"
+                    className="rounded-full shadow-md blur-sm"
                     data-ai-hint="man portrait"
                   />
                 </div>
@@ -94,7 +94,7 @@ export default function GetStartedPage() {
                     alt="Profile 3"
                     width={40}
                     height={40}
-                    className="rounded-full shadow-md"
+                    className="rounded-full shadow-md blur-sm"
                     data-ai-hint="woman portrait"
                   />
                 </div>
@@ -104,7 +104,7 @@ export default function GetStartedPage() {
                     alt="Profile 4"
                     width={40}
                     height={40}
-                    className="rounded-full shadow-md"
+                    className="rounded-full shadow-md blur-sm"
                     data-ai-hint="person portrait"
                   />
                 </div>
