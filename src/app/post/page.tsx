@@ -99,7 +99,6 @@ export default function PostPage() {
       <SheetContent side="bottom" className="h-screen flex flex-col">
         <SheetHeader className="flex-row items-center justify-between">
             <SheetTitle>Create Post</SheetTitle>
-            <Button variant="ghost" onClick={() => setIsOpen(false)}>Cancel</Button>
         </SheetHeader>
         <div className="flex-grow p-4 -mx-6 overflow-y-auto">
             <div className="flex items-start space-x-4">
@@ -132,7 +131,8 @@ export default function PostPage() {
                 </div>
             </div>
         </div>
-        <div className="p-4 -mx-6 border-t flex justify-end">
+        <div className="p-4 -mx-6 border-t flex justify-between items-center">
+          <Button variant="ghost" onClick={() => setIsOpen(false)}>Cancel</Button>
           <Button onClick={form.handleSubmit(onSubmit)} disabled={isSubmitting}>
              {isSubmitting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
             Publish
