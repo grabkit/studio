@@ -1,11 +1,35 @@
 
+"use client";
+
 import { Button } from "@/components/ui/button";
 import Link from "next/link";
 import { ArrowRight } from "lucide-react";
 import Image from 'next/image';
+import React from 'react';
+import { Carousel, CarouselContent, CarouselItem } from "@/components/ui/carousel"
+import Autoplay from "embla-carousel-autoplay"
 
+
+const carouselItems = [
+  {
+    title: "Express Yourself, Anonymously.",
+    description: "Welcome to Blur. Share your thoughts and connect with others without revealing your identity."
+  },
+  {
+    title: "A Safe Space for Ideas.",
+    description: "Engage in discussions and share your perspective in a supportive environment."
+  },
+  {
+    title: "Join the Conversation.",
+    description: "Discover communities and topics that matter to you. Your voice is welcome here."
+  }
+]
 
 export default function GetStartedPage() {
+  const plugin = React.useRef(
+    Autoplay({ delay: 5000, stopOnInteraction: true })
+  )
+
   return (
     <div className="flex h-screen flex-col items-center justify-between bg-background p-8 text-center">
       <div className="flex-shrink-0" />
@@ -85,9 +109,22 @@ export default function GetStartedPage() {
         </div>
       </div>
       <div className="w-full max-w-sm">
-        <div className="mb-8">
-            <h2 className="font-headline text-2xl font-bold">Express Yourself, Anonymously.</h2>
-            <p className="text-muted-foreground mt-2">Welcome to Blur. Share your thoughts and connect with others without revealing your identity.</p>
+        <div className="mb-8 h-24">
+            <Carousel
+              plugins={[plugin.current]}
+              className="w-full"
+              onMouseEnter={plugin.current.stop}
+              onMouseLeave={plugin.current.reset}
+            >
+              <CarouselContent>
+                {carouselItems.map((item, index) => (
+                  <CarouselItem key={index}>
+                    <h2 className="font-headline text-2xl font-bold">{item.title}</h2>
+                    <p className="text-muted-foreground mt-2">{item.description}</p>
+                  </CarouselItem>
+                ))}
+              </CarouselContent>
+            </Carousel>
         </div>
         <Button asChild size="lg" className="w-full font-headline text-lg rounded-full">
           <Link href="/auth">
