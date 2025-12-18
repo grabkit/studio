@@ -250,7 +250,7 @@ const CommentFormSchema = z.object({
   content: z.string().min(1, "Comment cannot be empty.").max(280),
 });
 
-function CommentForm({ postId }: { postId: string }) {
+function CommentForm({ postId, commentsAllowed }: { postId: string, commentsAllowed?: boolean }) {
   const { user } = useUser();
   const { firestore } = useFirebase();
   const { toast } = useToast();
@@ -291,6 +291,17 @@ function CommentForm({ postId }: { postId: string }) {
             errorEmitter.emit('permission-error', permissionError);
         });
   };
+  
+  if (commentsAllowed === false) {
+    return (
+        <div className="fixed bottom-0 left-0 right-0 bg-background border-t z-10 max-w-2xl mx-auto sm:px-4">
+            <div className="p-4 text-center text-sm text-muted-foreground">
+                The author has turned off replies for this post.
+            </div>
+        </div>
+    );
+  }
+
 
   return (
     <div className="fixed bottom-0 left-0 right-0 bg-background border-t z-10 max-w-2xl mx-auto sm:px-4">
@@ -480,18 +491,18 @@ export default function PostDetailPage() {
         <div className="pt-14 pb-40">
             <PostDetailItem post={post} />
             <div>
-                {areCommentsLoading && <div className="p-4 text-center">Loading comments...</div>}
-                {comments?.map((comment) => (
-                <CommentItem key={comment.id} comment={comment} postAuthorId={post.authorId} />
+                {(post.commentsAllowed !== false && areCommentsLoading) && <div className="p-4 text-center">Loading comments...</div>}
+                {post.commentsAllowed !== false && comments?.map((comment) => (
+                    <CommentItem key={comment.id} comment={comment} postAuthorId={post.authorId} />
                 ))}
-                {!areCommentsLoading && comments?.length === 0 && (
+                {(post.commentsAllowed !== false && !areCommentsLoading && comments?.length === 0) && (
                 <div className="text-center py-10">
                     <p className="text-muted-foreground">No comments yet. Be the first to reply!</p>
                 </div>
                 )}
             </div>
         </div>
-        <CommentForm postId={post.id} />
+        <CommentForm postId={post.id} commentsAllowed={post.commentsAllowed} />
     </AppLayout>
   );
 }

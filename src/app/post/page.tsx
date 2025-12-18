@@ -11,8 +11,6 @@ import { useFirebase, useUser } from "@/firebase";
 import {
   Sheet,
   SheetContent,
-  SheetHeader,
-  SheetTitle,
 } from "@/components/ui/sheet";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
@@ -21,9 +19,12 @@ import { Form, FormControl, FormField, FormItem } from "@/components/ui/form";
 import { Loader2, X } from "lucide-react";
 import { errorEmitter } from "@/firebase/error-emitter";
 import { FirestorePermissionError } from "@/firebase/errors";
+import { Switch } from "@/components/ui/switch";
+import { Label } from "@/components/ui/label";
 
 const postSchema = z.object({
   content: z.string().min(1, "Post cannot be empty.").max(280, "Post cannot exceed 280 characters."),
+  commentsAllowed: z.boolean().default(true),
 });
 
 const getInitials = (name: string | null | undefined) => {
@@ -47,6 +48,7 @@ export default function PostPage() {
     resolver: zodResolver(postSchema),
     defaultValues: {
       content: "",
+      commentsAllowed: true,
     },
   });
 
@@ -72,6 +74,7 @@ export default function PostPage() {
       likes: [],
       likeCount: 0,
       commentCount: 0,
+      commentsAllowed: values.commentsAllowed,
     };
 
     setDoc(newPostRef, newPost)
@@ -97,25 +100,24 @@ export default function PostPage() {
   return (
     <Sheet open={isOpen} onOpenChange={setIsOpen}>
       <SheetContent side="bottom" className="h-screen flex flex-col p-0">
-        <div className="sticky top-0 z-10 flex flex-row items-center justify-between p-4 border-b bg-background">
+        <div className="sticky top-0 z-10 flex flex-row items-center justify-between p-2 border-b bg-background">
           <Button variant="ghost" size="icon" onClick={() => setIsOpen(false)}>
             <X className="h-5 w-5" />
           </Button>
           <h2 className="text-base font-bold">Create Post</h2>
-          <Button onClick={form.handleSubmit(onSubmit)} disabled={isSubmitting} size="sm" className="w-24">
-             {isSubmitting ? <Loader2 className="h-4 w-4 animate-spin" /> : 'Publish'}
-          </Button>
+          <div className="w-10"></div>
         </div>
-        <div className="flex-grow p-4 overflow-y-auto">
-            <div className="flex items-start space-x-4">
-                <Avatar>
-                    <AvatarImage src={user?.photoURL || undefined} />
-                    <AvatarFallback>{getInitials(user?.displayName)}</AvatarFallback>
-                </Avatar>
-                <div className="w-full">
-                    <span className="font-semibold text-sm">{formatUserId(user?.uid)}</span>
-                     <Form {...form}>
-                        <form onSubmit={form.handleSubmit(onSubmit)} className="w-full space-y-4">
+        
+        <Form {...form}>
+            <form onSubmit={form.handleSubmit(onSubmit)} className="flex-grow flex flex-col">
+                <div className="flex-grow p-4 overflow-y-auto">
+                    <div className="flex items-start space-x-4">
+                        <Avatar>
+                            <AvatarImage src={user?.photoURL || undefined} />
+                            <AvatarFallback>{getInitials(user?.displayName)}</AvatarFallback>
+                        </Avatar>
+                        <div className="w-full">
+                            <span className="font-semibold text-sm">{formatUserId(user?.uid)}</span>
                             <FormField
                             control={form.control}
                             name="content"
@@ -132,11 +134,36 @@ export default function PostPage() {
                                 </FormItem>
                             )}
                             />
-                        </form>
-                    </Form>
+                        </div>
+                    </div>
                 </div>
-            </div>
-        </div>
+
+                <div className="p-4 border-t bg-background">
+                    <div className="flex items-center justify-between">
+                         <FormField
+                            control={form.control}
+                            name="commentsAllowed"
+                            render={({ field }) => (
+                                <FormItem className="flex items-center space-x-2">
+                                     <Switch
+                                        id="comments-allowed"
+                                        checked={field.value}
+                                        onCheckedChange={field.onChange}
+                                    />
+                                    <Label htmlFor="comments-allowed" className="text-sm text-muted-foreground">
+                                        {field.value ? "Replies are on" : "Replies are off"}
+                                    </Label>
+                                </FormItem>
+                            )}
+                            />
+                        <Button type="submit" disabled={isSubmitting} size="lg" className="rounded-full w-32">
+                            {isSubmitting ? <Loader2 className="h-4 w-4 animate-spin" /> : 'Publish'}
+                        </Button>
+                    </div>
+                </div>
+            </form>
+        </Form>
+
       </SheetContent>
     </Sheet>
   );

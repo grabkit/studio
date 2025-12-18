@@ -67,6 +67,10 @@
         "commentCount": {
           "type": "number",
           "description": "The total number of comments on the post."
+        },
+        "commentsAllowed": {
+          "type": "boolean",
+          "description": "Indicates if comments are allowed on this post."
         }
       },
       "required": [
