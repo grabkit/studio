@@ -1,4 +1,3 @@
-
 "use client";
 
 import { useState, useEffect } from "react";
@@ -107,6 +106,7 @@ export default function PostPage() {
         <div className="sticky top-0 z-10 flex items-center gap-2 p-2 border-b bg-background h-14">
           <SheetClose asChild>
             <Button variant="ghost" size="icon">
+                <X className="h-4 w-4" />
             </Button>
           </SheetClose>
           <SheetTitle className="text-base font-bold">Create Post</SheetTitle>
@@ -143,7 +143,7 @@ export default function PostPage() {
                     </div>
                 </div>
 
-                <div className="fixed bottom-0 left-0 right-0 p-4 border-t bg-background w-full">
+                <div className="p-4 border-t bg-background w-full">
                     <div className="flex items-center justify-between">
                          <FormField
                             control={form.control}
