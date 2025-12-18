@@ -32,7 +32,7 @@ export default function GetStartedPage() {
               />
             </svg>
             <div className="absolute inset-0">
-              <div className="absolute top-0 left-1/2 -translate-x-1/2 -translate-y-1/2">
+              <div className="absolute top-0 left-1/2 -translate-x-1/2 -translate-y-1/3">
                   <Image
                     src="https://picsum.photos/seed/1/50/50"
                     alt="Profile 1"
