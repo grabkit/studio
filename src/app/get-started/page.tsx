@@ -111,7 +111,7 @@ export default function GetStartedPage() {
                 alt="Blur Logo"
                 width={120}
                 height={40}
-                className="z-10"
+                className="z-10 animate-blur-unblur-slow"
               />
       </div>
       <div className="w-full max-w-sm z-10">
