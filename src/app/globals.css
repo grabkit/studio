@@ -154,19 +154,4 @@
   .animate-rotate-around-reverse {
     animation: rotate-around-reverse 20s linear infinite;
   }
-
-  @keyframes blur-unblur {
-    0%, 100% {
-      filter: blur(2px);
-      opacity: 0.7;
-    }
-    50% {
-      filter: blur(0px);
-      opacity: 1;
-    }
-  }
-
-  .animate-blur-unblur {
-    animation: blur-unblur 5s linear infinite;
-  }
 }

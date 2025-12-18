@@ -70,7 +70,7 @@ export default function GetStartedPage() {
                   alt="Profile 1"
                   width={50}
                   height={50}
-                  className="rounded-full animate-blur-unblur"
+                  className="rounded-full blur-[2px]"
                 />
               </div>
                 <div className="absolute bottom-0 left-1/2 -translate-x-1/2 translate-y-1/4">
@@ -79,7 +79,7 @@ export default function GetStartedPage() {
                     alt="Profile 2"
                     width={50}
                     height={50}
-                    className="rounded-full animate-blur-unblur"
+                    className="rounded-full blur-[2px]"
                   />
                 </div>
             </div>
@@ -92,7 +92,7 @@ export default function GetStartedPage() {
                     alt="Profile 3"
                     width={40}
                     height={40}
-                    className="rounded-full animate-blur-unblur"
+                    className="rounded-full blur-[2px]"
                   />
                 </div>
                 <div className="absolute top-1/2 right-[20%] -translate-y-1/2 translate-x-1/2">
@@ -101,7 +101,7 @@ export default function GetStartedPage() {
                     alt="Profile 4"
                     width={40}
                     height={40}
-                    className="rounded-full animate-blur-unblur"
+                    className="rounded-full blur-[2px]"
                   />
                 </div>
             </div>
