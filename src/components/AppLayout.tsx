@@ -42,7 +42,7 @@ export default function AppLayout({
         className={cn(
           "mx-auto max-w-2xl px-0 sm:px-4",
           showTopBar ? "pt-16" : "pt-8",
-          showBottomNav ? "pb-20" : "pb-8"
+          showBottomNav ? "pb-16" : "pb-8"
         )}
       >
         {children}
