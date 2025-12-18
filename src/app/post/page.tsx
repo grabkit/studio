@@ -111,11 +111,10 @@ export default function PostPage() {
             </Button>
           </SheetClose>
           <SheetTitle className="text-base font-bold">Create Post</SheetTitle>
-          <SheetDescription className="sr-only">Create a new post by filling out the form below.</SheetDescription>
         </div>
         
         <Form {...form}>
-            <form onSubmit={form.handleSubmit(onSubmit)} className="flex-grow flex flex-col pt-14">
+            <form onSubmit={form.handleSubmit(onSubmit)} className="flex-grow flex flex-col pt-4">
                 <div className="flex-grow px-4 overflow-y-auto">
                     <div className="flex items-start space-x-4">
                         <Avatar>
@@ -157,7 +156,7 @@ export default function PostPage() {
                                         onCheckedChange={field.onChange}
                                     />
                                     <Label htmlFor="comments-allowed" className="text-sm text-muted-foreground">
-                                        {field.value ? "Replies are on" : "Replies are off"}
+                                        Replies
                                     </Label>
                                 </FormItem>
                             )}
