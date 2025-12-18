@@ -149,13 +149,13 @@ export default function PostPage() {
                             control={form.control}
                             name="commentsAllowed"
                             render={({ field }) => (
-                                <FormItem className="flex items-center space-x-2">
+                                <FormItem className="flex items-center space-x-2 space-y-0">
                                      <Switch
                                         id="comments-allowed"
                                         checked={field.value}
                                         onCheckedChange={field.onChange}
                                     />
-                                    <Label htmlFor="comments-allowed" className="text-sm leading-none">
+                                    <Label htmlFor="comments-allowed" className="text-sm">
                                         Replies
                                     </Label>
                                 </FormItem>
