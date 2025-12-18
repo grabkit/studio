@@ -95,14 +95,33 @@
     right: 0;
     bottom: 0;
     background-image:
+      radial-gradient(circle, hsl(var(--foreground)) 1px, transparent 1px),
       linear-gradient(to right, hsl(var(--border)) 1px, transparent 1px),
       linear-gradient(to bottom, hsl(var(--border)) 1px, transparent 1px);
-    background-size: 40px 40px;
+    background-size: 40px 40px, 40px 40px, 40px 40px;
     opacity: 0.2;
     mask-image: linear-gradient(to bottom, white, transparent);
     -webkit-mask-image: linear-gradient(to bottom, white, transparent);
     animation: move-grid 2s linear infinite;
   }
+  
+  .background-grid::after {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background-image: radial-gradient(circle, hsl(var(--foreground)) 1px, transparent 1px);
+    background-size: 40px 40px;
+    animation: blink 4s infinite;
+  }
+
+  @keyframes blink {
+    0%, 100% { opacity: 0; }
+    50% { opacity: 1; }
+  }
+
 
   .radial-spotlight {
     position: relative;
