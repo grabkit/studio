@@ -20,7 +20,7 @@ import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Form, FormControl, FormField, FormItem } from "@/components/ui/form";
-import { Loader2, X } from "lucide-react";
+import { Loader2 } from "lucide-react";
 import { errorEmitter } from "@/firebase/error-emitter";
 import { FirestorePermissionError } from "@/firebase/errors";
 import { Switch } from "@/components/ui/switch";
@@ -107,7 +107,6 @@ export default function PostPage() {
         <div className="sticky top-0 z-10 flex items-center gap-2 p-2 border-b bg-background h-14">
           <SheetClose asChild>
             <Button variant="ghost" size="icon">
-              <X className="h-5 w-5" />
             </Button>
           </SheetClose>
           <SheetTitle className="text-base font-bold">Create Post</SheetTitle>
@@ -115,8 +114,8 @@ export default function PostPage() {
         </div>
         
         <Form {...form}>
-            <form onSubmit={form.handleSubmit(onSubmit)} className="flex-grow flex flex-col pt-14">
-                <div className="flex-grow px-4 pb-4 overflow-y-auto">
+            <form onSubmit={form.handleSubmit(onSubmit)} className="flex-grow flex flex-col">
+                <div className="flex-grow px-4 pb-24 overflow-y-auto">
                     <div className="flex items-start space-x-4">
                         <Avatar>
                             <AvatarImage src={user?.photoURL || undefined} />
@@ -144,7 +143,7 @@ export default function PostPage() {
                     </div>
                 </div>
 
-                <div className="p-4 border-t bg-background">
+                <div className="fixed bottom-0 left-0 right-0 p-4 border-t bg-background w-full">
                     <div className="flex items-center justify-between">
                          <FormField
                             control={form.control}
