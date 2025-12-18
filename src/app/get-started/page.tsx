@@ -32,13 +32,13 @@ export default function GetStartedPage() {
               />
             </svg>
             <div className="absolute inset-0">
-              <div className="absolute top-1/2 left-[-10px] -translate-y-1/2 -translate-x-1/2">
+              <div className="absolute top-1/2 left-[-10px] -translate-y-1/2 -translate-x-1/3">
                   <Image
                     src="https://picsum.photos/seed/1/50/50"
                     alt="Profile 1"
                     width={50}
                     height={50}
-                    className="rounded-full shadow-md"
+                    className="rounded-full shadow-md z-10"
                     data-ai-hint="person face"
                   />
               </div>
@@ -50,7 +50,7 @@ export default function GetStartedPage() {
                     alt="Profile 2"
                     width={50}
                     height={50}
-                    className="rounded-full shadow-md"
+                    className="rounded-full shadow-md z-10"
                     data-ai-hint="man portrait"
                   />
                 </div>
