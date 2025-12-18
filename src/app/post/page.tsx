@@ -114,8 +114,8 @@ export default function PostPage() {
         </div>
         
         <Form {...form}>
-            <form onSubmit={form.handleSubmit(onSubmit)} className="flex-grow flex flex-col">
-                <div className="flex-grow p-4 pt-6 overflow-y-auto">
+            <form onSubmit={form.handleSubmit(onSubmit)} className="flex-grow flex flex-col pt-14">
+                <div className="flex-grow p-4 pt-8 overflow-y-auto">
                     <div className="flex items-start space-x-4">
                         <Avatar>
                             <AvatarImage src={user?.photoURL || undefined} />
