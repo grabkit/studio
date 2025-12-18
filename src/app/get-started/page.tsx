@@ -10,7 +10,6 @@ export default function GetStartedPage() {
         <div className="absolute inset-0 flex items-center justify-center">
             <svg width="220" height="220" viewBox="0 0 220 220" className="absolute">
               <circle
-                className="animate-draw"
                 cx="110"
                 cy="110"
                 r="100"
@@ -19,7 +18,6 @@ export default function GetStartedPage() {
                 fill="none"
               />
               <circle
-                 className="animate-fill"
                 cx="110"
                 cy="110"
                 r="100"
