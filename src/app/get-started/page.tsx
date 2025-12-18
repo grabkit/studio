@@ -44,7 +44,7 @@ export default function GetStartedPage() {
               </div>
             </div>
              <div className="absolute inset-0">
-                <div className="absolute top-1/2 right-0 -translate-y-1/3 translate-x-1/2">
+                <div className="absolute top-1/2 right-0 -translate-y-1/3 translate-x-1/4">
                    <Image
                     src="https://picsum.photos/seed/2/50/50"
                     alt="Profile 2"
