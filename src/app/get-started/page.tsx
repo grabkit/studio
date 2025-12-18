@@ -40,7 +40,7 @@ export default function GetStartedPage() {
   }, [api])
 
   return (
-    <div className="relative flex h-screen flex-col items-center justify-center bg-background p-8 text-center">
+    <div className="relative flex h-screen flex-col items-center justify-center bg-background p-8 text-center overflow-hidden">
        <div className="background-grid"></div>
       <div className="flex flex-col items-center justify-center">
         <div className="relative w-[320px] h-[320px] flex items-center justify-center mb-16">
@@ -121,7 +121,7 @@ export default function GetStartedPage() {
               />
         </div>
       </div>
-      <div className="w-full max-w-sm">
+      <div className="w-full max-w-sm z-10">
         <div className="h-28">
           <h2 className="font-headline text-2xl font-bold mb-4">Express Yourself, Anonymously.</h2>
             <Carousel
