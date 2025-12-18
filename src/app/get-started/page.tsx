@@ -24,7 +24,7 @@ export default function GetStartedPage() {
               <circle
                 cx="110"
                 cy="110"
-                r="103"
+                r="105"
                 stroke="hsl(var(--border))"
                 strokeWidth="1"
                 fill="none"
