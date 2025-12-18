@@ -41,7 +41,7 @@ export default function AppLayout({
       <main
         className={cn(
           "mx-auto max-w-2xl px-0 sm:px-4",
-          showTopBar ? "pt-24" : "pt-8",
+          showTopBar ? "pt-20" : "pt-8",
           showBottomNav ? "pb-28" : "pb-8"
         )}
       >
