@@ -32,8 +32,8 @@ export default function GetStartedPage() {
               />
             </svg>
             {/* Outer Circle Images */}
-            <div className="absolute inset-0">
-              <div className="absolute top-0 left-1/2 -translate-x-1/4 -translate-y-1/3">
+            <div className="absolute inset-0 animate-rotate-around">
+              <div className="absolute top-0 left-1/2 -translate-x-1/2 -translate-y-1/2">
                   <Image
                     src="https://picsum.photos/seed/1/50/50"
                     alt="Profile 1"
@@ -44,8 +44,8 @@ export default function GetStartedPage() {
                   />
               </div>
             </div>
-             <div className="absolute inset-0">
-                <div className="absolute bottom-0 left-1/2 -translate-x-[15%] translate-y-1/4">
+             <div className="absolute inset-0 animate-rotate-around" style={{animationDirection: "reverse"}}>
+                <div className="absolute bottom-0 left-1/2 -translate-x-1/2 translate-y-1/2">
                    <Image
                     src="https://picsum.photos/seed/2/50/50"
                     alt="Profile 2"
@@ -71,7 +71,7 @@ export default function GetStartedPage() {
                 </div>
             </div>
             <div className="absolute inset-0">
-                <div className="absolute top-1/2 right-0 -translate-y-1/2 -translate-x-full">
+                <div className="absolute top-1/2 right-0 -translate-y-1/2 -translate-x-[110%]">
                    <Image
                     src="https://picsum.photos/seed/4/40/40"
                     alt="Profile 4"
