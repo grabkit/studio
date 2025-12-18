@@ -63,7 +63,7 @@ export default function GetStartedPage() {
               />
             </svg>
             {/* Outer Circle Images */}
-            <div className="absolute inset-0 animate-rotate-around">
+            <div className="absolute inset-0">
               <div className="absolute top-0 left-1/2 -translate-x-1/2 -translate-y-1/4">
                 <Image
                   src="https://picsum.photos/seed/1/50/50"
@@ -85,8 +85,8 @@ export default function GetStartedPage() {
             </div>
 
             {/* Inner Circle Images */}
-            <div className="absolute inset-0 animate-rotate-around-reverse">
-                <div className="absolute top-1/2 left-[20%] -translate-y-1/2 -translate-x-1/4">
+            <div className="absolute inset-0">
+                <div className="absolute top-1/2 left-[25%] -translate-y-1/2 -translate-x-1/2">
                   <Image
                     src="https://picsum.photos/seed/3/40/40"
                     alt="Profile 3"
@@ -95,7 +95,7 @@ export default function GetStartedPage() {
                     className="rounded-full"
                   />
                 </div>
-                <div className="absolute top-1/2 right-[12%] -translate-y-1/2 translate-x-1/4">
+                <div className="absolute top-1/2 right-[25%] -translate-y-1/2 translate-x-1/2">
                   <Image
                     src="https://picsum.photos/seed/4/40/40"
                     alt="Profile 4"

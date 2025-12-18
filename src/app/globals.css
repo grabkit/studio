@@ -63,22 +63,6 @@
     @apply bg-background/80 backdrop-blur-lg;
   }
 
-  @keyframes rotate-around {
-    from {
-      transform: rotate(0deg);
-    }
-    to {
-      transform: rotate(360deg);
-    }
-  }
-
-  .animate-rotate-around {
-    animation: rotate-around 40s linear infinite;
-  }
-  .animate-rotate-around-reverse {
-    animation: rotate-around 40s linear infinite reverse;
-  }
-
   @keyframes move-grid {
     from {
       background-position: 0 0;
