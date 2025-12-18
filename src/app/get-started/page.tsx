@@ -17,13 +17,6 @@ export default function GetStartedPage() {
                 strokeWidth="2"
                 fill="none"
               />
-              <circle
-                cx="110"
-                cy="110"
-                r="100"
-                fill="hsl(var(--primary) / 0.1)"
-                stroke="none"
-              />
             </svg>
         </div>
         <h1 className="font-headline text-6xl font-bold text-primary z-10">
