@@ -114,7 +114,7 @@ export default function PostPage() {
         </div>
         
         <Form {...form}>
-            <form onSubmit={form.handleSubmit(onSubmit)} className="flex-grow flex flex-col pt-14">
+            <form onSubmit={form.handleSubmit(onSubmit)} className="flex-grow flex flex-col">
                 <div className="flex-grow px-4 pb-4 pt-[2px] overflow-y-auto">
                     <div className="flex items-start space-x-4">
                         <Avatar>
@@ -155,7 +155,7 @@ export default function PostPage() {
                                         checked={field.value}
                                         onCheckedChange={field.onChange}
                                     />
-                                    <Label htmlFor="comments-allowed" className="text-sm">
+                                    <Label htmlFor="comments-allowed" className="text-sm leading-none">
                                         Replies
                                     </Label>
                                 </FormItem>
