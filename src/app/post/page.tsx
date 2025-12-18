@@ -111,11 +111,12 @@ export default function PostPage() {
             </Button>
           </SheetClose>
           <SheetTitle className="text-base font-bold">Create Post</SheetTitle>
+          <SheetDescription className="sr-only">Create a new post by writing content. You can also disable replies before publishing.</SheetDescription>
         </div>
         
         <Form {...form}>
-            <form onSubmit={form.handleSubmit(onSubmit)} className="flex-grow flex flex-col pt-4">
-                <div className="flex-grow px-4 overflow-y-auto">
+            <form onSubmit={form.handleSubmit(onSubmit)} className="flex-grow flex flex-col">
+                <div className="flex-grow px-4 overflow-y-auto pt-4">
                     <div className="flex items-start space-x-4">
                         <Avatar>
                             <AvatarImage src={user?.photoURL || undefined} />
@@ -155,7 +156,7 @@ export default function PostPage() {
                                         checked={field.value}
                                         onCheckedChange={field.onChange}
                                     />
-                                    <Label htmlFor="comments-allowed" className="text-sm text-muted-foreground">
+                                    <Label htmlFor="comments-allowed" className="text-sm text-muted-foreground !mt-0">
                                         Replies
                                     </Label>
                                 </FormItem>
