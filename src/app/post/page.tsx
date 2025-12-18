@@ -12,7 +12,6 @@ import { useFirebase, useUser } from "@/firebase";
 import {
   Sheet,
   SheetContent,
-  SheetHeader,
   SheetTitle,
   SheetDescription,
   SheetClose,
@@ -116,7 +115,7 @@ export default function PostPage() {
         </div>
         
         <Form {...form}>
-            <form onSubmit={form.handleSubmit(onSubmit)} className="flex-grow flex flex-col">
+            <form onSubmit={form.handleSubmit(onSubmit)} className="flex-grow flex flex-col pt-14">
                 <div className="flex-grow p-4 overflow-y-auto">
                     <div className="flex items-start space-x-4">
                         <Avatar>
