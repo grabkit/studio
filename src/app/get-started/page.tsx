@@ -8,6 +8,7 @@ import Image from 'next/image';
 import React, { useState, useEffect } from 'react';
 import { Carousel, CarouselApi, CarouselContent, CarouselItem } from "@/components/ui/carousel"
 import Autoplay from "embla-carousel-autoplay"
+import { cn } from "@/lib/utils";
 
 
 const carouselItems = [
@@ -116,7 +117,7 @@ export default function GetStartedPage() {
                 alt="Blur Logo"
                 width={120}
                 height={40}
-                className="z-10"
+                className={cn("z-10", "animate-blur-unblur")}
               />
         </div>
       </div>
