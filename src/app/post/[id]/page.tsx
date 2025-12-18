@@ -259,7 +259,7 @@ function CommentForm({ postId }: { postId: string }) {
     defaultValues: { content: "" },
   });
 
-  const onSubmit = async (values: z.infer<typeof CommentFormSchema>>) => {
+  const onSubmit = async (values: z.infer<typeof CommentFormSchema>) => {
     if (!user || !firestore) {
       toast({ variant: "destructive", title: "You must be logged in to comment." });
       return;
