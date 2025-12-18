@@ -5,8 +5,8 @@ import { Button } from "@/components/ui/button";
 import Link from "next/link";
 import { ArrowRight } from "lucide-react";
 import Image from 'next/image';
-import React from 'react';
-import { Carousel, CarouselContent, CarouselItem } from "@/components/ui/carousel"
+import React, { useState, useEffect } from 'react';
+import { Carousel, CarouselApi, CarouselContent, CarouselItem } from "@/components/ui/carousel"
 import Autoplay from "embla-carousel-autoplay"
 
 
@@ -17,9 +17,26 @@ const carouselItems = [
 ]
 
 export default function GetStartedPage() {
+  const [api, setApi] = useState<CarouselApi>()
+  const [current, setCurrent] = useState(0)
+  const [count, setCount] = useState(0)
+
   const plugin = React.useRef(
     Autoplay({ delay: 5000, stopOnInteraction: true })
   )
+
+  useEffect(() => {
+    if (!api) {
+      return
+    }
+ 
+    setCount(api.scrollSnapList().length)
+    setCurrent(api.selectedScrollSnap() + 1)
+ 
+    api.on("select", () => {
+      setCurrent(api.selectedScrollSnap() + 1)
+    })
+  }, [api])
 
   return (
     <div className="flex h-screen flex-col items-center justify-center bg-background p-8 text-center overflow-x-hidden">
@@ -102,6 +119,7 @@ export default function GetStartedPage() {
         <div className="h-28">
           <h2 className="font-headline text-2xl font-bold mb-4">Express Yourself, Anonymously.</h2>
             <Carousel
+              setApi={setApi}
               plugins={[plugin.current]}
               className="w-full"
               onMouseEnter={plugin.current.stop}
@@ -115,6 +133,17 @@ export default function GetStartedPage() {
                 ))}
               </CarouselContent>
             </Carousel>
+             <div className="flex justify-center gap-2 mt-4">
+              {Array.from({ length: count }).map((_, index) => (
+                  <button
+                      key={index}
+                      onClick={() => api?.scrollTo(index)}
+                      className={`h-2 w-2 rounded-full transition-colors ${
+                          current === index + 1 ? 'bg-primary' : 'bg-muted'
+                      }`}
+                  />
+              ))}
+          </div>
         </div>
         <Button asChild size="lg" className="w-full font-headline text-lg rounded-full mt-16">
           <Link href="/auth">
