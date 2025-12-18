@@ -1,4 +1,3 @@
-
 "use client";
 
 import { useState, useEffect } from "react";
@@ -116,7 +115,7 @@ export default function PostPage() {
         
         <Form {...form}>
             <form onSubmit={form.handleSubmit(onSubmit)} className="flex-grow flex flex-col">
-                <div className="flex-grow px-4 overflow-y-auto pt-4">
+                <div className="flex-grow px-4 overflow-y-auto pt-6">
                     <div className="flex items-start space-x-4">
                         <Avatar>
                             <AvatarImage src={user?.photoURL || undefined} />
