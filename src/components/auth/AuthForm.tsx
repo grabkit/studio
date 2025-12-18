@@ -33,11 +33,15 @@ import {
 import { Loader2, Mail, Lock, User } from "lucide-react";
 import { createUserWithEmailAndPassword, signInWithEmailAndPassword, updateProfile } from "firebase/auth";
 import { cn } from "@/lib/utils";
+import { Checkbox } from "@/components/ui/checkbox";
 
 const signUpSchema = z.object({
   name: z.string().min(2, { message: "Name must be at least 2 characters." }),
   email: z.string().email({ message: "Please enter a valid email." }),
   password: z.string().min(6, { message: "Password must be at least 6 characters." }),
+  terms: z.literal(true, {
+    errorMap: () => ({ message: "You must accept the terms and conditions." }),
+  }),
 });
 
 const loginSchema = z.object({
@@ -63,7 +67,7 @@ export default function AuthForm() {
 
   const signUpForm = useForm<z.infer<typeof signUpSchema>>({
     resolver: zodResolver(signUpSchema),
-    defaultValues: { name: "", email: "", password: "" },
+    defaultValues: { name: "", email: "", password: "", terms: false },
   });
     
   const forgotPasswordForm = useForm<z.infer<typeof forgotPasswordSchema>>({
@@ -211,6 +215,26 @@ export default function AuthForm() {
                             </div>
                         </FormControl>
                       <FormMessage />
+                    </FormItem>
+                  )}
+                />
+                 <FormField
+                  control={signUpForm.control}
+                  name="terms"
+                  render={({ field }) => (
+                    <FormItem className="flex flex-row items-start space-x-3 space-y-0 rounded-md py-4">
+                        <FormControl>
+                            <Checkbox
+                            checked={field.value}
+                            onCheckedChange={field.onChange}
+                            />
+                        </FormControl>
+                        <div className="space-y-1 leading-none">
+                            <FormLabel>
+                                I agree to our <Button variant="link" className="p-0 h-auto">Terms and Conditions</Button>.
+                            </FormLabel>
+                             <FormMessage />
+                        </div>
                     </FormItem>
                   )}
                 />
