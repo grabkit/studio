@@ -124,7 +124,7 @@ export default function AuthForm() {
 
       {authMode === 'login' ? (
          <Form {...loginForm}>
-            <form onSubmit={loginForm.handleSubmit(onLogin)} className="space-y-6">
+            <form onSubmit={loginForm.handleSubmit(onLogin)} className="space-y-4">
                 <FormField
                   control={loginForm.control}
                   name="email"
@@ -157,7 +157,7 @@ export default function AuthForm() {
                     </FormItem>
                   )}
                 />
-                <Button type="submit" size="lg" className="w-full font-headline text-lg rounded-full" disabled={loading}>
+                <Button type="submit" size="lg" className="w-full font-headline text-lg rounded-full pt-6 pb-6" disabled={loading}>
                   {loading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
                   Login
                 </Button>
@@ -165,7 +165,7 @@ export default function AuthForm() {
          </Form>
       ) : (
         <Form {...signUpForm}>
-            <form onSubmit={signUpForm.handleSubmit(onSignUp)} className="space-y-6">
+            <form onSubmit={signUpForm.handleSubmit(onSignUp)} className="space-y-4">
                 <FormField
                   control={signUpForm.control}
                   name="name"
@@ -214,7 +214,7 @@ export default function AuthForm() {
                     </FormItem>
                   )}
                 />
-                <Button type="submit" size="lg" className="w-full font-headline text-lg rounded-full" disabled={loading}>
+                <Button type="submit" size="lg" className="w-full font-headline text-lg rounded-full pt-6 pb-6" disabled={loading}>
                   {loading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
                   Create Account
                 </Button>
