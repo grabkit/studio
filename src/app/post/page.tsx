@@ -104,13 +104,12 @@ export default function PostPage() {
   return (
     <Sheet open={isOpen} onOpenChange={setIsOpen}>
       <SheetContent side="bottom" className="h-screen flex flex-col p-0">
-        <SheetHeader className="sticky top-0 z-10 flex flex-row items-center justify-between p-2 border-b bg-background">
+        <SheetHeader className="sticky top-0 z-10 flex flex-row items-center gap-2 p-2 border-b bg-background">
           <Button variant="ghost" size="icon" onClick={() => setIsOpen(false)}>
             <X className="h-5 w-5" />
           </Button>
           <SheetTitle className="text-base font-bold">Create Post</SheetTitle>
           <SheetDescription className="sr-only">Create a new post by filling out the form below.</SheetDescription>
-          <div className="w-10"></div>
         </SheetHeader>
         
         <Form {...form}>
