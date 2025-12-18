@@ -1,3 +1,4 @@
+
 import { Button } from "@/components/ui/button";
 import Link from "next/link";
 import { ArrowRight } from "lucide-react";
@@ -16,7 +17,7 @@ export default function GetStartedPage() {
                 alt="Profile 1"
                 width={50}
                 height={50}
-                className="rounded-full absolute top-0 left-1/2 -translate-x-1/2 -translate-y-1/2 z-10 shadow-md"
+                className="rounded-full absolute top-2.5 left-1/2 -translate-x-1/2 -translate-y-1/2 z-10 shadow-md"
                 data-ai-hint="person face"
               />
             </div>
