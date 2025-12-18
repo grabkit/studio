@@ -85,6 +85,10 @@ export default function GetStartedPage() {
         </div>
       </div>
       <div className="w-full max-w-sm">
+        <div className="mb-8">
+            <h2 className="font-headline text-2xl font-bold">Express Yourself, Anonymously.</h2>
+            <p className="text-muted-foreground mt-2">Welcome to Blur. Share your thoughts and connect with others without revealing your identity.</p>
+        </div>
         <Button asChild size="lg" className="w-full font-headline text-lg rounded-full">
           <Link href="/auth">
             Get Started
