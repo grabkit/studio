@@ -21,6 +21,15 @@ export default function GetStartedPage() {
                 fill="none"
                 strokeDasharray="2"
               />
+              <circle
+                cx="110"
+                cy="110"
+                r="110"
+                stroke="hsl(var(--border))"
+                strokeWidth="1"
+                fill="none"
+                strokeDasharray="4"
+              />
             </svg>
             <div className="absolute inset-0 animate-rotate-around">
               <Image
