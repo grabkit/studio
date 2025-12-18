@@ -30,7 +30,7 @@ import {
   AlertDialogTitle,
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
-import { Loader2 } from "lucide-react";
+import { Loader2, Mail, Lock } from "lucide-react";
 import { createUserWithEmailAndPassword, signInWithEmailAndPassword, updateProfile } from "firebase/auth";
 import { cn } from "@/lib/utils";
 
@@ -130,7 +130,12 @@ export default function AuthForm() {
                   name="email"
                   render={({ field }) => (
                     <FormItem>
-                      <FormControl><Input type="email" placeholder="Email" {...field} className="h-12 text-base" /></FormControl>
+                      <FormControl>
+                        <div className="relative">
+                            <Mail className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-muted-foreground" />
+                            <Input type="email" placeholder="Email" {...field} className="h-12 text-base pl-10" />
+                        </div>
+                      </FormControl>
                       <FormMessage />
                     </FormItem>
                   )}
@@ -140,7 +145,12 @@ export default function AuthForm() {
                   name="password"
                   render={({ field }) => (
                     <FormItem>
-                      <FormControl><Input type="password" placeholder="Password" {...field} className="h-12 text-base" /></FormControl>
+                      <FormControl>
+                        <div className="relative">
+                            <Lock className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-muted-foreground" />
+                            <Input type="password" placeholder="Password" {...field} className="h-12 text-base pl-10" />
+                        </div>
+                      </FormControl>
                       <FormMessage />
                     </FormItem>
                   )}
@@ -169,7 +179,12 @@ export default function AuthForm() {
                   name="email"
                   render={({ field }) => (
                     <FormItem>
-                      <FormControl><Input type="email" placeholder="Email" {...field} className="h-12 text-base" /></FormControl>
+                        <FormControl>
+                            <div className="relative">
+                                <Mail className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-muted-foreground" />
+                                <Input type="email" placeholder="Email" {...field} className="h-12 text-base pl-10" />
+                            </div>
+                        </FormControl>
                       <FormMessage />
                     </FormItem>
                   )}
@@ -179,7 +194,12 @@ export default function AuthForm() {
                   name="password"
                   render={({ field }) => (
                     <FormItem>
-                      <FormControl><Input type="password" placeholder="Password" {...field} className="h-12 text-base" /></FormControl>
+                        <FormControl>
+                            <div className="relative">
+                                <Lock className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-muted-foreground" />
+                                <Input type="password" placeholder="Password" {...field} className="h-12 text-base pl-10" />
+                            </div>
+                        </FormControl>
                       <FormMessage />
                     </FormItem>
                   )}
