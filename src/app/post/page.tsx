@@ -1,3 +1,4 @@
+
 "use client";
 
 import { useState, useEffect } from "react";
@@ -11,6 +12,9 @@ import { useFirebase, useUser } from "@/firebase";
 import {
   Sheet,
   SheetContent,
+  SheetHeader,
+  SheetTitle,
+  SheetDescription,
 } from "@/components/ui/sheet";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
@@ -100,13 +104,14 @@ export default function PostPage() {
   return (
     <Sheet open={isOpen} onOpenChange={setIsOpen}>
       <SheetContent side="bottom" className="h-screen flex flex-col p-0">
-        <div className="sticky top-0 z-10 flex flex-row items-center justify-between p-2 border-b bg-background">
+        <SheetHeader className="sticky top-0 z-10 flex flex-row items-center justify-between p-2 border-b bg-background">
           <Button variant="ghost" size="icon" onClick={() => setIsOpen(false)}>
             <X className="h-5 w-5" />
           </Button>
-          <h2 className="text-base font-bold">Create Post</h2>
+          <SheetTitle className="text-base font-bold">Create Post</SheetTitle>
+          <SheetDescription className="sr-only">Create a new post by filling out the form below.</SheetDescription>
           <div className="w-10"></div>
-        </div>
+        </SheetHeader>
         
         <Form {...form}>
             <form onSubmit={form.handleSubmit(onSubmit)} className="flex-grow flex flex-col">
