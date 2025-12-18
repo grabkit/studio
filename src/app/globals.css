@@ -93,4 +93,26 @@
     mask-image: linear-gradient(to bottom, white, transparent);
     -webkit-mask-image: linear-gradient(to bottom, white, transparent);
   }
+
+  .radial-spotlight {
+    position: relative;
+    overflow: hidden;
+  }
+  .radial-spotlight::before,
+  .radial-spotlight::after {
+    content: '';
+    position: absolute;
+    width: 400px;
+    height: 400px;
+    background: radial-gradient(circle, rgba(255, 255, 255, 0.08) 0%, transparent 70%);
+    pointer-events: none;
+  }
+  .radial-spotlight::before {
+    top: -100px;
+    left: -100px;
+  }
+  .radial-spotlight::after {
+    bottom: -100px;
+    right: -100px;
+  }
 }
