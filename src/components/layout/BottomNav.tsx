@@ -33,7 +33,7 @@ export default function BottomNav() {
               <div className={cn(
                 "p-3 rounded-full"
               )}>
-                <Icon className={cn("h-7 w-7", item.href === '/post' && "text-primary")} fill={(isActive && item.href !== '/post') ? "currentColor" : "none"} />
+                <Icon className={cn("h-7 w-7", item.href === '/post' && "text-foreground")} fill={(isActive && item.href !== '/post') ? "currentColor" : "none"} />
               </div>
             </Link>
           );
