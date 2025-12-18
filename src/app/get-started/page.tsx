@@ -111,9 +111,13 @@ export default function GetStartedPage() {
                 </div>
             </div>
 
-             <h1 className="font-headline text-6xl font-bold text-primary z-10">
-                Blur
-             </h1>
+             <Image
+                src="https://blogger.googleusercontent.com/img/b/R29vZ2xl/AVvXsEh5r85BhL7rCkS72xpX_5xkFZ9y_fVMFXYp_zLN9eEAnEA_C61c1jCJFaG86d1W6_mtsla64B191MOWYEFhJAa-lyMikD80WyfBVKiQxyc71spJx3Oy2FgvfotsVVnNIXGRXunpHYYvGFoQ7V-URilBXwJzIV9zQLSO_PN9raerNaTAb0VuCYo9EBqiyVts/s320/New%20Project%2020%20%5BEFC25EE%5D.png"
+                alt="Blur Logo"
+                width={180}
+                height={60}
+                className="z-10"
+              />
         </div>
       </div>
       <div className="w-full max-w-sm">
