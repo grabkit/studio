@@ -16,7 +16,7 @@ export default function SplashScreen() {
   }, [router]);
 
   return (
-    <div className="relative flex h-screen w-full items-center justify-center bg-background">
+    <div className="relative flex h-screen w-full items-center justify-center bg-background overflow-hidden">
       <Image
         src="https://blogger.googleusercontent.com/img/b/R29vZ2xl/AVvXsEh5r85BhL7rCkS72xpX_5xkFZ9y_fVMFXYp_zLN9eEAnEA_C61c1jCJFaG86d1W6_mtsla64B191MOWYEFhJAa-lyMikD80WyfBVKiQxyc71spJx3Oy2FgvfotsVVnNIXGRXunpHYYvGFoQ7V-URilBXwJzIV9zQLSO_PN9raerNaTAb0VuCYo9EBqiyVts/s320/New%20Project%2020%20%5BEFC25EE%5D.png"
         alt="Blur Logo"
