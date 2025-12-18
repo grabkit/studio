@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { useForm } from "react-hook-form";
+import { useForm, type UseFormReturn } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
 import { useRouter } from "next/navigation";
@@ -20,14 +20,6 @@ import {
 } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
 import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-} from "@/components/ui/card";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import {
   AlertDialog,
   AlertDialogAction,
   AlertDialogCancel,
@@ -40,6 +32,7 @@ import {
 } from "@/components/ui/alert-dialog";
 import { Loader2 } from "lucide-react";
 import { createUserWithEmailAndPassword, signInWithEmailAndPassword, updateProfile } from "firebase/auth";
+import { cn } from "@/lib/utils";
 
 const signUpSchema = z.object({
   name: z.string().min(2, { message: "Name must be at least 2 characters." }),
@@ -57,8 +50,8 @@ const forgotPasswordSchema = z.object({
 });
 
 export default function AuthForm() {
+  const [authMode, setAuthMode] = useState<"login" | "signup">("login");
   const [loading, setLoading] = useState(false);
-  const [activeTab, setActiveTab] = useState("login");
   const { auth } = useFirebase();
   const router = useRouter();
   const { toast } = useToast();
@@ -119,31 +112,25 @@ export default function AuthForm() {
   };
 
   return (
-    <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-      <Card className="shadow-lg">
-        <CardHeader className="text-center">
-          <CardTitle className="font-headline text-3xl">
-            {activeTab === 'login' ? 'Welcome Back!' : 'Create an Account'}
-          </CardTitle>
-          <CardDescription>
-            {activeTab === 'login' ? 'Sign in to continue to Blur.' : 'Enter your details to get started.'}
-          </CardDescription>
-        </CardHeader>
-        <CardContent>
-          <TabsList className="grid w-full grid-cols-2 mb-4">
-            <TabsTrigger value="login" className="font-headline">Login</TabsTrigger>
-            <TabsTrigger value="signup" className="font-headline">Sign Up</TabsTrigger>
-          </TabsList>
-          <TabsContent value="login">
-            <Form {...loginForm}>
-              <form onSubmit={loginForm.handleSubmit(onLogin)} className="space-y-4">
+    <div className="w-full">
+        <div className="text-center mb-8">
+            <h1 className="font-headline text-5xl font-bold text-primary">
+                Blur
+            </h1>
+            <p className="text-muted-foreground mt-2">
+              {authMode === 'login' ? 'Welcome back! Sign in to continue.' : 'Create an account to get started.'}
+            </p>
+        </div>
+
+      {authMode === 'login' ? (
+         <Form {...loginForm}>
+            <form onSubmit={loginForm.handleSubmit(onLogin)} className="space-y-6">
                 <FormField
                   control={loginForm.control}
                   name="email"
                   render={({ field }) => (
                     <FormItem>
-                      <FormLabel>Email</FormLabel>
-                      <FormControl><Input placeholder="you@example.com" {...field} /></FormControl>
+                      <FormControl><Input type="email" placeholder="Email" {...field} className="h-12 text-base" /></FormControl>
                       <FormMessage />
                     </FormItem>
                   )}
@@ -153,32 +140,26 @@ export default function AuthForm() {
                   name="password"
                   render={({ field }) => (
                     <FormItem>
-                      <FormLabel>Password</FormLabel>
-                      <FormControl><Input type="password" placeholder="••••••••" {...field} /></FormControl>
+                      <FormControl><Input type="password" placeholder="Password" {...field} className="h-12 text-base" /></FormControl>
                       <FormMessage />
                     </FormItem>
                   )}
                 />
-                <Button type="submit" className="w-full font-headline" disabled={loading}>
+                <Button type="submit" size="lg" className="w-full font-headline text-lg" disabled={loading}>
                   {loading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
                   Login
                 </Button>
-              </form>
-            </Form>
-            <div className="text-center mt-4">
-                <ForgotPasswordDialog loading={loading} form={forgotPasswordForm} onSubmit={onForgotPassword} />
-            </div>
-          </TabsContent>
-          <TabsContent value="signup">
-            <Form {...signUpForm}>
-              <form onSubmit={signUpForm.handleSubmit(onSignUp)} className="space-y-4">
+            </form>
+         </Form>
+      ) : (
+        <Form {...signUpForm}>
+            <form onSubmit={signUpForm.handleSubmit(onSignUp)} className="space-y-6">
                 <FormField
                   control={signUpForm.control}
                   name="name"
                   render={({ field }) => (
                     <FormItem>
-                      <FormLabel>Name</FormLabel>
-                      <FormControl><Input placeholder="Your Name" {...field} /></FormControl>
+                      <FormControl><Input placeholder="Name" {...field} className="h-12 text-base" /></FormControl>
                       <FormMessage />
                     </FormItem>
                   )}
@@ -188,8 +169,7 @@ export default function AuthForm() {
                   name="email"
                   render={({ field }) => (
                     <FormItem>
-                      <FormLabel>Email</FormLabel>
-                      <FormControl><Input placeholder="you@example.com" {...field} /></FormControl>
+                      <FormControl><Input type="email" placeholder="Email" {...field} className="h-12 text-base" /></FormControl>
                       <FormMessage />
                     </FormItem>
                   )}
@@ -199,27 +179,32 @@ export default function AuthForm() {
                   name="password"
                   render={({ field }) => (
                     <FormItem>
-                      <FormLabel>Password</FormLabel>
-                      <FormControl><Input type="password" placeholder="••••••••" {...field} /></FormControl>
+                      <FormControl><Input type="password" placeholder="Password" {...field} className="h-12 text-base" /></FormControl>
                       <FormMessage />
                     </FormItem>
                   )}
                 />
-                <Button type="submit" className="w-full font-headline" disabled={loading}>
+                <Button type="submit" size="lg" className="w-full font-headline text-lg" disabled={loading}>
                   {loading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
                   Create Account
                 </Button>
-              </form>
-            </Form>
-          </TabsContent>
-        </CardContent>
-      </Card>
-    </Tabs>
+            </form>
+        </Form>
+      )}
+       <div className="text-center mt-6">
+            <Button variant="link" onClick={() => setAuthMode(authMode === 'login' ? 'signup' : 'login')} className="text-sm p-0 h-auto">
+                {authMode === 'login' ? "Don't have an account? Sign Up" : "Already have an account? Login"}
+            </Button>
+       </div>
+
+        <div className={cn("text-center mt-2", authMode === 'signup' && 'hidden')}>
+            <ForgotPasswordDialog loading={loading} form={forgotPasswordForm} onSubmit={onForgotPassword} />
+        </div>
+    </div>
   );
 }
 
-function ForgotPasswordDialog({form, onSubmit, loading}: {form: any, onSubmit: any, loading: boolean}) {
-    const { auth } = useFirebase();
+function ForgotPasswordDialog({form, onSubmit, loading}: {form: UseFormReturn<any>, onSubmit: any, loading: boolean}) {
     return (
         <AlertDialog>
             <AlertDialogTrigger asChild>
@@ -227,26 +212,25 @@ function ForgotPasswordDialog({form, onSubmit, loading}: {form: any, onSubmit: a
             </AlertDialogTrigger>
             <AlertDialogContent>
                 <Form {...form}>
-                    <form onSubmit={form.handleSubmit(onSubmit)}>
+                    <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
                         <AlertDialogHeader>
                             <AlertDialogTitle className="font-headline">Forgot Password?</AlertDialogTitle>
                             <AlertDialogDescription>
                                 Enter your email address and we'll send you a link to reset your password.
                             </AlertDialogDescription>
                         </AlertDialogHeader>
-                        <div className="py-4">
-                             <FormField
-                                control={form.control}
-                                name="email"
-                                render={({ field }) => (
-                                    <FormItem>
-                                    <FormLabel>Email</FormLabel>
-                                    <FormControl><Input placeholder="you@example.com" {...field} /></FormControl>
-                                    <FormMessage />
-                                    </FormItem>
-                                )}
-                                />
-                        </div>
+                        
+                        <FormField
+                            control={form.control}
+                            name="email"
+                            render={({ field }) => (
+                                <FormItem>
+                                <FormLabel>Email</FormLabel>
+                                <FormControl><Input placeholder="you@example.com" {...field} /></FormControl>
+                                <FormMessage />
+                                </FormItem>
+                            )}
+                        />
                         <AlertDialogFooter>
                             <AlertDialogCancel>Cancel</AlertDialogCancel>
                             <AlertDialogAction type="submit" disabled={loading}>
@@ -260,5 +244,3 @@ function ForgotPasswordDialog({form, onSubmit, loading}: {form: any, onSubmit: a
         </AlertDialog>
     );
 }
-
-    
