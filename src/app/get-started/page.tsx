@@ -16,7 +16,7 @@ export default function GetStartedPage() {
                 stroke="hsl(var(--border))"
                 strokeWidth="2"
                 fill="none"
-                strokeDasharray="10 10"
+                strokeDasharray="2"
               />
             </svg>
         </div>
