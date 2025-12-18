@@ -121,6 +121,31 @@ function PostItem({ post }: { post: WithId<Post> }) {
     router.push(`/post?content=${encodedContent}`);
   };
 
+  const handleShare = async () => {
+    if (navigator.share) {
+      try {
+        await navigator.share({
+          title: 'Check out this post on Blur',
+          text: post.content,
+          url: `${window.location.origin}/post/${post.id}`,
+        });
+      } catch (error) {
+        console.error('Error sharing:', error);
+        toast({
+          variant: "destructive",
+          title: "Sharing Failed",
+          description: "Could not share the post at this time.",
+        });
+      }
+    } else {
+      toast({
+        variant: "destructive",
+        title: "Not Supported",
+        description: "Your browser does not support the Web Share API.",
+      });
+    }
+  };
+
 
   return (
     <Card className="w-full shadow-none border-x-0 border-t-0 rounded-none">
@@ -175,7 +200,7 @@ function PostItem({ post }: { post: WithId<Post> }) {
               <button onClick={handleRepost} className="flex items-center space-x-1 hover:text-green-500">
                 <Repeat className={cn("h-4 w-4")} />
               </button>
-              <button className="flex items-center space-x-1 hover:text-primary">
+              <button onClick={handleShare} className="flex items-center space-x-1 hover:text-primary">
                 <Send className="h-4 w-4" />
               </button>
             </div>
