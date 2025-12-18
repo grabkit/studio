@@ -157,7 +157,7 @@ export default function AuthForm() {
                     </FormItem>
                   )}
                 />
-                <Button type="submit" size="lg" className="w-full font-headline text-lg" disabled={loading}>
+                <Button type="submit" size="lg" className="w-full font-headline text-lg rounded-full" disabled={loading}>
                   {loading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
                   Login
                 </Button>
@@ -214,7 +214,7 @@ export default function AuthForm() {
                     </FormItem>
                   )}
                 />
-                <Button type="submit" size="lg" className="w-full font-headline text-lg" disabled={loading}>
+                <Button type="submit" size="lg" className="w-full font-headline text-lg rounded-full" disabled={loading}>
                   {loading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
                   Create Account
                 </Button>
