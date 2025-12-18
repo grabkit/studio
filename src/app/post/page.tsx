@@ -1,7 +1,8 @@
+
 "use client";
 
-import { useState, useEffect } from "react";
-import { useRouter } from "next/navigation";
+import { useState, useEffect, Suspense } from "react";
+import { useRouter, useSearchParams } from "next/navigation";
 import { useForm } from "react-hook-form";
 import * as z from "zod";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -40,12 +41,15 @@ const formatUserId = (uid: string | undefined) => {
     return `blur${uid.substring(uid.length - 6)}`;
 }
 
-export default function PostPage() {
+function PostPageComponent() {
   const [isOpen, setIsOpen] = useState(true);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const router = useRouter();
+  const searchParams = useSearchParams();
   const { user } = useUser();
   const { firestore } = useFirebase();
+
+  const repostContent = searchParams.get('content');
 
   const form = useForm<z.infer<typeof postSchema>>({
     resolver: zodResolver(postSchema),
@@ -54,6 +58,12 @@ export default function PostPage() {
       commentsAllowed: true,
     },
   });
+
+  useEffect(() => {
+    if (repostContent) {
+      form.setValue('content', decodeURIComponent(repostContent));
+    }
+  }, [repostContent, form]);
 
   useEffect(() => {
     if (!isOpen) {
@@ -171,5 +181,13 @@ export default function PostPage() {
 
       </SheetContent>
     </Sheet>
+  );
+}
+
+export default function PostPage() {
+  return (
+    <Suspense fallback={<div>Loading...</div>}>
+      <PostPageComponent />
+    </Suspense>
   );
 }

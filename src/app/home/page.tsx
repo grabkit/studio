@@ -34,6 +34,7 @@ import {
 } from "@/components/ui/alert-dialog";
 import React, { useState } from "react";
 import { Button, buttonVariants } from "@/components/ui/button";
+import { useRouter } from "next/navigation";
 
 
 const formatUserId = (uid: string | undefined) => {
@@ -50,6 +51,7 @@ function PostItem({ post }: { post: WithId<Post> }) {
   const { user } = useUser();
   const { firestore } = useFirebase();
   const { toast } = useToast();
+  const router = useRouter();
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
 
   const hasLiked = user ? post.likes?.includes(user.uid) : false;
@@ -114,6 +116,11 @@ function PostItem({ post }: { post: WithId<Post> }) {
       });
   };
 
+  const handleRepost = () => {
+    const encodedContent = encodeURIComponent(post.content);
+    router.push(`/post?content=${encodedContent}`);
+  };
+
 
   return (
     <Card className="w-full shadow-none border-x-0 border-t-0 rounded-none">
@@ -165,7 +172,7 @@ function PostItem({ post }: { post: WithId<Post> }) {
                 <MessageCircle className="h-4 w-4" />
                  <span className="text-xs">{post.commentCount > 0 ? post.commentCount : ''}</span>
               </Link>
-              <button className="flex items-center space-x-1 hover:text-green-500">
+              <button onClick={handleRepost} className="flex items-center space-x-1 hover:text-green-500">
                 <Repeat className={cn("h-4 w-4")} />
               </button>
               <button className="flex items-center space-x-1 hover:text-primary">
