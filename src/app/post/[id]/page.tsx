@@ -85,7 +85,7 @@ function PostDetailItem({ post }: { post: WithId<Post> }) {
     return doc(firestore, "users", user.uid, "bookmarks", post.id);
   }, [firestore, user, post.id]);
 
-  const { data: bookmark, isLoading: isBookmarkLoading } = useDoc(bookmarkRef);
+  const { data: bookmark, isLoading: isBookmarkLoading } = useDoc<Bookmark>(bookmarkRef);
   const isBookmarked = !!bookmark;
 
 
@@ -131,7 +131,7 @@ function PostDetailItem({ post }: { post: WithId<Post> }) {
   };
 
   const handleBookmark = () => {
-    if (!bookmarkRef) return;
+    if (!bookmarkRef || !post.authorId) return;
 
     if (isBookmarked) {
         deleteDoc(bookmarkRef).catch(error => {
@@ -139,8 +139,14 @@ function PostDetailItem({ post }: { post: WithId<Post> }) {
             errorEmitter.emit('permission-error', permissionError);
         });
     } else {
-        setDoc(bookmarkRef, {}).catch(error => {
-            const permissionError = new FirestorePermissionError({ path: bookmarkRef.path, operation: 'create', requestResourceData: {} });
+        const newBookmark = {
+            itemId: post.id,
+            itemType: 'post',
+            originalOwnerId: post.authorId,
+            createdAt: serverTimestamp()
+        };
+        setDoc(bookmarkRef, newBookmark).catch(error => {
+            const permissionError = new FirestorePermissionError({ path: bookmarkRef.path, operation: 'create', requestResourceData: newBookmark });
             errorEmitter.emit('permission-error', permissionError);
         })
     }

@@ -144,7 +144,7 @@
           "format": "date-time"
         }
       },
-      "required": ["itemId", "itemType", "createdAt"]
+      "required": ["itemId", "itemType", "createdAt", "originalOwnerId"]
     }
   },
   "auth": {

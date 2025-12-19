@@ -11,7 +11,7 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { formatDistanceToNow } from "date-fns";
 import { Skeleton } from "@/components/ui/skeleton";
-import type { Post, Bookmark } from "@/lib/types";
+import type { Post } from "@/lib/types";
 import { Heart, MessageCircle, Repeat, Send, MoreHorizontal, Edit, Trash2, Bookmark as BookmarkIcon } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useToast } from "@/hooks/use-toast";
@@ -107,7 +107,7 @@ function PostItem({ post }: { post: WithId<Post> }) {
   };
 
   const handleBookmark = () => {
-    if (!bookmarkRef) return;
+    if (!bookmarkRef || !post.authorId) return;
 
     if (isBookmarked) {
         deleteDoc(bookmarkRef).catch(error => {
@@ -115,8 +115,14 @@ function PostItem({ post }: { post: WithId<Post> }) {
             errorEmitter.emit('permission-error', permissionError);
         });
     } else {
-        setDoc(bookmarkRef, {}).catch(error => {
-            const permissionError = new FirestorePermissionError({ path: bookmarkRef.path, operation: 'create', requestResourceData: {} });
+        const newBookmark = {
+            itemId: post.id,
+            itemType: 'post',
+            originalOwnerId: post.authorId,
+            createdAt: serverTimestamp()
+        };
+        setDoc(bookmarkRef, newBookmark).catch(error => {
+            const permissionError = new FirestorePermissionError({ path: bookmarkRef.path, operation: 'create', requestResourceData: newBookmark });
             errorEmitter.emit('permission-error', permissionError);
         })
     }

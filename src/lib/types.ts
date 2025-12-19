@@ -27,6 +27,8 @@ export interface User {
 }
 
 export interface Bookmark {
-    // This interface is currently unused after simplifying the bookmark creation.
-    // We only care about the document's existence, not its data.
+    itemId: string;
+    itemType: 'post';
+    originalOwnerId: string;
+    createdAt: Timestamp;
 }

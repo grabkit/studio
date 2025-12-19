@@ -7,7 +7,6 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
 import { collection, query, where, getDocs, doc } from "firebase/firestore";
 import { useCollection } from "@/firebase/firestore/use-collection";
-import { useDoc } from "@/firebase/firestore/use-doc";
 import { Settings, LogOut, Grid3x3, FileText, Bookmark as BookmarkIcon } from "lucide-react";
 import { signOut } from "firebase/auth";
 import { useToast } from "@/hooks/use-toast";
