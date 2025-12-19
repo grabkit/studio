@@ -1,3 +1,4 @@
+
 rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
@@ -12,8 +13,6 @@ service cloud.firestore {
     }
 
     // VALIDATION FUNCTIONS
-
-    // Validate incoming Post data on create. Ensures author is correct and defaults are set.
     function isValidNewPost() {
         let data = request.resource.data;
         return data.authorId == request.auth.uid
@@ -22,26 +21,22 @@ service cloud.firestore {
             && data.likeCount == 0
             && data.commentCount == 0
             && data.commentsAllowed is bool
-            // Ensure `likes` is an empty list on creation
             && data.likes is list && data.likes.size() == 0;
     }
 
-    // Validate a new comment.
     function isValidNewComment(postId, commentId) {
         let data = request.resource.data;
         let post = get(/databases/$(database)/documents/posts/$(postId)).data;
-        // Allow comment only if the post allows it, default to true if not set
         let commentsAllowed = post.get('commentsAllowed', true);
         return commentsAllowed == true
             && data.authorId == request.auth.uid
             && data.postId == postId
             && data.content is string && data.content.size() > 0
-            && data.id == commentId // Critical check: ensure data integrity
+            && data.id == commentId
             && data.keys().hasOnly(['id', 'postId', 'authorId', 'content', 'timestamp']);
     }
 
     // RULES
-
     match /users/{userId} {
       // Any signed-in user can get a user's profile document.
       allow get: if isSignedIn();
@@ -82,7 +77,6 @@ service cloud.firestore {
 
     match /posts/{postId}/comments/{commentId} {
       allow read: if isSignedIn();
-      // Pass the commentId from the path into the validation function
       allow create: if isSignedIn() && isValidNewComment(postId, commentId);
       allow delete: if isSignedIn() && (isOwner(resource.data.authorId) || isOwner(get(/databases/$(database)/documents/posts/$(postId)).data.authorId));
     }
