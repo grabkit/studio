@@ -22,7 +22,7 @@ service cloud.firestore {
     function isValidUser(userId) {
       let data = request.resource.data;
       return data.id == userId
-          && data.keys().hasOnly(['id', 'anonymousId', 'name', 'email']);
+          && data.keys().hasOnly(['id', 'anonymousId', 'name', 'email', 'bookmarkedPosts']);
     }
 
     // Validate incoming Post data on create. Ensures author is correct and defaults are set.
@@ -33,9 +33,9 @@ service cloud.firestore {
             && data.content.size() > 0
             && data.likeCount == 0
             && data.commentCount == 0
+            && data.commentsAllowed is bool
             // Ensure `likes` is an empty list on creation
-            && data.likes is list
-            && data.likes.size() == 0;
+            && data.likes is list && data.likes.size() == 0;
     }
     
     // Validate a new comment.
@@ -44,7 +44,11 @@ service cloud.firestore {
     // and no extra fields are present.
     function isValidNewComment(postId, commentId) {
         let data = request.resource.data;
-        return data.authorId == request.auth.uid
+        let post = get(/databases/$(database)/documents/posts/$(postId)).data;
+        // Allow comment only if the post allows it, default to true if not set
+        let commentsAllowed = post.get('commentsAllowed', true);
+        return commentsAllowed == true
+            && data.authorId == request.auth.uid
             && data.postId == postId
             && data.content is string && data.content.size() > 0
             && data.id == commentId // Critical check: ensure data integrity
@@ -56,8 +60,15 @@ service cloud.firestore {
     match /users/{userId} {
       allow get: if isOwner(userId);
       allow list: if false; // Disable user enumeration for privacy.
-      allow create: if isOwner(userId) && isValidUser(userId);
-      allow update: if isOwner(userId) && isValidUser(userId);
+      allow create: if isOwner(userId) 
+                    && isValidUser(userId) 
+                    && request.resource.data.bookmarkedPosts == [];
+      allow update: if isOwner(userId) && (
+        // Allow user to update their profile info, including bookmarks
+        isValidUser(userId) ||
+        // Also allow updating *only* the bookmarks field.
+        request.resource.data.diff(resource.data).affectedKeys().hasOnly(['bookmarkedPosts'])
+      );
       allow delete: if isOwner(userId);
     }
     
@@ -68,14 +79,14 @@ service cloud.firestore {
       
       // Allow updates only for specific, controlled scenarios.
       allow update: if isSignedIn() && (
-          // Scenario 1: The owner is updating ONLY the content.
-          (isOwner(resource.data.authorId) && request.resource.data.content != resource.data.content && request.resource.data.keys().hasOnly(['content'])) ||
+          // Scenario 1: The owner is updating ONLY the content and/or commentsAllowed.
+          (isOwner(resource.data.authorId) && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['content', 'commentsAllowed'])) ||
           
-          // Scenario 2: ANY user is liking/unliking the post.
-          (request.resource.data.likeCount == resource.data.likeCount + 1 || request.resource.data.likeCount == resource.data.likeCount - 1) ||
+          // Scenario 2: ANY user is liking/unliking the post. Ensures only 'likes' and 'likeCount' are modified.
+          (request.resource.data.diff(resource.data).affectedKeys().hasOnly(['likes', 'likeCount']) && (request.resource.data.likeCount == resource.data.likeCount + 1 || request.resource.data.likeCount == resource.data.likeCount - 1)) ||
 
-          // Scenario 3: The comment count is being incremented/decremented.
-          (request.resource.data.commentCount == resource.data.commentCount + 1 || request.resource.data.commentCount == resource.data.commentCount - 1)
+          // Scenario 3: The comment count is being incremented/decremented. Ensures only 'commentCount' is modified.
+          (request.resource.data.diff(resource.data).affectedKeys().hasOnly(['commentCount']) && (request.resource.data.commentCount == resource.data.commentCount + 1 || request.resource.data.commentCount == resource.data.commentCount - 1))
       );
     }
     
