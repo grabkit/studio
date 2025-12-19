@@ -2,7 +2,7 @@
 "use client";
 
 import * as React from "react";
-import { useState, Suspense, useEffect } from "react";
+import { useState, Suspense } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { useForm, useFieldArray } from "react-hook-form";
 import * as z from "zod";
@@ -33,33 +33,31 @@ const pollOptionSchema = z.object({
   option: z.string().min(1, "Option cannot be empty.").max(100, "Option is too long."),
 });
 
-const postSchema = z.object({
+// Base schema for common fields
+const baseSchema = z.object({
   content: z.string().min(1, "Post content cannot be empty.").max(560, "Post is too long."),
   commentsAllowed: z.boolean().default(true),
-  isPoll: z.boolean().default(false),
-  pollOptions: z.array(pollOptionSchema).optional(),
-}).superRefine((data, ctx) => {
-    if (data.isPoll) {
-        if (!data.pollOptions || data.pollOptions.length < 2) {
-            ctx.addIssue({
-                code: z.ZodIssueCode.custom,
-                message: "A poll must have at least 2 options.",
-                path: ["pollOptions"],
-            });
-        }
-        if (data.pollOptions) {
-            data.pollOptions.forEach((opt, index) => {
-                if (opt.option.trim() === "") {
-                     ctx.addIssue({
-                        code: z.ZodIssueCode.custom,
-                        message: "Option cannot be empty.",
-                        path: [`pollOptions`, index, "option"],
-                    });
-                }
-            });
-        }
-    }
 });
+
+// Schema for a standard text post
+const textPostSchema = baseSchema.extend({
+  isPoll: z.literal(false),
+});
+
+// Schema for a poll post
+const pollPostSchema = baseSchema.extend({
+  isPoll: z.literal(true),
+  pollOptions: z
+    .array(pollOptionSchema)
+    .min(2, "A poll must have at least 2 options.")
+    .max(4, "A poll can have at most 4 options."),
+});
+
+// Use a discriminated union to validate based on the `isPoll` flag
+const postSchema = z.discriminatedUnion("isPoll", [
+  textPostSchema,
+  pollPostSchema,
+]);
 
 
 const getInitials = (name: string | null | undefined) => {
@@ -74,7 +72,6 @@ const formatUserId = (uid: string | undefined) => {
 
 function PostPageComponent() {
   const [isOpen, setIsOpen] = useState(true);
-  const [isSubmitting, setIsSubmitting] = useState(false);
   const router = useRouter();
   const searchParams = useSearchParams();
   const { user } = useUser();
@@ -89,7 +86,6 @@ function PostPageComponent() {
       content: repostContent ? decodeURIComponent(repostContent) : "",
       commentsAllowed: true,
       isPoll: false,
-      pollOptions: [{ option: "" }, { option: "" }],
     },
   });
 
@@ -100,7 +96,7 @@ function PostPageComponent() {
 
   const isPoll = form.watch("isPoll");
 
-  useEffect(() => {
+  React.useEffect(() => {
     if (!isOpen) {
       setTimeout(() => router.back(), 300);
     }
@@ -109,7 +105,7 @@ function PostPageComponent() {
   const onSubmit = (values: z.infer<typeof postSchema>) => {
     if (!user || !firestore) return;
 
-    setIsSubmitting(true);
+    form.trigger();
     
     const postsColRef = collection(firestore, `posts`);
     const newPostRef = doc(postsColRef);
@@ -126,7 +122,7 @@ function PostPageComponent() {
       type: values.isPoll ? 'poll' : 'text',
     };
 
-    if (values.isPoll && values.pollOptions) {
+    if (values.isPoll) {
         newPostData.pollOptions = values.pollOptions.map(opt => ({ option: opt.option, votes: 0 }));
         newPostData.voters = {};
     }
@@ -145,7 +141,7 @@ function PostPageComponent() {
         errorEmitter.emit('permission-error', permissionError);
       })
       .finally(() => {
-        setIsSubmitting(false);
+        // No need for isSubmitting state, react-hook-form provides it
       });
   };
 
@@ -170,14 +166,10 @@ function PostPageComponent() {
                         <AvatarImage src={user?.photoURL || undefined} />
                         <AvatarFallback>{getInitials(user?.displayName)}</AvatarFallback>
                     </Avatar>
-                    <div className="w-full">
+                     <div className="w-full">
                         <div className="flex justify-between items-center">
                             <span className="font-semibold text-sm">{formatUserId(user?.uid)}</span>
-                            <Button type="button" variant="ghost" size="icon" onClick={() => form.setValue('isPoll', !isPoll)}>
-                                <ListOrdered className={cn("h-5 w-5 text-muted-foreground", isPoll && "text-primary")} />
-                            </Button>
                         </div>
-                         
                         <Form {...form}>
                             <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
                                 <FormField
@@ -228,32 +220,37 @@ function PostPageComponent() {
                                                 Add option
                                             </Button>
                                         )}
+                                        <FormMessage>{form.formState.errors.pollOptions?.root?.message || form.formState.errors.pollOptions?.message}</FormMessage>
                                     </div>
                                  )}
                                  
                                 <div className="p-4 border-t bg-background w-full fixed bottom-0 left-0 right-0">
                                     <div className="flex items-center justify-between">
-                                         <FormField
-                                            control={form.control}
-                                            name="commentsAllowed"
-                                            render={({ field }) => (
-                                                <FormItem className="flex items-center space-x-2 space-y-0">
-                                                     <Switch
-                                                        id="comments-allowed"
-                                                        checked={field.value}
-                                                        onCheckedChange={field.onChange}
-                                                    />
-                                                    <Label htmlFor="comments-allowed" className="text-sm">
-                                                        Replies
-                                                    </Label>
-                                                </FormItem>
-                                            )}
-                                            />
-                                        <Button type="submit" disabled={isSubmitting} className="rounded-full w-32">
-                                            {isSubmitting ? <Loader2 className="h-4 w-4 animate-spin" /> : 'Publish'}
+                                        <div className="flex items-center space-x-4">
+                                            <Button type="button" variant="ghost" size="icon" onClick={() => form.setValue('isPoll', !isPoll, { shouldValidate: true })}>
+                                                <ListOrdered className={cn("h-5 w-5 text-muted-foreground", isPoll && "text-primary")} />
+                                            </Button>
+                                             <FormField
+                                                control={form.control}
+                                                name="commentsAllowed"
+                                                render={({ field }) => (
+                                                    <FormItem className="flex items-center space-x-2 space-y-0">
+                                                         <Switch
+                                                            id="comments-allowed"
+                                                            checked={field.value}
+                                                            onCheckedChange={field.onChange}
+                                                        />
+                                                        <Label htmlFor="comments-allowed" className="text-sm">
+                                                            Replies
+                                                        </Label>
+                                                    </FormItem>
+                                                )}
+                                                />
+                                        </div>
+                                        <Button type="submit" disabled={form.formState.isSubmitting} className="rounded-full w-32">
+                                            {form.formState.isSubmitting ? <Loader2 className="h-4 w-4 animate-spin" /> : 'Publish'}
                                         </Button>
                                     </div>
-                                    <FormMessage>{form.formState.errors.root?.message}</FormMessage>
                                 </div>
                             </form>
                         </Form>
@@ -261,7 +258,6 @@ function PostPageComponent() {
                 </div>
             </div>
         </div>
-
       </SheetContent>
     </Sheet>
   );
