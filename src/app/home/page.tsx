@@ -138,7 +138,8 @@ function PollComponent({ post, user }: { post: WithId<Post>, user: any }) {
                                 </div>
                                 <span className={cn(
                                     "font-semibold",
-                                     isUserChoice ? "text-primary-foreground" : "text-primary"
+                                    isUserChoice && percentage < 99 ? "text-primary" :
+                                    isUserChoice ? "text-primary-foreground" : "text-primary"
                                 )}>
                                     {percentage.toFixed(0)}%
                                 </span>
