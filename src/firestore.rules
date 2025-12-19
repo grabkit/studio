@@ -48,12 +48,15 @@ service cloud.firestore {
     }
 
     function isValidNewPost() {
-        let data = request.resource.data;
-        return data.authorId == request.auth.uid
-            && data.id == request.id
-            && data.content is string && data.content.size() > 0
-            && data.likeCount == 0 && data.commentCount == 0
-            && data.commentsAllowed is bool && data.likes is list && data.likes.size() == 0;
+      let data = request.resource.data;
+      return data.authorId == request.auth.uid
+        && data.id == request.id
+        && data.content is string && data.content.size() > 0
+        && data.likeCount == 0
+        && data.commentCount == 0
+        && data.commentsAllowed is bool
+        && data.likes is list && data.likes.size() == 0
+        && data.keys().hasAll(['authorId', 'id', 'content', 'timestamp', 'likeCount', 'likes', 'commentCount', 'commentsAllowed']);
     }
 
     function isValidNewComment(postId, commentId) {
