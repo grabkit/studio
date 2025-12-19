@@ -11,7 +11,7 @@ import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { formatDistanceToNow } from "date-fns";
 import { Skeleton } from "@/components/ui/skeleton";
 import type { Post, Bookmark, PollOption } from "@/lib/types";
-import { Heart, MessageCircle, Repeat, Send, MoreHorizontal, Edit, Trash2, Bookmark as BookmarkIcon } from "lucide-react";
+import { Heart, MessageCircle, Repeat, Send, MoreHorizontal, Edit, Trash2, Bookmark as BookmarkIcon, CheckCircle2 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useToast } from "@/hooks/use-toast";
 import { FirestorePermissionError } from "@/firebase/errors";
@@ -36,7 +36,6 @@ import {
 import React, { useState, useMemo } from "react";
 import { Button, buttonVariants } from "@/components/ui/button";
 import { useRouter } from "next/navigation";
-import { Progress } from "@/components/ui/progress";
 
 
 const formatUserId = (uid: string | undefined) => {
@@ -55,8 +54,8 @@ function PollComponent({ post, user }: { post: WithId<Post>, user: any }) {
     const { toast } = useToast();
     const [isProcessing, setIsProcessing] = useState(false);
     
-    const userVote = post.voters && user ? post.voters[user.uid] : undefined;
-    const hasVoted = userVote !== undefined;
+    const userVoteIndex = post.voters && user ? post.voters[user.uid] : undefined;
+    const hasVoted = userVoteIndex !== undefined;
 
     const totalVotes = useMemo(() => {
         return post.pollOptions?.reduce((acc, option) => acc + option.votes, 0) || 0;
@@ -82,9 +81,7 @@ function PollComponent({ post, user }: { post: WithId<Post>, user: any }) {
 
                 const currentPost = postDoc.data() as Post;
 
-                // Double check if user has already voted
                 if (currentPost.voters && currentPost.voters[user.uid] !== undefined) {
-                    // User has already voted, transaction will abort, no need to throw
                     return;
                 }
                 
@@ -113,27 +110,49 @@ function PollComponent({ post, user }: { post: WithId<Post>, user: any }) {
     };
 
     return (
-        <div className="mt-3 space-y-2">
+        <div className="mt-4 space-y-2.5">
             {post.pollOptions?.map((option, index) => {
                 const percentage = totalVotes > 0 ? (option.votes / totalVotes) * 100 : 0;
-                const isUserChoice = userVote === index;
+                const isUserChoice = userVoteIndex === index;
 
                 if (hasVoted) {
                     return (
-                        <div key={index} className="relative">
-                            <Progress value={percentage} className="h-8 bg-primary/20" />
-                            <div className="absolute inset-0 flex items-center justify-between px-3">
-                                <span className={cn("text-sm font-medium truncate", isUserChoice ? "text-primary-foreground" : "text-foreground")}>{option.option}</span>
-                                <span className={cn("text-sm font-medium", isUserChoice ? "text-primary-foreground" : "text-foreground")}>{percentage.toFixed(0)}%</span>
+                        <div key={index} className="relative w-full">
+                            <div
+                                className={cn(
+                                    "absolute left-0 top-0 h-full rounded-md transition-all duration-500 ease-out",
+                                    isUserChoice ? "bg-primary" : "bg-primary/20"
+                                )}
+                                style={{ width: `${percentage}%` }}
+                            />
+                            <div className={cn(
+                                "relative flex h-10 items-center justify-between rounded-md border px-3 transition-colors",
+                                isUserChoice ? "border-primary" : "border-border"
+                            )}>
+                                <div className="flex items-center gap-2">
+                                    <span className={cn(
+                                        "font-medium truncate",
+                                        isUserChoice ? "text-primary-foreground" : "text-foreground"
+                                    )}>
+                                        {option.option}
+                                    </span>
+                                    {isUserChoice && <CheckCircle2 className="h-4 w-4 text-primary-foreground" />}
+                                </div>
+                                <span className={cn(
+                                    "font-semibold",
+                                    isUserChoice ? "text-primary-foreground" : "text-foreground"
+                                )}>
+                                    {percentage.toFixed(0)}%
+                                </span>
                             </div>
                         </div>
-                    )
+                    );
                 } else {
                     return (
                         <Button
                             key={index}
                             variant="outline"
-                            className="w-full justify-start h-8"
+                            className="w-full justify-center h-10 text-base"
                             onClick={() => handleVote(index)}
                             disabled={isProcessing}
                         >
@@ -142,6 +161,11 @@ function PollComponent({ post, user }: { post: WithId<Post>, user: any }) {
                     );
                 }
             })}
+             {hasVoted && (
+                <p className="text-xs text-muted-foreground pt-2 text-right">
+                    {totalVotes} {totalVotes === 1 ? 'vote' : 'votes'}
+                </p>
+            )}
         </div>
     );
 }
