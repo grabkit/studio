@@ -146,14 +146,18 @@ function PostItem({ post }: { post: WithId<Post> }) {
     <Card className="w-full shadow-none border-x-0 border-t-0 rounded-none">
       <CardContent className="p-4">
         <div className="flex space-x-3">
-          <Avatar className="h-10 w-10">
-            {/* The user's name is not available on the post object, so we show initials */}
-            <AvatarFallback>{getInitials(post.authorId)}</AvatarFallback>
-          </Avatar>
+          <Link href={`/profile/${post.authorId}`}>
+            <Avatar className="h-10 w-10">
+              {/* The user's name is not available on the post object, so we show initials */}
+              <AvatarFallback>{getInitials(post.authorId)}</AvatarFallback>
+            </Avatar>
+          </Link>
           <div className="flex-1 space-y-2">
             <div className="flex justify-between items-start">
               <div className="flex items-center">
-                <span className="text-sm font-semibold">{formatUserId(post.authorId)}</span>
+                 <Link href={`/profile/${post.authorId}`} className="text-sm font-semibold hover:underline">
+                    {formatUserId(post.authorId)}
+                 </Link>
               </div>
                <div className="flex items-center space-x-2">
                  <span className="text-xs text-muted-foreground">
@@ -181,7 +185,7 @@ function PostItem({ post }: { post: WithId<Post> }) {
                </div>
             </div>
             
-            <p className="text-foreground text-sm">{post.content}</p>
+            <p className="text-foreground text-sm whitespace-pre-wrap">{post.content}</p>
             
             <div className="flex items-center justify-between pt-2 text-muted-foreground">
                 <div className="flex items-center space-x-6">
@@ -245,7 +249,6 @@ function PostSkeleton() {
                     <Skeleton className="h-4 w-4" />
                     <Skeleton className="h-4 w-4" />
                 </div>
-                <Skeleton className="h-4 w-4" />
             </div>
           </div>
         </div>

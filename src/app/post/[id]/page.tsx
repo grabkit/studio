@@ -205,7 +205,7 @@ function PostDetailItem({ post }: { post: WithId<Post> }) {
               </div>
             </div>
 
-            <p className="text-foreground text-base">{post.content}</p>
+            <p className="text-foreground text-base whitespace-pre-wrap">{post.content}</p>
 
             <div className="border-t border-b -mx-4 my-2 px-4 py-2 text-sm text-muted-foreground flex items-center justify-around">
                 <div className="flex items-center space-x-2">
@@ -410,7 +410,7 @@ function CommentItem({ comment, postAuthorId }: { comment: WithId<Comment>, post
                 )}
             </div>
         </div>
-        <p className="text-sm text-foreground">{comment.content}</p>
+        <p className="text-sm text-foreground whitespace-pre-wrap">{comment.content}</p>
       </div>
     </div>
   );

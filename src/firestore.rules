@@ -43,9 +43,15 @@ service cloud.firestore {
     // RULES
 
     match /users/{userId} {
-      allow get, delete: if isOwner(userId);
-      allow list: if false; // Disable user enumeration for privacy.
+      // Any signed-in user can get a user's profile document.
+      allow get: if isSignedIn();
+      // Disable listing all users for privacy.
+      allow list: if false; 
 
+      // Only owner can delete their account doc.
+      allow delete: if isOwner(userId);
+
+      // A user can create their own document.
       allow create: if isOwner(userId)
                     && request.resource.data.id == userId
                     && request.resource.data.name is string
