@@ -1,3 +1,4 @@
+
 {
   "entities": {
     "User": {
@@ -34,7 +35,7 @@
       "$schema": "http://json-schema.org/draft-07/schema#",
       "title": "Post",
       "type": "object",
-      "description": "Represents a user-generated post, which can be a text post or a poll.",
+      "description": "Represents a user-generated text post.",
       "properties": {
         "id": {
           "type": "string",
@@ -46,31 +47,7 @@
         },
         "content": {
           "type": "string",
-          "description": "The text content of the post or the question for the poll."
-        },
-        "type": {
-          "type": "string",
-          "description": "The type of the post, either 'text' or 'poll'.",
-          "enum": ["text", "poll"]
-        },
-        "pollOptions": {
-          "type": "array",
-          "description": "An array of options for a poll. Only present if type is 'poll'.",
-          "items": {
-            "type": "object",
-            "properties": {
-              "option": { "type": "string" },
-              "votes": { "type": "number" }
-            },
-            "required": ["option", "votes"]
-          }
-        },
-        "voters": {
-          "type": "object",
-          "description": "A map of user IDs to the option index they voted for. Only for polls.",
-          "additionalProperties": {
-            "type": "number"
-          }
+          "description": "The text content of the post."
         },
         "timestamp": {
           "type": "string",
@@ -101,8 +78,7 @@
         "id",
         "authorId",
         "content",
-        "timestamp",
-        "type"
+        "timestamp"
       ]
     },
     "Comment": {

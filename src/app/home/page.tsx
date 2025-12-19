@@ -4,7 +4,7 @@
 
 import AppLayout from "@/components/AppLayout";
 import { useFirebase, useMemoFirebase, useUser } from "@/firebase";
-import { collection, query, orderBy, limit, doc, writeBatch, arrayUnion, arrayRemove, increment, deleteDoc, updateDoc, runTransaction } from "firebase/firestore";
+import { collection, query, orderBy, limit, doc, writeBatch, arrayUnion, arrayRemove, increment, deleteDoc, updateDoc } from "firebase/firestore";
 import { useCollection, type WithId } from "@/firebase/firestore/use-collection";
 import { Card, CardContent } from "@/components/ui/card";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
@@ -36,7 +36,6 @@ import {
 import React, { useState } from "react";
 import { Button, buttonVariants } from "@/components/ui/button";
 import { useRouter } from "next/navigation";
-import { Progress } from "@/components/ui/progress";
 
 
 const formatUserId = (uid: string | undefined) => {
@@ -48,101 +47,6 @@ const getInitials = (name: string | null | undefined) => {
   if (!name) return "U";
   return name.split(' ').map(n => n[0]).join('').substring(0, 2).toUpperCase();
 };
-
-function PollComponent({ post }: { post: WithId<Post> }) {
-  const { user, firestore } = useFirebase();
-  const { toast } = useToast();
-  
-  if (post.type !== 'poll' || !post.pollOptions) return null;
-
-  const userVote = user ? post.voters?.[user.uid] : undefined;
-  const totalVotes = post.pollOptions.reduce((acc, option) => acc + option.votes, 0);
-
-  const handleVote = async (optionIndex: number) => {
-    if (!user || !firestore) {
-      toast({
-        variant: "destructive",
-        title: "Authentication Error",
-        description: "You must be logged in to vote.",
-      });
-      return;
-    }
-    
-    if (userVote !== undefined) {
-        toast({
-            variant: "destructive",
-            title: "Already Voted",
-            description: "You can only vote once per poll.",
-        });
-        return;
-    }
-
-    const postRef = doc(firestore, 'posts', post.id);
-
-    try {
-        await runTransaction(firestore, async (transaction) => {
-            const postDoc = await transaction.get(postRef);
-            if (!postDoc.exists()) {
-                throw "Post does not exist!";
-            }
-
-            const currentPost = postDoc.data() as Post;
-            const newPollOptions = [...(currentPost.pollOptions || [])];
-            newPollOptions[optionIndex].votes += 1;
-
-            transaction.update(postRef, {
-                pollOptions: newPollOptions,
-                [`voters.${user.uid}`]: optionIndex
-            });
-        });
-    } catch (e: any) {
-        console.error("Vote transaction failed: ", e);
-         const permissionError = new FirestorePermissionError({
-            path: postRef.path,
-            operation: 'update',
-            requestResourceData: { [`voters.${user.uid}`]: optionIndex },
-        });
-        errorEmitter.emit('permission-error', permissionError);
-    }
-  };
-
-  return (
-    <div className="space-y-2 mt-4">
-      {post.pollOptions.map((option, index) => {
-        const percentage = totalVotes > 0 ? (option.votes / totalVotes) * 100 : 0;
-        const didVoteForThis = userVote === index;
-        
-        if (userVote !== undefined) {
-          // Show results
-          return (
-             <div key={index} className="relative">
-                <Progress value={percentage} className="h-8" />
-                <div className="absolute inset-0 flex items-center justify-between px-3 text-sm">
-                    <span className={cn("font-medium", didVoteForThis ? "text-primary-foreground" : "text-foreground")}>{option.option}</span>
-                    <span className={cn("font-medium", didVoteForThis ? "text-primary-foreground" : "text-muted-foreground")}>{percentage.toFixed(0)}%</span>
-                </div>
-            </div>
-          )
-        } else {
-          // Show voting buttons
-          return (
-            <Button
-              key={index}
-              variant="outline"
-              className="w-full justify-start h-8"
-              onClick={() => handleVote(index)}
-            >
-              {option.option}
-            </Button>
-          )
-        }
-      })}
-       {userVote !== undefined && (
-         <p className="text-xs text-muted-foreground text-right">{totalVotes} votes</p>
-       )}
-    </div>
-  );
-}
 
 
 function PostItem({ post }: { post: WithId<Post> }) {
@@ -268,8 +172,6 @@ function PostItem({ post }: { post: WithId<Post> }) {
             </div>
             
             <p className="text-foreground text-sm whitespace-pre-wrap">{post.content}</p>
-            
-            {post.type === 'poll' && <PollComponent post={post} />}
 
             <div className="flex items-center justify-between pt-2 text-muted-foreground">
                 <div className="flex items-center space-x-6">
