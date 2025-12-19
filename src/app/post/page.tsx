@@ -65,12 +65,12 @@ function PostPageComponent() {
   const { user } = useUser();
   const { firestore } = useFirebase();
 
-  const repostContent = searchParams.get('content');
+  const repostContent = searchParams.get('content') || "";
 
   const form = useForm<z.infer<typeof postSchema>>({
     resolver: zodResolver(postSchema),
     defaultValues: {
-      content: "",
+      content: repostContent ? decodeURIComponent(repostContent) : "",
       commentsAllowed: true,
       isPoll: false,
       pollOptions: [{ option: "" }, { option: "" }],
@@ -83,12 +83,6 @@ function PostPageComponent() {
   });
 
   const isPoll = form.watch("isPoll");
-
-  useEffect(() => {
-    if (repostContent) {
-      form.setValue('content', decodeURIComponent(repostContent));
-    }
-  }, [repostContent, form]);
 
   useEffect(() => {
     if (!isOpen) {
