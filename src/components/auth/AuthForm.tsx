@@ -35,6 +35,8 @@ import { Loader2, Mail, Lock, User } from "lucide-react";
 import { createUserWithEmailAndPassword, signInWithEmailAndPassword, updateProfile } from "firebase/auth";
 import { cn } from "@/lib/utils";
 import { Checkbox } from "@/components/ui/checkbox";
+import { doc, setDoc } from "firebase/firestore";
+import type { User as UserType } from "@/lib/types";
 
 const signUpSchema = z.object({
   name: z.string().min(2, { message: "Name must be at least 2 characters." }),
@@ -57,7 +59,7 @@ const forgotPasswordSchema = z.object({
 export default function AuthForm() {
   const [authMode, setAuthMode] = useState<"login" | "signup">("login");
   const [loading, setLoading] = useState(false);
-  const { auth } = useFirebase();
+  const { auth, firestore } = useFirebase();
   const router = useRouter();
   const { toast } = useToast();
 
@@ -93,8 +95,19 @@ export default function AuthForm() {
     setLoading(true);
     try {
       const userCredential = await createUserWithEmailAndPassword(auth, values.email, values.password);
-      if (userCredential.user) {
-        await updateProfile(userCredential.user, { displayName: values.name });
+      const user = userCredential.user;
+      if (user && firestore) {
+        await updateProfile(user, { displayName: values.name });
+        
+        // Create user document in Firestore
+        const userDocRef = doc(firestore, "users", user.uid);
+        const newUser: Omit<UserType, 'anonymousId'> = {
+            id: user.uid,
+            name: values.name,
+            email: values.email,
+            bookmarkedPosts: []
+        };
+        await setDoc(userDocRef, newUser);
       }
       router.push("/home");
     } catch (error: any) {
