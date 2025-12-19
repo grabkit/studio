@@ -4,13 +4,13 @@
 
 import AppLayout from "@/components/AppLayout";
 import { useFirebase, useMemoFirebase, useUser } from "@/firebase";
-import { collection, query, orderBy, limit, doc, updateDoc, arrayUnion, arrayRemove, increment, deleteDoc, setDoc, serverTimestamp, deleteDoc as deleteBookmarkDoc } from "firebase/firestore";
+import { collection, query, orderBy, limit, doc, updateDoc, arrayUnion, arrayRemove, increment, deleteDoc, setDoc, serverTimestamp, deleteDoc as deleteBookmarkDoc, runTransaction } from "firebase/firestore";
 import { useCollection, type WithId } from "@/firebase/firestore/use-collection";
 import { Card, CardContent } from "@/components/ui/card";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { formatDistanceToNow } from "date-fns";
 import { Skeleton } from "@/components/ui/skeleton";
-import type { Post, Bookmark } from "@/lib/types";
+import type { Post, Bookmark, PollOption } from "@/lib/types";
 import { Heart, MessageCircle, Repeat, Send, MoreHorizontal, Edit, Trash2, Bookmark as BookmarkIcon } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useToast } from "@/hooks/use-toast";
@@ -36,6 +36,7 @@ import {
 import React, { useState, useMemo } from "react";
 import { Button, buttonVariants } from "@/components/ui/button";
 import { useRouter } from "next/navigation";
+import { Progress } from "@/components/ui/progress";
 
 
 const formatUserId = (uid: string | undefined) => {
@@ -48,6 +49,102 @@ const getInitials = (name: string | null | undefined) => {
   return name.split(' ').map(n => n[0]).join('').substring(0, 2).toUpperCase();
 };
 
+
+function PollComponent({ post, user }: { post: WithId<Post>, user: any }) {
+    const { firestore } = useFirebase();
+    const { toast } = useToast();
+    const [isProcessing, setIsProcessing] = useState(false);
+    
+    const userVote = post.voters && user ? post.voters[user.uid] : undefined;
+    const hasVoted = userVote !== undefined;
+
+    const totalVotes = useMemo(() => {
+        return post.pollOptions?.reduce((acc, option) => acc + option.votes, 0) || 0;
+    }, [post.pollOptions]);
+
+    const handleVote = async (optionIndex: number) => {
+        if (!user || !firestore) {
+            toast({ variant: "destructive", title: "You must be logged in to vote." });
+            return;
+        }
+        if (hasVoted || isProcessing) return;
+
+        setIsProcessing(true);
+
+        const postRef = doc(firestore, 'posts', post.id);
+
+        try {
+            await runTransaction(firestore, async (transaction) => {
+                const postDoc = await transaction.get(postRef);
+                if (!postDoc.exists()) {
+                    throw "Post does not exist!";
+                }
+
+                const currentPost = postDoc.data() as Post;
+
+                // Double check if user has already voted
+                if (currentPost.voters && currentPost.voters[user.uid] !== undefined) {
+                    // User has already voted, transaction will abort, no need to throw
+                    return;
+                }
+                
+                const newPollOptions = currentPost.pollOptions ? [...currentPost.pollOptions] : [];
+                if (newPollOptions.length > optionIndex) {
+                    newPollOptions[optionIndex].votes += 1;
+                }
+
+                const newVoters = { ...(currentPost.voters || {}), [user.uid]: optionIndex };
+                
+                transaction.update(postRef, {
+                    pollOptions: newPollOptions,
+                    voters: newVoters,
+                });
+            });
+        } catch (e: any) {
+            const permissionError = new FirestorePermissionError({
+                path: postRef.path,
+                operation: 'update',
+                requestResourceData: { vote: optionIndex },
+            });
+            errorEmitter.emit('permission-error', permissionError);
+        } finally {
+            setIsProcessing(false);
+        }
+    };
+
+    return (
+        <div className="mt-3 space-y-2">
+            {post.pollOptions?.map((option, index) => {
+                const percentage = totalVotes > 0 ? (option.votes / totalVotes) * 100 : 0;
+                const isUserChoice = userVote === index;
+
+                if (hasVoted) {
+                    return (
+                        <div key={index} className="relative">
+                             <Progress value={percentage} className="h-8" />
+                             <div className="absolute inset-0 flex items-center justify-between px-3 text-sm">
+                                <span className={cn("font-semibold", isUserChoice ? "text-primary-foreground" : "text-foreground")}>{option.option}</span>
+                                <span className={cn("font-semibold", isUserChoice ? "text-primary-foreground" : "text-muted-foreground")}>{percentage.toFixed(0)}%</span>
+                             </div>
+                        </div>
+                    )
+                } else {
+                    return (
+                        <Button
+                            key={index}
+                            variant="outline"
+                            className="w-full justify-start h-8"
+                            onClick={() => handleVote(index)}
+                            disabled={isProcessing}
+                        >
+                            {option.option}
+                        </Button>
+                    );
+                }
+            })}
+        </div>
+    );
+}
 
 function PostItem({ post, bookmarks }: { post: WithId<Post>, bookmarks: WithId<Bookmark>[] | null }) {
   const { user, firestore } = useFirebase();
@@ -209,6 +306,11 @@ function PostItem({ post, bookmarks }: { post: WithId<Post>, bookmarks: WithId<B
             </div>
             
             <p className="text-foreground text-sm whitespace-pre-wrap">{post.content}</p>
+
+            {post.type === 'poll' && post.pollOptions && (
+              <PollComponent post={post} user={user} />
+            )}
+
 
             <div className="flex items-center justify-between pt-2 text-muted-foreground">
                 <div className="flex items-center space-x-6">

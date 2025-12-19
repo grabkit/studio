@@ -11,57 +11,93 @@ service cloud.firestore {
       return request.auth.uid == userId;
     }
 
-    // Users can read any profile, but only write to their own.
     match /users/{userId} {
       allow get: if isSignedIn();
+      allow list: if false; // Do not allow querying of all users
       allow create: if isOwner(userId);
-      // list is false to prevent querying all users.
-      allow list, update, delete: if false;
+      allow update, delete: if false; // Profile updates/deletes not implemented
     }
     
-    // Users can only manage their own bookmarks.
     match /users/{userId}/bookmarks/{postId} {
-      allow read, write: if isOwner(userId);
+      // Allow user to manage their own bookmarks
+      allow list, get, create, delete: if isOwner(userId);
+      allow update: if false;
     }
 
-    // Rules for posts
     match /posts/{postId} {
-      // Any signed-in user can read all posts.
-      allow list, get: if isSignedIn();
-      
-      // A user can create a post if they are signed in and the data is valid.
-      allow create: if isSignedIn()
-                    && request.resource.data.authorId == request.auth.uid
-                    && request.resource.data.content is string
-                    && request.resource.data.content.size() > 0 && request.resource.data.content.size() <= 280;
-
-      // A user can update likes/comments, or their own post content.
-      allow update: if isSignedIn() && 
-                    (
-                      // Rule for updating likes
-                      (request.resource.data.diff(resource.data).affectedKeys().hasOnly(['likes', 'likeCount'])) ||
-                      // Rule for updating comment count
-                      (request.resource.data.diff(resource.data).affectedKeys().hasOnly(['commentCount'])) ||
-                      // Rule for editing own post content
-                      (isOwner(resource.data.authorId) && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['content', 'commentsAllowed']))
-                    );
-
-      // A user can only delete their own posts.
+      allow get, list: if isSignedIn();
+      allow create: if isSignedIn() && (isNewTextPost() || isNewPollPost());
       allow delete: if isSignedIn() && isOwner(resource.data.authorId);
+      allow update: if isSignedIn() && (
+          // Allow editing post content
+          (isOwner(resource.data.authorId) && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['content', 'commentsAllowed'])) ||
+          // Allow liking/unliking a post
+          (request.resource.data.diff(resource.data).affectedKeys().hasOnly(['likes', 'likeCount'])) ||
+           // Allow updating comment count
+          (request.resource.data.diff(resource.data).affectedKeys().hasOnly(['commentCount'])) ||
+          // Allow voting on a poll
+          isVoting(request, resource)
+      );
+    }
+    
+    // Function to validate a new text post
+    function isNewTextPost() {
+      let data = request.resource.data;
+      return data.type == 'text'
+        && data.authorId == request.auth.uid
+        && data.id == request.id
+        && data.content is string && data.content.size() > 0 && data.content.size() <= 280
+        && data.likeCount == 0
+        && data.commentCount == 0
+        && data.commentsAllowed is bool
+        && data.likes is list && data.likes.size() == 0
+        && data.keys().hasAll(['id', 'authorId', 'content', 'timestamp', 'likes', 'likeCount', 'commentCount', 'commentsAllowed', 'type']);
     }
 
-    // Rules for comments
-    match /posts/{postId}/comments/{commentId} {
-      // Any signed-in user can read comments.
-      allow read: if isSignedIn();
+    // Function to validate a new poll post
+    function isNewPollPost() {
+        let data = request.resource.data;
+        return data.type == 'poll'
+            && data.authorId == request.auth.uid
+            && data.id == request.id
+            && data.content is string && data.content.size() > 0 && data.content.size() <= 280
+            && data.likeCount == 0
+            && data.commentCount == 0
+            && data.commentsAllowed is bool
+            && data.likes is list && data.likes.size() == 0
+            && data.pollOptions is list && data.pollOptions.size() >= 2 && data.pollOptions.size() <= 4
+            && data.pollOptions[0].keys().hasAll(['option', 'votes']) && data.pollOptions[0].votes == 0
+            && data.voters is map && data.voters.size() == 0
+            && data.keys().hasAll(['id', 'authorId', 'content', 'timestamp', 'likes', 'likeCount', 'commentCount', 'commentsAllowed', 'type', 'pollOptions', 'voters']);
+    }
 
-      // A user can create a comment if they are signed in and the post allows comments.
-      allow create: if isSignedIn() 
-                    && get(/databases/$(database)/documents/posts/$(postId)).data.commentsAllowed == true
-                    && request.resource.data.authorId == request.auth.uid;
-      
-      // A user can delete their own comment, or the post owner can delete any comment on their post.
+    // Function to validate a poll vote
+    function isVoting(req, res) {
+      let userVote = req.resource.data.voters[req.auth.uid];
+      let hasVoted = res.data.voters.keys().hasAny([req.auth.uid]);
+      // Check that only pollOptions and voters are being updated
+      return req.resource.data.diff(res.data).affectedKeys().hasAll(['pollOptions', 'voters'])
+        // Ensure user hasn't voted before
+        && !hasVoted
+        // Ensure the vote is valid
+        && req.resource.data.pollOptions[userVote].votes == res.data.pollOptions[userVote].votes + 1;
+    }
+
+
+    match /posts/{postId}/comments/{commentId} {
+      allow read: if isSignedIn();
+      allow create: if isSignedIn() && isValidNewComment(postId, commentId);
       allow delete: if isSignedIn() && (isOwner(resource.data.authorId) || isOwner(get(/databases/$(database)/documents/posts/$(postId)).data.authorId));
+    }
+
+    function isValidNewComment(postId, commentId) {
+        let data = request.resource.data;
+        let post = get(/databases/$(database)/documents/posts/$(postId)).data;
+        return post.commentsAllowed == true
+            && data.authorId == request.auth.uid && data.postId == postId
+            && data.content is string && data.content.size() > 0
+            && data.id == commentId
+            && data.keys().hasOnly(['id', 'postId', 'authorId', 'content', 'timestamp']);
     }
   }
 }

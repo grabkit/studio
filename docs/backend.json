@@ -31,11 +31,27 @@
         "email"
       ]
     },
+    "PollOption": {
+      "title": "Poll Option",
+      "type": "object",
+      "description": "Represents a single option in a poll.",
+      "properties": {
+        "option": {
+          "type": "string",
+          "description": "The text of the poll option."
+        },
+        "votes": {
+          "type": "number",
+          "description": "The number of votes for this option."
+        }
+      },
+      "required": ["option", "votes"]
+    },
     "Post": {
       "$schema": "http://json-schema.org/draft-07/schema#",
       "title": "Post",
       "type": "object",
-      "description": "Represents a user-generated text post.",
+      "description": "Represents a user-generated text post, which can optionally be a poll.",
       "properties": {
         "id": {
           "type": "string",
@@ -72,6 +88,22 @@
         "commentsAllowed": {
           "type": "boolean",
           "description": "Indicates if comments are allowed on this post."
+        },
+        "type": {
+          "type": "string",
+          "enum": ["text", "poll"],
+          "description": "The type of the post."
+        },
+        "pollOptions": {
+          "type": "array",
+          "description": "An array of poll options, if the post is a poll.",
+          "items": {
+            "$ref": "#/backend/entities/PollOption"
+          }
+        },
+        "voters": {
+          "type": "object",
+          "description": "A map of user IDs to the index of the option they voted for, to prevent multiple votes."
         }
       },
       "required": [

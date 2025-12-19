@@ -1,5 +1,10 @@
 import { type Timestamp } from "firebase/firestore";
 
+export interface PollOption {
+    option: string;
+    votes: number;
+}
+
 export interface Post {
     id: string;
     authorId: string;
@@ -9,6 +14,11 @@ export interface Post {
     likeCount: number;
     commentCount: number;
     commentsAllowed?: boolean;
+
+    // Poll specific fields
+    type?: 'text' | 'poll';
+    pollOptions?: PollOption[];
+    voters?: Record<string, number>; // maps userId to option index
 }
 
 export interface Comment {

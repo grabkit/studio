@@ -3,7 +3,7 @@
 
 import { useState, useEffect, Suspense } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
-import { useForm } from "react-hook-form";
+import { useForm, useFieldArray } from "react-hook-form";
 import * as z from "zod";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { collection, serverTimestamp, setDoc, doc } from "firebase/firestore";
@@ -17,19 +17,35 @@ import {
   SheetClose,
 } from "@/components/ui/sheet";
 import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Form, FormControl, FormField, FormItem, FormMessage } from "@/components/ui/form";
-import { Loader2, X } from "lucide-react";
+import { Loader2, X, ListOrdered, Plus, Trash2 } from "lucide-react";
 import { errorEmitter } from "@/firebase/error-emitter";
 import { FirestorePermissionError } from "@/firebase/errors";
 import { Switch } from "@/components/ui/switch";
 import { Label } from "@/components/ui/label";
 
+const pollOptionSchema = z.object({
+  option: z.string().min(1, "Option cannot be empty.").max(100, "Option is too long."),
+});
+
 const postSchema = z.object({
   content: z.string().min(1, "Post cannot be empty.").max(280, "Post cannot exceed 280 characters."),
   commentsAllowed: z.boolean().default(true),
+  isPoll: z.boolean().default(false),
+  pollOptions: z.array(pollOptionSchema).optional(),
+}).refine(data => {
+    if (data.isPoll) {
+        return data.pollOptions && data.pollOptions.length >= 2;
+    }
+    return true;
+}, {
+    message: "A poll must have at least 2 options.",
+    path: ["pollOptions"],
 });
+
 
 const getInitials = (name: string | null | undefined) => {
   if (!name) return "U";
@@ -56,8 +72,17 @@ function PostPageComponent() {
     defaultValues: {
       content: "",
       commentsAllowed: true,
+      isPoll: false,
+      pollOptions: [{ option: "" }, { option: "" }],
     },
   });
+
+  const { fields, append, remove } = useFieldArray({
+    control: form.control,
+    name: "pollOptions",
+  });
+
+  const isPoll = form.watch("isPoll");
 
   useEffect(() => {
     if (repostContent) {
@@ -79,7 +104,7 @@ function PostPageComponent() {
     const postsColRef = collection(firestore, `posts`);
     const newPostRef = doc(postsColRef);
 
-    const newPost = {
+    const newPost: any = {
       id: newPostRef.id,
       authorId: user.uid,
       content: values.content,
@@ -88,7 +113,13 @@ function PostPageComponent() {
       likeCount: 0,
       commentCount: 0,
       commentsAllowed: values.commentsAllowed,
+      type: values.isPoll ? 'poll' : 'text',
     };
+
+    if (values.isPoll && values.pollOptions) {
+        newPost.pollOptions = values.pollOptions.map(opt => ({ option: opt.option, votes: 0 }));
+        newPost.voters = {};
+    }
 
     setDoc(newPostRef, newPost)
       .then(() => {
@@ -102,7 +133,6 @@ function PostPageComponent() {
             requestResourceData: newPost
         });
         errorEmitter.emit('permission-error', permissionError);
-        console.error("Error creating post:", serverError);
       })
       .finally(() => {
         setIsSubmitting(false);
@@ -140,9 +170,9 @@ function PostPageComponent() {
                                     <FormItem>
                                         <FormControl>
                                             <Textarea
-                                            placeholder={"Start a new thread..."}
+                                            placeholder={isPoll ? "Ask a question..." : "Start a new thread..."}
                                             className="border-none focus-visible:ring-0 !outline-none text-base resize-none -ml-2"
-                                            rows={5}
+                                            rows={3}
                                             {...field}
                                             />
                                         </FormControl>
@@ -150,6 +180,45 @@ function PostPageComponent() {
                                     </FormItem>
                                 )}
                              />
+
+                             {isPoll && (
+                                <div className="space-y-2 mt-4">
+                                    {fields.map((field, index) => (
+                                        <FormField
+                                            key={field.id}
+                                            control={form.control}
+                                            name={`pollOptions.${index}.option`}
+                                            render={({ field }) => (
+                                                <FormItem>
+                                                    <FormControl>
+                                                        <div className="flex items-center gap-2">
+                                                            <Input placeholder={`Option ${index + 1}`} {...field} className="bg-secondary"/>
+                                                            {fields.length > 2 && (
+                                                                <Button variant="ghost" size="icon" onClick={() => remove(index)}>
+                                                                    <Trash2 className="h-4 w-4 text-destructive" />
+                                                                </Button>
+                                                            )}
+                                                        </div>
+                                                    </FormControl>
+                                                    <FormMessage />
+                                                </FormItem>
+                                            )}
+                                        />
+                                    ))}
+                                    {fields.length < 4 && (
+                                        <Button type="button" variant="outline" size="sm" onClick={() => append({option: ""})}>
+                                            <Plus className="h-4 w-4 mr-2" />
+                                            Add option
+                                        </Button>
+                                    )}
+                                </div>
+                             )}
+
+                            <div className="mt-4">
+                                <Button type="button" variant="ghost" size="icon" onClick={() => form.setValue('isPoll', !isPoll)}>
+                                    <ListOrdered className="h-5 w-5" />
+                                </Button>
+                            </div>
                         </div>
                     </div>
                 </div>
