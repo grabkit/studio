@@ -96,20 +96,24 @@ export default function AuthForm() {
     try {
       const userCredential = await createUserWithEmailAndPassword(auth, values.email, values.password);
       const user = userCredential.user;
+      
+      // After creating the user in Auth, create their profile document in Firestore.
       if (user && firestore) {
         await updateProfile(user, { displayName: values.name });
         
-        // Create user document in Firestore
         const userDocRef = doc(firestore, "users", user.uid);
         const newUser: UserType = {
             id: user.uid,
             name: values.name,
             email: values.email,
         };
+        // This setDoc creates the user document in the 'users' collection.
         await setDoc(userDocRef, newUser);
       }
+
       router.push("/home");
     } catch (error: any) {
+      console.error("Sign up error:", error);
       toast({ variant: "destructive", title: "Sign Up Failed", description: error.message });
     } finally {
       setLoading(false);
