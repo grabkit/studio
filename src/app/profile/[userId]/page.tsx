@@ -76,7 +76,13 @@ export default function UserProfilePage() {
     const params = useParams();
     const router = useRouter();
     const userId = params.userId as string;
-    const { firestore } = useFirebase();
+    const { firestore, user: currentUser } = useFirebase();
+
+    useEffect(() => {
+        if (currentUser && userId === currentUser.uid) {
+            router.replace('/account');
+        }
+    }, [currentUser, userId, router]);
 
     const userRef = useMemoFirebase(() => {
         if (!firestore || !userId) return null;
@@ -119,7 +125,7 @@ export default function UserProfilePage() {
         return `blur${uid.substring(uid.length - 6)}`;
     };
 
-    if (userLoading) {
+    if (userLoading || (currentUser && userId === currentUser.uid)) {
         return (
             <AppLayout showTopBar={false}>
                  <div className="flex items-center justify-between mb-6 px-4">
@@ -228,4 +234,3 @@ export default function UserProfilePage() {
         </AppLayout>
     );
 }
-
