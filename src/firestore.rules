@@ -10,9 +10,9 @@ service cloud.firestore {
     function isOwner(userId) {
       return request.auth.uid == userId;
     }
-    
+
     // VALIDATION FUNCTIONS
-    
+
     // Validate incoming Post data on create. Ensures author is correct and defaults are set.
     function isValidNewPost() {
         let data = request.resource.data;
@@ -25,7 +25,7 @@ service cloud.firestore {
             // Ensure `likes` is an empty list on creation
             && data.likes is list && data.likes.size() == 0;
     }
-    
+
     // Validate a new comment.
     function isValidNewComment(postId, commentId) {
         let data = request.resource.data;
@@ -41,36 +41,36 @@ service cloud.firestore {
     }
 
     // RULES
-    
+
     match /users/{userId} {
-      allow read, delete: if isOwner(userId);
+      allow get, delete: if isOwner(userId);
       allow list: if false; // Disable user enumeration for privacy.
 
       allow create: if isOwner(userId)
                     && request.resource.data.id == userId
                     && request.resource.data.name is string
                     && request.resource.data.email is string;
-      
+
       // Users can't update their profile doc directly for now.
       allow update: if false;
 
-      // Simplest, most robust rule for bookmarks.
+      // A user can fully manage their own bookmarks sub-collection.
       match /bookmarks/{postId} {
         allow get, list, create, delete: if isOwner(userId);
       }
     }
 
-    
+
     match /posts/{postId} {
       allow get, list: if isSignedIn();
       allow create: if isSignedIn() && isValidNewPost();
       allow delete: if isSignedIn() && isOwner(resource.data.authorId);
-      
+
       // Allow updates only for specific, controlled scenarios.
       allow update: if isSignedIn() && (
           // Scenario 1: The owner is updating ONLY the content and/or commentsAllowed.
           (isOwner(resource.data.authorId) && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['content', 'commentsAllowed'])) ||
-          
+
           // Scenario 2: ANY user is liking/unliking the post. Ensures only 'likes' and 'likeCount' are modified.
           (request.resource.data.diff(resource.data).affectedKeys().hasOnly(['likes', 'likeCount']) && (request.resource.data.likeCount == resource.data.likeCount + 1 || request.resource.data.likeCount == resource.data.likeCount - 1)) ||
 
@@ -78,7 +78,7 @@ service cloud.firestore {
           (request.resource.data.diff(resource.data).affectedKeys().hasOnly(['commentCount']) && (request.resource.data.commentCount == resource.data.commentCount + 1 || request.resource.data.commentCount == resource.data.commentCount - 1))
       );
     }
-    
+
     match /posts/{postId}/comments/{commentId} {
       allow read: if isSignedIn();
       // Pass the commentId from the path into the validation function
