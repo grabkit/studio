@@ -1,7 +1,7 @@
 
 "use client";
 
-import { useState, useEffect, Suspense } from "react";
+import { useState, Suspense } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { useForm, useFieldArray } from "react-hook-form";
 import * as z from "zod";
@@ -36,14 +36,27 @@ const postSchema = z.object({
   commentsAllowed: z.boolean().default(true),
   isPoll: z.boolean().default(false),
   pollOptions: z.array(pollOptionSchema).optional(),
-}).refine(data => {
+}).superRefine((data, ctx) => {
     if (data.isPoll) {
-        return data.pollOptions && data.pollOptions.length >= 2;
+        if (!data.pollOptions || data.pollOptions.length < 2) {
+            ctx.addIssue({
+                code: z.ZodIssueCode.custom,
+                message: "A poll must have at least 2 options.",
+                path: ["pollOptions"],
+            });
+        }
+        if (data.pollOptions) {
+            data.pollOptions.forEach((opt, index) => {
+                if (opt.option.trim() === "") {
+                     ctx.addIssue({
+                        code: z.ZodIssueCode.custom,
+                        message: "Option cannot be empty.",
+                        path: [`pollOptions`, index, "option"],
+                    });
+                }
+            });
+        }
     }
-    return true;
-}, {
-    message: "A poll must have at least 2 options.",
-    path: ["pollOptions"],
 });
 
 
@@ -84,9 +97,10 @@ function PostPageComponent() {
 
   const isPoll = form.watch("isPoll");
 
-  useEffect(() => {
+  React.useEffect(() => {
     if (!isOpen) {
-      router.back();
+      // Use a timeout to allow the sheet to animate out
+      setTimeout(() => router.back(), 300);
     }
   }, [isOpen, router]);
 
