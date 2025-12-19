@@ -146,18 +146,16 @@ function PostItem({ post }: { post: WithId<Post> }) {
     <Card className="w-full shadow-none border-x-0 border-t-0 rounded-none">
       <CardContent className="p-4">
         <div className="flex space-x-3">
-          <Link href={`/profile/${post.authorId}`}>
-            <Avatar className="h-10 w-10">
-              {/* The user's name is not available on the post object, so we show initials */}
-              <AvatarFallback>{getInitials(post.authorId)}</AvatarFallback>
-            </Avatar>
-          </Link>
+          <Avatar className="h-10 w-10">
+            {/* The user's name is not available on the post object, so we show initials */}
+            <AvatarFallback>{getInitials(post.authorId)}</AvatarFallback>
+          </Avatar>
           <div className="flex-1 space-y-2">
             <div className="flex justify-between items-start">
               <div className="flex items-center">
-                 <Link href={`/profile/${post.authorId}`} className="text-sm font-semibold hover:underline">
+                 <div className="text-sm font-semibold">
                     {formatUserId(post.authorId)}
-                 </Link>
+                 </div>
               </div>
                <div className="flex items-center space-x-2">
                  <span className="text-xs text-muted-foreground">
