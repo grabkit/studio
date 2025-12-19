@@ -1,0 +1,231 @@
+
+"use client";
+
+import { useParams, useRouter } from "next/navigation";
+import { useFirebase, useMemoFirebase } from "@/firebase";
+import { doc, collection, query, where, getDocs } from "firebase/firestore";
+import { useDoc } from "@/firebase/firestore/use-doc";
+import { useCollection } from "@/firebase/firestore/use-collection";
+import type { Post, User, UserPost, Bookmark } from "@/lib/types";
+import React, { useMemo, useState, useEffect } from "react";
+import Link from "next/link";
+
+import AppLayout from "@/components/AppLayout";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { Button } from "@/components/ui/button";
+import { Skeleton } from "@/components/ui/skeleton";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Grid3x3, FileText, ArrowLeft, Bookmark as BookmarkIcon } from "lucide-react";
+
+const PostGrid = ({ posts, isLoading, emptyState }: { posts: (Post | UserPost)[] | null, isLoading: boolean, emptyState: React.ReactNode }) => {
+    return (
+        <>
+            <div className="grid grid-cols-3 gap-1 mt-1">
+                {isLoading && Array.from({length: 6}).map((_, i) => (
+                    <Skeleton key={i} className="aspect-square w-full" />
+                ))}
+                {posts?.map((post) => (
+                <Link key={post.id} href={`/post/${post.id}`}>
+                    <div className="aspect-square bg-muted flex items-center justify-center hover:bg-accent transition-colors">
+                        <FileText className="h-8 w-8 text-muted-foreground" />
+                    </div>
+                </Link>
+                ))}
+            </div>
+            {!isLoading && posts?.length === 0 && emptyState}
+        </>
+    )
+}
+
+function ProfilePageSkeleton() {
+    return (
+        <div className="px-4">
+             <div className="flex items-center space-x-5 mb-6">
+                <Skeleton className="h-20 w-20 md:h-24 md:w-24 rounded-full" />
+                 <div className="flex-1 flex justify-around text-center">
+                    <div>
+                        <div className="font-bold text-lg"><Skeleton className="h-6 w-8 mx-auto" /></div>
+                        <p className="text-sm text-muted-foreground">Posts</p>
+                    </div>
+                    <div>
+                        <div className="font-bold text-lg"><Skeleton className="h-6 w-8 mx-auto" /></div>
+                        <p className="text-sm text-muted-foreground">Likes</p>
+                    </div>
+                     <div>
+                        <div className="font-bold text-lg"><Skeleton className="h-6 w-8 mx-auto" /></div>
+                        <p className="text-sm text-muted-foreground">Comments</p>
+                    </div>
+                </div>
+            </div>
+            <div className="mb-4">
+                 <Skeleton className="h-5 w-32 mb-2" />
+                 <Skeleton className="h-4 w-48" />
+            </div>
+             <Skeleton className="h-px w-full" />
+             <div className="grid grid-cols-3 gap-1 mt-4">
+                {Array.from({length: 3}).map((_, i) => (
+                    <Skeleton key={i} className="aspect-square w-full" />
+                ))}
+            </div>
+        </div>
+    )
+}
+
+
+export default function UserProfilePage() {
+    const params = useParams();
+    const router = useRouter();
+    const userId = params.userId as string;
+    const { firestore } = useFirebase();
+
+    const userRef = useMemoFirebase(() => {
+        if (!firestore || !userId) return null;
+        return doc(firestore, "users", userId);
+    }, [firestore, userId]);
+
+    const userPostsQuery = useMemoFirebase(() => {
+        if (!firestore || !userId) return null;
+        return query(
+        collection(firestore, "posts"),
+        where("authorId", "==", userId)
+        );
+    }, [firestore, userId]);
+
+    const { data: user, isLoading: userLoading } = useDoc<User>(userRef);
+    const { data: posts, isLoading: postsLoading } = useCollection<Post>(userPostsQuery);
+
+    const totalLikes = useMemo(() => {
+        if (!posts) return 0;
+        return posts.reduce((acc, post) => acc + (post.likeCount || 0), 0);
+    }, [posts]);
+    
+    const totalComments = useMemo(() => {
+        if (!posts) return 0;
+        return posts.reduce((acc, post) => acc + (post.commentCount || 0), 0);
+    }, [posts]);
+
+    const getInitials = (name: string | null | undefined) => {
+        if (!name) return "U";
+        return name
+        .split(" ")
+        .map((n) => n[0])
+        .join("")
+        .substring(0, 2)
+        .toUpperCase();
+    };
+
+    const formatUserId = (uid: string | undefined) => {
+        if (!uid) return "blur??????";
+        return `blur${uid.substring(uid.length - 6)}`;
+    };
+
+    if (userLoading) {
+        return (
+            <AppLayout showTopBar={false}>
+                 <div className="flex items-center justify-between mb-6 px-4">
+                    <Button variant="ghost" size="icon" onClick={() => router.back()}>
+                        <ArrowLeft className="h-6 w-6" />
+                    </Button>
+                    <h2 className="text-2xl font-semibold font-headline -translate-x-1/2 relative left-1/2">
+                        <Skeleton className="h-8 w-32" />
+                    </h2>
+                </div>
+                <ProfilePageSkeleton />
+            </AppLayout>
+        )
+    }
+
+    if (!user) {
+        return (
+             <AppLayout showTopBar={false}>
+                <div className="text-center py-20 pt-32">
+                    <h2 className="text-2xl font-headline text-primary">User not found</h2>
+                    <p className="text-muted-foreground mt-2">
+                        This user may not exist.
+                    </p>
+                </div>
+            </AppLayout>
+        )
+    }
+
+    return (
+        <AppLayout showTopBar={false}>
+            <div className="px-4">
+                <div className="flex items-center justify-between mb-6">
+                     <Button variant="ghost" size="icon" onClick={() => router.back()}>
+                        <ArrowLeft className="h-6 w-6" />
+                    </Button>
+                    <h2 className="text-2xl font-semibold font-headline -translate-x-1/2 relative left-1/2">
+                      {formatUserId(user?.id)}
+                    </h2>
+                </div>
+
+                <div className="flex items-center space-x-5 mb-6">
+                <Avatar className="h-20 w-20 md:h-24 md:w-24">
+                    <AvatarImage
+                    src={undefined} // No photoURL for other users for now
+                    alt={user?.name || "User"}
+                    />
+                    <AvatarFallback className="text-3xl font-headline bg-primary text-primary-foreground">
+                    {getInitials(user?.name)}
+                    </AvatarFallback>
+                </Avatar>
+                <div className="flex-1 flex justify-around text-center">
+                    <div>
+                        {postsLoading ? (
+                            <div className="font-bold text-lg"><Skeleton className="h-6 w-8 mx-auto" /></div>
+                        ) : (
+                            <div className="font-bold text-lg">{posts?.length ?? 0}</div>
+                        )}
+                        <p className="text-sm text-muted-foreground">Posts</p>
+                    </div>
+                    <div>
+                        {postsLoading ? (
+                            <div className="font-bold text-lg"><Skeleton className="h-6 w-8 mx-auto" /></div>
+                        ) : (
+                            <div className="font-bold text-lg">{totalLikes}</div>
+                        )}
+                        <p className="text-sm text-muted-foreground">Likes</p>
+                    </div>
+                    <div>
+                        {postsLoading ? (
+                        <div className="font-bold text-lg"><Skeleton className="h-6 w-8 mx-auto" /></div>
+                        ) : (
+                        <div className="font-bold text-lg">{totalComments}</div>
+                        )}
+                        <p className="text-sm text-muted-foreground">Comments</p>
+                    </div>
+                </div>
+                </div>
+
+
+                {/* User Name and Bio */}
+                <div className="mb-4">
+                    <h1 className="font-bold text-base">{user?.name}</h1>
+                    {/* Hiding email for privacy on public profiles */}
+                </div>
+                
+                <Tabs defaultValue="posts" className="w-full">
+                    <TabsList className="grid w-full grid-cols-1">
+                        <TabsTrigger value="posts" className="gap-2"><Grid3x3 className="h-5 w-5" /> Posts</TabsTrigger>
+                    </TabsList>
+                    <TabsContent value="posts">
+                        <PostGrid
+                            posts={posts}
+                            isLoading={postsLoading}
+                            emptyState={
+                                <div className="col-span-3 text-center py-16">
+                                    <h3 className="text-xl font-headline text-primary">No Posts Yet</h3>
+                                    <p className="text-muted-foreground">This user hasn't posted anything.</p>
+                                </div>
+                            }
+                        />
+                    </TabsContent>
+                </Tabs>
+
+
+            </div>
+        </AppLayout>
+    );
+}
+

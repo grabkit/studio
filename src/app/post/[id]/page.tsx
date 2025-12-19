@@ -20,6 +20,7 @@ import { useDoc } from "@/firebase/firestore/use-doc";
 import type { Post, Comment } from "@/lib/types";
 import { useParams, useRouter } from "next/navigation";
 import React, { useState } from "react";
+import Link from 'next/link';
 
 import AppLayout from "@/components/AppLayout";
 import { Card, CardContent } from "@/components/ui/card";
@@ -165,16 +166,18 @@ function PostDetailItem({ post }: { post: WithId<Post> }) {
     <Card className="w-full shadow-none rounded-none border-x-0 border-t-0 border-b">
       <CardContent className="p-4">
         <div className="flex space-x-3">
-          <Avatar className="h-10 w-10">
-            <AvatarFallback>{getInitials(post.authorId)}</AvatarFallback>
-          </Avatar>
+            <Link href={isOwner ? '/account' : `/profile/${post.authorId}`}>
+                <Avatar className="h-10 w-10">
+                    <AvatarFallback>{getInitials(post.authorId)}</AvatarFallback>
+                </Avatar>
+            </Link>
           <div className="flex-1 space-y-2">
             <div className="flex justify-between items-start">
-              <div className="flex items-center">
-                <span className="text-sm font-semibold">
-                  {formatUserId(post.authorId)}
-                </span>
-              </div>
+                <div className="flex items-center">
+                    <Link href={isOwner ? '/account' : `/profile/${post.authorId}`} className="text-sm font-semibold hover:underline">
+                        {formatUserId(post.authorId)}
+                    </Link>
+                </div>
               <div className="flex items-center space-x-2">
                  <span className="text-xs text-muted-foreground">
                     {post.timestamp
@@ -389,12 +392,16 @@ function CommentItem({ comment, postAuthorId }: { comment: WithId<Comment>, post
 
   return (
     <div className="flex space-x-3 p-4 border-b">
+      <Link href={user?.uid === comment.authorId ? '/account' : `/profile/${comment.authorId}`}>
        <Avatar className="h-8 w-8">
         <AvatarFallback>{getInitials(comment.authorId)}</AvatarFallback>
       </Avatar>
+      </Link>
       <div className="flex-1">
         <div className="flex justify-between items-center">
-            <span className="font-semibold text-sm">{formatUserId(comment.authorId)}</span>
+             <Link href={user?.uid === comment.authorId ? '/account' : `/profile/${comment.authorId}`} className="font-semibold text-sm hover:underline">
+                {formatUserId(comment.authorId)}
+            </Link>
             <div className="flex items-center space-x-2">
                 <span className="text-xs text-muted-foreground">
                 {comment.timestamp

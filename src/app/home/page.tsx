@@ -291,16 +291,17 @@ function PostItem({ post, bookmarks }: { post: WithId<Post>, bookmarks: WithId<B
     <Card className="w-full shadow-none border-x-0 border-t-0 rounded-none">
       <CardContent className="p-4">
         <div className="flex space-x-3">
-          <Avatar className="h-10 w-10">
-            {/* The user's name is not available on the post object, so we show initials */}
-            <AvatarFallback>{getInitials(post.authorId)}</AvatarFallback>
-          </Avatar>
+          <Link href={isOwner ? '/account' : `/profile/${post.authorId}`}>
+            <Avatar className="h-10 w-10">
+              <AvatarFallback>{getInitials(post.authorId)}</AvatarFallback>
+            </Avatar>
+          </Link>
           <div className="flex-1 space-y-2">
             <div className="flex justify-between items-start">
               <div className="flex items-center">
-                 <div className="text-sm font-semibold">
+                 <Link href={isOwner ? '/account' : `/profile/${post.authorId}`} className="text-sm font-semibold hover:underline">
                     {formatUserId(post.authorId)}
-                 </div>
+                 </Link>
               </div>
                <div className="flex items-center space-x-2">
                  <span className="text-xs text-muted-foreground">
