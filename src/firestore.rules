@@ -6,7 +6,7 @@ service cloud.firestore {
     // Anyone can read, write, and delete data in your database.
     // This is not recommended for production applications.
     match /{document=**} {
-      allow read, write: if true;
+      allow read, write: if request.auth != null;
     }
   }
 }
