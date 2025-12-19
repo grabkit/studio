@@ -2,85 +2,11 @@
 rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
-
-    // HELPER FUNCTIONS
-    function isSignedIn() {
-      return request.auth != null;
-    }
-
-    function isOwner(userId) {
-      return request.auth.uid == userId;
-    }
-
-    // VALIDATION FUNCTIONS
-    function isValidNewPost() {
-        let data = request.resource.data;
-        return data.authorId == request.auth.uid
-            && data.content is string
-            && data.content.size() > 0
-            && data.likeCount == 0
-            && data.commentCount == 0
-            && data.commentsAllowed is bool
-            && data.likes is list && data.likes.size() == 0;
-    }
-
-    function isValidNewComment(postId, commentId) {
-        let data = request.resource.data;
-        let post = get(/databases/$(database)/documents/posts/$(postId)).data;
-        let commentsAllowed = post.get('commentsAllowed', true);
-        return commentsAllowed == true
-            && data.authorId == request.auth.uid
-            && data.postId == postId
-            && data.content is string && data.content.size() > 0
-            && data.id == commentId
-            && data.keys().hasOnly(['id', 'postId', 'authorId', 'content', 'timestamp']);
-    }
-
-    // RULES
-    match /users/{userId} {
-      // PERMANENT FIX: Allow any signed-in user to get another user's profile document.
-      allow get: if isSignedIn();
-      // Disable listing all users for privacy.
-      allow list: if false;
-
-      // Only the owner can delete their own account document.
-      allow delete: if isOwner(userId);
-
-      // A user can create their own document upon sign-up.
-      allow create: if isOwner(userId)
-                    && request.resource.data.id == userId
-                    && request.resource.data.name is string
-                    && request.resource.data.email is string;
-
-      // Users can't update their profile doc directly for now.
-      allow update: if false;
-    }
-
-
-    match /posts/{postId} {
-      // Any signed-in user can read any post or list of posts.
-      allow get, list: if isSignedIn();
-      
-      allow create: if isSignedIn() && isValidNewPost();
-      allow delete: if isSignedIn() && isOwner(resource.data.authorId);
-
-      // Allow updates only for specific, controlled scenarios.
-      allow update: if isSignedIn() && (
-          // Scenario 1: The owner is updating ONLY the content and/or commentsAllowed.
-          (isOwner(resource.data.authorId) && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['content', 'commentsAllowed'])) ||
-
-          // Scenario 2: ANY user is liking/unliking the post. Ensures only 'likes' and 'likeCount' are modified.
-          (request.resource.data.diff(resource.data).affectedKeys().hasOnly(['likes', 'likeCount']) && (request.resource.data.likeCount == resource.data.likeCount + 1 || request.resource.data.likeCount == resource.data.likeCount - 1)) ||
-
-          // Scenario 3: The comment count is being incremented/decremented. Ensures only 'commentCount' is modified.
-          (request.resource.data.diff(resource.data).affectedKeys().hasOnly(['commentCount']) && (request.resource.data.commentCount == resource.data.commentCount + 1 || request.resource.data.commentCount == resource.data.commentCount - 1))
-      );
-    }
-
-    match /posts/{postId}/comments/{commentId} {
-      allow read: if isSignedIn();
-      allow create: if isSignedIn() && isValidNewComment(postId, commentId);
-      allow delete: if isSignedIn() && (isOwner(resource.data.authorId) || isOwner(get(/databases/$(database)/documents/posts/$(postId)).data.authorId));
+    // WARNING: These rules are insecure and make your data publicly accessible.
+    // Anyone can read, write, and delete data in your database.
+    // This is not recommended for production applications.
+    match /{document=**} {
+      allow read, write: if true;
     }
   }
 }
