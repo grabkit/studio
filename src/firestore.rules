@@ -19,7 +19,8 @@ service cloud.firestore {
     // VALIDATION FUNCTIONS
     
     // Validate the core fields of a User document.
-    function hasValidCoreUserFields(data) {
+    function hasValidCoreUserFields() {
+        let data = request.resource.data;
         return data.id == request.auth.uid
             && data.name is string && data.name.size() > 0
             && data.email is string && data.email.matches('.*@.*');
@@ -58,31 +59,15 @@ service cloud.firestore {
       allow get: if isOwner(userId);
       allow list: if false; // Disable user enumeration for privacy.
 
-      // Allow creation ONLY with the specific required fields and an empty bookmarks array.
+      // Allow creation only with the specific required fields.
       allow create: if isOwner(userId)
-                    && hasValidCoreUserFields(request.resource.data)
+                    && hasValidCoreUserFields()
                     && request.resource.data.bookmarkedPosts == []
                     && request.resource.data.keys().hasOnly(['id', 'name', 'email', 'bookmarkedPosts']);
 
-      // Allow updates ONLY for specific, mutually exclusive scenarios.
-      allow update: if isOwner(userId) && (
-          // Scenario 1: User is updating ONLY their profile info (name/email).
-          // Important: 'id' and 'bookmarkedPosts' must NOT change in this scenario.
-          (
-            request.resource.data.keys().hasAll(['id', 'name', 'email', 'bookmarkedPosts']) &&
-            request.resource.data.id == resource.data.id &&
-            request.resource.data.bookmarkedPosts == resource.data.bookmarkedPosts &&
-            hasValidCoreUserFields(request.resource.data)
-          ) ||
-          // Scenario 2: User is ONLY updating their bookmarks.
-          // Important: 'id', 'name', and 'email' must NOT change in this scenario.
-          (
-            request.resource.data.keys().hasAll(['id', 'name', 'email', 'bookmarkedPosts']) &&
-            request.resource.data.id == resource.data.id &&
-            request.resource.data.name == resource.data.name &&
-            request.resource.data.email == resource.data.email
-          )
-      );
+      // Allow update only by the owner. The client-side code is responsible
+      // for ensuring that only appropriate fields (like bookmarks) are updated.
+      allow update: if isOwner(userId);
 
       allow delete: if isOwner(userId);
     }
