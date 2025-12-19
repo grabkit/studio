@@ -121,7 +121,7 @@ function PollComponent({ post, user }: { post: WithId<Post>, user: any }) {
                         <div key={index} className="relative w-full h-10 rounded-full overflow-hidden bg-secondary">
                              <div
                                 className={cn(
-                                    "absolute left-0 top-0 h-full transition-all duration-500 ease-out",
+                                    "absolute left-0 top-0 h-full rounded-full transition-all duration-500 ease-out",
                                     isUserChoice ? "bg-primary" : "bg-primary/20"
                                 )}
                                 style={{ width: `${percentage}%` }}
