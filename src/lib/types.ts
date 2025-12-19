@@ -18,3 +18,11 @@ export interface Comment {
     content: string;
     timestamp: Timestamp;
 }
+
+export interface User {
+    id: string;
+    name: string;
+    email: string;
+    anonymousId?: string;
+    bookmarkedPosts?: string[];
+}
