@@ -166,17 +166,29 @@ function PostDetailItem({ post }: { post: WithId<Post> }) {
     <Card className="w-full shadow-none rounded-none border-x-0 border-t-0 border-b">
       <CardContent className="p-4">
         <div className="flex space-x-3">
-            <Link href={isOwner ? '/account' : `/profile/${post.authorId}`}>
-                <Avatar className="h-10 w-10">
-                    <AvatarFallback>{getInitials(post.authorId)}</AvatarFallback>
-                </Avatar>
+          {isOwner ? (
+            <Link href="/account">
+              <Avatar className="h-10 w-10">
+                <AvatarFallback>{getInitials(post.authorId)}</AvatarFallback>
+              </Avatar>
             </Link>
+          ) : (
+            <Avatar className="h-10 w-10">
+              <AvatarFallback>{getInitials(post.authorId)}</AvatarFallback>
+            </Avatar>
+          )}
           <div className="flex-1 space-y-2">
             <div className="flex justify-between items-start">
                 <div className="flex items-center">
-                    <Link href={isOwner ? '/account' : `/profile/${post.authorId}`} className="text-sm font-semibold hover:underline">
-                        {formatUserId(post.authorId)}
+                  {isOwner ? (
+                    <Link href="/account" className="text-sm font-semibold hover:underline">
+                      {formatUserId(post.authorId)}
                     </Link>
+                  ) : (
+                    <span className="text-sm font-semibold">
+                      {formatUserId(post.authorId)}
+                    </span>
+                  )}
                 </div>
               <div className="flex items-center space-x-2">
                  <span className="text-xs text-muted-foreground">
@@ -392,16 +404,28 @@ function CommentItem({ comment, postAuthorId }: { comment: WithId<Comment>, post
 
   return (
     <div className="flex space-x-3 p-4 border-b">
-      <Link href={user?.uid === comment.authorId ? '/account' : `/profile/${comment.authorId}`}>
-       <Avatar className="h-8 w-8">
-        <AvatarFallback>{getInitials(comment.authorId)}</AvatarFallback>
-      </Avatar>
-      </Link>
+      {user?.uid === comment.authorId ? (
+        <Link href="/account">
+          <Avatar className="h-8 w-8">
+            <AvatarFallback>{getInitials(comment.authorId)}</AvatarFallback>
+          </Avatar>
+        </Link>
+      ) : (
+        <Avatar className="h-8 w-8">
+          <AvatarFallback>{getInitials(comment.authorId)}</AvatarFallback>
+        </Avatar>
+      )}
       <div className="flex-1">
         <div className="flex justify-between items-center">
-             <Link href={user?.uid === comment.authorId ? '/account' : `/profile/${comment.authorId}`} className="font-semibold text-sm hover:underline">
-                {formatUserId(comment.authorId)}
-            </Link>
+             {user?.uid === comment.authorId ? (
+                <Link href="/account" className="font-semibold text-sm hover:underline">
+                    {formatUserId(comment.authorId)}
+                </Link>
+             ) : (
+                <span className="font-semibold text-sm">
+                    {formatUserId(comment.authorId)}
+                </span>
+             )}
             <div className="flex items-center space-x-2">
                 <span className="text-xs text-muted-foreground">
                 {comment.timestamp
