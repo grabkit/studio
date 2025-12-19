@@ -98,6 +98,7 @@ function PollComponent({ post, user }: { post: WithId<Post>, user: any }) {
                 });
             });
         } catch (e: any) {
+            console.error(e);
             const permissionError = new FirestorePermissionError({
                 path: postRef.path,
                 operation: 'update',
@@ -117,31 +118,22 @@ function PollComponent({ post, user }: { post: WithId<Post>, user: any }) {
 
                 if (hasVoted) {
                     return (
-                        <div key={index} className="relative w-full">
-                            <div
+                        <div key={index} className="relative w-full h-10 rounded-md overflow-hidden bg-secondary">
+                             <div
                                 className={cn(
-                                    "absolute left-0 top-0 h-full rounded-md transition-all duration-500 ease-out",
-                                    isUserChoice ? "bg-primary" : "bg-primary/20"
+                                    "absolute left-0 top-0 h-full transition-all duration-500 ease-out",
+                                    isUserChoice ? "bg-blue-500/80" : "bg-primary/20"
                                 )}
                                 style={{ width: `${percentage}%` }}
                             />
-                            <div className={cn(
-                                "relative flex h-10 items-center justify-between rounded-md border px-3 transition-colors",
-                                isUserChoice ? "border-primary" : "border-border"
-                            )}>
+                            <div className="absolute inset-0 flex items-center justify-between px-3">
                                 <div className="flex items-center gap-2">
-                                    <span className={cn(
-                                        "font-medium truncate",
-                                        isUserChoice ? "text-primary-foreground" : "text-foreground"
-                                    )}>
+                                     {isUserChoice && <CheckCircle2 className="h-4 w-4 text-white" />}
+                                    <span className="font-medium text-foreground truncate">
                                         {option.option}
                                     </span>
-                                    {isUserChoice && <CheckCircle2 className="h-4 w-4 text-primary-foreground" />}
                                 </div>
-                                <span className={cn(
-                                    "font-semibold",
-                                    isUserChoice ? "text-primary-foreground" : "text-foreground"
-                                )}>
+                                <span className="font-semibold text-foreground">
                                     {percentage.toFixed(0)}%
                                 </span>
                             </div>
