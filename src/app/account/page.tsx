@@ -5,18 +5,15 @@ import { useUser, useFirebase, useMemoFirebase } from "@/firebase";
 import { useRouter } from "next/navigation";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
-import { collection, query, where, doc, documentId } from "firebase/firestore";
+import { collection, query, where } from "firebase/firestore";
 import { useCollection } from "@/firebase/firestore/use-collection";
-import { useDoc } from "@/firebase/firestore/use-doc";
-import { Settings, LogOut, Grid3x3, Bookmark, FileText } from "lucide-react";
+import { Settings, LogOut, Grid3x3, FileText } from "lucide-react";
 import { signOut } from "firebase/auth";
 import { useToast } from "@/hooks/use-toast";
-import type { Post, User } from "@/lib/types";
+import type { Post } from "@/lib/types";
 import { Skeleton } from "@/components/ui/skeleton";
 import Link from "next/link";
 import React, { useMemo } from "react";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { cn } from "@/lib/utils";
 
 const PostGrid = ({ posts, isLoading, emptyState }: { posts: Post[] | null, isLoading: boolean, emptyState: React.ReactNode }) => {
     return (
@@ -44,12 +41,6 @@ export default function AccountPage() {
   const router = useRouter();
   const { toast } = useToast();
 
-  const userRef = useMemoFirebase(() => {
-    if (!firestore || !user) return null;
-    return doc(firestore, 'users', user.uid);
-  }, [firestore, user]);
-  const { data: userData } = useDoc<User>(userRef);
-
   const userPostsQuery = useMemoFirebase(() => {
     if (!firestore || !user) return null;
     return query(
@@ -58,16 +49,7 @@ export default function AccountPage() {
     );
   }, [firestore, user]);
 
-  const bookmarkedPostsQuery = useMemoFirebase(() => {
-    if (!firestore || !userData || !userData.bookmarkedPosts || userData.bookmarkedPosts.length === 0) return null;
-    return query(
-        collection(firestore, "posts"),
-        where(documentId(), "in", userData.bookmarkedPosts)
-    );
-  }, [firestore, userData]);
-
   const { data: posts, isLoading: postsLoading } = useCollection<Post>(userPostsQuery);
-  const { data: bookmarkedPosts, isLoading: bookmarksLoading } = useCollection<Post>(bookmarkedPostsQuery);
 
   const totalLikes = useMemo(() => {
     if (!posts) return 0;
@@ -181,40 +163,21 @@ export default function AccountPage() {
 
 
         {/* Tabs */}
-        <Tabs defaultValue="posts" className="w-full">
-            <TabsList className="grid w-full grid-cols-2">
-                <TabsTrigger value="posts" className="data-[state=active]:border-b-2 data-[state=active]:border-primary rounded-none">
-                     <Grid3x3 className="mx-auto h-6 w-6" />
-                </TabsTrigger>
-                <TabsTrigger value="bookmarks" className="data-[state=active]:border-b-2 data-[state=active]:border-primary rounded-none">
-                     <Bookmark className="mx-auto h-6 w-6" />
-                </TabsTrigger>
-            </TabsList>
-            <TabsContent value="posts">
-                <PostGrid
-                    posts={posts}
-                    isLoading={postsLoading}
-                    emptyState={
-                        <div className="col-span-3 text-center py-16">
-                            <h3 className="text-xl font-headline text-primary">No Posts Yet</h3>
-                            <p className="text-muted-foreground">Start sharing your thoughts!</p>
-                        </div>
-                    }
-                />
-            </TabsContent>
-            <TabsContent value="bookmarks">
-                 <PostGrid
-                    posts={bookmarkedPosts}
-                    isLoading={bookmarksLoading}
-                    emptyState={
-                        <div className="col-span-3 text-center py-16">
-                            <h3 className="text-xl font-headline text-primary">No Bookmarks Yet</h3>
-                            <p className="text-muted-foreground">Save posts to see them here.</p>
-                        </div>
-                    }
-                />
-            </TabsContent>
-        </Tabs>
+        <div className="w-full border-t pt-2">
+            <div className="flex items-center justify-center p-2 border-b-2 border-primary">
+                <Grid3x3 className="h-6 w-6 text-primary" />
+            </div>
+            <PostGrid
+                posts={posts}
+                isLoading={postsLoading}
+                emptyState={
+                    <div className="col-span-3 text-center py-16">
+                        <h3 className="text-xl font-headline text-primary">No Posts Yet</h3>
+                        <p className="text-muted-foreground">Start sharing your thoughts!</p>
+                    </div>
+                }
+            />
+        </div>
       </div>
     </AppLayout>
   );

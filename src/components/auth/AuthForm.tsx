@@ -105,7 +105,6 @@ export default function AuthForm() {
             id: user.uid,
             name: values.name,
             email: values.email,
-            bookmarkedPosts: []
         };
         await setDoc(userDocRef, newUser);
       }

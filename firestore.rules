@@ -22,7 +22,7 @@ service cloud.firestore {
     function isValidUser(userId) {
       let data = request.resource.data;
       return data.id == userId
-          && data.keys().hasOnly(['id', 'anonymousId', 'name', 'email', 'bookmarkedPosts']);
+          && data.keys().hasOnly(['id', 'anonymousId', 'name', 'email']);
     }
 
     // Validate incoming Post data on create. Ensures author is correct and defaults are set.
@@ -61,12 +61,7 @@ service cloud.firestore {
       allow get: if isOwner(userId);
       allow list: if false; // Disable user enumeration for privacy.
       allow create: if isOwner(userId) && isValidUser(userId);
-      allow update: if isOwner(userId) && (
-        // Allow user to update their profile info, including bookmarks
-        isValidUser(userId) ||
-        // Also allow updating *only* the bookmarks field.
-        request.resource.data.diff(resource.data).affectedKeys().hasOnly(['bookmarkedPosts'])
-      );
+      allow update: if isOwner(userId) && isValidUser(userId);
       allow delete: if isOwner(userId);
     }
     

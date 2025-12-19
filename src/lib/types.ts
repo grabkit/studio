@@ -24,5 +24,4 @@ export interface User {
     name: string;
     email: string;
     anonymousId?: string;
-    bookmarkedPosts?: string[];
 }

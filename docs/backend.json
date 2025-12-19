@@ -22,13 +22,6 @@
           "type": "string",
           "description": "User's email address.",
           "format": "email"
-        },
-        "bookmarkedPosts": {
-            "type": "array",
-            "description": "An array of post IDs that the user has bookmarked.",
-            "items": {
-                "type": "string"
-            }
         }
       },
       "required": [
