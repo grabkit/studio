@@ -14,10 +14,11 @@ import {
   arrayRemove,
   arrayUnion,
   deleteDoc,
+  updateDoc,
 } from "firebase/firestore";
 import { useCollection, type WithId } from "@/firebase/firestore/use-collection";
 import { useDoc } from "@/firebase/firestore/use-doc";
-import type { Post, Comment } from "@/lib/types";
+import type { Post, Comment, User } from "@/lib/types";
 import { useParams, useRouter } from "next/navigation";
 import React, { useState } from "react";
 
@@ -29,7 +30,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { Button, buttonVariants } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { Form, FormControl, FormField, FormItem, FormMessage } from "@/components/ui/form";
-import { Heart, MessageCircle, Send, Trash2, MoreHorizontal, Edit, ArrowLeft, Repeat } from "lucide-react";
+import { Heart, MessageCircle, Send, Trash2, MoreHorizontal, Edit, ArrowLeft, Repeat, Bookmark } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useToast } from "@/hooks/use-toast";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -77,8 +78,15 @@ function PostDetailItem({ post }: { post: WithId<Post> }) {
   const router = useRouter();
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
 
+  const userRef = useMemoFirebase(() => {
+    if (!firestore || !user) return null;
+    return doc(firestore, 'users', user.uid);
+  }, [firestore, user]);
+  const { data: userData } = useDoc<User>(userRef);
+
   const hasLiked = user ? post.likes?.includes(user.uid) : false;
   const isOwner = user?.uid === post.authorId;
+  const isBookmarked = userData?.bookmarkedPosts?.includes(post.id) ?? false;
 
 
   const handleLike = async () => {
@@ -120,6 +128,31 @@ function PostDetailItem({ post }: { post: WithId<Post> }) {
       });
       errorEmitter.emit('permission-error', permissionError);
     });
+  };
+
+  const handleBookmark = async () => {
+    if (!user || !firestore || !userRef) {
+      toast({
+        variant: 'destructive',
+        title: 'Authentication Error',
+        description: 'You must be logged in to bookmark a post.',
+      });
+      return;
+    }
+
+    const payload = {
+      bookmarkedPosts: isBookmarked ? arrayRemove(post.id) : arrayUnion(post.id),
+    };
+
+    updateDoc(userRef, payload)
+        .catch(serverError => {
+            const permissionError = new FirestorePermissionError({
+                path: userRef.path,
+                operation: 'update',
+                requestResourceData: payload,
+            });
+            errorEmitter.emit('permission-error', permissionError);
+        });
   };
 
   const handleDeletePost = async () => {
@@ -244,6 +277,9 @@ function PostDetailItem({ post }: { post: WithId<Post> }) {
                         <Send className="h-5 w-5" />
                     </button>
                 </div>
+                 <button onClick={handleBookmark} className="flex items-center space-x-1 hover:text-amber-500">
+                    <Bookmark className={cn("h-5 w-5", isBookmarked && "text-amber-500 fill-amber-500")} />
+                </button>
             </div>
           </div>
         </div>

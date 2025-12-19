@@ -5,15 +5,18 @@ import { useUser, useFirebase, useMemoFirebase } from "@/firebase";
 import { useRouter } from "next/navigation";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
-import { collection, query, where } from "firebase/firestore";
+import { collection, query, where, doc, getDocs, Query, CollectionReference } from "firebase/firestore";
 import { useCollection } from "@/firebase/firestore/use-collection";
-import { Settings, LogOut, Grid3x3, FileText } from "lucide-react";
+import { useDoc } from "@/firebase/firestore/use-doc";
+import { Settings, LogOut, Grid3x3, FileText, Bookmark } from "lucide-react";
 import { signOut } from "firebase/auth";
 import { useToast } from "@/hooks/use-toast";
-import type { Post } from "@/lib/types";
+import type { Post, User } from "@/lib/types";
 import { Skeleton } from "@/components/ui/skeleton";
 import Link from "next/link";
-import React, { useMemo } from "react";
+import React, { useMemo, useState, useEffect } from "react";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+
 
 const PostGrid = ({ posts, isLoading, emptyState }: { posts: Post[] | null, isLoading: boolean, emptyState: React.ReactNode }) => {
     return (
@@ -40,6 +43,14 @@ export default function AccountPage() {
   const { auth, firestore } = useFirebase();
   const router = useRouter();
   const { toast } = useToast();
+  const [bookmarkedPosts, setBookmarkedPosts] = useState<Post[] | null>(null);
+  const [bookmarksLoading, setBookmarksLoading] = useState(true);
+
+  const userRef = useMemoFirebase(() => {
+    if (!firestore || !user) return null;
+    return doc(firestore, 'users', user.uid);
+  }, [firestore, user]);
+  const { data: userData } = useDoc<User>(userRef);
 
   const userPostsQuery = useMemoFirebase(() => {
     if (!firestore || !user) return null;
@@ -50,6 +61,35 @@ export default function AccountPage() {
   }, [firestore, user]);
 
   const { data: posts, isLoading: postsLoading } = useCollection<Post>(userPostsQuery);
+
+  useEffect(() => {
+    const fetchBookmarkedPosts = async () => {
+      if (!firestore || !userData || !userData.bookmarkedPosts || userData.bookmarkedPosts.length === 0) {
+        setBookmarkedPosts([]);
+        setBookmarksLoading(false);
+        return;
+      }
+      
+      setBookmarksLoading(true);
+      const postsRef = collection(firestore, 'posts');
+      // Firestore 'in' query is limited to 30 items. For more, we would need to batch queries.
+      const bookmarkedPostsQuery = query(postsRef, where('id', 'in', userData.bookmarkedPosts.slice(0, 30)));
+      
+      try {
+        const querySnapshot = await getDocs(bookmarkedPostsQuery);
+        const postsData = querySnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() })) as Post[];
+        setBookmarkedPosts(postsData);
+      } catch (error) {
+        console.error("Error fetching bookmarked posts:", error);
+        setBookmarkedPosts([]);
+      } finally {
+        setBookmarksLoading(false);
+      }
+    };
+
+    fetchBookmarkedPosts();
+  }, [firestore, userData]);
+
 
   const totalLikes = useMemo(() => {
     if (!posts) return 0;
@@ -137,8 +177,7 @@ export default function AccountPage() {
                 ) : (
                     <div className="font-bold text-lg">{totalLikes}</div>
                 )}
-                <p className="text-sm text-muted-foreground">Likes</p>
-              </div>
+                <p className="text-sm text-muted-foreground">Likes</p>              </div>
               <div>
                 {postsLoading ? (
                   <div className="font-bold text-lg"><Skeleton className="h-6 w-8 mx-auto" /></div>
@@ -163,21 +202,40 @@ export default function AccountPage() {
 
 
         {/* Tabs */}
-        <div className="w-full border-t pt-2">
-            <div className="flex items-center justify-center p-2 border-b-2 border-primary">
-                <Grid3x3 className="h-6 w-6 text-primary" />
-            </div>
-            <PostGrid
-                posts={posts}
-                isLoading={postsLoading}
-                emptyState={
-                    <div className="col-span-3 text-center py-16">
-                        <h3 className="text-xl font-headline text-primary">No Posts Yet</h3>
-                        <p className="text-muted-foreground">Start sharing your thoughts!</p>
-                    </div>
-                }
-            />
-        </div>
+        <Tabs defaultValue="posts" className="w-full">
+            <TabsList className="grid w-full grid-cols-2">
+                <TabsTrigger value="posts" className="flex-col gap-1">
+                    <Grid3x3 className="h-5 w-5" />
+                </TabsTrigger>
+                <TabsTrigger value="bookmarks" className="flex-col gap-1">
+                    <Bookmark className="h-5 w-5" />
+                </TabsTrigger>
+            </TabsList>
+            <TabsContent value="posts">
+                <PostGrid
+                    posts={posts}
+                    isLoading={postsLoading}
+                    emptyState={
+                        <div className="col-span-3 text-center py-16">
+                            <h3 className="text-xl font-headline text-primary">No Posts Yet</h3>
+                            <p className="text-muted-foreground">Start sharing your thoughts!</p>
+                        </div>
+                    }
+                />
+            </TabsContent>
+            <TabsContent value="bookmarks">
+                <PostGrid
+                    posts={bookmarkedPosts}
+                    isLoading={bookmarksLoading}
+                    emptyState={
+                        <div className="col-span-3 text-center py-16">
+                            <h3 className="text-xl font-headline text-primary">No Bookmarks Yet</h3>
+                            <p className="text-muted-foreground">Save posts to see them here.</p>
+                        </div>
+                    }
+                />
+            </TabsContent>
+        </Tabs>
       </div>
     </AppLayout>
   );
