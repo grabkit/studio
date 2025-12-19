@@ -107,7 +107,7 @@ function PostItem({ post }: { post: WithId<Post> }) {
   };
 
   const handleBookmark = () => {
-    if (!bookmarkRef) return;
+    if (!bookmarkRef || !post.authorId) return;
 
     if (isBookmarked) {
         deleteDoc(bookmarkRef).catch(error => {

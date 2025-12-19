@@ -40,11 +40,14 @@ service cloud.firestore {
             && data.keys().hasOnly(['id', 'postId', 'authorId', 'content', 'timestamp']);
     }
 
+    // This is the corrected, more robust validation for a new bookmark.
     function isValidNewBookmark() {
       let data = request.resource.data;
       return data.itemId is string
           && data.itemType == 'post'
-          && data.createdAt == request.time;
+          && data.originalOwnerId is string
+          && data.createdAt == request.time
+          && data.keys().hasOnly(['itemId', 'itemType', 'originalOwnerId', 'createdAt']);
     }
 
     
@@ -63,10 +66,9 @@ service cloud.firestore {
       allow update: if false;
 
       match /bookmarks/{postId} {
-        allow read: if isOwner(userId);
+        allow read, delete: if isOwner(userId);
         allow list: if isOwner(userId);
         allow create: if isOwner(userId) && isValidNewBookmark();
-        allow delete: if isOwner(userId);
       }
     }
 
