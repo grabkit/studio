@@ -65,13 +65,8 @@ service cloud.firestore {
                     && request.resource.data.bookmarkedPosts == []
                     && request.resource.data.keys().hasOnly(['id', 'name', 'email', 'bookmarkedPosts']);
 
-      // Allow update ONLY for the bookmarkedPosts field by the owner.
-      // This is a more secure rule. It ensures that other fields are not accidentally changed.
-      allow update: if isOwner(userId)
-                    && request.resource.data.keys().hasOnly(['id', 'name', 'email', 'bookmarkedPosts', 'anonymousId'])
-                    && request.resource.data.id == resource.data.id
-                    && request.resource.data.name == resource.data.name
-                    && request.resource.data.email == resource.data.email;
+      // Allow owner to update ONLY the bookmarkedPosts field.
+      allow update: if isOwner(userId) && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['bookmarkedPosts']);
 
       allow delete: if isOwner(userId);
     }
