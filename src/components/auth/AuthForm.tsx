@@ -31,7 +31,7 @@ import {
   AlertDialogTitle,
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
-import { Loader2, Mail, Lock, User } from "lucide-react";
+import { Loader2, Mail, Lock, User as UserIcon } from "lucide-react";
 import { createUserWithEmailAndPassword, signInWithEmailAndPassword, updateProfile } from "firebase/auth";
 import { cn } from "@/lib/utils";
 import { Checkbox } from "@/components/ui/checkbox";
@@ -101,7 +101,7 @@ export default function AuthForm() {
         
         // Create user document in Firestore
         const userDocRef = doc(firestore, "users", user.uid);
-        const newUser: Omit<UserType, 'anonymousId'> = {
+        const newUser: UserType = {
             id: user.uid,
             name: values.name,
             email: values.email,
@@ -197,7 +197,7 @@ export default function AuthForm() {
                         <FormLabel>Name</FormLabel>
                         <FormControl>
                             <div className="relative">
-                                <User className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-muted-foreground" />
+                                <UserIcon className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-muted-foreground" />
                                 <Input placeholder="Name" {...field} className="h-12 text-base pl-10 rounded-full bg-secondary" />
                             </div>
                         </FormControl>

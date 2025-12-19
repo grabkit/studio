@@ -18,11 +18,12 @@ service cloud.firestore {
 
     // VALIDATION FUNCTIONS
     
-    // Validate the incoming User document on create/update.
-    function isValidUser(userId) {
-      let data = request.resource.data;
-      return data.id == userId
-          && data.keys().hasOnly(['id', 'anonymousId', 'name', 'email', 'bookmarkedPosts']);
+    // Validate the core fields of a User document.
+    function hasValidCoreUserFields() {
+        let data = request.resource.data;
+        return data.id == request.auth.uid
+            && data.name is string && data.name.size() > 0
+            && data.email is string && data.email.matches('.*@.*');
     }
 
     // Validate incoming Post data on create. Ensures author is correct and defaults are set.
@@ -39,9 +40,6 @@ service cloud.firestore {
     }
     
     // Validate a new comment.
-    // Ensures the user is the author, the post ID matches, content is valid,
-    // the document ID in the data matches the resource ID,
-    // and no extra fields are present.
     function isValidNewComment(postId, commentId) {
         let data = request.resource.data;
         let post = get(/databases/$(database)/documents/posts/$(postId)).data;
@@ -60,15 +58,19 @@ service cloud.firestore {
     match /users/{userId} {
       allow get: if isOwner(userId);
       allow list: if false; // Disable user enumeration for privacy.
-      allow create: if isOwner(userId) 
-                    && isValidUser(userId) 
-                    && request.resource.data.bookmarkedPosts == [];
+
+      allow create: if isOwner(userId)
+                    && hasValidCoreUserFields()
+                    && request.resource.data.bookmarkedPosts == []
+                    && request.resource.data.keys().hasOnly(['id', 'name', 'email', 'bookmarkedPosts']);
+
       allow update: if isOwner(userId) && (
-        // Allow user to update their profile info, including bookmarks
-        isValidUser(userId) ||
-        // Also allow updating *only* the bookmarks field.
-        request.resource.data.diff(resource.data).affectedKeys().hasOnly(['bookmarkedPosts'])
+        // Scenario 1: User is updating their name or email.
+        (hasValidCoreUserFields() && request.resource.data.keys().hasOnly(['id', 'name', 'email', 'bookmarkedPosts', 'anonymousId'])) ||
+        // Scenario 2: A user is ONLY updating their bookmarks.
+        (request.resource.data.diff(resource.data).affectedKeys().hasOnly(['bookmarkedPosts']))
       );
+
       allow delete: if isOwner(userId);
     }
     
