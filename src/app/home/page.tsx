@@ -129,11 +129,17 @@ function PollComponent({ post, user }: { post: WithId<Post>, user: any }) {
                             <div className="absolute inset-0 flex items-center justify-between px-4">
                                 <div className="flex items-center gap-2">
                                      {isUserChoice && <CheckCircle2 className="h-4 w-4 text-primary-foreground" />}
-                                    <span className="font-medium text-primary-foreground truncate text-shadow">
+                                    <span className={cn(
+                                        "font-medium truncate",
+                                        isUserChoice ? "text-primary-foreground" : "text-primary"
+                                    )}>
                                         {option.option}
                                     </span>
                                 </div>
-                                <span className="font-semibold text-primary-foreground text-shadow">
+                                <span className={cn(
+                                    "font-semibold",
+                                     isUserChoice ? "text-primary-foreground" : "text-primary"
+                                )}>
                                     {percentage.toFixed(0)}%
                                 </span>
                             </div>
