@@ -130,12 +130,7 @@ function PostItem({ post }: { post: WithId<Post> }) {
           url: `${window.location.origin}/post/${post.id}`,
         });
       } catch (error) {
-        console.error('Error sharing:', error);
-        toast({
-          variant: "destructive",
-          title: "Sharing Failed",
-          description: "Could not share the post at this time.",
-        });
+        // Silently fail. The user likely canceled the share action.
       }
     } else {
       toast({
