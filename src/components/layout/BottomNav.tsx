@@ -2,11 +2,12 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { Home, User, HomeIcon, UserIcon, Plus } from "lucide-react";
+import { Home, User, HomeIcon, UserIcon, Plus, Heart as HeartIcon } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 const navItems = [
   { href: "/home", label: "Home", icon: Home, activeIcon: HomeIcon },
+  { href: "/activity", label: "Activity", icon: HeartIcon, activeIcon: HeartIcon },
   { href: "/post", label: "Post", icon: Plus, activeIcon: Plus },
   { href: "/account", label: "Account", icon: User, activeIcon: UserIcon },
 ];

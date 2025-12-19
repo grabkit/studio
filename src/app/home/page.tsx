@@ -10,7 +10,7 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { formatDistanceToNow } from "date-fns";
 import { Skeleton } from "@/components/ui/skeleton";
-import type { Post, Bookmark, PollOption } from "@/lib/types";
+import type { Post, Bookmark, PollOption, Notification } from "@/lib/types";
 import { Heart, MessageCircle, Repeat, Send, MoreHorizontal, Edit, Trash2, Bookmark as BookmarkIcon, CheckCircle2 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useToast } from "@/hooks/use-toast";
@@ -204,6 +204,23 @@ function PostItem({ post, bookmarks }: { post: WithId<Post>, bookmarks: WithId<B
         });
         errorEmitter.emit('permission-error', permissionError);
     });
+
+    // Create a notification if the user is not the owner of the post and is liking it
+    if (!isOwner && !hasLiked) {
+        const notificationRef = doc(collection(firestore, 'users', post.authorId, 'notifications'));
+        const notificationData: Omit<Notification, 'id'> = {
+            type: 'like',
+            postId: post.id,
+            postContent: post.content.substring(0, 100), // snippet of post content
+            fromUserId: user.uid,
+            timestamp: serverTimestamp(),
+            read: false,
+        };
+        setDoc(notificationRef, { ...notificationData, id: notificationRef.id }).catch(serverError => {
+            // Silently fail notification creation error
+            console.error("Failed to create like notification:", serverError);
+        });
+    }
   };
 
   const handleDeletePost = async () => {
@@ -291,29 +308,15 @@ function PostItem({ post, bookmarks }: { post: WithId<Post>, bookmarks: WithId<B
     <Card className="w-full shadow-none border-x-0 border-t-0 rounded-none">
       <CardContent className="p-4">
         <div className="flex space-x-3">
-          {isOwner ? (
-            <Link href="/account">
-              <Avatar className="h-10 w-10">
-                <AvatarFallback>{getInitials(post.authorId)}</AvatarFallback>
-              </Avatar>
-            </Link>
-          ) : (
-            <Avatar className="h-10 w-10">
-              <AvatarFallback>{getInitials(post.authorId)}</AvatarFallback>
-            </Avatar>
-          )}
+          <Avatar className="h-10 w-10">
+            <AvatarFallback>{getInitials(post.authorId)}</AvatarFallback>
+          </Avatar>
           <div className="flex-1 space-y-2">
             <div className="flex justify-between items-start">
               <div className="flex items-center">
-                 {isOwner ? (
-                    <Link href="/account" className="text-sm font-semibold hover:underline">
-                        {formatUserId(post.authorId)}
-                    </Link>
-                 ) : (
-                    <span className="text-sm font-semibold">
-                        {formatUserId(post.authorId)}
-                    </span>
-                 )}
+                 <span className="text-sm font-semibold">
+                    {formatUserId(post.authorId)}
+                </span>
               </div>
                <div className="flex items-center space-x-2">
                  <span className="text-xs text-muted-foreground">
@@ -341,7 +344,10 @@ function PostItem({ post, bookmarks }: { post: WithId<Post>, bookmarks: WithId<B
                </div>
             </div>
             
-            <p className="text-foreground text-sm whitespace-pre-wrap">{post.content}</p>
+            <Link href={`/post/${post.id}`} className="!mt-0">
+                <p className="text-foreground text-sm whitespace-pre-wrap">{post.content}</p>
+            </Link>
+
 
             {post.type === 'poll' && post.pollOptions && (
               <PollComponent post={post} user={user} />

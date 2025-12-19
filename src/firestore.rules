@@ -22,6 +22,13 @@ service cloud.firestore {
       allow list, get, create, delete: if isOwner(userId);
       allow update: if false;
     }
+    
+    match /users/{userId}/notifications/{notificationId} {
+      allow list, get: if isOwner(userId);
+      allow create: if isSignedIn(); // Allow any signed in user to create a notification for another user
+      allow update(data): if isOwner(userId) && data.keys().hasOnly(['read']); // Allow user to mark their notifications as read
+      allow delete: if false;
+    }
 
     match /posts/{postId} {
       allow get, list: if isSignedIn();

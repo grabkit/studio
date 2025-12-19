@@ -45,3 +45,13 @@ export interface Bookmark {
 export interface UserPost extends Post {
     // This can be extended with user-specific post data if needed in future
 }
+
+export interface Notification {
+    id: string;
+    type: 'like' | 'comment';
+    postId: string;
+    postContent: string;
+    fromUserId: string;
+    timestamp: Timestamp;
+    read: boolean;
+}

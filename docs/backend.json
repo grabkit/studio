@@ -169,6 +169,45 @@
         "postId",
         "timestamp"
       ]
+    },
+    "Notification": {
+        "$schema": "http://json-schema.org/draft-07/schema#",
+        "title": "Notification",
+        "type": "object",
+        "description": "Represents a notification for a user about an activity.",
+        "properties": {
+            "id": {
+                "type": "string",
+                "description": "Unique identifier for the notification."
+            },
+            "type": {
+                "type": "string",
+                "enum": ["like", "comment"],
+                "description": "The type of activity."
+            },
+            "postId": {
+                "type": "string",
+                "description": "The ID of the post the activity is related to."
+            },
+            "postContent": {
+                "type": "string",
+                "description": "A snippet of the content of the post."
+            },
+            "fromUserId": {
+                "type": "string",
+                "description": "The ID of the user who initiated the activity."
+            },
+            "timestamp": {
+                "type": "string",
+                "format": "date-time",
+                "description": "When the notification was created."
+            },
+            "read": {
+                "type": "boolean",
+                "description": "Whether the user has read the notification."
+            }
+        },
+        "required": ["id", "type", "postId", "fromUserId", "timestamp", "read"]
     }
   },
   "auth": {
@@ -215,6 +254,26 @@
             ]
         }
       },
+       {
+        "path": "/users/{userId}/notifications/{notificationId}",
+        "definition": {
+            "entityName": "Notification",
+            "schema": {
+                "$ref": "#/backend/entities/Notification"
+            },
+            "description": "Stores notifications for a user.",
+            "params": [
+                {
+                    "name": "userId",
+                    "description": "The ID of the user receiving the notification."
+                },
+                {
+                    "name": "notificationId",
+                    "description": "The unique ID for the notification."
+                }
+            ]
+        }
+      },
       {
         "path": "/posts/{postId}",
         "definition": {
@@ -252,6 +311,6 @@
         }
       }
     ],
-    "reasoning": "The Firestore structure is designed for a public, social-media-style application. User profiles are stored in a `/users` collection, while all posts are stored in a single top-level `/posts` collection. This global `posts` collection allows any user to easily query and view all public posts. Security rules are configured to enforce that while all authenticated users can read posts, only the original author (`authorId` must match `request.auth.uid`) can write, update, or delete their own posts. Comments are stored in a subcollection under each post for clear organization. User-specific data like bookmarks are stored in a subcollection under the respective user's document for security and scalability."
+    "reasoning": "The Firestore structure is designed for a public, social-media-style application. User profiles are stored in a `/users` collection, while all posts are stored in a single top-level `/posts` collection. This global `posts` collection allows any user to easily query and view all public posts. Security rules are configured to enforce that while all authenticated users can read posts, only the original author (`authorId` must match `request.auth.uid`) can write, update, or delete their own posts. Comments are stored in a subcollection under each post for clear organization. User-specific data like bookmarks and notifications are stored in subcollections under the respective user's document for security and scalability."
   }
 }

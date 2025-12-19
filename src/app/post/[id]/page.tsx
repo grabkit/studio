@@ -14,10 +14,11 @@ import {
   arrayRemove,
   arrayUnion,
   deleteDoc,
+  setDoc,
 } from "firebase/firestore";
 import { useCollection, type WithId } from "@/firebase/firestore/use-collection";
 import { useDoc } from "@/firebase/firestore/use-doc";
-import type { Post, Comment } from "@/lib/types";
+import type { Post, Comment, Notification } from "@/lib/types";
 import { useParams, useRouter } from "next/navigation";
 import React, { useState } from "react";
 import Link from 'next/link';
@@ -119,6 +120,21 @@ function PostDetailItem({ post }: { post: WithId<Post> }) {
       });
       errorEmitter.emit('permission-error', permissionError);
     });
+
+    if (!isOwner && !hasLiked) {
+        const notificationRef = doc(collection(firestore, 'users', post.authorId, 'notifications'));
+        const notificationData: Omit<Notification, 'id'> = {
+            type: 'like',
+            postId: post.id,
+            postContent: post.content.substring(0, 100),
+            fromUserId: user.uid,
+            timestamp: serverTimestamp(),
+            read: false,
+        };
+        setDoc(notificationRef, { ...notificationData, id: notificationRef.id }).catch(serverError => {
+            console.error("Failed to create like notification:", serverError);
+        });
+    }
   };
 
   const handleDeletePost = async () => {
@@ -166,29 +182,15 @@ function PostDetailItem({ post }: { post: WithId<Post> }) {
     <Card className="w-full shadow-none rounded-none border-x-0 border-t-0 border-b">
       <CardContent className="p-4">
         <div className="flex space-x-3">
-          {isOwner ? (
-            <Link href="/account">
-              <Avatar className="h-10 w-10">
-                <AvatarFallback>{getInitials(post.authorId)}</AvatarFallback>
-              </Avatar>
-            </Link>
-          ) : (
-            <Avatar className="h-10 w-10">
-              <AvatarFallback>{getInitials(post.authorId)}</AvatarFallback>
-            </Avatar>
-          )}
+          <Avatar className="h-10 w-10">
+            <AvatarFallback>{getInitials(post.authorId)}</AvatarFallback>
+          </Avatar>
           <div className="flex-1 space-y-2">
             <div className="flex justify-between items-start">
                 <div className="flex items-center">
-                  {isOwner ? (
-                    <Link href="/account" className="text-sm font-semibold hover:underline">
-                      {formatUserId(post.authorId)}
-                    </Link>
-                  ) : (
                     <span className="text-sm font-semibold">
                       {formatUserId(post.authorId)}
                     </span>
-                  )}
                 </div>
               <div className="flex items-center space-x-2">
                  <span className="text-xs text-muted-foreground">
@@ -285,7 +287,7 @@ const CommentFormSchema = z.object({
   content: z.string().min(1, "Comment cannot be empty.").max(280),
 });
 
-function CommentForm({ postId, commentsAllowed }: { postId: string, commentsAllowed?: boolean }) {
+function CommentForm({ post, commentsAllowed }: { post: WithId<Post>, commentsAllowed?: boolean }) {
   const { user } = useUser();
   const { firestore } = useFirebase();
   const { toast } = useToast();
@@ -300,33 +302,47 @@ function CommentForm({ postId, commentsAllowed }: { postId: string, commentsAllo
       return;
     }
 
-    const postRef = doc(firestore, "posts", postId);
-    const commentRef = doc(collection(firestore, "posts", postId, "comments"));
+    const postRef = doc(firestore, "posts", post.id);
+    const commentRef = doc(collection(firestore, "posts", post.id, "comments"));
 
-    const newComment = {
+    const newComment: Omit<Comment, 'timestamp'> = {
       id: commentRef.id,
-      postId: postId,
+      postId: post.id,
       authorId: user.uid,
       content: values.content,
-      timestamp: serverTimestamp(),
     };
     
     const batch = writeBatch(firestore);
-batch.set(commentRef, newComment);
-batch.update(postRef, { commentCount: increment(1) });
+    batch.set(commentRef, {...newComment, timestamp: serverTimestamp()});
+    batch.update(postRef, { commentCount: increment(1) });
 
-batch.commit()
-  .then(() => form.reset())
-  .catch(serverError => {
-    // Only check for new comment error since it's the primary operation.
-    // The commentCount increment error is less critical for the user to see.
-    const permissionError = new FirestorePermissionError({
-        path: commentRef.path,
-        operation: 'create',
-        requestResourceData: newComment,
-    });
-    errorEmitter.emit('permission-error', permissionError);
-  });
+    batch.commit()
+      .then(() => {
+        form.reset();
+        // Create notification if not the post owner
+        if (user.uid !== post.authorId) {
+            const notificationRef = doc(collection(firestore, 'users', post.authorId, 'notifications'));
+            const notificationData: Omit<Notification, 'id'> = {
+                type: 'comment',
+                postId: post.id,
+                postContent: post.content.substring(0, 100),
+                fromUserId: user.uid,
+                timestamp: serverTimestamp(),
+                read: false,
+            };
+            setDoc(notificationRef, { ...notificationData, id: notificationRef.id }).catch(serverError => {
+                console.error("Failed to create comment notification:", serverError);
+            });
+        }
+      })
+      .catch(serverError => {
+        const permissionError = new FirestorePermissionError({
+            path: commentRef.path,
+            operation: 'create',
+            requestResourceData: newComment,
+        });
+        errorEmitter.emit('permission-error', permissionError);
+      });
   };
   
   if (commentsAllowed === false) {
@@ -404,28 +420,14 @@ function CommentItem({ comment, postAuthorId }: { comment: WithId<Comment>, post
 
   return (
     <div className="flex space-x-3 p-4 border-b">
-      {user?.uid === comment.authorId ? (
-        <Link href="/account">
-          <Avatar className="h-8 w-8">
-            <AvatarFallback>{getInitials(comment.authorId)}</AvatarFallback>
-          </Avatar>
-        </Link>
-      ) : (
-        <Avatar className="h-8 w-8">
-          <AvatarFallback>{getInitials(comment.authorId)}</AvatarFallback>
-        </Avatar>
-      )}
+      <Avatar className="h-8 w-8">
+        <AvatarFallback>{getInitials(comment.authorId)}</AvatarFallback>
+      </Avatar>
       <div className="flex-1">
         <div className="flex justify-between items-center">
-             {user?.uid === comment.authorId ? (
-                <Link href="/account" className="font-semibold text-sm hover:underline">
-                    {formatUserId(comment.authorId)}
-                </Link>
-             ) : (
-                <span className="font-semibold text-sm">
-                    {formatUserId(comment.authorId)}
-                </span>
-             )}
+            <span className="font-semibold text-sm">
+                {formatUserId(comment.authorId)}
+            </span>
             <div className="flex items-center space-x-2">
                 <span className="text-xs text-muted-foreground">
                 {comment.timestamp
@@ -555,7 +557,7 @@ export default function PostDetailPage() {
                 )}
             </div>
         </div>
-        <CommentForm postId={post.id} commentsAllowed={post.commentsAllowed} />
+        <CommentForm post={post} commentsAllowed={post.commentsAllowed} />
     </AppLayout>
   );
 }
