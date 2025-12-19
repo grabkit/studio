@@ -122,13 +122,13 @@ function PollComponent({ post, user }: { post: WithId<Post>, user: any }) {
                              <div
                                 className={cn(
                                     "absolute left-0 top-0 h-full transition-all duration-500 ease-out",
-                                    isUserChoice ? "bg-blue-500/80" : "bg-primary/20"
+                                    isUserChoice ? "bg-primary" : "bg-primary/20"
                                 )}
                                 style={{ width: `${percentage}%` }}
                             />
                             <div className="absolute inset-0 flex items-center justify-between px-3">
                                 <div className="flex items-center gap-2">
-                                     {isUserChoice && <CheckCircle2 className="h-4 w-4 text-white" />}
+                                     {isUserChoice && <CheckCircle2 className="h-4 w-4 text-primary-foreground" />}
                                     <span className="font-medium text-foreground truncate">
                                         {option.option}
                                     </span>
