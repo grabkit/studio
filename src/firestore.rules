@@ -40,12 +40,6 @@ service cloud.firestore {
             && data.keys().hasOnly(['id', 'postId', 'authorId', 'content', 'timestamp']);
     }
 
-    function isValidNewBookmark(userId, postId) {
-      let data = request.resource.data;
-      return data.userId == userId
-          && data.postId == postId
-          && data.keys().hasOnly(['userId', 'postId', 'timestamp']);
-    }
     
     // RULES
     
@@ -62,13 +56,6 @@ service cloud.firestore {
       allow update: if false;
     }
 
-    match /users/{userId}/bookmarks/{postId} {
-        allow read: if isOwner(userId);
-        allow create: if isOwner(userId) && isValidNewBookmark(userId, postId);
-        allow delete: if isOwner(userId);
-        // Listing bookmarks is implicitly handled by reading the collection
-        allow list: if isOwner(userId);
-    }
     
     match /posts/{postId} {
       allow get, list: if isSignedIn();

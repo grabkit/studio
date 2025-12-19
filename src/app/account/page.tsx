@@ -5,16 +5,15 @@ import { useUser, useFirebase, useMemoFirebase } from "@/firebase";
 import { useRouter } from "next/navigation";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
-import { collection, query, where, doc, getDocs, Query, CollectionReference, orderBy } from "firebase/firestore";
+import { collection, query, where } from "firebase/firestore";
 import { useCollection } from "@/firebase/firestore/use-collection";
-import { Settings, LogOut, Grid3x3, FileText, Bookmark } from "lucide-react";
+import { Settings, LogOut, Grid3x3, FileText } from "lucide-react";
 import { signOut } from "firebase/auth";
 import { useToast } from "@/hooks/use-toast";
-import type { Post, User, Bookmark as BookmarkType } from "@/lib/types";
+import type { Post } from "@/lib/types";
 import { Skeleton } from "@/components/ui/skeleton";
 import Link from "next/link";
-import React, { useMemo, useState, useEffect } from "react";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import React, { useMemo } from "react";
 
 
 const PostGrid = ({ posts, isLoading, emptyState }: { posts: Post[] | null, isLoading: boolean, emptyState: React.ReactNode }) => {
@@ -42,8 +41,6 @@ export default function AccountPage() {
   const { auth, firestore } = useFirebase();
   const router = useRouter();
   const { toast } = useToast();
-  const [bookmarkedPosts, setBookmarkedPosts] = useState<Post[] | null>(null);
-  const [bookmarksLoading, setBookmarksLoading] = useState(true);
 
   const userPostsQuery = useMemoFirebase(() => {
     if (!firestore || !user) return null;
@@ -54,67 +51,6 @@ export default function AccountPage() {
   }, [firestore, user]);
 
   const { data: posts, isLoading: postsLoading } = useCollection<Post>(userPostsQuery);
-  
-  const userBookmarksQuery = useMemoFirebase(() => {
-    if (!firestore || !user) return null;
-    return query(
-      collection(firestore, 'users', user.uid, 'bookmarks'),
-      orderBy('timestamp', 'desc')
-    );
-  }, [firestore, user]);
-
-  const { data: bookmarkDocs, isLoading: bookmarksDocsLoading } = useCollection<BookmarkType>(userBookmarksQuery);
-
-  useEffect(() => {
-    const fetchBookmarkedPosts = async () => {
-      if (!firestore || !bookmarkDocs) {
-        if (!bookmarksDocsLoading) {
-            setBookmarkedPosts([]);
-            setBookmarksLoading(false);
-        }
-        return;
-      }
-      
-      setBookmarksLoading(true);
-      const postIds = bookmarkDocs.map(bm => bm.postId);
-
-      if (postIds.length === 0) {
-        setBookmarkedPosts([]);
-        setBookmarksLoading(false);
-        return;
-      }
-
-      const postsData: Post[] = [];
-      // Firestore 'in' query is limited to 30 items. Batching for more than 30.
-      const batchSize = 30;
-      for (let i = 0; i < postIds.length; i += batchSize) {
-          const batchIds = postIds.slice(i, i + batchSize);
-          const postsRef = collection(firestore, 'posts');
-          const bookmarkedPostsQuery = query(postsRef, where('id', 'in', batchIds));
-          try {
-            const querySnapshot = await getDocs(bookmarkedPostsQuery);
-            querySnapshot.forEach(doc => {
-              postsData.push({ id: doc.id, ...doc.data() } as Post);
-            });
-          } catch (error) {
-            console.error("Error fetching a batch of bookmarked posts:", error);
-          }
-      }
-      
-      // Optional: sort posts by bookmark timestamp
-      const sortedPosts = postsData.sort((a, b) => {
-        const aTimestamp = bookmarkDocs.find(bm => bm.postId === a.id)?.timestamp.toMillis() || 0;
-        const bTimestamp = bookmarkDocs.find(bm => bm.postId === b.id)?.timestamp.toMillis() || 0;
-        return bTimestamp - aTimestamp;
-      });
-
-      setBookmarkedPosts(sortedPosts);
-      setBookmarksLoading(false);
-    };
-
-    fetchBookmarkedPosts();
-  }, [firestore, bookmarkDocs, bookmarksDocsLoading]);
-
 
   const totalLikes = useMemo(() => {
     if (!posts) return 0;
@@ -226,44 +162,23 @@ export default function AccountPage() {
         </div>
 
 
-        {/* Tabs */}
-        <Tabs defaultValue="posts" className="w-full">
-            <TabsList className="grid w-full grid-cols-2">
-                <TabsTrigger value="posts" className="flex-col gap-1">
-                    <Grid3x3 className="h-5 w-5" />
-                </TabsTrigger>
-                <TabsTrigger value="bookmarks" className="flex-col gap-1">
-                    <Bookmark className="h-5 w-5" />
-                </TabsTrigger>
-            </TabsList>
-            <TabsContent value="posts">
-                <PostGrid
-                    posts={posts}
-                    isLoading={postsLoading}
-                    emptyState={
-                        <div className="col-span-3 text-center py-16">
-                            <h3 className="text-xl font-headline text-primary">No Posts Yet</h3>
-                            <p className="text-muted-foreground">Start sharing your thoughts!</p>
-                        </div>
-                    }
-                />
-            </TabsContent>
-            <TabsContent value="bookmarks">
-                <PostGrid
-                    posts={bookmarkedPosts}
-                    isLoading={bookmarksLoading}
-                    emptyState={
-                        <div className="col-span-3 text-center py-16">
-                            <h3 className="text-xl font-headline text-primary">No Bookmarks Yet</h3>
-                            <p className="text-muted-foreground">Save posts to see them here.</p>
-                        </div>
-                    }
-                />
-            </TabsContent>
-        </Tabs>
+        {/* Posts Grid */}
+        <div className="border-t pt-2">
+            <div className="flex justify-center p-2">
+                <Grid3x3 className="h-6 w-6" />
+            </div>
+            <PostGrid
+                posts={posts}
+                isLoading={postsLoading}
+                emptyState={
+                    <div className="col-span-3 text-center py-16">
+                        <h3 className="text-xl font-headline text-primary">No Posts Yet</h3>
+                        <p className="text-muted-foreground">Start sharing your thoughts!</p>
+                    </div>
+                }
+            />
+        </div>
       </div>
     </AppLayout>
   );
 }
-
-    
