@@ -18,14 +18,6 @@ service cloud.firestore {
 
     // VALIDATION FUNCTIONS
     
-    // Validate the core fields of a User document.
-    function hasValidCoreUserFields() {
-        let data = request.resource.data;
-        return data.id == request.auth.uid
-            && data.name is string && data.name.size() > 0
-            && data.email is string && data.email.matches('.*@.*');
-    }
-
     // Validate incoming Post data on create. Ensures author is correct and defaults are set.
     function isValidNewPost() {
         let data = request.resource.data;
@@ -61,12 +53,18 @@ service cloud.firestore {
 
       // Allow creation only with the specific required fields.
       allow create: if isOwner(userId)
-                    && hasValidCoreUserFields()
+                    && request.resource.data.id == request.auth.uid
+                    && request.resource.data.name is string && request.resource.data.name.size() > 0
+                    && request.resource.data.email is string && request.resource.data.email.matches('.*@.*')
                     && request.resource.data.bookmarkedPosts == []
                     && request.resource.data.keys().hasOnly(['id', 'name', 'email', 'bookmarkedPosts']);
-
-      // Allow owner to update ONLY the bookmarkedPosts field.
-      allow update: if isOwner(userId) && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['bookmarkedPosts']);
+      
+      // Allow updates only for the bookmarkedPosts field.
+      // This rule ensures that other fields are not tampered with during a bookmark operation.
+      allow update: if isOwner(userId)
+                    && request.resource.data.id == resource.data.id
+                    && request.resource.data.name == resource.data.name
+                    && request.resource.data.email == resource.data.email;
 
       allow delete: if isOwner(userId);
     }
