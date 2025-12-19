@@ -56,6 +56,16 @@ const forgotPasswordSchema = z.object({
     email: z.string().email({ message: "Please enter a valid email." }),
 });
 
+
+// Combined schema for the single form
+const authSchema = z.object({
+  name: z.string().optional(),
+  email: z.string().email({ message: "Please enter a valid email." }),
+  password: z.string().min(6, { message: "Password must be at least 6 characters." }),
+  terms: z.boolean().optional(),
+});
+
+
 export default function AuthForm() {
   const [authMode, setAuthMode] = useState<"login" | "signup">("login");
   const [loading, setLoading] = useState(false);
@@ -63,13 +73,8 @@ export default function AuthForm() {
   const router = useRouter();
   const { toast } = useToast();
 
-  const loginForm = useForm<z.infer<typeof loginSchema>>({
-    resolver: zodResolver(loginSchema),
-    defaultValues: { email: "", password: "" },
-  });
-
-  const signUpForm = useForm<z.infer<typeof signUpSchema>>({
-    resolver: zodResolver(signUpSchema),
+  const form = useForm<z.infer<typeof authSchema>>({
+    resolver: zodResolver(authSchema),
     defaultValues: { name: "", email: "", password: "", terms: false },
   });
     
@@ -77,6 +82,29 @@ export default function AuthForm() {
     resolver: zodResolver(forgotPasswordSchema),
     defaultValues: { email: "" },
   });
+
+  const handleSubmit = async (values: z.infer<typeof authSchema>) => {
+    if (authMode === 'login') {
+      const result = loginSchema.safeParse(values);
+      if (!result.success) {
+        // Manually set form errors
+        result.error.issues.forEach(issue => {
+          form.setError(issue.path[0] as keyof typeof values, { message: issue.message });
+        });
+        return;
+      }
+      await onLogin(result.data);
+    } else { // signup
+      const result = signUpSchema.safeParse(values);
+       if (!result.success) {
+        result.error.issues.forEach(issue => {
+          form.setError(issue.path[0] as keyof typeof values, { message: issue.message });
+        });
+        return;
+      }
+      await onSignUp(result.data);
+    }
+  };
 
 
   const onLogin = async (values: z.infer<typeof loginSchema>) => {
@@ -131,6 +159,12 @@ export default function AuthForm() {
         setLoading(false);
     }
   };
+  
+  const toggleAuthMode = () => {
+    setAuthMode(prevMode => (prevMode === 'login' ? 'signup' : 'login'));
+    form.reset(); // Reset form state and errors on mode switch
+  }
+
 
   return (
     <div className="w-full">
@@ -148,52 +182,11 @@ export default function AuthForm() {
             </p>
         </div>
 
-      {authMode === 'login' ? (
-         <Form {...loginForm}>
-            <form onSubmit={loginForm.handleSubmit(onLogin)} className="space-y-4">
-                <FormField
-                  control={loginForm.control}
-                  name="email"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Email</FormLabel>
-                      <FormControl>
-                        <div className="relative">
-                            <Mail className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-muted-foreground" />
-                            <Input type="email" placeholder="Email" {...field} className="h-12 text-base pl-10 rounded-full bg-secondary" />
-                        </div>
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-                <FormField
-                  control={loginForm.control}
-                  name="password"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Password</FormLabel>
-                      <FormControl>
-                        <div className="relative">
-                            <Lock className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-muted-foreground" />
-                            <Input type="password" placeholder="Password" {...field} className="h-12 text-base pl-10 rounded-full bg-secondary" />
-                        </div>
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-                <Button type="submit" size="lg" className="w-full font-headline text-lg rounded-full pt-6 pb-6" disabled={loading}>
-                  {loading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-                  Login
-                </Button>
-            </form>
-         </Form>
-      ) : (
-        <Form {...signUpForm}>
-            <form onSubmit={signUpForm.handleSubmit(onSignUp)} className="space-y-4">
-                <FormField
-                  control={signUpForm.control}
+      <Form {...form}>
+        <form onSubmit={form.handleSubmit(handleSubmit)} className="space-y-4">
+            {authMode === 'signup' && (
+               <FormField
+                  control={form.control}
                   name="name"
                   render={({ field }) => (
                     <FormItem>
@@ -208,40 +201,44 @@ export default function AuthForm() {
                     </FormItem>
                   )}
                 />
+            )}
+            
+            <FormField
+              control={form.control}
+              name="email"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Email</FormLabel>
+                  <FormControl>
+                    <div className="relative">
+                        <Mail className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-muted-foreground" />
+                        <Input type="email" placeholder="Email" {...field} className="h-12 text-base pl-10 rounded-full bg-secondary" />
+                    </div>
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+            <FormField
+              control={form.control}
+              name="password"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Password</FormLabel>
+                  <FormControl>
+                    <div className="relative">
+                        <Lock className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-muted-foreground" />
+                        <Input type="password" placeholder="Password" {...field} className="h-12 text-base pl-10 rounded-full bg-secondary" />
+                    </div>
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+            
+            {authMode === 'signup' && (
                 <FormField
-                  control={signUpForm.control}
-                  name="email"
-                  render={({ field }) => (
-                    <FormItem>
-                        <FormLabel>Email</FormLabel>
-                        <FormControl>
-                            <div className="relative">
-                                <Mail className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-muted-foreground" />
-                                <Input type="email" placeholder="Email" {...field} className="h-12 text-base pl-10 rounded-full bg-secondary" />
-                            </div>
-                        </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-                <FormField
-                  control={signUpForm.control}
-                  name="password"
-                  render={({ field }) => (
-                    <FormItem>
-                        <FormLabel>Password</FormLabel>
-                        <FormControl>
-                            <div className="relative">
-                                <Lock className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-muted-foreground" />
-                                <Input type="password" placeholder="Password" {...field} className="h-12 text-base pl-10 rounded-full bg-secondary" />
-                            </div>
-                        </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-                 <FormField
-                  control={signUpForm.control}
+                  control={form.control}
                   name="terms"
                   render={({ field }) => (
                     <FormItem className="flex flex-row items-start space-x-3 space-y-0 rounded-md py-4">
@@ -260,15 +257,17 @@ export default function AuthForm() {
                     </FormItem>
                   )}
                 />
-                <Button type="submit" size="lg" className="w-full font-headline text-lg rounded-full pt-6 pb-6" disabled={loading}>
-                  {loading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-                  Create Account
-                </Button>
-            </form>
-        </Form>
-      )}
+            )}
+
+            <Button type="submit" size="lg" className="w-full font-headline text-lg rounded-full pt-6 pb-6" disabled={loading}>
+              {loading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+              {authMode === 'login' ? 'Login' : 'Create Account'}
+            </Button>
+        </form>
+      </Form>
+      
        <div className="text-center mt-6">
-            <button onClick={() => setAuthMode(authMode === 'login' ? 'signup' : 'login')} className="text-sm">
+            <button onClick={toggleAuthMode} className="text-sm">
                 <span className="text-muted-foreground">
                     {authMode === 'login' ? "Don't have an account? " : "Already have an account? "}
                 </span>
