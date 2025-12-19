@@ -14,10 +14,11 @@ import {
   arrayRemove,
   arrayUnion,
   deleteDoc,
+  setDoc,
 } from "firebase/firestore";
 import { useCollection, type WithId } from "@/firebase/firestore/use-collection";
 import { useDoc } from "@/firebase/firestore/use-doc";
-import type { Post, Comment } from "@/lib/types";
+import type { Post, Comment, Bookmark } from "@/lib/types";
 import { useParams, useRouter } from "next/navigation";
 import React, { useState } from "react";
 
@@ -29,7 +30,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { Button, buttonVariants } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { Form, FormControl, FormField, FormItem, FormMessage } from "@/components/ui/form";
-import { Heart, MessageCircle, Send, Trash2, MoreHorizontal, Edit, ArrowLeft, Repeat } from "lucide-react";
+import { Heart, MessageCircle, Send, Trash2, MoreHorizontal, Edit, ArrowLeft, Repeat, Bookmark as BookmarkIcon } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useToast } from "@/hooks/use-toast";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -71,14 +72,21 @@ const getInitials = (name: string | null | undefined) => {
 };
 
 function PostDetailItem({ post }: { post: WithId<Post> }) {
-  const { user } = useUser();
-  const { firestore } = useFirebase();
+  const { user, firestore } = useFirebase();
   const { toast } = useToast();
   const router = useRouter();
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
 
   const hasLiked = user ? post.likes?.includes(user.uid) : false;
   const isOwner = user?.uid === post.authorId;
+  
+  const bookmarkRef = useMemoFirebase(() => {
+    if (!firestore || !user) return null;
+    return doc(firestore, "users", user.uid, "bookmarks", post.id);
+  }, [firestore, user, post.id]);
+
+  const { data: bookmark, isLoading: isBookmarkLoading } = useDoc<Bookmark>(bookmarkRef);
+  const isBookmarked = !!bookmark;
 
 
   const handleLike = async () => {
@@ -120,6 +128,28 @@ function PostDetailItem({ post }: { post: WithId<Post> }) {
       });
       errorEmitter.emit('permission-error', permissionError);
     });
+  };
+
+  const handleBookmark = () => {
+    if (!bookmarkRef) return;
+
+    if (isBookmarked) {
+        deleteDoc(bookmarkRef).catch(error => {
+            const permissionError = new FirestorePermissionError({ path: bookmarkRef.path, operation: 'delete' });
+            errorEmitter.emit('permission-error', permissionError);
+        });
+    } else {
+        const newBookmark: Bookmark = {
+            itemId: post.id,
+            itemType: 'post',
+            originalOwnerId: post.authorId,
+            createdAt: serverTimestamp(),
+        }
+        setDoc(bookmarkRef, newBookmark).catch(error => {
+            const permissionError = new FirestorePermissionError({ path: bookmarkRef.path, operation: 'create', requestResourceData: newBookmark });
+            errorEmitter.emit('permission-error', permissionError);
+        })
+    }
   };
 
   const handleDeletePost = async () => {
@@ -238,6 +268,9 @@ function PostDetailItem({ post }: { post: WithId<Post> }) {
                 </button>
                 <button className="flex items-center space-x-1 hover:text-green-500">
                     <Repeat className={cn("h-5 w-5")} />
+                </button>
+                <button onClick={handleBookmark} disabled={isBookmarkLoading} className="flex items-center space-x-1 hover:text-yellow-500">
+                    <BookmarkIcon className={cn("h-5 w-5", isBookmarked && "text-yellow-500 fill-yellow-500")} />
                 </button>
                 <button onClick={handleShare} className="flex items-center space-x-1 hover:text-primary">
                     <Send className="h-5 w-5" />

@@ -4,14 +4,15 @@
 
 import AppLayout from "@/components/AppLayout";
 import { useFirebase, useMemoFirebase, useUser } from "@/firebase";
-import { collection, query, orderBy, limit, doc, writeBatch, arrayUnion, arrayRemove, increment, deleteDoc, serverTimestamp } from "firebase/firestore";
+import { collection, query, orderBy, limit, doc, writeBatch, arrayUnion, arrayRemove, increment, deleteDoc, serverTimestamp, setDoc } from "firebase/firestore";
 import { useCollection, type WithId } from "@/firebase/firestore/use-collection";
+import { useDoc } from "@/firebase/firestore/use-doc";
 import { Card, CardContent } from "@/components/ui/card";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { formatDistanceToNow } from "date-fns";
 import { Skeleton } from "@/components/ui/skeleton";
-import type { Post } from "@/lib/types";
-import { Heart, MessageCircle, Repeat, Send, MoreHorizontal, Edit, Trash2 } from "lucide-react";
+import type { Post, Bookmark } from "@/lib/types";
+import { Heart, MessageCircle, Repeat, Send, MoreHorizontal, Edit, Trash2, Bookmark as BookmarkIcon } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useToast } from "@/hooks/use-toast";
 import { FirestorePermissionError } from "@/firebase/errors";
@@ -49,14 +50,21 @@ const getInitials = (name: string | null | undefined) => {
 };
 
 function PostItem({ post }: { post: WithId<Post> }) {
-  const { user } = useUser();
-  const { firestore } = useFirebase();
+  const { user, firestore } = useFirebase();
   const { toast } = useToast();
   const router = useRouter();
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
   
   const hasLiked = user ? post.likes?.includes(user.uid) : false;
   const isOwner = user?.uid === post.authorId;
+
+  const bookmarkRef = useMemoFirebase(() => {
+    if (!firestore || !user) return null;
+    return doc(firestore, "users", user.uid, "bookmarks", post.id);
+  }, [firestore, user, post.id]);
+
+  const { data: bookmark, isLoading: isBookmarkLoading } = useDoc<Bookmark>(bookmarkRef);
+  const isBookmarked = !!bookmark;
 
 
   const handleLike = async () => {
@@ -96,6 +104,28 @@ function PostItem({ post }: { post: WithId<Post> }) {
         });
         errorEmitter.emit('permission-error', permissionError);
     });
+  };
+
+  const handleBookmark = () => {
+    if (!bookmarkRef) return;
+
+    if (isBookmarked) {
+        deleteDoc(bookmarkRef).catch(error => {
+            const permissionError = new FirestorePermissionError({ path: bookmarkRef.path, operation: 'delete' });
+            errorEmitter.emit('permission-error', permissionError);
+        });
+    } else {
+        const newBookmark: Bookmark = {
+            itemId: post.id,
+            itemType: 'post',
+            originalOwnerId: post.authorId,
+            createdAt: serverTimestamp(),
+        }
+        setDoc(bookmarkRef, newBookmark).catch(error => {
+            const permissionError = new FirestorePermissionError({ path: bookmarkRef.path, operation: 'create', requestResourceData: newBookmark });
+            errorEmitter.emit('permission-error', permissionError);
+        })
+    }
   };
 
   const handleDeletePost = async () => {
@@ -202,6 +232,9 @@ function PostItem({ post }: { post: WithId<Post> }) {
                     <Send className="h-4 w-4" />
                   </button>
                 </div>
+                 <button onClick={handleBookmark} disabled={isBookmarkLoading} className="flex items-center space-x-1 hover:text-yellow-500">
+                    <BookmarkIcon className={cn("h-4 w-4", isBookmarked && "text-yellow-500 fill-yellow-500")} />
+                </button>
             </div>
           </div>
         </div>
@@ -240,11 +273,14 @@ function PostSkeleton() {
             </div>
             <Skeleton className="h-4 w-full" />
             <Skeleton className="h-4 w-3/4" />
-            <div className="flex items-center space-x-6 pt-2">
-              <Skeleton className="h-4 w-4" />
-              <Skeleton className="h-4 w-4" />
-              <Skeleton className="h-4 w-4" />
-              <Skeleton className="h-4 w-4" />
+            <div className="flex items-center justify-between pt-2">
+                <div className="flex items-center space-x-6">
+                    <Skeleton className="h-4 w-4" />
+                    <Skeleton className="h-4 w-4" />
+                    <Skeleton className="h-4 w-4" />
+                    <Skeleton className="h-4 w-4" />
+                </div>
+                <Skeleton className="h-4 w-4" />
             </div>
           </div>
         </div>

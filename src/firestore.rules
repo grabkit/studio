@@ -40,6 +40,13 @@ service cloud.firestore {
             && data.keys().hasOnly(['id', 'postId', 'authorId', 'content', 'timestamp']);
     }
 
+    function isValidNewBookmark() {
+      let data = request.resource.data;
+      return data.itemId is string
+          && data.itemType == 'post'
+          && data.createdAt == request.time;
+    }
+
     
     // RULES
     
@@ -54,6 +61,13 @@ service cloud.firestore {
       
       // Users can't update their profile doc directly for now.
       allow update: if false;
+
+      match /bookmarks/{postId} {
+        allow read: if isOwner(userId);
+        allow list: if isOwner(userId);
+        allow create: if isOwner(userId) && isValidNewBookmark();
+        allow delete: if isOwner(userId);
+      }
     }
 
     
