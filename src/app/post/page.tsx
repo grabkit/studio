@@ -2,7 +2,7 @@
 "use client";
 
 import * as React from "react";
-import { useState, Suspense } from "react";
+import { useState, Suspense, useEffect } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { useForm, useFieldArray } from "react-hook-form";
 import * as z from "zod";
@@ -27,6 +27,7 @@ import { errorEmitter } from "@/firebase/error-emitter";
 import { FirestorePermissionError } from "@/firebase/errors";
 import { Switch } from "@/components/ui/switch";
 import { Label } from "@/components/ui/label";
+import { cn } from "@/lib/utils";
 
 const pollOptionSchema = z.object({
   option: z.string().min(1, "Option cannot be empty.").max(100, "Option is too long."),
@@ -98,7 +99,7 @@ function PostPageComponent() {
 
   const isPoll = form.watch("isPoll");
 
-  React.useEffect(() => {
+  useEffect(() => {
     if (!isOpen) {
       // Use a timeout to allow the sheet to animate out
       setTimeout(() => router.back(), 300);
@@ -112,8 +113,8 @@ function PostPageComponent() {
     
     const postsColRef = collection(firestore, `posts`);
     const newPostRef = doc(postsColRef);
-
-    const newPost: any = {
+    
+    const newPostData: any = {
       id: newPostRef.id,
       authorId: user.uid,
       content: values.content,
@@ -126,11 +127,11 @@ function PostPageComponent() {
     };
 
     if (values.isPoll && values.pollOptions) {
-        newPost.pollOptions = values.pollOptions.map(opt => ({ option: opt.option, votes: 0 }));
-        newPost.voters = {};
+        newPostData.pollOptions = values.pollOptions.map(opt => ({ option: opt.option, votes: 0 }));
+        newPostData.voters = {};
     }
 
-    setDoc(newPostRef, newPost)
+    setDoc(newPostRef, newPostData)
       .then(() => {
         form.reset();
         setIsOpen(false);
@@ -139,7 +140,7 @@ function PostPageComponent() {
         const permissionError = new FirestorePermissionError({
             path: newPostRef.path,
             operation: 'create',
-            requestResourceData: newPost
+            requestResourceData: newPostData
         });
         errorEmitter.emit('permission-error', permissionError);
       })
@@ -162,101 +163,103 @@ function PostPageComponent() {
           <SheetDescription className="sr-only">Create a new post by writing content. You can also disable replies before publishing.</SheetDescription>
         </div>
         
-        <Form {...form}>
-            <form onSubmit={form.handleSubmit(onSubmit)} className="flex-grow flex flex-col pt-14">
-                <div className="flex-grow overflow-y-auto px-4 pb-4 pt-[2px]">
-                    <div className="flex items-start space-x-4">
-                        <Avatar>
-                            <AvatarImage src={user?.photoURL || undefined} />
-                            <AvatarFallback>{getInitials(user?.displayName)}</AvatarFallback>
-                        </Avatar>
-                        <div className="w-full">
-                            <span className="font-semibold text-sm">{formatUserId(user?.uid)}</span>
-                             <FormField
-                                control={form.control}
-                                name="content"
-                                render={({ field }) => (
-                                    <FormItem>
-                                        <FormControl>
-                                            <Textarea
-                                            placeholder={isPoll ? "Ask a question..." : "Start a new thread..."}
-                                            className="border-none focus-visible:ring-0 !outline-none text-base resize-none -ml-2"
-                                            rows={3}
-                                            {...field}
-                                            />
-                                        </FormControl>
-                                        <FormMessage />
-                                    </FormItem>
-                                )}
-                             />
+        <div className="flex-grow flex flex-col pt-14">
+            <div className="flex-grow overflow-y-auto px-4 pb-4 pt-[2px]">
+                <div className="flex items-start space-x-4">
+                    <Avatar>
+                        <AvatarImage src={user?.photoURL || undefined} />
+                        <AvatarFallback>{getInitials(user?.displayName)}</AvatarFallback>
+                    </Avatar>
+                    <div className="w-full">
+                        <span className="font-semibold text-sm">{formatUserId(user?.uid)}</span>
+                         
+                        <Form {...form}>
+                            <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
+                                <FormField
+                                    control={form.control}
+                                    name="content"
+                                    render={({ field }) => (
+                                        <FormItem>
+                                            <FormControl>
+                                                <Textarea
+                                                placeholder={isPoll ? "Ask a question..." : "Start a new thread..."}
+                                                className="border-none focus-visible:ring-0 !outline-none text-base resize-none -ml-2"
+                                                rows={3}
+                                                {...field}
+                                                />
+                                            </FormControl>
+                                            <FormMessage />
+                                        </FormItem>
+                                    )}
+                                 />
 
-                             {isPoll && (
-                                <div className="space-y-2 mt-4">
-                                    {fields.map((field, index) => (
-                                        <FormField
-                                            key={field.id}
+                                 {isPoll && (
+                                    <div className="space-y-2 mt-4">
+                                        {fields.map((field, index) => (
+                                            <FormField
+                                                key={field.id}
+                                                control={form.control}
+                                                name={`pollOptions.${index}.option`}
+                                                render={({ field }) => (
+                                                    <FormItem>
+                                                        <FormControl>
+                                                            <div className="flex items-center gap-2">
+                                                                <Input placeholder={`Option ${index + 1}`} {...field} className="bg-secondary"/>
+                                                                {fields.length > 2 && (
+                                                                    <Button variant="ghost" size="icon" type="button" onClick={() => remove(index)}>
+                                                                        <Trash2 className="h-4 w-4 text-destructive" />
+                                                                    </Button>
+                                                                )}
+                                                            </div>
+                                                        </FormControl>
+                                                        <FormMessage />
+                                                    </FormItem>
+                                                )}
+                                            />
+                                        ))}
+                                        {fields.length < 4 && (
+                                            <Button type="button" variant="outline" size="sm" onClick={() => append({option: ""})}>
+                                                <Plus className="h-4 w-4 mr-2" />
+                                                Add option
+                                            </Button>
+                                        )}
+                                    </div>
+                                 )}
+                                 
+                                <div className="p-4 border-t bg-background w-full fixed bottom-0 left-0 right-0">
+                                    <div className="flex items-center justify-between">
+                                         <FormField
                                             control={form.control}
-                                            name={`pollOptions.${index}.option`}
+                                            name="commentsAllowed"
                                             render={({ field }) => (
-                                                <FormItem>
-                                                    <FormControl>
-                                                        <div className="flex items-center gap-2">
-                                                            <Input placeholder={`Option ${index + 1}`} {...field} className="bg-secondary"/>
-                                                            {fields.length > 2 && (
-                                                                <Button variant="ghost" size="icon" onClick={() => remove(index)}>
-                                                                    <Trash2 className="h-4 w-4 text-destructive" />
-                                                                </Button>
-                                                            )}
-                                                        </div>
-                                                    </FormControl>
-                                                    <FormMessage />
+                                                <FormItem className="flex items-center space-x-2 space-y-0">
+                                                     <Switch
+                                                        id="comments-allowed"
+                                                        checked={field.value}
+                                                        onCheckedChange={field.onChange}
+                                                    />
+                                                    <Label htmlFor="comments-allowed" className="text-sm">
+                                                        Replies
+                                                    </Label>
                                                 </FormItem>
                                             )}
-                                        />
-                                    ))}
-                                    {fields.length < 4 && (
-                                        <Button type="button" variant="outline" size="sm" onClick={() => append({option: ""})}>
-                                            <Plus className="h-4 w-4 mr-2" />
-                                            Add option
+                                            />
+                                        <Button type="submit" disabled={isSubmitting} className="rounded-full w-32">
+                                            {isSubmitting ? <Loader2 className="h-4 w-4 animate-spin" /> : 'Publish'}
                                         </Button>
-                                    )}
+                                    </div>
                                 </div>
-                             )}
-
-                            <div className="mt-4">
-                                <Button type="button" variant="ghost" size="icon" onClick={() => form.setValue('isPoll', !isPoll)}>
-                                    <ListOrdered className="h-5 w-5" />
-                                </Button>
-                            </div>
-                        </div>
+                            </form>
+                        </Form>
                     </div>
                 </div>
-
-                <div className="p-4 border-t bg-background w-full">
-                    <div className="flex items-center justify-between">
-                         <FormField
-                            control={form.control}
-                            name="commentsAllowed"
-                            render={({ field }) => (
-                                <FormItem className="flex items-center space-x-2 space-y-0">
-                                     <Switch
-                                        id="comments-allowed"
-                                        checked={field.value}
-                                        onCheckedChange={field.onChange}
-                                    />
-                                    <Label htmlFor="comments-allowed" className="text-sm">
-                                        Replies
-                                    </Label>
-                                </FormItem>
-                            )}
-                            />
-                        <Button type="submit" disabled={isSubmitting} className="rounded-full w-32">
-                            {isSubmitting ? <Loader2 className="h-4 w-4 animate-spin" /> : 'Publish'}
-                        </Button>
-                    </div>
+                 <div className="mt-4 pl-14">
+                    <Button type="button" variant="ghost" size="icon" onClick={() => form.setValue('isPoll', !isPoll)}>
+                        <ListOrdered className={cn("h-5 w-5", isPoll && "text-blue-500")} />
+                    </Button>
                 </div>
-            </form>
-        </Form>
+            </div>
+        </div>
 
       </SheetContent>
     </Sheet>
