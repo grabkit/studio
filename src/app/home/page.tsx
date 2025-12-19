@@ -37,6 +37,7 @@ import {
 import React, { useState } from "react";
 import { Button, buttonVariants } from "@/components/ui/button";
 import { useRouter } from "next/navigation";
+import { updateDocumentNonBlocking } from "@/firebase/non-blocking-updates";
 
 
 const formatUserId = (uid: string | undefined) => {
@@ -107,7 +108,7 @@ function PostItem({ post }: { post: WithId<Post> }) {
     });
   };
 
-  const handleBookmark = async () => {
+  const handleBookmark = () => {
     if (!user || !firestore || !userRef) {
       toast({
         variant: 'destructive',
@@ -121,15 +122,8 @@ function PostItem({ post }: { post: WithId<Post> }) {
       bookmarkedPosts: isBookmarked ? arrayRemove(post.id) : arrayUnion(post.id),
     };
 
-    updateDoc(userRef, payload)
-        .catch(serverError => {
-            const permissionError = new FirestorePermissionError({
-                path: userRef.path,
-                operation: 'update',
-                requestResourceData: payload,
-            });
-            errorEmitter.emit('permission-error', permissionError);
-        });
+    // Use the non-blocking update function
+    updateDocumentNonBlocking(userRef, payload);
   };
 
   const handleDeletePost = async () => {

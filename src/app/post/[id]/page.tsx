@@ -54,6 +54,7 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
+import { updateDocumentNonBlocking } from "@/firebase/non-blocking-updates";
 
 
 const formatUserId = (uid: string | undefined) => {
@@ -130,7 +131,7 @@ function PostDetailItem({ post }: { post: WithId<Post> }) {
     });
   };
 
-  const handleBookmark = async () => {
+  const handleBookmark = () => {
     if (!user || !firestore || !userRef) {
       toast({
         variant: 'destructive',
@@ -144,15 +145,8 @@ function PostDetailItem({ post }: { post: WithId<Post> }) {
       bookmarkedPosts: isBookmarked ? arrayRemove(post.id) : arrayUnion(post.id),
     };
 
-    updateDoc(userRef, payload)
-        .catch(serverError => {
-            const permissionError = new FirestorePermissionError({
-                path: userRef.path,
-                operation: 'update',
-                requestResourceData: payload,
-            });
-            errorEmitter.emit('permission-error', permissionError);
-        });
+    // Use the non-blocking update function
+    updateDocumentNonBlocking(userRef, payload);
   };
 
   const handleDeletePost = async () => {
@@ -337,19 +331,21 @@ function CommentForm({ postId, commentsAllowed }: { postId: string, commentsAllo
     };
     
     const batch = writeBatch(firestore);
-    batch.set(commentRef, newComment);
-    batch.update(postRef, { commentCount: increment(1) });
-    
-    batch.commit()
-        .then(() => form.reset())
-        .catch(serverError => {
-            const permissionError = new FirestorePermissionError({
-                path: commentRef.path,
-                operation: 'create',
-                requestResourceData: newComment,
-            });
-            errorEmitter.emit('permission-error', permissionError);
-        });
+batch.set(commentRef, newComment);
+batch.update(postRef, { commentCount: increment(1) });
+
+batch.commit()
+  .then(() => form.reset())
+  .catch(serverError => {
+    // Only check for new comment error since it's the primary operation.
+    // The commentCount increment error is less critical for the user to see.
+    const permissionError = new FirestorePermissionError({
+        path: commentRef.path,
+        operation: 'create',
+        requestResourceData: newComment,
+    });
+    errorEmitter.emit('permission-error', permissionError);
+  });
   };
   
   if (commentsAllowed === false) {
