@@ -4,7 +4,7 @@
 
 import AppLayout from "@/components/AppLayout";
 import { useFirebase, useMemoFirebase, useUser } from "@/firebase";
-import { collection, query, orderBy, limit, doc, writeBatch, arrayUnion, arrayRemove, increment, deleteDoc, updateDoc } from "firebase/firestore";
+import { collection, query, orderBy, limit, doc, writeBatch, arrayUnion, arrayRemove, increment, deleteDoc, setDoc } from "firebase/firestore";
 import { useCollection, type WithId } from "@/firebase/firestore/use-collection";
 import { useDoc } from "@/firebase/firestore/use-doc";
 import { Card, CardContent } from "@/components/ui/card";
@@ -37,7 +37,6 @@ import {
 import React, { useState } from "react";
 import { Button, buttonVariants } from "@/components/ui/button";
 import { useRouter } from "next/navigation";
-import { updateDocumentNonBlocking } from "@/firebase/non-blocking-updates";
 
 
 const formatUserId = (uid: string | undefined) => {
@@ -122,8 +121,15 @@ function PostItem({ post }: { post: WithId<Post> }) {
       bookmarkedPosts: isBookmarked ? arrayRemove(post.id) : arrayUnion(post.id),
     };
 
-    // Use the non-blocking update function
-    updateDocumentNonBlocking(userRef, payload);
+    setDoc(userRef, payload, { merge: true })
+      .catch(serverError => {
+          const permissionError = new FirestorePermissionError({
+              path: userRef.path,
+              operation: 'update',
+              requestResourceData: payload,
+          });
+          errorEmitter.emit('permission-error', permissionError);
+      });
   };
 
   const handleDeletePost = async () => {

@@ -14,7 +14,7 @@ import {
   arrayRemove,
   arrayUnion,
   deleteDoc,
-  updateDoc,
+  setDoc,
 } from "firebase/firestore";
 import { useCollection, type WithId } from "@/firebase/firestore/use-collection";
 import { useDoc } from "@/firebase/firestore/use-doc";
@@ -54,7 +54,6 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
-import { updateDocumentNonBlocking } from "@/firebase/non-blocking-updates";
 
 
 const formatUserId = (uid: string | undefined) => {
@@ -145,8 +144,15 @@ function PostDetailItem({ post }: { post: WithId<Post> }) {
       bookmarkedPosts: isBookmarked ? arrayRemove(post.id) : arrayUnion(post.id),
     };
 
-    // Use the non-blocking update function
-    updateDocumentNonBlocking(userRef, payload);
+    setDoc(userRef, payload, { merge: true })
+      .catch(serverError => {
+          const permissionError = new FirestorePermissionError({
+              path: userRef.path,
+              operation: 'update',
+              requestResourceData: payload,
+          });
+          errorEmitter.emit('permission-error', permissionError);
+      });
   };
 
   const handleDeletePost = async () => {
