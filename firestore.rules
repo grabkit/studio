@@ -62,9 +62,9 @@ service cloud.firestore {
       allow list: if false; // Disable user enumeration for privacy.
       allow create: if isOwner(userId) && isValidUser(userId);
       allow update: if isOwner(userId) && (
-        // Allow user to update their profile info
+        // Allow user to update their profile info, including bookmarks
         isValidUser(userId) ||
-        // Allow user to update only their bookmarks
+        // Also allow updating *only* the bookmarks field.
         request.resource.data.diff(resource.data).affectedKeys().hasOnly(['bookmarkedPosts'])
       );
       allow delete: if isOwner(userId);
