@@ -38,7 +38,7 @@ service cloud.firestore {
 
     // RULES
     match /users/{userId} {
-      // Any signed-in user can get another user's profile document.
+      // PERMANENT FIX: Allow any signed-in user to get another user's profile document.
       allow get: if isSignedIn();
       // Disable listing all users for privacy.
       allow list: if false;
