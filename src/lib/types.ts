@@ -25,3 +25,13 @@ export interface User {
     email: string;
     anonymousId?: string;
 }
+
+export interface Bookmark {
+    id: string;
+    postId: string;
+    timestamp: Timestamp;
+}
+
+export interface UserPost extends Post {
+    // This can be extended with user-specific post data if needed in future
+}

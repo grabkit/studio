@@ -21,6 +21,10 @@ service cloud.firestore {
                     && request.resource.data.email is string;
       allow update: if false;
     }
+    
+    match /users/{userId}/bookmarks/{postId} {
+      allow read, write: if isOwner(userId);
+    }
 
     match /posts/{postId} {
       allow get, list: if isSignedIn();
@@ -45,8 +49,7 @@ service cloud.firestore {
             && data.id == request.id
             && data.content is string && data.content.size() > 0
             && data.likeCount == 0 && data.commentCount == 0
-            && data.commentsAllowed is bool && data.likes is list && data.likes.size() == 0
-            && !data.keys().hasAny(['pollOptions', 'voters', 'type']);
+            && data.commentsAllowed is bool && data.likes is list && data.likes.size() == 0;
     }
 
     function isValidNewComment(postId, commentId) {

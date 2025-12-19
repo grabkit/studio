@@ -4,14 +4,14 @@
 
 import AppLayout from "@/components/AppLayout";
 import { useFirebase, useMemoFirebase, useUser } from "@/firebase";
-import { collection, query, orderBy, limit, doc, writeBatch, arrayUnion, arrayRemove, increment, deleteDoc, updateDoc } from "firebase/firestore";
+import { collection, query, orderBy, limit, doc, updateDoc, arrayUnion, arrayRemove, increment, deleteDoc, setDoc, serverTimestamp, deleteDoc as deleteBookmarkDoc } from "firebase/firestore";
 import { useCollection, type WithId } from "@/firebase/firestore/use-collection";
 import { Card, CardContent } from "@/components/ui/card";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { formatDistanceToNow } from "date-fns";
 import { Skeleton } from "@/components/ui/skeleton";
-import type { Post } from "@/lib/types";
-import { Heart, MessageCircle, Repeat, Send, MoreHorizontal, Edit, Trash2 } from "lucide-react";
+import type { Post, Bookmark } from "@/lib/types";
+import { Heart, MessageCircle, Repeat, Send, MoreHorizontal, Edit, Trash2, Bookmark as BookmarkIcon } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useToast } from "@/hooks/use-toast";
 import { FirestorePermissionError } from "@/firebase/errors";
@@ -33,7 +33,7 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
-import React, { useState } from "react";
+import React, { useState, useMemo } from "react";
 import { Button, buttonVariants } from "@/components/ui/button";
 import { useRouter } from "next/navigation";
 
@@ -49,7 +49,7 @@ const getInitials = (name: string | null | undefined) => {
 };
 
 
-function PostItem({ post }: { post: WithId<Post> }) {
+function PostItem({ post, bookmarks }: { post: WithId<Post>, bookmarks: WithId<Bookmark>[] | null }) {
   const { user, firestore } = useFirebase();
   const { toast } = useToast();
   const router = useRouter();
@@ -57,6 +57,8 @@ function PostItem({ post }: { post: WithId<Post> }) {
   
   const hasLiked = user ? post.likes?.includes(user.uid) : false;
   const isOwner = user?.uid === post.authorId;
+  const isBookmarked = useMemo(() => bookmarks?.some(b => b.postId === post.id), [bookmarks, post.id]);
+
 
   const handleLike = async () => {
     if (!user || !firestore) {
@@ -129,6 +131,41 @@ function PostItem({ post }: { post: WithId<Post> }) {
     }
   };
 
+  const handleBookmark = () => {
+    if (!user || !firestore) {
+        toast({
+            variant: "destructive",
+            title: "Authentication Error",
+            description: "You must be logged in to bookmark a post.",
+        });
+        return;
+    }
+    const bookmarkRef = doc(firestore, 'users', user.uid, 'bookmarks', post.id);
+
+    if (isBookmarked) {
+        deleteBookmarkDoc(bookmarkRef).catch(serverError => {
+            const permissionError = new FirestorePermissionError({
+                path: bookmarkRef.path,
+                operation: 'delete',
+            });
+            errorEmitter.emit('permission-error', permissionError);
+        });
+    } else {
+        const bookmarkData: Omit<Bookmark, 'id'> = {
+            postId: post.id,
+            timestamp: serverTimestamp()
+        };
+        setDoc(bookmarkRef, bookmarkData).catch(serverError => {
+            const permissionError = new FirestorePermissionError({
+                path: bookmarkRef.path,
+                operation: 'create',
+                requestResourceData: bookmarkData,
+            });
+            errorEmitter.emit('permission-error', permissionError);
+        });
+    }
+  };
+
 
   return (
     <Card className="w-full shadow-none border-x-0 border-t-0 rounded-none">
@@ -190,6 +227,9 @@ function PostItem({ post }: { post: WithId<Post> }) {
                     <Send className="h-4 w-4" />
                   </button>
                 </div>
+                 <button onClick={handleBookmark} className="flex items-center space-x-1 hover:text-blue-500">
+                    <BookmarkIcon className={cn("h-4 w-4", isBookmarked && "text-blue-500 fill-blue-500")} />
+                </button>
             </div>
           </div>
         </div>
@@ -245,7 +285,7 @@ function PostSkeleton() {
 
 
 export default function HomePage() {
-  const { firestore } = useFirebase();
+  const { firestore, user } = useFirebase();
 
   const postsQuery = useMemoFirebase(() => {
     if (!firestore) return null;
@@ -256,7 +296,15 @@ export default function HomePage() {
     );
   }, [firestore]);
 
-  const { data: posts, isLoading } = useCollection<Post>(postsQuery);
+  const bookmarksQuery = useMemoFirebase(() => {
+    if (!firestore || !user) return null;
+    return collection(firestore, 'users', user.uid, 'bookmarks');
+  }, [firestore, user]);
+
+  const { data: posts, isLoading: postsLoading } = useCollection<Post>(postsQuery);
+  const { data: bookmarks, isLoading: bookmarksLoading } = useCollection<Bookmark>(bookmarksQuery);
+
+  const isLoading = postsLoading || bookmarksLoading;
 
   return (
     <AppLayout>
@@ -275,7 +323,7 @@ export default function HomePage() {
           </div>
         )}
         {posts?.map((post) => (
-          <PostItem key={post.id} post={post} />
+          <PostItem key={post.id} post={post} bookmarks={bookmarks} />
         ))}
       </div>
     </AppLayout>

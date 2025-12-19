@@ -5,19 +5,19 @@ import { useUser, useFirebase, useMemoFirebase } from "@/firebase";
 import { useRouter } from "next/navigation";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
-import { collection, query, where } from "firebase/firestore";
+import { collection, query, where, orderBy, getDocs } from "firebase/firestore";
 import { useCollection } from "@/firebase/firestore/use-collection";
-import { Settings, LogOut, Grid3x3, FileText } from "lucide-react";
+import { Settings, LogOut, Grid3x3, FileText, Bookmark as BookmarkIcon } from "lucide-react";
 import { signOut } from "firebase/auth";
 import { useToast } from "@/hooks/use-toast";
-import type { Post } from "@/lib/types";
+import type { Post, UserPost, Bookmark } from "@/lib/types";
 import { Skeleton } from "@/components/ui/skeleton";
 import Link from "next/link";
-import React, { useMemo } from "react";
+import React, { useMemo, useState, useEffect } from "react";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 
 
-const PostGrid = ({ posts, isLoading, emptyState }: { posts: Post[] | null, isLoading: boolean, emptyState: React.ReactNode }) => {
+const PostGrid = ({ posts, isLoading, emptyState }: { posts: (Post | UserPost)[] | null, isLoading: boolean, emptyState: React.ReactNode }) => {
     return (
         <>
             <div className="grid grid-cols-3 gap-1 mt-1">
@@ -36,6 +36,70 @@ const PostGrid = ({ posts, isLoading, emptyState }: { posts: Post[] | null, isLo
         </>
     )
 }
+
+function BookmarkedPosts() {
+    const { user, firestore } = useFirebase();
+    const [posts, setPosts] = useState<UserPost[] | null>(null);
+    const [isLoading, setIsLoading] = useState(true);
+
+    const bookmarksQuery = useMemoFirebase(() => {
+        if (!firestore || !user) return null;
+        return query(
+            collection(firestore, "users", user.uid, "bookmarks"),
+            orderBy("timestamp", "desc")
+        );
+    }, [firestore, user]);
+
+    const { data: bookmarks } = useCollection<Bookmark>(bookmarksQuery);
+
+    useEffect(() => {
+        if (!bookmarks || !firestore) {
+            setIsLoading(bookmarks === null); // Still loading if bookmarks haven't been fetched
+            return;
+        };
+
+        const fetchPosts = async () => {
+            if (bookmarks.length === 0) {
+                setPosts([]);
+                setIsLoading(false);
+                return;
+            }
+            const postIds = bookmarks.map(b => b.postId);
+            const postsQuery = query(collection(firestore, 'posts'), where('id', 'in', postIds));
+            
+            try {
+                const postSnapshots = await getDocs(postsQuery);
+                const fetchedPosts = postSnapshots.docs.map(doc => ({ ...doc.data(), id: doc.id } as UserPost));
+                
+                // Order posts according to bookmark timestamp
+                const orderedPosts = bookmarks.map(bookmark => fetchedPosts.find(p => p.id === bookmark.postId)).filter(p => p) as UserPost[];
+
+                setPosts(orderedPosts);
+            } catch (error) {
+                console.error("Error fetching bookmarked posts:", error);
+                setPosts([]);
+            } finally {
+                setIsLoading(false);
+            }
+        };
+
+        fetchPosts();
+    }, [bookmarks, firestore]);
+
+    return (
+        <PostGrid
+            posts={posts}
+            isLoading={isLoading}
+            emptyState={
+                <div className="col-span-3 text-center py-16">
+                    <h3 className="text-xl font-headline text-primary">No Bookmarks Yet</h3>
+                    <p className="text-muted-foreground">Save posts to see them here.</p>
+                </div>
+            }
+        />
+    )
+}
+
 
 export default function AccountPage() {
   const { user } = useUser();
@@ -164,8 +228,9 @@ export default function AccountPage() {
 
 
         <Tabs defaultValue="posts" className="w-full">
-            <TabsList className="grid w-full grid-cols-1">
+            <TabsList className="grid w-full grid-cols-2">
                 <TabsTrigger value="posts" className="gap-2"><Grid3x3 className="h-5 w-5" /> Posts</TabsTrigger>
+                <TabsTrigger value="bookmarked" className="gap-2"><BookmarkIcon className="h-5 w-5" /> Bookmarked</TabsTrigger>
             </TabsList>
             <TabsContent value="posts">
                 <PostGrid
@@ -178,6 +243,9 @@ export default function AccountPage() {
                         </div>
                     }
                 />
+            </TabsContent>
+            <TabsContent value="bookmarked">
+                <BookmarkedPosts />
             </TabsContent>
         </Tabs>
       </div>
