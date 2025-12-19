@@ -2,7 +2,7 @@
 "use client";
 
 import * as React from "react";
-import { useState, Suspense, useEffect } from "react";
+import { useState, Suspense } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { useForm, useFieldArray } from "react-hook-form";
 import * as z from "zod";
@@ -34,7 +34,6 @@ const pollOptionSchema = z.object({
 });
 
 const postSchema = z.object({
-  content: z.string().min(1, "Post cannot be empty.").max(280, "Post cannot exceed 280 characters."),
   commentsAllowed: z.boolean().default(true),
   isPoll: z.boolean().default(false),
   pollOptions: z.array(pollOptionSchema).optional(),
@@ -81,11 +80,12 @@ function PostPageComponent() {
   const { firestore } = useFirebase();
 
   const repostContent = searchParams.get('content') || "";
+  const [content, setContent] = useState(repostContent ? decodeURIComponent(repostContent) : "");
+
 
   const form = useForm<z.infer<typeof postSchema>>({
     resolver: zodResolver(postSchema),
     defaultValues: {
-      content: repostContent ? decodeURIComponent(repostContent) : "",
       commentsAllowed: true,
       isPoll: false,
       pollOptions: [{ option: "" }, { option: "" }],
@@ -99,15 +99,19 @@ function PostPageComponent() {
 
   const isPoll = form.watch("isPoll");
 
-  useEffect(() => {
+  React.useEffect(() => {
     if (!isOpen) {
-      // Use a timeout to allow the sheet to animate out
       setTimeout(() => router.back(), 300);
     }
   }, [isOpen, router]);
 
   const onSubmit = (values: z.infer<typeof postSchema>) => {
     if (!user || !firestore) return;
+    if (content.trim() === "") {
+        form.setError("root", { message: "Post content cannot be empty." });
+        return;
+    }
+
 
     setIsSubmitting(true);
     
@@ -117,7 +121,7 @@ function PostPageComponent() {
     const newPostData: any = {
       id: newPostRef.id,
       authorId: user.uid,
-      content: values.content,
+      content: content,
       timestamp: serverTimestamp(),
       likes: [],
       likeCount: 0,
@@ -129,6 +133,9 @@ function PostPageComponent() {
     if (values.isPoll && values.pollOptions) {
         newPostData.pollOptions = values.pollOptions.map(opt => ({ option: opt.option, votes: 0 }));
         newPostData.voters = {};
+    } else {
+        delete newPostData.pollOptions;
+        delete newPostData.voters;
     }
 
     setDoc(newPostRef, newPostData)
@@ -171,28 +178,23 @@ function PostPageComponent() {
                         <AvatarFallback>{getInitials(user?.displayName)}</AvatarFallback>
                     </Avatar>
                     <div className="w-full">
-                        <span className="font-semibold text-sm">{formatUserId(user?.uid)}</span>
+                        <div className="flex justify-between items-center">
+                            <span className="font-semibold text-sm">{formatUserId(user?.uid)}</span>
+                            <Button type="button" variant="ghost" size="icon" onClick={() => form.setValue('isPoll', !isPoll)}>
+                                <ListOrdered className={cn("h-5 w-5 text-muted-foreground", isPoll && "text-primary")} />
+                            </Button>
+                        </div>
                          
+                        <Textarea
+                            placeholder={isPoll ? "Ask a question..." : "Start a new thread..."}
+                            className="border-none focus-visible:ring-0 !outline-none text-base resize-none -ml-2"
+                            rows={3}
+                            value={content}
+                            onChange={(e) => setContent(e.target.value)}
+                        />
+
                         <Form {...form}>
                             <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
-                                <FormField
-                                    control={form.control}
-                                    name="content"
-                                    render={({ field }) => (
-                                        <FormItem>
-                                            <FormControl>
-                                                <Textarea
-                                                placeholder={isPoll ? "Ask a question..." : "Start a new thread..."}
-                                                className="border-none focus-visible:ring-0 !outline-none text-base resize-none -ml-2"
-                                                rows={3}
-                                                {...field}
-                                                />
-                                            </FormControl>
-                                            <FormMessage />
-                                        </FormItem>
-                                    )}
-                                 />
-
                                  {isPoll && (
                                     <div className="space-y-2 mt-4">
                                         {fields.map((field, index) => (
@@ -253,11 +255,6 @@ function PostPageComponent() {
                         </Form>
                     </div>
                 </div>
-                 <div className="mt-4 pl-14">
-                    <Button type="button" variant="ghost" size="icon" onClick={() => form.setValue('isPoll', !isPoll)}>
-                        <ListOrdered className={cn("h-5 w-5", isPoll && "text-blue-500")} />
-                    </Button>
-                </div>
             </div>
         </div>
 
@@ -268,7 +265,7 @@ function PostPageComponent() {
 
 export default function PostPage() {
   return (
-    <Suspense fallback={<div>Loading...</div>}>
+    <Suspense>
       <PostPageComponent />
     </Suspense>
   );
