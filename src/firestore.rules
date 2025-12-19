@@ -24,9 +24,9 @@ service cloud.firestore {
     }
     
     match /users/{userId}/notifications/{notificationId} {
-      allow list, get: if isOwner(userId);
+      allow get, list: if isOwner(userId);
       allow create: if isSignedIn(); // Allow any signed in user to create a notification for another user
-      allow update(data): if isOwner(userId) && data.keys().hasOnly(['read']); // Allow user to mark their notifications as read
+      allow update: if isOwner(userId) && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['read']); // Allow user to mark their notifications as read
       allow delete: if false;
     }
 
@@ -57,7 +57,7 @@ service cloud.firestore {
       let data = request.resource.data;
       return data.type == 'text'
         && data.authorId == request.auth.uid
-        && data.content is string && data.content.size() > 0 && data.content.size() <= 280
+        && data.content is string && data.content.size() > 0 && data.content.size() <= 560
         && data.likeCount == 0
         && data.commentCount == 0
         && data.commentsAllowed is bool
@@ -70,7 +70,7 @@ service cloud.firestore {
       let data = request.resource.data;
       return data.type == 'poll'
         && data.authorId == request.auth.uid
-        && data.content is string && data.content.size() > 0 && data.content.size() <= 280
+        && data.content is string && data.content.size() > 0 && data.content.size() <= 560
         && data.likeCount == 0
         && data.commentCount == 0
         && data.commentsAllowed is bool
