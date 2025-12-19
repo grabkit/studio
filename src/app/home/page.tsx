@@ -121,22 +121,11 @@ function PollComponent({ post, user }: { post: WithId<Post>, user: any }) {
                 if (hasVoted) {
                     return (
                         <div key={index} className="relative">
-                            <Progress value={percentage} className="h-8 bg-secondary" />
-                            <div
-                                className="absolute inset-0 flex items-center justify-between px-3 text-sm font-semibold text-primary-foreground"
-                                style={{ width: `${percentage}%`}}
-                            >
-                                <span className="truncate">{option.option}</span>
-                                <span>{percentage.toFixed(0)}%</span>
+                            <Progress value={percentage} className="h-8" />
+                            <div className="absolute inset-0 flex items-center justify-between px-3 text-sm font-medium">
+                                <span className={cn("truncate", isUserChoice ? "text-primary-foreground font-bold" : "text-foreground")}>{option.option}</span>
+                                <span className={cn("truncate", isUserChoice ? "text-primary-foreground font-bold" : "text-foreground")}>{percentage.toFixed(0)}%</span>
                             </div>
-                            {/* Text for the non-filled part, visible only if there's space */}
-                            {percentage < 90 && (
-                                <div
-                                    className="absolute inset-y-0 left-0 flex items-center justify-between px-3 text-sm font-semibold text-foreground"
-                                >
-                                    <span className="truncate">{option.option}</span>
-                                </div>
-                            )}
                         </div>
                     )
                 } else {
