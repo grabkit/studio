@@ -24,5 +24,12 @@ export interface User {
     name: string;
     email: string;
     anonymousId?: string;
-    bookmarkedPosts: string[];
 }
+
+export interface Bookmark {
+    postId: string;
+    userId: string;
+    timestamp: Timestamp;
+}
+
+    

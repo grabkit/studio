@@ -5,13 +5,12 @@ import { useUser, useFirebase, useMemoFirebase } from "@/firebase";
 import { useRouter } from "next/navigation";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
-import { collection, query, where, doc, getDocs, Query, CollectionReference } from "firebase/firestore";
+import { collection, query, where, doc, getDocs, Query, CollectionReference, orderBy } from "firebase/firestore";
 import { useCollection } from "@/firebase/firestore/use-collection";
-import { useDoc } from "@/firebase/firestore/use-doc";
 import { Settings, LogOut, Grid3x3, FileText, Bookmark } from "lucide-react";
 import { signOut } from "firebase/auth";
 import { useToast } from "@/hooks/use-toast";
-import type { Post, User } from "@/lib/types";
+import type { Post, User, Bookmark as BookmarkType } from "@/lib/types";
 import { Skeleton } from "@/components/ui/skeleton";
 import Link from "next/link";
 import React, { useMemo, useState, useEffect } from "react";
@@ -46,12 +45,6 @@ export default function AccountPage() {
   const [bookmarkedPosts, setBookmarkedPosts] = useState<Post[] | null>(null);
   const [bookmarksLoading, setBookmarksLoading] = useState(true);
 
-  const userRef = useMemoFirebase(() => {
-    if (!firestore || !user) return null;
-    return doc(firestore, 'users', user.uid);
-  }, [firestore, user]);
-  const { data: userData } = useDoc<User>(userRef);
-
   const userPostsQuery = useMemoFirebase(() => {
     if (!firestore || !user) return null;
     return query(
@@ -61,34 +54,66 @@ export default function AccountPage() {
   }, [firestore, user]);
 
   const { data: posts, isLoading: postsLoading } = useCollection<Post>(userPostsQuery);
+  
+  const userBookmarksQuery = useMemoFirebase(() => {
+    if (!firestore || !user) return null;
+    return query(
+      collection(firestore, 'users', user.uid, 'bookmarks'),
+      orderBy('timestamp', 'desc')
+    );
+  }, [firestore, user]);
+
+  const { data: bookmarkDocs, isLoading: bookmarksDocsLoading } = useCollection<BookmarkType>(userBookmarksQuery);
 
   useEffect(() => {
     const fetchBookmarkedPosts = async () => {
-      if (!firestore || !userData || !userData.bookmarkedPosts || userData.bookmarkedPosts.length === 0) {
-        setBookmarkedPosts([]);
-        setBookmarksLoading(false);
+      if (!firestore || !bookmarkDocs) {
+        if (!bookmarksDocsLoading) {
+            setBookmarkedPosts([]);
+            setBookmarksLoading(false);
+        }
         return;
       }
       
       setBookmarksLoading(true);
-      const postsRef = collection(firestore, 'posts');
-      // Firestore 'in' query is limited to 30 items. For more, we would need to batch queries.
-      const bookmarkedPostsQuery = query(postsRef, where('id', 'in', userData.bookmarkedPosts.slice(0, 30)));
-      
-      try {
-        const querySnapshot = await getDocs(bookmarkedPostsQuery);
-        const postsData = querySnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() })) as Post[];
-        setBookmarkedPosts(postsData);
-      } catch (error) {
-        console.error("Error fetching bookmarked posts:", error);
+      const postIds = bookmarkDocs.map(bm => bm.postId);
+
+      if (postIds.length === 0) {
         setBookmarkedPosts([]);
-      } finally {
         setBookmarksLoading(false);
+        return;
       }
+
+      const postsData: Post[] = [];
+      // Firestore 'in' query is limited to 30 items. Batching for more than 30.
+      const batchSize = 30;
+      for (let i = 0; i < postIds.length; i += batchSize) {
+          const batchIds = postIds.slice(i, i + batchSize);
+          const postsRef = collection(firestore, 'posts');
+          const bookmarkedPostsQuery = query(postsRef, where('id', 'in', batchIds));
+          try {
+            const querySnapshot = await getDocs(bookmarkedPostsQuery);
+            querySnapshot.forEach(doc => {
+              postsData.push({ id: doc.id, ...doc.data() } as Post);
+            });
+          } catch (error) {
+            console.error("Error fetching a batch of bookmarked posts:", error);
+          }
+      }
+      
+      // Optional: sort posts by bookmark timestamp
+      const sortedPosts = postsData.sort((a, b) => {
+        const aTimestamp = bookmarkDocs.find(bm => bm.postId === a.id)?.timestamp.toMillis() || 0;
+        const bTimestamp = bookmarkDocs.find(bm => bm.postId === b.id)?.timestamp.toMillis() || 0;
+        return bTimestamp - aTimestamp;
+      });
+
+      setBookmarkedPosts(sortedPosts);
+      setBookmarksLoading(false);
     };
 
     fetchBookmarkedPosts();
-  }, [firestore, userData]);
+  }, [firestore, bookmarkDocs, bookmarksDocsLoading]);
 
 
   const totalLikes = useMemo(() => {
@@ -240,3 +265,5 @@ export default function AccountPage() {
     </AppLayout>
   );
 }
+
+    

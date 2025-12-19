@@ -22,13 +22,6 @@
           "type": "string",
           "description": "User's email address.",
           "format": "email"
-        },
-        "bookmarkedPosts": {
-          "type": "array",
-          "description": "An array of post IDs that the user has bookmarked.",
-          "items": {
-            "type": "string"
-          }
         }
       },
       "required": [
@@ -125,6 +118,32 @@
         "content",
         "timestamp"
       ]
+    },
+    "Bookmark": {
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "title": "Bookmark",
+      "type": "object",
+      "description": "Represents a user's bookmark of a post.",
+      "properties": {
+        "postId": {
+          "type": "string",
+          "description": "The ID of the bookmarked post."
+        },
+        "userId": {
+          "type": "string",
+          "description": "The ID of the user who created the bookmark."
+        },
+        "timestamp": {
+          "type": "string",
+          "description": "Timestamp indicating when the bookmark was created.",
+          "format": "date-time"
+        }
+      },
+      "required": [
+        "postId",
+        "userId",
+        "timestamp"
+      ]
     }
   },
   "auth": {
@@ -147,6 +166,26 @@
             {
               "name": "userId",
               "description": "The unique identifier for the user, corresponding to the Firebase Auth UID."
+            }
+          ]
+        }
+      },
+      {
+        "path": "/users/{userId}/bookmarks/{postId}",
+        "definition": {
+          "entityName": "Bookmark",
+          "schema": {
+            "$ref": "#/backend/entities/Bookmark"
+          },
+          "description": "Sub-collection storing bookmarks for a user. The document ID is the post ID.",
+          "params": [
+            {
+              "name": "userId",
+              "description": "The ID of the user."
+            },
+            {
+              "name": "postId",
+              "description": "The ID of the bookmarked post."
             }
           ]
         }
@@ -191,3 +230,5 @@
     "reasoning": "The Firestore structure is designed for a public, social-media-style application. User profiles are stored in a `/users` collection, while all posts are stored in a single top-level `/posts` collection. This global `posts` collection allows any user to easily query and view all public posts. Security rules are configured to enforce that while all authenticated users can read posts, only the original author (`authorId` must match `request.auth.uid`) can write, update, or delete their own posts. This avoids complex queries and ensures efficient, secure data access for a public feed. Comments are stored in a subcollection under each post for clear organization and efficient querying."
   }
 }
+
+    

@@ -11,11 +11,6 @@ service cloud.firestore {
       return request.auth.uid == userId;
     }
     
-    // Return true if the user's UID exists in a list
-    function uidInList(list) {
-      return request.auth.uid in list;
-    }
-
     // VALIDATION FUNCTIONS
     
     // Validate incoming Post data on create. Ensures author is correct and defaults are set.
@@ -48,21 +43,20 @@ service cloud.firestore {
     // RULES
     
     match /users/{userId} {
-      allow get: if isOwner(userId);
+      allow read, delete: if isOwner(userId);
       allow list: if false; // Disable user enumeration for privacy.
 
-      // New user doc must have these fields, and bookmarkedPosts must be empty.
       allow create: if isOwner(userId)
                     && request.resource.data.id == userId
                     && request.resource.data.name is string
-                    && request.resource.data.email is string
-                    && request.resource.data.bookmarkedPosts == [];
+                    && request.resource.data.email is string;
       
-      // An owner can ONLY update the 'bookmarkedPosts' field. Nothing else.
-      allow update: if isOwner(userId)
-                    && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['bookmarkedPosts']);
+      // Users can't update their profile doc directly for now.
+      allow update: if false;
+    }
 
-      allow delete: if isOwner(userId);
+    match /users/{userId}/bookmarks/{postId} {
+        allow read, create, delete: if isOwner(userId);
     }
     
     match /posts/{postId} {
@@ -91,3 +85,5 @@ service cloud.firestore {
     }
   }
 }
+
+    

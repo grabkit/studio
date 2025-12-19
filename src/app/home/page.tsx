@@ -4,15 +4,15 @@
 
 import AppLayout from "@/components/AppLayout";
 import { useFirebase, useMemoFirebase, useUser } from "@/firebase";
-import { collection, query, orderBy, limit, doc, writeBatch, arrayUnion, arrayRemove, increment, deleteDoc, setDoc } from "firebase/firestore";
+import { collection, query, orderBy, limit, doc, writeBatch, arrayUnion, arrayRemove, increment, deleteDoc, setDoc, serverTimestamp } from "firebase/firestore";
 import { useCollection, type WithId } from "@/firebase/firestore/use-collection";
 import { useDoc } from "@/firebase/firestore/use-doc";
 import { Card, CardContent } from "@/components/ui/card";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { formatDistanceToNow } from "date-fns";
 import { Skeleton } from "@/components/ui/skeleton";
-import type { Post, User } from "@/lib/types";
-import { Heart, MessageCircle, Repeat, Send, MoreHorizontal, Edit, Trash2, Bookmark } from "lucide-react";
+import type { Post, User, Bookmark } from "@/lib/types";
+import { Heart, MessageCircle, Repeat, Send, MoreHorizontal, Edit, Trash2, Bookmark as BookmarkIcon } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useToast } from "@/hooks/use-toast";
 import { FirestorePermissionError } from "@/firebase/errors";
@@ -56,16 +56,16 @@ function PostItem({ post }: { post: WithId<Post> }) {
   const router = useRouter();
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
   
-  const userRef = useMemoFirebase(() => {
+  const bookmarkRef = useMemoFirebase(() => {
     if (!firestore || !user) return null;
-    return doc(firestore, 'users', user.uid);
-  }, [firestore, user]);
+    return doc(firestore, 'users', user.uid, 'bookmarks', post.id);
+  }, [firestore, user, post.id]);
   
-  const { data: userData } = useDoc<User>(userRef);
+  const { data: bookmarkData } = useDoc<Bookmark>(bookmarkRef);
 
   const hasLiked = user ? post.likes?.includes(user.uid) : false;
   const isOwner = user?.uid === post.authorId;
-  const isBookmarked = userData?.bookmarkedPosts?.includes(post.id) ?? false;
+  const isBookmarked = !!bookmarkData;
 
 
   const handleLike = async () => {
@@ -108,7 +108,7 @@ function PostItem({ post }: { post: WithId<Post> }) {
   };
 
   const handleBookmark = () => {
-    if (!user || !firestore || !userRef) {
+    if (!user || !firestore || !bookmarkRef) {
       toast({
         variant: 'destructive',
         title: 'Authentication Error',
@@ -117,19 +117,29 @@ function PostItem({ post }: { post: WithId<Post> }) {
       return;
     }
 
-    const payload = {
-      bookmarkedPosts: isBookmarked ? arrayRemove(post.id) : arrayUnion(post.id),
-    };
-
-    setDoc(userRef, payload, { merge: true })
-      .catch(serverError => {
-          const permissionError = new FirestorePermissionError({
-              path: userRef.path,
-              operation: 'update',
-              requestResourceData: payload,
-          });
-          errorEmitter.emit('permission-error', permissionError);
-      });
+    if (isBookmarked) {
+        deleteDoc(bookmarkRef).catch(serverError => {
+            const permissionError = new FirestorePermissionError({
+                path: bookmarkRef.path,
+                operation: 'delete',
+            });
+            errorEmitter.emit('permission-error', permissionError);
+        });
+    } else {
+        const bookmarkPayload: Bookmark = {
+            userId: user.uid,
+            postId: post.id,
+            timestamp: serverTimestamp() as any,
+        }
+        setDoc(bookmarkRef, bookmarkPayload).catch(serverError => {
+            const permissionError = new FirestorePermissionError({
+                path: bookmarkRef.path,
+                operation: 'create',
+                requestResourceData: bookmarkPayload,
+            });
+            errorEmitter.emit('permission-error', permissionError);
+        });
+    }
   };
 
   const handleDeletePost = async () => {
@@ -237,7 +247,7 @@ function PostItem({ post }: { post: WithId<Post> }) {
                   </button>
                 </div>
                 <button onClick={handleBookmark} className="flex items-center space-x-1 hover:text-amber-500">
-                    <Bookmark className={cn("h-4 w-4", isBookmarked && "text-amber-500 fill-amber-500")} />
+                    <BookmarkIcon className={cn("h-4 w-4", isBookmarked && "text-amber-500 fill-amber-500")} />
                 </button>
             </div>
           </div>
@@ -328,3 +338,5 @@ export default function HomePage() {
     </AppLayout>
   );
 }
+
+    
