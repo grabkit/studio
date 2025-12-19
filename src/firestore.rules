@@ -23,7 +23,11 @@ service cloud.firestore {
     }
     
     match /users/{userId}/bookmarks/{postId} {
-      allow read, write: if isOwner(userId);
+      // Allow a user to list their own bookmarks.
+      allow list: if isOwner(userId);
+      // Allow a user to get, create, and delete their own bookmarks.
+      allow get, create, delete: if isOwner(userId);
+      allow update: if false; // Bookmarks shouldn't be updatable
     }
 
     match /posts/{postId} {
