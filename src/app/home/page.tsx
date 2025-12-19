@@ -118,7 +118,7 @@ function PollComponent({ post, user }: { post: WithId<Post>, user: any }) {
 
                 if (hasVoted) {
                     return (
-                        <div key={index} className="relative w-full h-10 rounded-md overflow-hidden bg-secondary">
+                        <div key={index} className="relative w-full h-10 rounded-full overflow-hidden bg-secondary">
                              <div
                                 className={cn(
                                     "absolute left-0 top-0 h-full transition-all duration-500 ease-out",
@@ -126,14 +126,14 @@ function PollComponent({ post, user }: { post: WithId<Post>, user: any }) {
                                 )}
                                 style={{ width: `${percentage}%` }}
                             />
-                            <div className="absolute inset-0 flex items-center justify-between px-3">
+                            <div className="absolute inset-0 flex items-center justify-between px-4">
                                 <div className="flex items-center gap-2">
                                      {isUserChoice && <CheckCircle2 className="h-4 w-4 text-primary-foreground" />}
-                                    <span className="font-medium text-foreground truncate">
+                                    <span className="font-medium text-primary-foreground truncate text-shadow">
                                         {option.option}
                                     </span>
                                 </div>
-                                <span className="font-semibold text-foreground">
+                                <span className="font-semibold text-primary-foreground text-shadow">
                                     {percentage.toFixed(0)}%
                                 </span>
                             </div>
@@ -144,7 +144,7 @@ function PollComponent({ post, user }: { post: WithId<Post>, user: any }) {
                         <Button
                             key={index}
                             variant="outline"
-                            className="w-full justify-center h-10 text-base"
+                            className="w-full justify-center h-10 text-base rounded-full"
                             onClick={() => handleVote(index)}
                             disabled={isProcessing}
                         >
