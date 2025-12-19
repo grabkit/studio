@@ -53,11 +53,6 @@ service cloud.firestore {
 
       // Users can't update their profile doc directly for now.
       allow update: if false;
-
-      // A user can fully manage their own bookmarks sub-collection.
-      match /bookmarks/{postId} {
-        allow get, list, create, delete: if isOwner(userId);
-      }
     }
 
 

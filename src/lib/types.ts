@@ -25,10 +25,3 @@ export interface User {
     email: string;
     anonymousId?: string;
 }
-
-export interface Bookmark {
-    itemId: string;
-    itemType: 'post';
-    originalOwnerId: string;
-    createdAt: Timestamp;
-}
