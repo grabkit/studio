@@ -51,15 +51,14 @@ service cloud.firestore {
       allow get: if isOwner(userId);
       allow list: if false; // Disable user enumeration for privacy.
 
-      // Allow creation with specific required fields, without being overly strict on optional ones.
+      // New user doc must have these fields, and bookmarkedPosts must be empty.
       allow create: if isOwner(userId)
-                    && request.resource.data.id == request.auth.uid
-                    && request.resource.data.name is string && request.resource.data.name.size() > 0
-                    && request.resource.data.email is string && request.resource.data.email.matches('.*@.*')
+                    && request.resource.data.id == userId
+                    && request.resource.data.name is string
+                    && request.resource.data.email is string
                     && request.resource.data.bookmarkedPosts == [];
       
-      // Allow updates only for the bookmarkedPosts field by the owner.
-      // This is the most secure and direct way to handle this specific operation.
+      // An owner can ONLY update the 'bookmarkedPosts' field. Nothing else.
       allow update: if isOwner(userId)
                     && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['bookmarkedPosts']);
 
