@@ -10,7 +10,7 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { formatDistanceToNow } from "date-fns";
 import { Skeleton } from "@/components/ui/skeleton";
 import type { Post } from "@/lib/types";
-import { Heart, MessageCircle, Repeat, Send, MoreHorizontal, Edit, Trash2 } from "lucide-react";
+import { Heart, MessageCircle, Repeat, Send, MoreHorizontal, Edit, Trash2, Bookmark } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useToast } from "@/hooks/use-toast";
 import { FirestorePermissionError } from "@/firebase/errors";
@@ -183,21 +183,26 @@ function PostItem({ post }: { post: WithId<Post> }) {
             
             <p className="text-foreground text-sm">{post.content}</p>
             
-            <div className="flex items-center space-x-6 pt-2 text-muted-foreground">
-              <button onClick={handleLike} className="flex items-center space-x-1 hover:text-pink-500">
-                <Heart className={cn("h-4 w-4", hasLiked && "text-pink-500 fill-pink-500")} />
-                <span className="text-xs">{post.likeCount > 0 ? post.likeCount : ''}</span>
-              </button>
-              <Link href={`/post/${post.id}`} className="flex items-center space-x-1 hover:text-primary">
-                <MessageCircle className="h-4 w-4" />
-                 <span className="text-xs">{post.commentCount > 0 ? post.commentCount : ''}</span>
-              </Link>
-              <button onClick={handleRepost} className="flex items-center space-x-1 hover:text-green-500">
-                <Repeat className={cn("h-4 w-4")} />
-              </button>
-              <button onClick={handleShare} className="flex items-center space-x-1 hover:text-primary">
-                <Send className="h-4 w-4" />
-              </button>
+            <div className="flex items-center justify-between pt-2 text-muted-foreground">
+                <div className="flex items-center space-x-6">
+                  <button onClick={handleLike} className="flex items-center space-x-1 hover:text-pink-500">
+                    <Heart className={cn("h-4 w-4", hasLiked && "text-pink-500 fill-pink-500")} />
+                    <span className="text-xs">{post.likeCount > 0 ? post.likeCount : ''}</span>
+                  </button>
+                  <Link href={`/post/${post.id}`} className="flex items-center space-x-1 hover:text-primary">
+                    <MessageCircle className="h-4 w-4" />
+                     <span className="text-xs">{post.commentCount > 0 ? post.commentCount : ''}</span>
+                  </Link>
+                  <button onClick={handleRepost} className="flex items-center space-x-1 hover:text-green-500">
+                    <Repeat className={cn("h-4 w-4")} />
+                  </button>
+                  <button onClick={handleShare} className="flex items-center space-x-1 hover:text-primary">
+                    <Send className="h-4 w-4" />
+                  </button>
+                </div>
+                <button className="flex items-center space-x-1 hover:text-amber-500">
+                    <Bookmark className="h-4 w-4" />
+                </button>
             </div>
           </div>
         </div>

@@ -28,7 +28,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { Button, buttonVariants } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { Form, FormControl, FormField, FormItem, FormMessage } from "@/components/ui/form";
-import { Heart, MessageCircle, Send, Trash2, MoreHorizontal, Edit, ArrowLeft, Repeat } from "lucide-react";
+import { Heart, MessageCircle, Send, Trash2, MoreHorizontal, Edit, ArrowLeft, Repeat, Bookmark } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useToast } from "@/hooks/use-toast";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -222,24 +222,29 @@ function PostDetailItem({ post }: { post: WithId<Post> }) {
                 </div>
             </div>
 
-            <div className="flex items-center space-x-6 pt-2 text-muted-foreground justify-around">
-              <button
-                onClick={handleLike}
-                className="flex items-center space-x-1 hover:text-pink-500"
-              >
-                <Heart
-                  className={cn("h-5 w-5", hasLiked && "text-pink-500 fill-pink-500")}
-                />
-              </button>
-              <button className="flex items-center space-x-1 hover:text-primary">
-                <MessageCircle className="h-5 w-5" />
-              </button>
-              <button className="flex items-center space-x-1 hover:text-green-500">
-                <Repeat className={cn("h-5 w-5")} />
-              </button>
-              <button onClick={handleShare} className="flex items-center space-x-1 hover:text-primary">
-                <Send className="h-5 w-5" />
-              </button>
+            <div className="flex items-center justify-between pt-2 text-muted-foreground">
+                <div className="flex items-center space-x-6">
+                    <button
+                        onClick={handleLike}
+                        className="flex items-center space-x-1 hover:text-pink-500"
+                    >
+                        <Heart
+                        className={cn("h-5 w-5", hasLiked && "text-pink-500 fill-pink-500")}
+                        />
+                    </button>
+                    <button className="flex items-center space-x-1 hover:text-primary">
+                        <MessageCircle className="h-5 w-5" />
+                    </button>
+                    <button className="flex items-center space-x-1 hover:text-green-500">
+                        <Repeat className={cn("h-5 w-5")} />
+                    </button>
+                    <button onClick={handleShare} className="flex items-center space-x-1 hover:text-primary">
+                        <Send className="h-5 w-5" />
+                    </button>
+                </div>
+                 <button className="flex items-center space-x-1 hover:text-amber-500">
+                    <Bookmark className="h-5 w-5" />
+                </button>
             </div>
           </div>
         </div>
@@ -279,7 +284,7 @@ function CommentForm({ postId, commentsAllowed }: { postId: string, commentsAllo
     defaultValues: { content: "" },
   });
 
-  const onSubmit = async (values: z.infer<typeof CommentFormSchema>) => {
+  const onSubmit = async (values: z.infer<typeof CommentFormSchema>>) => {
     if (!user || !firestore) {
       toast({ variant: "destructive", title: "You must be logged in to comment." });
       return;
