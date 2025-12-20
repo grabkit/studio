@@ -69,11 +69,11 @@ function ChatHeader({ peerId }: { peerId: string }) {
             </Button>
             <div className="flex items-center gap-3 ml-2">
                 <Avatar className="h-8 w-8">
-                    <AvatarFallback>{isLoading ? <Skeleton className="h-8 w-8 rounded-full" /> : getInitials(peerUser?.name)}</AvatarFallback>
+                    <AvatarFallback>{isLoading || !peerUser ? <Skeleton className="h-8 w-8 rounded-full" /> : getInitials(peerUser?.name)}</AvatarFallback>
                 </Avatar>
                 <div>
                     <h2 className="text-base font-bold">
-                        {isLoading ? <Skeleton className="h-5 w-24" /> : peerUser?.name || formatUserId(peerId)}
+                        {isLoading || !peerUser ? <Skeleton className="h-5 w-24" /> : peerUser?.name || formatUserId(peerId)}
                     </h2>
                 </div>
             </div>
