@@ -26,13 +26,12 @@ import Link from 'next/link';
 import AppLayout from "@/components/AppLayout";
 import { Card, CardContent } from "@/components/ui/card";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
-import { formatDistanceToNow } from "date-fns";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Button, buttonVariants } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { Form, FormControl, FormField, FormItem, FormMessage } from "@/components/ui/form";
 import { Heart, MessageCircle, Send, Trash2, MoreHorizontal, Edit, ArrowLeft, Repeat } from "lucide-react";
-import { cn } from "@/lib/utils";
+import { cn, formatTimestamp } from "@/lib/utils";
 import { useToast } from "@/hooks/use-toast";
 import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
@@ -199,9 +198,7 @@ function PostDetailItem({ post }: { post: WithId<Post> }) {
                     </Link>
                     <span className="text-xs text-muted-foreground">
                       {post.timestamp
-                      ? formatDistanceToNow(new Date(post.timestamp.toDate()), {
-                          addSuffix: true,
-                          })
+                      ? formatTimestamp(post.timestamp.toDate())
                       : ""}
                    </span>
                 </div>
@@ -437,9 +434,7 @@ function CommentItem({ comment, postAuthorId }: { comment: WithId<Comment>, post
                 </Link>
                 <span className="text-xs text-muted-foreground">
                 {comment.timestamp
-                    ? formatDistanceToNow(new Date(comment.timestamp.toDate()), {
-                        addSuffix: true,
-                    })
+                    ? formatTimestamp(comment.timestamp.toDate())
                     : ""}
                 </span>
             </div>
@@ -575,3 +570,4 @@ export default function PostDetailPage() {
     
 
     
+

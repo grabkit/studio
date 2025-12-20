@@ -8,9 +8,8 @@ import type { Notification } from "@/lib/types";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import Link from "next/link";
-import { formatDistanceToNow } from "date-fns";
 import { Heart, MessageCircle } from "lucide-react";
-import { cn } from "@/lib/utils";
+import { cn, formatTimestamp } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import { useEffect } from "react";
 
@@ -52,7 +51,7 @@ function NotificationItem({ notification }: { notification: WithId<Notification>
                     <span className="text-muted-foreground italic"> "{notification.postContent}"</span>
                 </p>
                 <p className="text-xs text-muted-foreground mt-1">
-                    {formatDistanceToNow(notification.timestamp.toDate(), { addSuffix: true })}
+                    {formatTimestamp(notification.timestamp.toDate())}
                 </p>
             </div>
         </Link>

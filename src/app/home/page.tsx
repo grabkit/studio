@@ -8,11 +8,10 @@ import { collection, query, orderBy, limit, doc, updateDoc, arrayUnion, arrayRem
 import { useCollection, type WithId } from "@/firebase/firestore/use-collection";
 import { Card, CardContent } from "@/components/ui/card";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
-import { formatDistanceToNow } from "date-fns";
 import { Skeleton } from "@/components/ui/skeleton";
 import type { Post, Bookmark, PollOption, Notification } from "@/lib/types";
 import { Heart, MessageCircle, Repeat, Send, MoreHorizontal, Edit, Trash2, Bookmark as BookmarkIcon, CheckCircle2 } from "lucide-react";
-import { cn } from "@/lib/utils";
+import { cn, formatTimestamp } from "@/lib/utils";
 import { useToast } from "@/hooks/use-toast";
 import { FirestorePermissionError } from "@/firebase/errors";
 import { errorEmitter } from "@/firebase/error-emitter";
@@ -324,7 +323,7 @@ function PostItem({ post, bookmarks }: { post: WithId<Post>, bookmarks: WithId<B
                     {formatUserId(post.authorId)}
                 </Link>
                  <span className="text-xs text-muted-foreground">
-                    {post.timestamp ? formatDistanceToNow(new Date(post.timestamp.toDate()), { addSuffix: true }) : ''}
+                    {post.timestamp ? formatTimestamp(post.timestamp.toDate()) : ''}
                  </span>
               </div>
                <div className="flex items-center">
@@ -485,3 +484,4 @@ export default function HomePage() {
     
 
     
+
