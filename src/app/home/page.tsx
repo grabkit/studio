@@ -8,7 +8,7 @@ import { useCollection, type WithId } from "@/firebase/firestore/use-collection"
 import { Card, CardContent } from "@/components/ui/card";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Skeleton } from "@/components/ui/skeleton";
-import type { Post, Bookmark, PollOption, Notification, User, Conversation } from "@/lib/types";
+import type { Post, Bookmark, PollOption, Notification, User } from "@/lib/types";
 import { Heart, MessageCircle, Repeat, ArrowUpRight, MoreHorizontal, Edit, Trash2, Bookmark as BookmarkIcon, CheckCircle2, MessageSquare } from "lucide-react";
 import { cn, formatTimestamp, getInitials } from "@/lib/utils";
 import { useToast } from "@/hooks/use-toast";
@@ -222,28 +222,27 @@ function PostItem({ post, bookmarks }: { post: WithId<Post>, bookmarks: WithId<B
     const peerId = post.authorId;
     const currentUserId = user.uid;
 
-    // Create a consistent, unique conversation ID
     const participantIds = [currentUserId, peerId].sort();
     const conversationId = participantIds.join('_');
     
-    const conversationRef = doc(firestore, 'conversations', conversationId);
-
     try {
-        const newConversation: Conversation = {
+        const conversationRef = doc(firestore, 'conversations', conversationId);
+        
+        // This is a fire-and-forget write.
+        // We don't check if it exists first. We just create/merge it.
+        // This avoids the 'get' permission error.
+        const newConversation: Partial<Conversation> = {
             id: conversationId,
             participantIds,
             lastMessage: '',
             lastUpdated: serverTimestamp(),
             status: 'pending',
             requesterId: currentUserId,
-            // participantDetails will be populated on the client if needed
         };
 
-        // Use set with merge:true. This will create the doc if it doesn't exist,
-        // or do nothing if it already exists (since we're not changing any fields here).
-        // This is a safe way to ensure the conversation document exists.
         await setDoc(conversationRef, newConversation, { merge: true });
 
+        // On success, navigate to the conversation page
         router.push(`/messages/${peerId}`);
 
     } catch (error: any) {
@@ -255,7 +254,7 @@ function PostItem({ post, bookmarks }: { post: WithId<Post>, bookmarks: WithId<B
         });
         // Emit a contextual error if it's a permission issue
         const permissionError = new FirestorePermissionError({
-            path: conversationRef.path,
+            path: `conversations/${conversationId}`,
             operation: 'create', // or 'write'
         });
         errorEmitter.emit('permission-error', permissionError);
@@ -522,4 +521,6 @@ export default function HomePage() {
     </AppLayout>
   );
 }
+    
+
     

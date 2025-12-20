@@ -61,7 +61,7 @@ export interface Conversation {
     id: string;
     participantIds: string[];
     lastMessage: string;
-    lastUpdated: Timestamp;
+    lastUpdated: any; // Can be Timestamp or FieldValue
     status: 'pending' | 'accepted';
     requesterId: string;
     participantDetails?: { userId: string, name: string }[];
@@ -71,7 +71,8 @@ export interface Message {
     id: string;
     senderId: string;
     text: string;
-    timestamp: Timestamp;
+    timestamp: any; // Can be Timestamp or FieldValue
 }
+    
 
     
