@@ -4,7 +4,7 @@
 import { useParams, useRouter } from 'next/navigation';
 import AppLayout from "@/components/AppLayout";
 import { useFirebase, useMemoFirebase } from "@/firebase";
-import { collection, query, where, orderBy, limit, getDocs, writeBatch, serverTimestamp, addDoc } from "firebase/firestore";
+import { collection, query, where, orderBy, limit, getDoc, writeBatch, serverTimestamp, addDoc, getDocs } from "firebase/firestore";
 import { useCollection, WithId } from "@/firebase/firestore/use-collection";
 import { type Conversation, type Message, type User } from "@/lib/types";
 import React, { useEffect, useMemo, useRef, useState } from "react";
@@ -20,6 +20,10 @@ import { useDoc } from '@/firebase/firestore/use-doc';
 import { doc } from 'firebase/firestore';
 
 const formatUserId = (uid: string) => `blur${uid.substring(uid.length - 6)}`;
+
+const getConversationId = (uid1: string, uid2: string) => {
+    return [uid1, uid2].sort().join('_');
+}
 
 function MessageBubble({ message, isOwnMessage }: { message: WithId<Message>, isOwnMessage: boolean }) {
     return (
@@ -113,53 +117,22 @@ export default function ConversationPage() {
     const params = useParams();
     const peerId = params.peerId as string;
     const { firestore, user: currentUser } = useFirebase();
-    const [conversation, setConversation] = useState<WithId<Conversation> | null>(null);
-    const [isLoading, setIsLoading] = useState(true);
     const messagesEndRef = useRef<HTMLDivElement>(null);
 
     const {data: peerUser, isLoading: peerUserLoading} = useDoc<User>(firestore && peerId ? doc(firestore, 'users', peerId) : null);
-
-    useEffect(() => {
-        if (!firestore || !currentUser) return;
-        
-        const findConversation = async () => {
-            setIsLoading(true);
-            
-            // Query for conversations where the current user is a participant.
-            const userConversationsQuery = query(
-                collection(firestore, 'conversations'),
-                where('participantIds', 'array-contains', currentUser.uid)
-            );
-            
-            try {
-                const querySnapshot = await getDocs(userConversationsQuery);
-                // Client-side filter to find the specific conversation with the peer.
-                const existingConversation = querySnapshot.docs
-                    .map(doc => ({ id: doc.id, ...doc.data() } as WithId<Conversation>))
-                    .find(convo => convo.participantIds.includes(peerId));
-
-                if (existingConversation) {
-                    setConversation(existingConversation);
-                } else {
-                    // No existing conversation found
-                    setConversation(null);
-                }
-
-            } catch(e: any) {
-                console.error("Error finding conversation:", e);
-                 const permissionError = new FirestorePermissionError({
-                    path: 'conversations',
-                    operation: 'list'
-                });
-                errorEmitter.emit('permission-error', permissionError);
-            } finally {
-                setIsLoading(false);
-            }
-        }
-        findConversation();
-
-    }, [firestore, currentUser, peerId]);
     
+    const conversationId = useMemo(() => {
+        if (!currentUser || !peerId) return null;
+        return getConversationId(currentUser.uid, peerId);
+    }, [currentUser, peerId]);
+    
+    const conversationRef = useMemoFirebase(() => {
+        if (!firestore || !conversationId) return null;
+        return doc(firestore, 'conversations', conversationId);
+    }, [firestore, conversationId]);
+
+    const {data: conversation, isLoading: isConversationLoading} = useDoc<Conversation>(conversationRef);
+
     const messagesQuery = useMemoFirebase(() => {
         if (!firestore || !conversation) return null;
         return query(
@@ -176,31 +149,36 @@ export default function ConversationPage() {
 
 
     const handleSendMessage = async (text: string) => {
-        if (!firestore || !currentUser || !peerUser) return;
+        if (!firestore || !currentUser || !peerUser || !conversationId) return;
         
-        let currentConversation = conversation;
+        const conversationDocRef = doc(firestore, 'conversations', conversationId);
 
-        // If no conversation exists, create one
-        if (!currentConversation) {
-            const newConversationRef = doc(collection(firestore, 'conversations'));
+        try {
+            const conversationDoc = await getDoc(conversationDocRef);
+            const batch = writeBatch(firestore);
 
-            const newConversationData: Omit<Conversation, 'id'> = {
-                participantIds: [currentUser.uid, peerId],
-                participants: {
-                    [currentUser.uid]: { id: currentUser.uid, name: currentUser.displayName || "Anonymous" },
-                    [peerId]: { id: peerUser.id, name: peerUser.name || "Anonymous" },
-                },
-                lastMessage: null,
-                status: 'pending',
-                requesterId: currentUser.uid,
-            };
-            
-            const messageCollectionRef = collection(newConversationRef, 'messages');
+            if (!conversationDoc.exists()) {
+                // Create conversation if it doesn't exist
+                const newConversationData: Omit<Conversation, 'id'> = {
+                    participantIds: [currentUser.uid, peerId].sort(),
+                    participants: {
+                        [currentUser.uid]: { id: currentUser.uid, name: currentUser.displayName || "Anonymous" },
+                        [peerId]: { id: peerUser.id, name: peerUser.name || "Anonymous" },
+                    },
+                    lastMessage: null,
+                    status: 'pending',
+                    requesterId: currentUser.uid,
+                };
+                batch.set(conversationDocRef, {...newConversationData, id: conversationId });
+            }
+
+            // Add the new message
+            const messageCollectionRef = collection(conversationDocRef, 'messages');
             const newMessageRef = doc(messageCollectionRef);
             
             const newMessageData = {
                 id: newMessageRef.id,
-                conversationId: newConversationRef.id,
+                conversationId: conversationId,
                 senderId: currentUser.uid,
                 text,
                 timestamp: serverTimestamp(),
@@ -212,55 +190,16 @@ export default function ConversationPage() {
                 senderId: currentUser.uid,
             };
 
-            const batch = writeBatch(firestore);
-            batch.set(newConversationRef, {...newConversationData, id: newConversationRef.id });
             batch.set(newMessageRef, newMessageData);
-            batch.update(newConversationRef, { lastMessage: lastMessageData });
-            
-            setConversation({ id: newConversationRef.id, ...newConversationData });
-            currentConversation = { id: newConversationRef.id, ...newConversationData };
+            batch.update(conversationDocRef, { lastMessage: lastMessageData });
 
+            await batch.commit();
 
-            await batch.commit().catch(err => {
-                 errorEmitter.emit('permission-error', new FirestorePermissionError({
-                    path: newConversationRef.path,
-                    operation: 'create',
-                    requestResourceData: newConversationData,
-                }))
-            });
-
-        } else { // Conversation exists, just send message
-             const conversationId = currentConversation.id;
-
-            const messageCollectionRef = collection(firestore, 'conversations', conversationId, 'messages');
-            const newMessageRef = doc(messageCollectionRef);
-            const conversationRef = doc(firestore, 'conversations', conversationId);
-
-            const newMessageData = {
-                id: newMessageRef.id,
-                conversationId,
-                senderId: currentUser.uid,
-                text,
-                timestamp: serverTimestamp(),
-            };
-
-            const lastMessageData = {
-                text,
-                timestamp: serverTimestamp(),
-                senderId: currentUser.uid,
-            };
-
-            const batch = writeBatch(firestore);
-            batch.set(newMessageRef, newMessageData);
-            batch.update(conversationRef, { lastMessage: lastMessageData });
-
-            await batch.commit().catch(err => {
-                errorEmitter.emit('permission-error', new FirestorePermissionError({
-                    path: newMessageRef.path,
-                    operation: 'create',
-                    requestResourceData: newMessageData,
-                }))
-            });
+        } catch (err) {
+             errorEmitter.emit('permission-error', new FirestorePermissionError({
+                path: conversationDocRef.path,
+                operation: 'write', // Generic write operation for batch
+            }))
         }
     }
 
@@ -268,7 +207,7 @@ export default function ConversationPage() {
     const isAccepted = conversation?.status === 'accepted';
     const amIRequester = conversation?.requesterId === currentUser?.uid;
 
-    if (isLoading || peerUserLoading) {
+    if (isConversationLoading || peerUserLoading) {
          return (
              <AppLayout showTopBar={false} showBottomNav={false}>
                 <ChatHeader peerUser={null} />
