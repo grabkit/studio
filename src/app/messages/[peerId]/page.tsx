@@ -4,7 +4,7 @@
 import { useParams, useRouter } from 'next/navigation';
 import AppLayout from "@/components/AppLayout";
 import { useFirebase, useMemoFirebase } from "@/firebase";
-import { collection, query, where, orderBy, limit, and, or, getDocs, writeBatch, serverTimestamp, addDoc } from "firebase/firestore";
+import { collection, query, where, orderBy, limit, getDocs, writeBatch, serverTimestamp, addDoc } from "firebase/firestore";
 import { useCollection, WithId } from "@/firebase/firestore/use-collection";
 import { type Conversation, type Message, type User } from "@/lib/types";
 import React, { useEffect, useMemo, useRef, useState } from "react";
@@ -57,7 +57,7 @@ function ChatHeader({ peerUser }: { peerUser: User | null }) {
 function MessageInput({ onSendMessage, conversation }: { onSendMessage: (text: string) => Promise<void>, conversation: WithId<Conversation> | null }) {
     const [message, setMessage] = useState('');
     const [isSending, setIsSending] = useState(false);
-    const { firestore } = useFirebase();
+    const { firestore, user } = useFirebase();
 
     // Memoize the query to avoid re-running on every render
     const messagesQuery = useMemoFirebase(() => {
@@ -69,7 +69,7 @@ function MessageInput({ onSendMessage, conversation }: { onSendMessage: (text: s
     const messagesSentCount = sentMessages?.length ?? 0;
 
     const isRequest = conversation?.status === 'pending';
-    const limitReached = isRequest && messagesSentCount >= 3;
+    const limitReached = isRequest && user?.uid === conversation.requesterId && messagesSentCount >= 3;
 
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
@@ -82,9 +82,9 @@ function MessageInput({ onSendMessage, conversation }: { onSendMessage: (text: s
     
     return (
         <div className="fixed bottom-0 left-0 right-0 bg-background border-t z-10 max-w-2xl mx-auto sm:px-4">
-            {isRequest && (
+            {isRequest && user?.uid === conversation?.requesterId && (
                  <div className="p-3 text-center text-xs bg-secondary text-secondary-foreground">
-                    <p><b>Send a message request to {formatUserId(conversation?.participants[Object.keys(conversation.participants).find(k => k !== conversation.requesterId) ?? '']?.id ?? '')}</b></p>
+                    <p><b>Send a message request to {formatUserId(Object.keys(conversation.participants).find(k => k !== conversation.requesterId) ?? '')}</b></p>
                     <p className="text-secondary-foreground/80">You can send up to {3 - messagesSentCount} more messages before they accept your request.</p>
                  </div>
             )}
@@ -122,30 +122,25 @@ export default function ConversationPage() {
         
         const findConversation = async () => {
             setIsLoading(true);
-            // Query for conversations where the current user is a participant.
-            const userConversationsQuery = query(
+            
+            const sortedParticipantIds = [currentUser.uid, peerId].sort();
+
+            const conversationQuery = query(
                 collection(firestore, 'conversations'),
-                where('participantIds', 'array-contains', currentUser.uid)
+                where('participantIds', '==', sortedParticipantIds)
             );
             
             try {
-                const querySnapshot = await getDocs(userConversationsQuery);
-                let foundConversation: WithId<Conversation> | null = null;
-                
-                // Manually filter to find the one with the peer.
-                for (const doc of querySnapshot.docs) {
-                    const data = doc.data() as Conversation;
-                    if (data.participantIds.includes(peerId)) {
-                        foundConversation = { ...data, id: doc.id };
-                        break; // Found it, no need to continue.
-                    }
+                const querySnapshot = await getDocs(conversationQuery);
+                if (!querySnapshot.empty) {
+                    const doc = querySnapshot.docs[0];
+                    setConversation({ ...(doc.data() as Conversation), id: doc.id });
+                } else {
+                    setConversation(null);
                 }
-                
-                setConversation(foundConversation);
 
             } catch(e: any) {
                 console.error("Error finding conversation:", e);
-                // We can assume a permission error and handle it globally
                  const permissionError = new FirestorePermissionError({
                     path: 'conversations',
                     operation: 'list'
@@ -212,7 +207,7 @@ export default function ConversationPage() {
             };
 
             const batch = writeBatch(firestore);
-            batch.set(newConversationRef, newConversationData);
+            batch.set(newConversationRef, {...newConversationData, id: newConversationRef.id });
             batch.set(newMessageRef, newMessageData);
             batch.update(newConversationRef, { lastMessage: lastMessageData });
             
