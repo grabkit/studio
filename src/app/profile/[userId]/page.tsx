@@ -16,6 +16,7 @@ import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Grid3x3, FileText, ArrowLeft, Bookmark as BookmarkIcon } from "lucide-react";
+import { getInitials } from "@/lib/utils";
 
 const PostGrid = ({ posts, isLoading, emptyState }: { posts: (Post | UserPost)[] | null, isLoading: boolean, emptyState: React.ReactNode }) => {
     return (
@@ -109,16 +110,6 @@ export default function UserProfilePage() {
         if (!posts) return 0;
         return posts.reduce((acc, post) => acc + (post.commentCount || 0), 0);
     }, [posts]);
-
-    const getInitials = (name: string | null | undefined) => {
-        if (!name) return "U";
-        return name
-        .split(" ")
-        .map((n) => n[0])
-        .join("")
-        .substring(0, 2)
-        .toUpperCase();
-    };
 
     const formatUserId = (uid: string | undefined) => {
         if (!uid) return "blur??????";

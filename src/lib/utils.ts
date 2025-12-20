@@ -10,7 +10,7 @@ export function cn(...inputs: ClassValue[]) {
 export function formatTimestamp(date: Date): string {
   const now = new Date();
   const distance = formatDistanceToNowStrict(date, { addSuffix: false });
-  // formatDistanceToNowStrict returns string like '5 months', '1 day', '10 hours', '1 minute'
+  // formatDistanceToNowStrict returns string like '5 months', '1 day', '10 hours', '1minute'
   
   const [value, unit] = distance.split(' ');
 
@@ -36,3 +36,14 @@ export function formatTimestamp(date: Date): string {
   // Fallback for units not explicitly handled, though the above covers date-fns output
   return distance;
 }
+
+
+export const getInitials = (name: string | null | undefined) => {
+    if (!name) return "U";
+    return name
+      .split(" ")
+      .map((n) => n[0])
+      .join("")
+      .substring(0, 2)
+      .toUpperCase();
+};

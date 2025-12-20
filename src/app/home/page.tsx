@@ -11,7 +11,7 @@ import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Skeleton } from "@/components/ui/skeleton";
 import type { Post, Bookmark, PollOption, Notification } from "@/lib/types";
 import { Heart, MessageCircle, Repeat, ArrowUpRight, MoreHorizontal, Edit, Trash2, Bookmark as BookmarkIcon, CheckCircle2, Send } from "lucide-react";
-import { cn, formatTimestamp } from "@/lib/utils";
+import { cn, formatTimestamp, getInitials } from "@/lib/utils";
 import { useToast } from "@/hooks/use-toast";
 import { FirestorePermissionError } from "@/firebase/errors";
 import { errorEmitter } from "@/firebase/error-emitter";
@@ -40,11 +40,6 @@ import { useRouter } from "next/navigation";
 const formatUserId = (uid: string | undefined) => {
   if (!uid) return "blur??????";
   return `blur${uid.substring(uid.length - 6)}`;
-};
-
-const getInitials = (name: string | null | undefined) => {
-  if (!name) return "U";
-  return name.split(' ').map(n => n[0]).join('').substring(0, 2).toUpperCase();
 };
 
 

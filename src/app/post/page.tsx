@@ -27,7 +27,7 @@ import { errorEmitter } from "@/firebase/error-emitter";
 import { FirestorePermissionError } from "@/firebase/errors";
 import { Switch } from "@/components/ui/switch";
 import { Label } from "@/components/ui/label";
-import { cn } from "@/lib/utils";
+import { cn, getInitials } from "@/lib/utils";
 
 const pollOptionSchema = z.object({
   option: z.string().min(1, "Option cannot be empty.").max(100, "Option is too long."),
@@ -59,11 +59,6 @@ const postSchema = z.discriminatedUnion("isPoll", [
   pollPostSchema,
 ]);
 
-
-const getInitials = (name: string | null | undefined) => {
-  if (!name) return "U";
-  return name.split(' ').map(n => n[0]).join('').substring(0, 2).toUpperCase();
-};
 
 const formatUserId = (uid: string | undefined) => {
     if (!uid) return "blur??????";

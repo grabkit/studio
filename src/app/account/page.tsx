@@ -15,6 +15,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import Link from "next/link";
 import React, { useMemo, useState, useEffect } from "react";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { getInitials } from "@/lib/utils";
 
 
 const PostGrid = ({ posts, isLoading, emptyState }: { posts: (Post | UserPost)[] | null, isLoading: boolean, emptyState: React.ReactNode }) => {
@@ -143,16 +144,6 @@ export default function AccountPage() {
         description: error.message,
       });
     }
-  };
-
-  const getInitials = (name: string | null | undefined) => {
-    if (!name) return "U";
-    return name
-      .split(" ")
-      .map((n) => n[0])
-      .join("")
-      .substring(0, 2)
-      .toUpperCase();
   };
 
   const formatUserId = (uid: string | undefined) => {

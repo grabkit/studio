@@ -31,7 +31,7 @@ import { Button, buttonVariants } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { Form, FormControl, FormField, FormItem, FormMessage } from "@/components/ui/form";
 import { Heart, MessageCircle, ArrowUpRight, Trash2, MoreHorizontal, Edit, ArrowLeft, Repeat } from "lucide-react";
-import { cn, formatTimestamp } from "@/lib/utils";
+import { cn, formatTimestamp, getInitials } from "@/lib/utils";
 import { useToast } from "@/hooks/use-toast";
 import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
@@ -59,16 +59,6 @@ import {
 const formatUserId = (uid: string | undefined) => {
   if (!uid) return "blur??????";
   return `blur${uid.substring(uid.length - 6)}`;
-};
-
-const getInitials = (name: string | null | undefined) => {
-  if (!name) return "U";
-  return name
-    .split(" ")
-    .map((n) => n[0])
-    .join("")
-    .substring(0, 2)
-    .toUpperCase();
 };
 
 function PostDetailItem({ post }: { post: WithId<Post> }) {

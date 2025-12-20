@@ -33,7 +33,7 @@ import {
 } from "@/components/ui/alert-dialog";
 import { Loader2, Mail, Lock, User as UserIcon } from "lucide-react";
 import { createUserWithEmailAndPassword, signInWithEmailAndPassword, updateProfile } from "firebase/auth";
-import { cn } from "@/lib/utils";
+import { cn, getInitials } from "@/lib/utils";
 import { Checkbox } from "@/components/ui/checkbox";
 import { doc, setDoc } from "firebase/firestore";
 import type { User as UserType } from "@/lib/types";

@@ -9,18 +9,13 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import Link from "next/link";
 import { Heart, MessageCircle } from "lucide-react";
-import { cn, formatTimestamp } from "@/lib/utils";
+import { cn, formatTimestamp, getInitials } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import { useEffect } from "react";
 
 const formatUserId = (uid: string | undefined) => {
   if (!uid) return "blur??????";
   return `blur${uid.substring(uid.length - 6)}`;
-};
-
-const getInitials = (name: string | null | undefined) => {
-  if (!name) return "U";
-  return name.split(' ').map(n => n[0]).join('').substring(0, 2).toUpperCase();
 };
 
 function NotificationItem({ notification }: { notification: WithId<Notification> }) {
