@@ -55,25 +55,3 @@ export interface Notification {
     timestamp: Timestamp;
     read: boolean;
 }
-
-export interface Conversation {
-    id: string;
-    participantIds: string[];
-    participants: Record<string, { name: string; id: string }>;
-    lastMessage: {
-        text: string;
-        timestamp: Timestamp;
-        senderId: string;
-    } | null;
-    status: 'pending' | 'accepted';
-    // ID of the user who initiated the conversation
-    requesterId: string; 
-}
-
-export interface Message {
-    id: string;
-    conversationId: string;
-    senderId: string;
-    text: string;
-    timestamp: Timestamp;
-}
