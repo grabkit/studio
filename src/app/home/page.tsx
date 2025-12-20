@@ -299,9 +299,9 @@ function PostItem({ post, bookmarks }: { post: WithId<Post>, bookmarks: WithId<B
           <div className="flex-1 space-y-2">
             <div className="flex justify-between items-start">
               <div className="flex items-center">
-                 <span className="text-sm font-semibold">
+                 <Link href={`/profile/${post.authorId}`} className="text-sm font-semibold hover:underline">
                     {formatUserId(post.authorId)}
-                </span>
+                </Link>
               </div>
                <div className="flex items-center space-x-2">
                  <span className="text-xs text-muted-foreground">
@@ -458,5 +458,7 @@ export default function HomePage() {
     </AppLayout>
   );
 }
+
+    
 
     
