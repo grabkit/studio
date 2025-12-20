@@ -57,10 +57,19 @@ function ChatHeader({ peerUser }: { peerUser: User | null }) {
 function MessageInput({ onSendMessage, conversation }: { onSendMessage: (text: string) => Promise<void>, conversation: WithId<Conversation> | null }) {
     const [message, setMessage] = useState('');
     const [isSending, setIsSending] = useState(false);
-    
-    const messagesSent = useCollection(conversation ? query(collection(doc(collection('conversations'), conversation.id), 'messages')) : null).data?.length ?? 0;
+    const { firestore } = useFirebase();
+
+    // Memoize the query to avoid re-running on every render
+    const messagesQuery = useMemoFirebase(() => {
+        if (!firestore || !conversation) return null;
+        return query(collection(doc(collection(firestore, 'conversations'), conversation.id), 'messages'));
+    }, [firestore, conversation]);
+
+    const { data: sentMessages } = useCollection(messagesQuery);
+    const messagesSentCount = sentMessages?.length ?? 0;
+
     const isRequest = conversation?.status === 'pending';
-    const limitReached = isRequest && messagesSent >= 3;
+    const limitReached = isRequest && messagesSentCount >= 3;
 
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
@@ -75,8 +84,8 @@ function MessageInput({ onSendMessage, conversation }: { onSendMessage: (text: s
         <div className="fixed bottom-0 left-0 right-0 bg-background border-t z-10 max-w-2xl mx-auto sm:px-4">
             {isRequest && (
                  <div className="p-3 text-center text-xs bg-secondary text-secondary-foreground">
-                    <p><b>Send a message request to {conversation?.participants[conversation.requesterId === 'me' ? 'peer' : conversation.requesterId]?.name ?? 'this user'}</b></p>
-                    <p className="text-secondary-foreground/80">You can send up to {3 - messagesSent} more messages before they accept your request.</p>
+                    <p><b>Send a message request to {formatUserId(conversation?.participants[Object.keys(conversation.participants).find(k => k !== conversation.requesterId) ?? '']?.id ?? '')}</b></p>
+                    <p className="text-secondary-foreground/80">You can send up to {3 - messagesSentCount} more messages before they accept your request.</p>
                  </div>
             )}
             <div className="p-4">
@@ -113,19 +122,38 @@ export default function ConversationPage() {
         
         const findConversation = async () => {
             setIsLoading(true);
-            const conversationQuery = query(
+            // Query for conversations where the current user is a participant.
+            const userConversationsQuery = query(
                 collection(firestore, 'conversations'),
-                where('participantIds', '==', [currentUser.uid, peerId].sort())
+                where('participantIds', 'array-contains', currentUser.uid)
             );
-            const querySnapshot = await getDocs(conversationQuery);
+            
+            try {
+                const querySnapshot = await getDocs(userConversationsQuery);
+                let foundConversation: WithId<Conversation> | null = null;
+                
+                // Manually filter to find the one with the peer.
+                for (const doc of querySnapshot.docs) {
+                    const data = doc.data() as Conversation;
+                    if (data.participantIds.includes(peerId)) {
+                        foundConversation = { ...data, id: doc.id };
+                        break; // Found it, no need to continue.
+                    }
+                }
+                
+                setConversation(foundConversation);
 
-            if (!querySnapshot.empty) {
-                const convoDoc = querySnapshot.docs[0];
-                setConversation({ ...convoDoc.data() as Conversation, id: convoDoc.id });
-            } else {
-                setConversation(null); // No existing conversation
+            } catch(e: any) {
+                console.error("Error finding conversation:", e);
+                // We can assume a permission error and handle it globally
+                 const permissionError = new FirestorePermissionError({
+                    path: 'conversations',
+                    operation: 'list'
+                });
+                errorEmitter.emit('permission-error', permissionError);
+            } finally {
+                setIsLoading(false);
             }
-            setIsLoading(false);
         }
         findConversation();
 
@@ -149,13 +177,11 @@ export default function ConversationPage() {
     const handleSendMessage = async (text: string) => {
         if (!firestore || !currentUser || !peerUser) return;
         
-        let conversationId = conversation?.id;
+        let currentConversation = conversation;
 
         // If no conversation exists, create one
-        if (!conversationId) {
-            const batch = writeBatch(firestore);
+        if (!currentConversation) {
             const newConversationRef = doc(collection(firestore, 'conversations'));
-            conversationId = newConversationRef.id;
 
             const newConversationData: Omit<Conversation, 'id'> = {
                 participantIds: [currentUser.uid, peerId].sort(),
@@ -167,42 +193,74 @@ export default function ConversationPage() {
                 status: 'pending',
                 requesterId: currentUser.uid,
             };
-            batch.set(newConversationRef, newConversationData);
             
-            // This is to update local state immediately
-            setConversation({ id: conversationId, ...newConversationData });
-            await batch.commit();
+            const messageCollectionRef = collection(newConversationRef, 'messages');
+            const newMessageRef = doc(messageCollectionRef);
+            
+            const newMessageData = {
+                id: newMessageRef.id,
+                conversationId: newConversationRef.id,
+                senderId: currentUser.uid,
+                text,
+                timestamp: serverTimestamp(),
+            };
+
+            const lastMessageData = {
+                text,
+                timestamp: serverTimestamp(),
+                senderId: currentUser.uid,
+            };
+
+            const batch = writeBatch(firestore);
+            batch.set(newConversationRef, newConversationData);
+            batch.set(newMessageRef, newMessageData);
+            batch.update(newConversationRef, { lastMessage: lastMessageData });
+            
+            setConversation({ id: newConversationRef.id, ...newConversationData });
+            currentConversation = { id: newConversationRef.id, ...newConversationData };
+
+
+            await batch.commit().catch(err => {
+                 errorEmitter.emit('permission-error', new FirestorePermissionError({
+                    path: newConversationRef.path,
+                    operation: 'create',
+                    requestResourceData: newConversationData,
+                }))
+            });
+
+        } else { // Conversation exists, just send message
+             const conversationId = currentConversation.id;
+
+            const messageCollectionRef = collection(firestore, 'conversations', conversationId, 'messages');
+            const newMessageRef = doc(messageCollectionRef);
+            const conversationRef = doc(firestore, 'conversations', conversationId);
+
+            const newMessageData = {
+                id: newMessageRef.id,
+                conversationId,
+                senderId: currentUser.uid,
+                text,
+                timestamp: serverTimestamp(),
+            };
+
+            const lastMessageData = {
+                text,
+                timestamp: serverTimestamp(),
+                senderId: currentUser.uid,
+            };
+
+            const batch = writeBatch(firestore);
+            batch.set(newMessageRef, newMessageData);
+            batch.update(conversationRef, { lastMessage: lastMessageData });
+
+            await batch.commit().catch(err => {
+                errorEmitter.emit('permission-error', new FirestorePermissionError({
+                    path: newMessageRef.path,
+                    operation: 'create',
+                    requestResourceData: newMessageData,
+                }))
+            });
         }
-
-        if (!conversationId) return;
-
-        const messageCollectionRef = collection(firestore, 'conversations', conversationId, 'messages');
-        const newMessageRef = doc(messageCollectionRef);
-        const conversationRef = doc(firestore, 'conversations', conversationId);
-
-        const newMessageData: Omit<Message, 'id' | 'timestamp'> = {
-            conversationId,
-            senderId: currentUser.uid,
-            text,
-        };
-
-        const lastMessageData = {
-            text,
-            timestamp: serverTimestamp(),
-            senderId: currentUser.uid,
-        };
-
-        const batch = writeBatch(firestore);
-        batch.set(newMessageRef, { ...newMessageData, timestamp: serverTimestamp() });
-        batch.update(conversationRef, { lastMessage: lastMessageData });
-
-        await batch.commit().catch(err => {
-            errorEmitter.emit('permission-error', new FirestorePermissionError({
-                path: newMessageRef.path,
-                operation: 'create',
-                requestResourceData: newMessageData,
-            }))
-        });
     }
 
     const conversationExists = conversation !== null;

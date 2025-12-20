@@ -59,8 +59,9 @@ service cloud.firestore {
     }
 
     match /conversations/{conversationId} {
-      // Allow read/write access only to participants of the conversation.
-      allow read: if isParticipant(conversationId);
+      allow get: if isParticipant(conversationId);
+      // Allow list only if querying for user's own conversations.
+      allow list: if isSignedIn() && request.query.where.get('participantIds').get('array-contains') == request.auth.uid;
       // Allow creation if the requester is the one creating it.
       allow create: if request.resource.data.requesterId == request.auth.uid;
       // Allow updates (like accepting a request) if a participant is making the change.
@@ -70,8 +71,12 @@ service cloud.firestore {
     match /conversations/{conversationId}/messages/{messageId} {
       // Allow read access to participants.
       allow list, get: if isParticipant(conversationId);
-      // Allow message creation if the user is a participant and the conversation is accepted.
-      allow create: if isParticipant(conversationId) && get(/databases/$(database)/documents/conversations/$(conversationId)).data.status == 'accepted';
+      // Allow message creation if the conversation is accepted,
+      // OR if it's pending and the requester is sending the message (up to a limit, enforced by client).
+      allow create: if (isParticipant(conversationId) && 
+        (get(/databases/$(database)/documents/conversations/$(conversationId)).data.status == 'accepted' || 
+        (get(/databases/$(database)/documents/conversations/$(conversationId)).data.status == 'pending' && 
+         get(/databases/$(database)/documents/conversations/$(conversationId)).data.requesterId == request.auth.uid)));
     }
 
 
