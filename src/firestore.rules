@@ -60,13 +60,10 @@ service cloud.firestore {
 
     match /conversations/{conversationId} {
       allow get: if isParticipant(conversationId);
-      // Allow list only if querying for user's own conversations OR for a specific conversation between two users.
       allow list: if isSignedIn() && 
-                    (request.query.where.get('participantIds').get('array-contains') == request.auth.uid ||
-                     request.query.where.get('participantIds').get('==')_size == 2 && request.auth.uid in request.query.where.get('participantIds').get('=='));
-      // Allow creation if the requester is the one creating it.
+                    (request.query.where['participantIds']['array-contains'] == request.auth.uid || 
+                     (request.query.where['participantIds'] != null && request.query.where['participantIds'].keys().hasOnly(['==']) && request.query.where['participantIds']['=='].size() == 2 && request.auth.uid in request.query.where['participantIds']['==']));
       allow create: if isSignedIn() && request.resource.data.requesterId == request.auth.uid;
-      // Allow updates (like accepting a request) if a participant is making the change.
       allow update: if isParticipant(conversationId);
       allow delete: if isParticipant(conversationId);
     }
