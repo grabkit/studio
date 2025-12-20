@@ -70,6 +70,8 @@ function MessageInput({ onSendMessage, conversation }: { onSendMessage: (text: s
 
     const isRequest = conversation?.status === 'pending';
     const limitReached = isRequest && user?.uid === conversation.requesterId && messagesSentCount >= 3;
+    const peerParticipant = conversation ? Object.values(conversation.participants).find(p => p.id !== user?.uid) : null;
+
 
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
@@ -82,9 +84,9 @@ function MessageInput({ onSendMessage, conversation }: { onSendMessage: (text: s
     
     return (
         <div className="fixed bottom-0 left-0 right-0 bg-background border-t z-10 max-w-2xl mx-auto sm:px-4">
-            {isRequest && user?.uid === conversation?.requesterId && (
+            {isRequest && user?.uid === conversation?.requesterId && peerParticipant && (
                  <div className="p-3 text-center text-xs bg-secondary text-secondary-foreground">
-                    <p><b>Send a message request to {formatUserId(Object.keys(conversation.participants).find(k => k !== conversation.requesterId) ?? '')}</b></p>
+                    <p><b>Send a message request to {formatUserId(peerParticipant.id)}</b></p>
                     <p className="text-secondary-foreground/80">You can send up to {3 - messagesSentCount} more messages before they accept your request.</p>
                  </div>
             )}
@@ -139,6 +141,7 @@ export default function ConversationPage() {
                 if (existingConversation) {
                     setConversation(existingConversation);
                 } else {
+                    // No existing conversation found
                     setConversation(null);
                 }
 
@@ -182,7 +185,7 @@ export default function ConversationPage() {
             const newConversationRef = doc(collection(firestore, 'conversations'));
 
             const newConversationData: Omit<Conversation, 'id'> = {
-                participantIds: [currentUser.uid, peerId].sort(),
+                participantIds: [currentUser.uid, peerId],
                 participants: {
                     [currentUser.uid]: { id: currentUser.uid, name: currentUser.displayName || "Anonymous" },
                     [peerId]: { id: peerUser.id, name: peerUser.name || "Anonymous" },

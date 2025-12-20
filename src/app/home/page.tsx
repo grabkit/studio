@@ -351,7 +351,7 @@ function PostItem({ post, bookmarks }: { post: WithId<Post>, bookmarks: WithId<B
                </div>
             </div>
             
-            <Link href={`/post/${post.id}`} className="!mt-0">
+            <Link href={`/post/${post.id}`} className="block !mt-0">
                 <p className="text-foreground text-sm whitespace-pre-wrap">{post.content}</p>
             </Link>
 
@@ -413,9 +413,8 @@ function PostSkeleton() {
         <div className="flex space-x-3">
           <Skeleton className="h-10 w-10 rounded-full" />
           <div className="flex-1 space-y-2">
-            <div className="flex justify-between">
-              <Skeleton className="h-4 w-[150px]" />
-              <Skeleton className="h-3 w-[100px]" />
+            <div className="flex justify-between items-start">
+                <Skeleton className="h-4 w-[150px]" />
             </div>
             <Skeleton className="h-4 w-full" />
             <Skeleton className="h-4 w-3/4" />

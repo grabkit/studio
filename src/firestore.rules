@@ -60,7 +60,7 @@ service cloud.firestore {
 
     match /conversations/{conversationId} {
       allow get: if isParticipant(conversationId);
-      // IMPORTANT: This rule is restrictive. It only allows queries that filter by the user's own UID.
+      // IMPORTANT: A user can only query for conversations they are a part of.
       allow list: if isSignedIn() && request.query.where['participantIds']['array-contains'] == request.auth.uid;
       allow create: if isSignedIn() && request.resource.data.requesterId == request.auth.uid;
       allow update: if isParticipant(conversationId);
