@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { Home, User, HomeIcon, UserIcon, Plus, Heart as HeartIcon } from "lucide-react";
+import { Home, User, HomeIcon, UserIcon, Plus, Heart as HeartIcon, MessageSquare } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useFirebase, useMemoFirebase } from "@/firebase";
 import { collection, query, where, limit } from "firebase/firestore";
@@ -14,6 +14,7 @@ const navItems = [
   { href: "/home", label: "Home", icon: Home, activeIcon: HomeIcon },
   { href: "/activity", label: "Activity", icon: HeartIcon, activeIcon: HeartIcon },
   { href: "/post", label: "Post", icon: Plus, activeIcon: Plus },
+  { href: "/messages", label: "Messages", icon: MessageSquare, activeIcon: MessageSquare },
   { href: "/account", label: "Account", icon: User, activeIcon: UserIcon },
 ];
 
@@ -34,11 +35,13 @@ export default function BottomNav() {
 
   const hasUnread = useMemo(() => (unreadNotifications?.length ?? 0) > 0, [unreadNotifications]);
 
+  const isMessagesActive = pathname.startsWith('/messages');
+
   return (
     <footer className="fixed bottom-0 left-0 right-0 z-40 border-t bg-background-blur">
       <nav className="flex h-14 items-center justify-around max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         {navItems.map((item) => {
-          const isActive = pathname === item.href;
+          const isActive = item.href === '/messages' ? isMessagesActive : pathname === item.href;
           const Icon = isActive ? item.activeIcon : item.icon;
           const isActivityTab = item.href === '/activity';
 
@@ -48,7 +51,7 @@ export default function BottomNav() {
               href={item.href}
               aria-label={item.label}
               className={cn(
-                "flex flex-col items-center justify-center w-20 transition-colors duration-200",
+                "flex flex-col items-center justify-center w-16 transition-colors duration-200",
                 isActive && item.href !== '/post' ? "text-foreground" : "text-muted-foreground hover:text-foreground"
               )}
             >

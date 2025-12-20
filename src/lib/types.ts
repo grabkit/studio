@@ -7,9 +7,9 @@ export interface PollOption {
 
 export interface Post {
     id: string;
+    timestamp: Timestamp;
     authorId: string;
     content: string;
-    timestamp: Timestamp;
     likes: string[];
     likeCount: number;
     commentCount: number;
@@ -54,4 +54,26 @@ export interface Notification {
     fromUserId: string;
     timestamp: Timestamp;
     read: boolean;
+}
+
+export interface Conversation {
+    id: string;
+    participantIds: string[];
+    participants: Record<string, { name: string; id: string }>;
+    lastMessage: {
+        text: string;
+        timestamp: Timestamp;
+        senderId: string;
+    } | null;
+    status: 'pending' | 'accepted';
+    // ID of the user who initiated the conversation
+    requesterId: string; 
+}
+
+export interface Message {
+    id: string;
+    conversationId: string;
+    senderId: string;
+    text: string;
+    timestamp: Timestamp;
 }

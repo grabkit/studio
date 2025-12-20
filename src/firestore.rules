@@ -11,6 +11,11 @@ service cloud.firestore {
       return request.auth.uid == userId;
     }
 
+    // A user is a participant in a conversation if their UID is in the participantIds array.
+    function isParticipant(conversationId) {
+      return request.auth.uid in get(/databases/$(database)/documents/conversations/$(conversationId)).data.participantIds;
+    }
+
     match /users/{userId} {
       allow get: if isSignedIn();
       allow list: if false; // Do not allow querying of all users
@@ -52,6 +57,23 @@ service cloud.firestore {
       allow create: if isSignedIn() && isValidNewComment(postId, commentId);
       allow delete: if isSignedIn() && (isOwner(resource.data.authorId) || isOwner(get(/databases/$(database)/documents/posts/$(postId)).data.authorId));
     }
+
+    match /conversations/{conversationId} {
+      // Allow read/write access only to participants of the conversation.
+      allow read: if isParticipant(conversationId);
+      // Allow creation if the requester is the one creating it.
+      allow create: if request.resource.data.requesterId == request.auth.uid;
+      // Allow updates (like accepting a request) if a participant is making the change.
+      allow update: if isParticipant(conversationId);
+    }
+
+    match /conversations/{conversationId}/messages/{messageId} {
+      // Allow read access to participants.
+      allow list, get: if isParticipant(conversationId);
+      // Allow message creation if the user is a participant and the conversation is accepted.
+      allow create: if isParticipant(conversationId) && get(/databases/$(database)/documents/conversations/$(conversationId)).data.status == 'accepted';
+    }
+
 
     function isNewTextPost() {
       let data = request.resource.data;

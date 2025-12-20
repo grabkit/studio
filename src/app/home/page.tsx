@@ -10,7 +10,7 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Skeleton } from "@/components/ui/skeleton";
 import type { Post, Bookmark, PollOption, Notification } from "@/lib/types";
-import { Heart, MessageCircle, Repeat, ArrowUpRight, MoreHorizontal, Edit, Trash2, Bookmark as BookmarkIcon, CheckCircle2 } from "lucide-react";
+import { Heart, MessageCircle, Repeat, ArrowUpRight, MoreHorizontal, Edit, Trash2, Bookmark as BookmarkIcon, CheckCircle2, Send } from "lucide-react";
 import { cn, formatTimestamp } from "@/lib/utils";
 import { useToast } from "@/hooks/use-toast";
 import { FirestorePermissionError } from "@/firebase/errors";
@@ -318,15 +318,22 @@ function PostItem({ post, bookmarks }: { post: WithId<Post>, bookmarks: WithId<B
           </Avatar>
           <div className="flex-1 space-y-2">
             <div className="flex justify-between items-start">
-              <div className="flex items-center space-x-2">
-                 <Link href={`/profile/${post.authorId}`} className="text-sm font-semibold hover:underline">
-                    {formatUserId(post.authorId)}
-                </Link>
-                 <span className="text-xs text-muted-foreground">
-                    {post.timestamp ? formatTimestamp(post.timestamp.toDate()) : ''}
-                 </span>
-              </div>
+                <div className="flex items-center space-x-2">
+                    <Link href={`/profile/${post.authorId}`} className="text-sm font-semibold hover:underline">
+                        {formatUserId(post.authorId)}
+                    </Link>
+                    <span className="text-xs text-muted-foreground">
+                        {post.timestamp ? formatTimestamp(post.timestamp.toDate()) : ''}
+                    </span>
+                </div>
                <div className="flex items-center">
+                    {!isOwner && user && (
+                        <Button variant="ghost" size="icon" className="h-8 w-8" asChild>
+                            <Link href={`/messages/${post.authorId}`}>
+                                <Send className="h-4 w-4" />
+                            </Link>
+                        </Button>
+                    )}
                  {isOwner && (
                     <DropdownMenu>
                       <DropdownMenuTrigger asChild>
@@ -478,9 +485,3 @@ export default function HomePage() {
     </AppLayout>
   );
 }
-
-    
-
-    
-
-    

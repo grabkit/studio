@@ -208,6 +208,57 @@
             }
         },
         "required": ["id", "type", "postId", "fromUserId", "timestamp", "read"]
+    },
+    "Conversation": {
+      "title": "Conversation",
+      "type": "object",
+      "description": "Represents a private conversation between two or more users.",
+      "properties": {
+        "id": { "type": "string" },
+        "participantIds": { "type": "array", "items": { "type": "string" } },
+        "participants": {
+          "type": "object",
+          "additionalProperties": {
+            "type": "object",
+            "properties": {
+              "name": { "type": "string" },
+              "id": { "type": "string" }
+            },
+            "required": ["name", "id"]
+          }
+        },
+        "lastMessage": {
+          "type": "object",
+          "properties": {
+            "text": { "type": "string" },
+            "timestamp": { "type": "string", "format": "date-time" },
+            "senderId": { "type": "string" }
+          },
+          "required": ["text", "timestamp", "senderId"]
+        },
+        "status": {
+          "type": "string",
+          "enum": ["pending", "accepted"]
+        },
+        "requesterId": {
+          "type": "string",
+          "description": "The ID of the user who initiated the conversation."
+        }
+      },
+      "required": ["id", "participantIds", "participants", "status", "requesterId"]
+    },
+    "Message": {
+      "title": "Message",
+      "type": "object",
+      "description": "Represents a single message within a conversation.",
+      "properties": {
+        "id": { "type": "string" },
+        "conversationId": { "type": "string" },
+        "senderId": { "type": "string" },
+        "text": { "type": "string" },
+        "timestamp": { "type": "string", "format": "date-time" }
+      },
+      "required": ["id", "conversationId", "senderId", "text", "timestamp"]
     }
   },
   "auth": {
@@ -309,8 +360,44 @@
             }
           ]
         }
+      },
+      {
+        "path": "/conversations/{conversationId}",
+        "definition": {
+            "entityName": "Conversation",
+            "schema": {
+                "$ref": "#/backend/entities/Conversation"
+            },
+            "description": "Stores metadata about a conversation between users.",
+            "params": [
+                {
+                    "name": "conversationId",
+                    "description": "Unique ID for the conversation."
+                }
+            ]
+        }
+      },
+      {
+        "path": "/conversations/{conversationId}/messages/{messageId}",
+        "definition": {
+            "entityName": "Message",
+            "schema": {
+                "$ref": "#/backend/entities/Message"
+            },
+            "description": "Stores all messages within a specific conversation.",
+            "params": [
+                {
+                    "name": "conversationId",
+                    "description": "The ID of the parent conversation."
+                },
+                {
+                    "name": "messageId",
+                    "description": "Unique ID for the message."
+                }
+            ]
+        }
       }
     ],
-    "reasoning": "The Firestore structure is designed for a public, social-media-style application. User profiles are stored in a `/users` collection, while all posts are stored in a single top-level `/posts` collection. This global `posts` collection allows any user to easily query and view all public posts. Security rules are configured to enforce that while all authenticated user can read posts, only the original author (`authorId` must match `request.auth.uid`) can write, update, or delete their own posts. Comments are stored in a subcollection under each post for clear organization. User-specific data like bookmarks and notifications are stored in subcollections under the respective user's document for security and scalability."
+    "reasoning": "The Firestore structure is designed for a public, social-media-style application. User profiles are stored in a `/users` collection, while all posts are stored in a single top-level `/posts` collection. This global `posts` collection allows any user to easily query and view all public posts. Security rules are configured to enforce that while all authenticated user can read posts, only the original author (`authorId` must match `request.auth.uid`) can write, update, or delete their own posts. Comments are stored in a subcollection under each post for clear organization. User-specific data like bookmarks and notifications are stored in subcollections under the respective user's document for security and scalability. Messaging is handled through a top-level `conversations` collection, with messages stored in a subcollection. This allows for efficient querying of conversations a user is part of, while keeping the actual message data separate."
   }
 }
