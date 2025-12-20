@@ -248,9 +248,30 @@ function PostItem({ post, bookmarks }: { post: WithId<Post>, bookmarks: WithId<B
     router.push(`/post?content=${encodedContent}`);
   };
 
-  const handleShare = () => {
-    // Placeholder for share functionality
-    toast({ title: "Share Post", description: "Sharing functionality coming soon!" });
+  const handleShare = async () => {
+    const shareData = {
+      title: `Post by ${formatUserId(post.authorId)}`,
+      text: post.content,
+      url: `${window.location.origin}/post/${post.id}`,
+    };
+    try {
+      if (navigator.share) {
+        await navigator.share(shareData);
+      } else {
+        await navigator.clipboard.writeText(shareData.url);
+        toast({
+            title: "Link Copied",
+            description: "Post link has been copied to your clipboard.",
+        });
+      }
+    } catch (error) {
+      console.error("Error sharing:", error);
+      toast({
+        variant: "destructive",
+        title: "Could not share",
+        description: "There was an error trying to share this post.",
+      });
+    }
   };
 
   const handleBookmark = () => {
@@ -458,6 +479,8 @@ export default function HomePage() {
     </AppLayout>
   );
 }
+
+    
 
     
 
