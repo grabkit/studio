@@ -57,14 +57,14 @@
           "type": "string",
           "description": "Unique identifier for the post entity."
         },
-        "authorId": {
-          "type": "string",
-          "description": "Reference to the User who created the post."
-        },
         "timestamp": {
           "type": "string",
           "description": "Timestamp indicating when the post was created.",
           "format": "date-time"
+        },
+        "authorId": {
+          "type": "string",
+          "description": "Reference to the User who created the post."
         },
         "content": {
           "type": "string",
