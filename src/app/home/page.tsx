@@ -1,5 +1,4 @@
 
-
 "use client";
 
 import AppLayout from "@/components/AppLayout";
@@ -322,6 +321,11 @@ function PostItem({ post, bookmarks }: { post: WithId<Post>, bookmarks: WithId<B
                     </span>
                 </div>
                <div className="flex items-center">
+                 {!isOwner && (
+                    <Button variant="ghost" size="icon" className="h-6 w-6">
+                        <MessageSquare className="h-4 w-4 text-muted-foreground" />
+                    </Button>
+                 )}
                  {isOwner && (
                     <DropdownMenu>
                       <DropdownMenuTrigger asChild>
@@ -472,3 +476,5 @@ export default function HomePage() {
     </AppLayout>
   );
 }
+
+  
