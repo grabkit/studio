@@ -10,7 +10,7 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Skeleton } from "@/components/ui/skeleton";
 import type { Post, Bookmark, PollOption, Notification } from "@/lib/types";
-import { Heart, MessageCircle, Repeat, Send, MoreHorizontal, Edit, Trash2, Bookmark as BookmarkIcon, CheckCircle2 } from "lucide-react";
+import { Heart, MessageCircle, Repeat, ArrowUpRight, MoreHorizontal, Edit, Trash2, Bookmark as BookmarkIcon, CheckCircle2 } from "lucide-react";
 import { cn, formatTimestamp } from "@/lib/utils";
 import { useToast } from "@/hooks/use-toast";
 import { FirestorePermissionError } from "@/firebase/errors";
@@ -373,7 +373,7 @@ function PostItem({ post, bookmarks }: { post: WithId<Post>, bookmarks: WithId<B
                     <Repeat className={cn("h-4 w-4")} />
                   </button>
                   <button onClick={handleShare} className="flex items-center space-x-1 hover:text-primary">
-                    <Send className="h-4 w-4" />
+                    <ArrowUpRight className="h-4 w-4" />
                   </button>
                 </div>
                  <button onClick={handleBookmark} className="flex items-center space-x-1 hover:text-blue-500">
@@ -484,4 +484,3 @@ export default function HomePage() {
     
 
     
-
