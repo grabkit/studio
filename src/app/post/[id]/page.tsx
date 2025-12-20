@@ -14,14 +14,11 @@ import {
   arrayRemove,
   arrayUnion,
   deleteDoc,
-  setDoc,
-  where,
-  getDocs,
-  addDoc
+  setDoc
 } from "firebase/firestore";
 import { useCollection, type WithId } from "@/firebase/firestore/use-collection";
 import { useDoc } from "@/firebase/firestore/use-doc";
-import type { Post, Comment, Notification, Conversation } from "@/lib/types";
+import type { Post, Comment, Notification } from "@/lib/types";
 import { useParams, useRouter } from "next/navigation";
 import React, { useState } from "react";
 import Link from 'next/link';
@@ -160,42 +157,9 @@ function PostDetailItem({ post }: { post: WithId<Post> }) {
       });
   };
 
-  const handleMessage = async () => {
-     if (!user || !firestore || isOwner) return;
-
-    try {
-        // Check if a conversation already exists
-        const conversationsRef = collection(firestore, 'conversations');
-        const q = query(conversationsRef, where('participantIds', 'array-contains', user.uid));
-        const querySnapshot = await getDocs(q);
-
-        let existingConversation: WithId<Conversation> | null = null;
-        querySnapshot.forEach(doc => {
-            const conv = doc.data() as Conversation;
-            if (conv.participantIds.includes(post.authorId)) {
-                existingConversation = { ...conv, id: doc.id };
-            }
-        });
-
-        if (existingConversation) {
-            router.push(`/messages/${existingConversation.id}`);
-        } else {
-            // Create a new conversation
-            const newConversationRef = await addDoc(conversationsRef, {
-                participantIds: [user.uid, post.authorId],
-                lastMessage: '',
-                lastUpdated: serverTimestamp(),
-            });
-            router.push(`/messages/${newConversationRef.id}`);
-        }
-    } catch (error) {
-        console.error("Error starting conversation:", error);
-        toast({
-            variant: "destructive",
-            title: "Error",
-            description: "Could not start a conversation.",
-        });
-    }
+  const handleShare = () => {
+    // Placeholder for share functionality
+    toast({ title: "Share Post", description: "Sharing functionality coming soon!" });
   };
 
   return (
@@ -275,11 +239,9 @@ function PostDetailItem({ post }: { post: WithId<Post> }) {
                 <button className="flex items-center space-x-1 hover:text-green-500">
                     <Repeat className={cn("h-5 w-5")} />
                 </button>
-                {!isOwner && (
-                  <button onClick={handleMessage} className="flex items-center space-x-1 hover:text-primary">
+                 <button onClick={handleShare} className="flex items-center space-x-1 hover:text-primary">
                     <Send className="h-5 w-5" />
                   </button>
-                )}
             </div>
           </div>
         </div>

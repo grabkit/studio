@@ -4,13 +4,13 @@
 
 import AppLayout from "@/components/AppLayout";
 import { useFirebase, useMemoFirebase, useUser } from "@/firebase";
-import { collection, query, orderBy, limit, doc, updateDoc, arrayUnion, arrayRemove, increment, deleteDoc, setDoc, serverTimestamp, deleteDoc as deleteBookmarkDoc, runTransaction, where, getDocs, addDoc } from "firebase/firestore";
+import { collection, query, orderBy, limit, doc, updateDoc, arrayUnion, arrayRemove, increment, deleteDoc, setDoc, serverTimestamp, deleteDoc as deleteBookmarkDoc, runTransaction } from "firebase/firestore";
 import { useCollection, type WithId } from "@/firebase/firestore/use-collection";
 import { Card, CardContent } from "@/components/ui/card";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { formatDistanceToNow } from "date-fns";
 import { Skeleton } from "@/components/ui/skeleton";
-import type { Post, Bookmark, PollOption, Notification, Conversation } from "@/lib/types";
+import type { Post, Bookmark, PollOption, Notification } from "@/lib/types";
 import { Heart, MessageCircle, Repeat, Send, MoreHorizontal, Edit, Trash2, Bookmark as BookmarkIcon, CheckCircle2 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useToast } from "@/hooks/use-toast";
@@ -248,42 +248,9 @@ function PostItem({ post, bookmarks }: { post: WithId<Post>, bookmarks: WithId<B
     router.push(`/post?content=${encodedContent}`);
   };
 
-  const handleMessage = async () => {
-    if (!user || !firestore || isOwner) return;
-
-    try {
-        // Check if a conversation already exists
-        const conversationsRef = collection(firestore, 'conversations');
-        const q = query(conversationsRef, where('participantIds', 'array-contains', user.uid));
-        const querySnapshot = await getDocs(q);
-
-        let existingConversation: WithId<Conversation> | null = null;
-        querySnapshot.forEach(doc => {
-            const conv = doc.data() as Conversation;
-            if (conv.participantIds.includes(post.authorId)) {
-                existingConversation = { ...conv, id: doc.id };
-            }
-        });
-
-        if (existingConversation) {
-            router.push(`/messages/${existingConversation.id}`);
-        } else {
-            // Create a new conversation
-            const newConversationRef = await addDoc(conversationsRef, {
-                participantIds: [user.uid, post.authorId],
-                lastMessage: '',
-                lastUpdated: serverTimestamp(),
-            });
-            router.push(`/messages/${newConversationRef.id}`);
-        }
-    } catch (error) {
-        console.error("Error starting conversation:", error);
-        toast({
-            variant: "destructive",
-            title: "Error",
-            description: "Could not start a conversation.",
-        });
-    }
+  const handleShare = () => {
+    // Placeholder for share functionality
+    toast({ title: "Share Post", description: "Sharing functionality coming soon!" });
   };
 
   const handleBookmark = () => {
@@ -385,11 +352,9 @@ function PostItem({ post, bookmarks }: { post: WithId<Post>, bookmarks: WithId<B
                   <button onClick={handleRepost} className="flex items-center space-x-1 hover:text-green-500">
                     <Repeat className={cn("h-4 w-4")} />
                   </button>
-                  {!isOwner && (
-                    <button onClick={handleMessage} className="flex items-center space-x-1 hover:text-primary">
-                        <Send className="h-4 w-4" />
-                    </button>
-                  )}
+                  <button onClick={handleShare} className="flex items-center space-x-1 hover:text-primary">
+                    <Send className="h-4 w-4" />
+                  </button>
                 </div>
                  <button onClick={handleBookmark} className="flex items-center space-x-1 hover:text-blue-500">
                     <BookmarkIcon className={cn("h-4 w-4", isBookmarked && "text-blue-500 fill-blue-500")} />
