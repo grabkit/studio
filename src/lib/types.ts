@@ -60,11 +60,11 @@ export interface Notification {
 export interface Conversation {
     id: string;
     participantIds: string[];
-    participantDetails: { userId: string, name: string }[];
     lastMessage: string;
     lastUpdated: Timestamp;
     status: 'pending' | 'accepted';
     requesterId: string;
+    participantDetails?: { userId: string, name: string }[];
 }
 
 export interface Message {

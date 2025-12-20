@@ -3,7 +3,7 @@
 
 import AppLayout from "@/components/AppLayout";
 import { useFirebase, useMemoFirebase, useUser } from "@/firebase";
-import { collection, query, orderBy, limit, doc, updateDoc, arrayUnion, arrayRemove, increment, deleteDoc, setDoc, serverTimestamp, getDoc, runTransaction, getDocs, where } from "firebase/firestore";
+import { collection, query, orderBy, limit, doc, updateDoc, arrayUnion, arrayRemove, increment, deleteDoc, setDoc, serverTimestamp, getDoc, runTransaction } from "firebase/firestore";
 import { useCollection, type WithId } from "@/firebase/firestore/use-collection";
 import { Card, CardContent } from "@/components/ui/card";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
@@ -222,52 +222,45 @@ function PostItem({ post, bookmarks }: { post: WithId<Post>, bookmarks: WithId<B
     const peerId = post.authorId;
     const currentUserId = user.uid;
 
+    // Create a consistent, unique conversation ID
     const participantIds = [currentUserId, peerId].sort();
     const conversationId = participantIds.join('_');
-
+    
     const conversationRef = doc(firestore, 'conversations', conversationId);
 
     try {
-        const conversationSnap = await getDoc(conversationRef);
+        const newConversation: Conversation = {
+            id: conversationId,
+            participantIds,
+            lastMessage: '',
+            lastUpdated: serverTimestamp(),
+            status: 'pending',
+            requesterId: currentUserId,
+            // participantDetails will be populated on the client if needed
+        };
 
-        if (!conversationSnap.exists()) {
-             const usersRef = collection(firestore, 'users');
-             const q = query(usersRef, where('id', 'in', participantIds));
-             const usersSnap = await getDocs(q);
-             const participantDetails = usersSnap.docs.map(docSnap => ({
-                 userId: docSnap.data().id,
-                 name: docSnap.data().name,
-             }));
+        // Use set with merge:true. This will create the doc if it doesn't exist,
+        // or do nothing if it already exists (since we're not changing any fields here).
+        // This is a safe way to ensure the conversation document exists.
+        await setDoc(conversationRef, newConversation, { merge: true });
 
-            const newConversation: Conversation = {
-                id: conversationId,
-                participantIds,
-                participantDetails,
-                lastMessage: '',
-                lastUpdated: serverTimestamp(),
-                status: 'pending',
-                requesterId: currentUserId
-            };
-            await setDoc(conversationRef, newConversation);
-        }
-        
-        toast({
-            title: "Request Sent",
-            description: "Your message request has been sent.",
-        });
+        router.push(`/messages/${peerId}`);
 
-    } catch (error) {
+    } catch (error: any) {
         console.error("Error starting conversation:", error);
         toast({
             variant: "destructive",
             title: "Error",
             description: "Could not start a conversation.",
         });
-        if (error instanceof FirestorePermissionError) {
-             errorEmitter.emit('permission-error', error);
-        }
+        // Emit a contextual error if it's a permission issue
+        const permissionError = new FirestorePermissionError({
+            path: conversationRef.path,
+            operation: 'create', // or 'write'
+        });
+        errorEmitter.emit('permission-error', permissionError);
     }
-  };
+};
 
   const handleDeletePost = async () => {
     if (!firestore || !isOwner) return;
@@ -529,6 +522,4 @@ export default function HomePage() {
     </AppLayout>
   );
 }
-    
-
     
