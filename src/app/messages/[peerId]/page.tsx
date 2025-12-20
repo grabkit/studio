@@ -123,18 +123,21 @@ export default function ConversationPage() {
         const findConversation = async () => {
             setIsLoading(true);
             
-            const sortedParticipantIds = [currentUser.uid, peerId].sort();
-
-            const conversationQuery = query(
+            // Query for conversations where the current user is a participant.
+            const userConversationsQuery = query(
                 collection(firestore, 'conversations'),
-                where('participantIds', '==', sortedParticipantIds)
+                where('participantIds', 'array-contains', currentUser.uid)
             );
             
             try {
-                const querySnapshot = await getDocs(conversationQuery);
-                if (!querySnapshot.empty) {
-                    const doc = querySnapshot.docs[0];
-                    setConversation({ ...(doc.data() as Conversation), id: doc.id });
+                const querySnapshot = await getDocs(userConversationsQuery);
+                // Client-side filter to find the specific conversation with the peer.
+                const existingConversation = querySnapshot.docs
+                    .map(doc => ({ id: doc.id, ...doc.data() } as WithId<Conversation>))
+                    .find(convo => convo.participantIds.includes(peerId));
+
+                if (existingConversation) {
+                    setConversation(existingConversation);
                 } else {
                     setConversation(null);
                 }
