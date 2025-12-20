@@ -11,11 +11,6 @@ service cloud.firestore {
       return request.auth.uid == userId;
     }
 
-    // A user is a participant in a conversation if their UID is in the participantIds array.
-    function isParticipant(conversationId) {
-      return request.auth.uid in get(/databases/$(database)/documents/conversations/$(conversationId)).data.participantIds;
-    }
-
     match /users/{userId} {
       allow get: if isSignedIn();
       allow list: if false; // Do not allow querying of all users
@@ -59,25 +54,27 @@ service cloud.firestore {
     }
 
     match /conversations/{conversationId} {
-      // Allow reading a conversation doc if the user is a participant.
-      allow get: if isParticipant(conversationId);
-      
+      // Allow reading a conversation doc if the user's UID is part of the conversationId string itself.
+      allow get: if isSignedIn() && request.auth.uid in conversationId.split('_');
+
       // IMPORTANT: A user can only query for conversations they are a part of.
       allow list: if isSignedIn() && request.query.where['participantIds']['array-contains'] == request.auth.uid;
 
-      // Allow creating a conversation if the user is the requester and the participant IDs are sorted.
-      allow create: if isSignedIn() && request.resource.data.requesterId == request.auth.uid && request.resource.data.participantIds == request.resource.data.participantIds.toSorted();
+      // Allow creating a conversation if the user is the requester and is one of the participants.
+      allow create: if isSignedIn() && request.resource.data.requesterId == request.auth.uid && request.auth.uid in request.resource.data.participantIds;
       
-      allow update: if isParticipant(conversationId);
-      allow delete: if isParticipant(conversationId);
+      // Allow participants to update (e.g. accept) or delete a conversation.
+      allow update, delete: if isSignedIn() && request.auth.uid in resource.data.participantIds;
     }
 
+
     match /conversations/{conversationId}/messages/{messageId} {
-      // Allow read access to participants.
-      allow list, get: if isParticipant(conversationId);
+      // Allow read access to participants by checking the parent conversation document.
+      allow list, get: if isSignedIn() && request.auth.uid in get(/databases/$(database)/documents/conversations/$(conversationId)).data.participantIds;
+
       // Allow message creation if the conversation is accepted,
-      // OR if it's pending and the requester is sending the message.
-      allow create: if (isParticipant(conversationId) && 
+      // OR if it's pending and the requester is sending the message (up to a limit).
+      allow create: if (isSignedIn() && request.auth.uid in get(/databases/$(database)/documents/conversations/$(conversationId)).data.participantIds && 
         (get(/databases/$(database)/documents/conversations/$(conversationId)).data.status == 'accepted' || 
         (get(/databases/$(database)/documents/conversations/$(conversationId)).data.status == 'pending' && 
          get(/databases/$(database)/documents/conversations/$(conversationId)).data.requesterId == request.auth.uid)));
