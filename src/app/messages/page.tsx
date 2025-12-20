@@ -26,7 +26,7 @@ function ConversationItem({ conversation, currentUser }: { conversation: WithId<
         return doc(firestore, 'users', otherParticipantId);
     }, [firestore, otherParticipantId]);
 
-    const { data: otherUser } = useCollection<User>(otherUserRef as any);
+    const { data: otherUser } = useDoc<User>(otherUserRef as any);
 
     const name = otherUser?.name || 'User';
 
@@ -59,7 +59,7 @@ function RequestItem({ request, onAccept }: { request: WithId<Conversation>, onA
         return doc(firestore, 'users', requesterId);
     }, [firestore, requesterId]);
 
-    const { data: requesterUser } = useCollection<User>(requesterUserRef as any);
+    const { data: requesterUser } = useDoc<User>(requesterUserRef as any);
     const name = requesterUser?.name || 'User';
 
 
@@ -138,13 +138,29 @@ function ConversationsList({
         )
     }
 
+    // Filter out requests sent by the current user for the 'requests' tab
+    const filteredRequests = conversations.filter(request => request.requesterId !== currentUser.uid);
+
+    if (filteredRequests.length === 0) {
+        return (
+            <div className="text-center py-20 px-4">
+               <div className="inline-block p-4 bg-secondary rounded-full">
+                   <EmptyIcon className="h-10 w-10 text-primary" />
+               </div>
+               <h2 className="mt-6 text-xl font-headline text-primary">{emptyStateTitle}</h2>
+               <p className="text-muted-foreground mt-2 max-w-sm mx-auto">
+                  {emptyStateDescription}
+               </p>
+           </div>
+       )
+    }
+
+
     return (
         <div className="divide-y">
-            {conversations.map(request => {
-                // Don't show requests sent by the current user
-                if (request.requesterId === currentUser.uid) return null;
-                return <RequestItem key={request.id} request={request} onAccept={onAcceptRequest} />
-            })}
+            {filteredRequests.map(request => (
+                <RequestItem key={request.id} request={request} onAccept={onAcceptRequest} />
+            ))}
         </div>
     )
 }
@@ -158,8 +174,7 @@ export default function MessagesPage() {
         if (!user || !firestore) return null;
         return query(
             collection(firestore, 'conversations'),
-            where('participantIds', 'array-contains', user.uid),
-            orderBy('lastUpdated', 'desc')
+            where('participantIds', 'array-contains', user.uid)
         );
     }, [user, firestore]);
 
@@ -239,5 +254,3 @@ export default function MessagesPage() {
         </AppLayout>
     )
 }
-
-    
