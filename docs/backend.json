@@ -208,6 +208,45 @@
             }
         },
         "required": ["id", "type", "postId", "fromUserId", "timestamp", "read"]
+    },
+    "Conversation": {
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "title": "Conversation",
+      "type": "object",
+      "description": "Represents a direct message conversation between two or more users.",
+      "properties": {
+        "id": { "type": "string" },
+        "participantIds": { "type": "array", "items": { "type": "string" } },
+        "participantDetails": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "userId": { "type": "string" },
+              "name": { "type": "string" }
+            },
+            "required": ["userId", "name"]
+          }
+        },
+        "lastMessage": { "type": "string" },
+        "lastUpdated": { "type": "string", "format": "date-time" },
+        "status": { "type": "string", "enum": ["pending", "accepted"] },
+        "requesterId": { "type": "string" }
+      },
+      "required": ["id", "participantIds", "participantDetails", "lastUpdated", "status", "requesterId"]
+    },
+    "Message": {
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "title": "Message",
+      "type": "object",
+      "description": "Represents a single message within a conversation.",
+      "properties": {
+        "id": { "type": "string" },
+        "senderId": { "type": "string" },
+        "text": { "type": "string" },
+        "timestamp": { "type": "string", "format": "date-time" }
+      },
+      "required": ["id", "senderId", "text", "timestamp"]
     }
   },
   "auth": {
@@ -309,8 +348,46 @@
             }
           ]
         }
+      },
+      {
+        "path": "/conversations/{conversationId}",
+        "definition": {
+          "entityName": "Conversation",
+          "schema": {
+            "$ref": "#/backend/entities/Conversation"
+          },
+          "description": "Stores metadata about a direct message conversation. The document ID is a composite of the participant UIDs.",
+          "params": [
+            {
+              "name": "conversationId",
+              "description": "The unique identifier for the conversation."
+            }
+          ]
+        }
+      },
+      {
+        "path": "/conversations/{conversationId}/messages/{messageId}",
+        "definition": {
+          "entityName": "Message",
+          "schema": {
+            "$ref": "#/backend/entities/Message"
+          },
+          "description": "Stores all messages for a given conversation in a subcollection.",
+          "params": [
+            {
+              "name": "conversationId",
+              "description": "The ID of the parent conversation."
+            },
+            {
+              "name": "messageId",
+              "description": "The unique identifier for the message."
+            }
+          ]
+        }
       }
     ],
     "reasoning": "The Firestore structure is designed for a public, social-media-style application. User profiles are stored in a `/users` collection, while all posts are stored in a single top-level `/posts` collection. This global `posts` collection allows any user to easily query and view all public posts. Security rules are configured to enforce that while all authenticated user can read posts, only the original author (`authorId` must match `request.auth.uid`) can write, update, or delete their own posts. Comments are stored in a subcollection under each post for clear organization. User-specific data like bookmarks and notifications are stored in subcollections under the respective user's document for security and scalability. Messaging is handled through a top-level `conversations` collection, with messages stored in a subcollection. This allows for efficient querying of conversations a user is part of, while keeping the actual message data separate."
   }
 }
+
+    

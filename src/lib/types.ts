@@ -56,3 +56,22 @@ export interface Notification {
     timestamp: Timestamp;
     read: boolean;
 }
+
+export interface Conversation {
+    id: string;
+    participantIds: string[];
+    participantDetails: { userId: string, name: string }[];
+    lastMessage: string;
+    lastUpdated: Timestamp;
+    status: 'pending' | 'accepted';
+    requesterId: string;
+}
+
+export interface Message {
+    id: string;
+    senderId: string;
+    text: string;
+    timestamp: Timestamp;
+}
+
+    

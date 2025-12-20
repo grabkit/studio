@@ -3,12 +3,12 @@
 
 import AppLayout from "@/components/AppLayout";
 import { useFirebase, useMemoFirebase, useUser } from "@/firebase";
-import { collection, query, orderBy, limit, doc, updateDoc, arrayUnion, arrayRemove, increment, deleteDoc, setDoc, serverTimestamp, getDoc, runTransaction } from "firebase/firestore";
+import { collection, query, orderBy, limit, doc, updateDoc, arrayUnion, arrayRemove, increment, deleteDoc, setDoc, serverTimestamp, getDoc, runTransaction, getDocs, where } from "firebase/firestore";
 import { useCollection, type WithId } from "@/firebase/firestore/use-collection";
 import { Card, CardContent } from "@/components/ui/card";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Skeleton } from "@/components/ui/skeleton";
-import type { Post, Bookmark, PollOption, Notification, User } from "@/lib/types";
+import type { Post, Bookmark, PollOption, Notification, User, Conversation } from "@/lib/types";
 import { Heart, MessageCircle, Repeat, ArrowUpRight, MoreHorizontal, Edit, Trash2, Bookmark as BookmarkIcon, CheckCircle2, MessageSquare } from "lucide-react";
 import { cn, formatTimestamp, getInitials } from "@/lib/utils";
 import { useToast } from "@/hooks/use-toast";
@@ -216,6 +216,59 @@ function PostItem({ post, bookmarks }: { post: WithId<Post>, bookmarks: WithId<B
     }
   };
 
+  const handleStartConversation = async () => {
+    if (!user || !firestore || isOwner) return;
+
+    const peerId = post.authorId;
+    const currentUserId = user.uid;
+
+    const participantIds = [currentUserId, peerId].sort();
+    const conversationId = participantIds.join('_');
+
+    const conversationRef = doc(firestore, 'conversations', conversationId);
+
+    try {
+        const conversationSnap = await getDoc(conversationRef);
+
+        if (!conversationSnap.exists()) {
+             const usersRef = collection(firestore, 'users');
+             const q = query(usersRef, where('id', 'in', participantIds));
+             const usersSnap = await getDocs(q);
+             const participantDetails = usersSnap.docs.map(docSnap => ({
+                 userId: docSnap.data().id,
+                 name: docSnap.data().name,
+             }));
+
+            const newConversation: Conversation = {
+                id: conversationId,
+                participantIds,
+                participantDetails,
+                lastMessage: '',
+                lastUpdated: serverTimestamp(),
+                status: 'pending',
+                requesterId: currentUserId
+            };
+            await setDoc(conversationRef, newConversation);
+             toast({
+                title: "Request Sent",
+                description: "Your message request has been sent.",
+            });
+        }
+        router.push(`/messages/${peerId}`);
+
+    } catch (error) {
+        console.error("Error starting conversation:", error);
+        toast({
+            variant: "destructive",
+            title: "Error",
+            description: "Could not start a conversation.",
+        });
+        if (error instanceof FirestorePermissionError) {
+             errorEmitter.emit('permission-error', error);
+        }
+    }
+  };
+
   const handleDeletePost = async () => {
     if (!firestore || !isOwner) return;
     const postRef = doc(firestore, 'posts', post.id);
@@ -322,7 +375,7 @@ function PostItem({ post, bookmarks }: { post: WithId<Post>, bookmarks: WithId<B
                 </div>
                <div className="flex items-center">
                  {!isOwner && (
-                    <Button variant="ghost" size="icon" className="h-6 w-6">
+                    <Button variant="ghost" size="icon" className="h-6 w-6" onClick={handleStartConversation}>
                         <MessageSquare className="h-4 w-4 text-muted-foreground" />
                     </Button>
                  )}
@@ -477,4 +530,4 @@ export default function HomePage() {
   );
 }
 
-  
+    

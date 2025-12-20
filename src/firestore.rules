@@ -11,9 +11,12 @@ service cloud.firestore {
       return request.auth.uid == userId;
     }
 
+    function isParticipant() {
+      return request.auth.uid in resource.data.participantIds;
+    }
+
     match /users/{userId} {
-      allow get: if isSignedIn();
-      allow list: if false; // Do not allow querying of all users
+      allow get, list: if isSignedIn();
       allow create: if isOwner(userId);
       allow update, delete: if false; // Profile updates/deletes not implemented
     }
@@ -51,6 +54,20 @@ service cloud.firestore {
       allow read: if isSignedIn();
       allow create: if isSignedIn() && isValidNewComment(postId, commentId);
       allow delete: if isSignedIn() && (isOwner(resource.data.authorId) || isOwner(get(/databases/$(database)/documents/posts/$(postId)).data.authorId));
+    }
+
+    match /conversations/{conversationId} {
+      allow get, list: if isSignedIn() && request.auth.uid in resource.data.participantIds;
+      allow create: if isSignedIn() && request.auth.uid in request.resource.data.participantIds;
+      allow update: if isParticipant() && (
+        // Allow updating last message details or status
+        request.resource.data.diff(resource.data).affectedKeys().hasAny(['lastMessage', 'lastUpdated', 'status'])
+      );
+    }
+
+    match /conversations/{conversationId}/messages/{messageId} {
+      allow read, list: if isSignedIn() && get(/databases/$(database)/documents/conversations/$(conversationId)).data.participantIds.hasAny([request.auth.uid]);
+      allow create: if isSignedIn() && get(/databases/$(database)/documents/conversations/$(conversationId)).data.participantIds.hasAny([request.auth.uid]) && request.resource.data.senderId == request.auth.uid;
     }
     
     function isNewTextPost() {
@@ -93,3 +110,5 @@ service cloud.firestore {
     }
   }
 }
+
+    

@@ -4,68 +4,99 @@
 import AppLayout from "@/components/AppLayout";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
-import { getInitials } from "@/lib/utils";
+import { getInitials, formatTimestamp } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import { MessageSquare, Mail } from "lucide-react";
-
-// Dummy data for UI development
-const dummyChats = [
-    { id: '1', name: 'John Doe', lastMessage: 'Hey, how are you?', time: '5m' },
-    { id: '2', name: 'Jane Smith', lastMessage: 'You: See you then!', time: '1h' },
-    { id: '3', name: 'Alex Ray', lastMessage: 'Okay, sounds good.', time: 'yesterday' },
-];
-
-const dummyRequests = [
-    { id: '4', name: 'Emily White', isSender: false },
-    { id: '5', name: 'Chris Green', isSender: true },
-];
+import { useFirebase, useMemoFirebase } from "@/firebase";
+import { collection, query, where, orderBy, doc, updateDoc } from "firebase/firestore";
+import { useCollection, type WithId } from "@/firebase/firestore/use-collection";
+import type { Conversation, User } from "@/lib/types";
+import { useMemo } from "react";
+import Link from "next/link";
+import { Skeleton } from "@/components/ui/skeleton";
+import { useToast } from "@/hooks/use-toast";
 
 
-function ConversationItem({ chat }: { chat: typeof dummyChats[0] }) {
+function ConversationItem({ conversation, currentUser }: { conversation: WithId<Conversation>, currentUser: User }) {
+    const otherParticipant = conversation.participantDetails.find(p => p.userId !== currentUser.uid);
+
     return (
-        <div className="p-4 border-b flex justify-between items-center hover:bg-accent cursor-pointer">
+        <Link href={`/messages/${otherParticipant?.userId}`} className="p-4 border-b flex justify-between items-center hover:bg-accent cursor-pointer">
             <div className="flex items-center space-x-3">
                 <Avatar className="h-12 w-12">
-                    <AvatarFallback>{getInitials(chat.name)}</AvatarFallback>
+                    <AvatarFallback>{getInitials(otherParticipant?.name)}</AvatarFallback>
                 </Avatar>
                 <div>
-                    <p className="font-semibold">{chat.name}</p>
-                    <p className="text-sm text-muted-foreground truncate max-w-xs">{chat.lastMessage}</p>
+                    <p className="font-semibold">{otherParticipant?.name}</p>
+                    <p className="text-sm text-muted-foreground truncate max-w-xs">{conversation.lastMessage || 'No messages yet'}</p>
                 </div>
             </div>
-            <p className="text-xs text-muted-foreground self-start shrink-0">{chat.time}</p>
-        </div>
+            {conversation.lastUpdated && (
+                <p className="text-xs text-muted-foreground self-start shrink-0">
+                    {formatTimestamp(conversation.lastUpdated.toDate())}
+                </p>
+            )}
+        </Link>
     );
 }
 
-function RequestItem({ request }: { request: typeof dummyRequests[0] }) {
+function RequestItem({ request, onAccept }: { request: WithId<Conversation>, onAccept: (id: string) => void }) {
+    const requester = request.participantDetails.find(p => p.userId === request.requesterId);
+
     return (
         <div className="p-4 border-b flex justify-between items-center">
             <div className="flex items-center space-x-3">
                 <Avatar className="h-12 w-12">
-                    <AvatarFallback>{getInitials(request.name)}</AvatarFallback>
+                    <AvatarFallback>{getInitials(requester?.name)}</AvatarFallback>
                 </Avatar>
                 <div>
-                    <p className="font-semibold">{request.name}</p>
+                    <p className="font-semibold">{requester?.name}</p>
                     <p className="text-sm text-muted-foreground">Wants to message you</p>
                 </div>
             </div>
-            {!request.isSender && (
-                <Button size="sm">Accept</Button>
-            )}
+            <Button size="sm" onClick={() => onAccept(request.id)}>Accept</Button>
         </div>
     );
 }
 
-function ConversationsList({ type }: { type: 'chats' | 'requests' }) {
-    const items = type === 'chats' ? dummyChats : dummyRequests;
-    const ItemComponent = type === 'chats' ? ConversationItem : RequestItem;
-    
+function ListSkeleton() {
+    return (
+        <div className="divide-y">
+            {Array.from({ length: 3 }).map((_, i) => (
+                <div key={i} className="p-4 flex items-center space-x-3">
+                    <Skeleton className="h-12 w-12 rounded-full" />
+                    <div className="space-y-2">
+                        <Skeleton className="h-4 w-32" />
+                        <Skeleton className="h-3 w-48" />
+                    </div>
+                </div>
+            ))}
+        </div>
+    )
+}
+
+function ConversationsList({
+    conversations,
+    isLoading,
+    type,
+    currentUser,
+    onAcceptRequest
+}: {
+    conversations: WithId<Conversation>[] | null;
+    isLoading: boolean;
+    type: 'chats' | 'requests';
+    currentUser: User;
+    onAcceptRequest: (id: string) => void;
+}) {
     const emptyStateTitle = type === 'chats' ? "No Chats Yet" : "No New Requests";
-    const emptyStateDescription = type === 'chats' ? "Start a conversation from a user's post." : "When a user wants to chat, you'll see their request here.";
+    const emptyStateDescription = type === 'chats' ? "Accepted requests will appear here." : "When a user wants to chat, you'll see their request here.";
     const EmptyIcon = type === 'chats' ? MessageSquare : Mail;
 
-    if (items.length === 0) {
+    if (isLoading) {
+        return <ListSkeleton />;
+    }
+
+    if (!conversations || conversations.length === 0) {
         return (
              <div className="text-center py-20 px-4">
                 <div className="inline-block p-4 bg-secondary rounded-full">
@@ -78,17 +109,81 @@ function ConversationsList({ type }: { type: 'chats' | 'requests' }) {
             </div>
         )
     }
+    
+    if (type === 'chats') {
+        return (
+            <div className="divide-y">
+                {conversations.map(convo => <ConversationItem key={convo.id} conversation={convo} currentUser={currentUser} />)}
+            </div>
+        )
+    }
 
     return (
         <div className="divide-y">
-            {/* @ts-ignore */}
-            {items.map(item => <ItemComponent key={item.id} {...{[type === 'chats' ? 'chat' : 'request']: item}} />)}
+            {conversations.map(request => {
+                // Don't show requests sent by the current user
+                if (request.requesterId === currentUser.uid) return null;
+                return <RequestItem key={request.id} request={request} onAccept={onAcceptRequest} />
+            })}
         </div>
     )
 }
 
 
 export default function MessagesPage() {
+    const { firestore, user } = useFirebase();
+    const { toast } = useToast();
+
+    const conversationsQuery = useMemoFirebase(() => {
+        if (!user || !firestore) return null;
+        return query(
+            collection(firestore, 'conversations'),
+            where('participantIds', 'array-contains', user.uid),
+            orderBy('lastUpdated', 'desc')
+        );
+    }, [user, firestore]);
+
+    const { data: conversations, isLoading } = useCollection<Conversation>(conversationsQuery);
+
+    const { chats, requests } = useMemo(() => {
+        const chats: WithId<Conversation>[] = [];
+        const requests: WithId<Conversation>[] = [];
+        conversations?.forEach(c => {
+            if (c.status === 'accepted') {
+                chats.push(c);
+            } else if (c.status === 'pending') {
+                requests.push(c);
+            }
+        });
+        return { chats, requests };
+    }, [conversations]);
+
+    const handleAcceptRequest = async (conversationId: string) => {
+        if (!firestore) return;
+        const convoRef = doc(firestore, 'conversations', conversationId);
+        try {
+            await updateDoc(convoRef, { status: 'accepted' });
+            toast({
+                title: "Request Accepted",
+                description: "You can now chat with this user.",
+            });
+        } catch (error) {
+            console.error("Error accepting request:", error);
+             toast({
+                variant: "destructive",
+                title: "Error",
+                description: "Could not accept the request.",
+            });
+        }
+    }
+
+    if (!user) {
+        return (
+             <AppLayout showTopBar={false}>
+                <ListSkeleton />
+             </AppLayout>
+        )
+    }
 
     return (
         <AppLayout showTopBar={false}>
@@ -102,13 +197,27 @@ export default function MessagesPage() {
                     <TabsTrigger value="requests">Requests</TabsTrigger>
                 </TabsList>
                 <TabsContent value="chats">
-                    <ConversationsList type="chats" />
+                    <ConversationsList 
+                        conversations={chats}
+                        isLoading={isLoading}
+                        type="chats"
+                        currentUser={user}
+                        onAcceptRequest={handleAcceptRequest}
+                    />
                 </TabsContent>
                 <TabsContent value="requests">
-                    <ConversationsList type="requests" />
+                    <ConversationsList
+                        conversations={requests}
+                        isLoading={isLoading}
+                        type="requests"
+                        currentUser={user}
+                        onAcceptRequest={handleAcceptRequest}
+                    />
                 </TabsContent>
             </Tabs>
 
         </AppLayout>
     )
 }
+
+    
