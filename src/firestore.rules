@@ -55,11 +55,11 @@ service cloud.firestore {
     match /conversations/{conversationId} {
       // A user can get a conversation if their UID is in the participantIds array
       allow get: if isSignedIn() && request.auth.uid in resource.data.participantIds;
-      // A user can list conversations they are a part of
+      // A user can list conversations they are a part of by querying their own UID in the 'participantIds' array
       allow list: if isSignedIn() && request.query.where['participantIds']['array-contains'] == request.auth.uid;
       // A user can create a conversation if their UID is in the new document's participantIds
       allow create: if isSignedIn() && request.auth.uid in request.resource.data.participantIds;
-      // A participant can update the status (e.g., to accept a request)
+      // A participant can update the status (e.g., to accept a request) or last message
       allow update: if isSignedIn() && request.auth.uid in resource.data.participantIds &&
                        request.resource.data.diff(resource.data).affectedKeys().hasAny(['lastMessage', 'lastUpdated', 'status']);
     }
