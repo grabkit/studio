@@ -319,15 +319,15 @@ function PostItem({ post, bookmarks }: { post: WithId<Post>, bookmarks: WithId<B
           </Avatar>
           <div className="flex-1 space-y-2">
             <div className="flex justify-between items-start">
-              <div className="flex items-center">
+              <div className="flex items-center space-x-2">
                  <Link href={`/profile/${post.authorId}`} className="text-sm font-semibold hover:underline">
                     {formatUserId(post.authorId)}
                 </Link>
-              </div>
-               <div className="flex items-center space-x-2">
                  <span className="text-xs text-muted-foreground">
                     {post.timestamp ? formatDistanceToNow(new Date(post.timestamp.toDate()), { addSuffix: true }) : ''}
                  </span>
+              </div>
+               <div className="flex items-center">
                  {isOwner && (
                     <DropdownMenu>
                       <DropdownMenuTrigger asChild>

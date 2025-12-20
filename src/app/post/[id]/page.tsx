@@ -193,19 +193,19 @@ function PostDetailItem({ post }: { post: WithId<Post> }) {
           </Avatar>
           <div className="flex-1 space-y-2">
             <div className="flex justify-between items-start">
-                <div className="flex items-center">
+                <div className="flex items-center space-x-2">
                     <Link href={`/profile/${post.authorId}`} className="text-sm font-semibold hover:underline">
                       {formatUserId(post.authorId)}
                     </Link>
+                    <span className="text-xs text-muted-foreground">
+                      {post.timestamp
+                      ? formatDistanceToNow(new Date(post.timestamp.toDate()), {
+                          addSuffix: true,
+                          })
+                      : ""}
+                   </span>
                 </div>
-              <div className="flex items-center space-x-2">
-                 <span className="text-xs text-muted-foreground">
-                    {post.timestamp
-                    ? formatDistanceToNow(new Date(post.timestamp.toDate()), {
-                        addSuffix: true,
-                        })
-                    : ""}
-                 </span>
+              <div className="flex items-center">
                 {isOwner && (
                     <DropdownMenu>
                         <DropdownMenuTrigger asChild>
@@ -431,10 +431,10 @@ function CommentItem({ comment, postAuthorId }: { comment: WithId<Comment>, post
       </Avatar>
       <div className="flex-1">
         <div className="flex justify-between items-center">
-            <Link href={`/profile/${comment.authorId}`} className="font-semibold text-sm hover:underline">
-                {formatUserId(comment.authorId)}
-            </Link>
             <div className="flex items-center space-x-2">
+                <Link href={`/profile/${comment.authorId}`} className="font-semibold text-sm hover:underline">
+                    {formatUserId(comment.authorId)}
+                </Link>
                 <span className="text-xs text-muted-foreground">
                 {comment.timestamp
                     ? formatDistanceToNow(new Date(comment.timestamp.toDate()), {
@@ -442,6 +442,8 @@ function CommentItem({ comment, postAuthorId }: { comment: WithId<Comment>, post
                     })
                     : ""}
                 </span>
+            </div>
+            <div className="flex items-center">
                 {canDelete && (
                     <Button variant="ghost" size="icon" className="h-6 w-6" onClick={handleDelete}>
                         <Trash2 className="h-4 w-4 text-muted-foreground" />
