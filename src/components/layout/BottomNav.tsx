@@ -57,7 +57,7 @@ export default function BottomNav() {
               )}>
                 <Icon className={cn("h-7 w-7")} fill={(isActive && item.href !== '/post') ? "currentColor" : "none"} />
                 {isActivityTab && hasUnread && (
-                    <div className="absolute top-2.5 right-2.5 w-2.5 h-2.5 bg-destructive rounded-full border-2 border-background"></div>
+                    <div className="absolute top-3 right-2.5 w-2.5 h-2.5 bg-destructive rounded-full border-2 border-background"></div>
                 )}
               </div>
             </Link>
