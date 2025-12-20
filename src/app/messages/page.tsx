@@ -18,16 +18,26 @@ import { useToast } from "@/hooks/use-toast";
 
 
 function ConversationItem({ conversation, currentUser }: { conversation: WithId<Conversation>, currentUser: User }) {
-    const otherParticipant = conversation.participantDetails.find(p => p.userId !== currentUser.uid);
+    const otherParticipantId = conversation.participantIds.find(p => p !== currentUser.uid);
+    const { firestore } = useFirebase();
+
+    const otherUserRef = useMemoFirebase(() => {
+        if (!firestore || !otherParticipantId) return null;
+        return doc(firestore, 'users', otherParticipantId);
+    }, [firestore, otherParticipantId]);
+
+    const { data: otherUser } = useCollection<User>(otherUserRef as any);
+
+    const name = otherUser?.name || 'User';
 
     return (
-        <Link href={`/messages/${otherParticipant?.userId}`} className="p-4 border-b flex justify-between items-center hover:bg-accent cursor-pointer">
+        <Link href={`/messages/${otherParticipantId}`} className="p-4 border-b flex justify-between items-center hover:bg-accent cursor-pointer">
             <div className="flex items-center space-x-3">
                 <Avatar className="h-12 w-12">
-                    <AvatarFallback>{getInitials(otherParticipant?.name)}</AvatarFallback>
+                    <AvatarFallback>{getInitials(name)}</AvatarFallback>
                 </Avatar>
                 <div>
-                    <p className="font-semibold">{otherParticipant?.name}</p>
+                    <p className="font-semibold">{name}</p>
                     <p className="text-sm text-muted-foreground truncate max-w-xs">{conversation.lastMessage || 'No messages yet'}</p>
                 </div>
             </div>
@@ -41,16 +51,26 @@ function ConversationItem({ conversation, currentUser }: { conversation: WithId<
 }
 
 function RequestItem({ request, onAccept }: { request: WithId<Conversation>, onAccept: (id: string) => void }) {
-    const requester = request.participantDetails.find(p => p.userId === request.requesterId);
+     const requesterId = request.requesterId;
+     const { firestore } = useFirebase();
+
+    const requesterUserRef = useMemoFirebase(() => {
+        if (!firestore || !requesterId) return null;
+        return doc(firestore, 'users', requesterId);
+    }, [firestore, requesterId]);
+
+    const { data: requesterUser } = useCollection<User>(requesterUserRef as any);
+    const name = requesterUser?.name || 'User';
+
 
     return (
         <div className="p-4 border-b flex justify-between items-center">
             <div className="flex items-center space-x-3">
                 <Avatar className="h-12 w-12">
-                    <AvatarFallback>{getInitials(requester?.name)}</AvatarFallback>
+                    <AvatarFallback>{getInitials(name)}</AvatarFallback>
                 </Avatar>
                 <div>
-                    <p className="font-semibold">{requester?.name}</p>
+                    <p className="font-semibold">{name}</p>
                     <p className="text-sm text-muted-foreground">Wants to message you</p>
                 </div>
             </div>
