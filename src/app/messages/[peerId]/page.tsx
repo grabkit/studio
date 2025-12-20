@@ -9,7 +9,7 @@ import { useDoc } from '@/firebase/firestore/use-doc';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
-import React from 'react';
+import React, { useMemo } from 'react';
 
 import AppLayout from '@/components/AppLayout';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
@@ -236,5 +236,3 @@ export default function ChatPage() {
         </AppLayout>
     )
 }
-
-    
