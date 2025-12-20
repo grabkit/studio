@@ -249,12 +249,12 @@ function PostItem({ post, bookmarks }: { post: WithId<Post>, bookmarks: WithId<B
                 requesterId: currentUserId
             };
             await setDoc(conversationRef, newConversation);
-             toast({
-                title: "Request Sent",
-                description: "Your message request has been sent.",
-            });
         }
-        router.push(`/messages/${peerId}`);
+        
+        toast({
+            title: "Request Sent",
+            description: "Your message request has been sent.",
+        });
 
     } catch (error) {
         console.error("Error starting conversation:", error);
@@ -529,5 +529,6 @@ export default function HomePage() {
     </AppLayout>
   );
 }
+    
 
     
