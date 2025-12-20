@@ -53,17 +53,6 @@ service cloud.firestore {
       allow delete: if isSignedIn() && (isOwner(resource.data.authorId) || isOwner(get(/databases/$(database)/documents/posts/$(postId)).data.authorId));
     }
     
-    // Messaging Rules
-    match /conversations/{conversationId} {
-      allow get, update: if isSignedIn() && request.auth.uid in resource.data.participantIds;
-      allow list: if isSignedIn() && request.query.where['participantIds']['array-contains'] == request.auth.uid;
-      allow create: if isSignedIn() && request.auth.uid in request.resource.data.participantIds;
-    }
-
-    match /conversations/{conversationId}/messages/{messageId} {
-        allow read, create: if isSignedIn() && get(/databases/$(database)/documents/conversations/$(conversationId)).data.participantIds.hasAny([request.auth.uid]);
-    }
-
     function isNewTextPost() {
       let data = request.resource.data;
       return data.type == 'text'
