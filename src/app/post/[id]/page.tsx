@@ -15,10 +15,13 @@ import {
   arrayUnion,
   deleteDoc,
   setDoc,
+  where,
+  getDocs,
+  addDoc
 } from "firebase/firestore";
 import { useCollection, type WithId } from "@/firebase/firestore/use-collection";
 import { useDoc } from "@/firebase/firestore/use-doc";
-import type { Post, Comment, Notification } from "@/lib/types";
+import type { Post, Comment, Notification, Conversation } from "@/lib/types";
 import { useParams, useRouter } from "next/navigation";
 import React, { useState } from "react";
 import Link from 'next/link';
@@ -157,23 +160,41 @@ function PostDetailItem({ post }: { post: WithId<Post> }) {
       });
   };
 
-  const handleShare = async () => {
-    if (navigator.share) {
-      try {
-        await navigator.share({
-          title: 'Check out this post on Blur',
-          text: post.content,
-          url: window.location.href, // Use current URL for detail page
+  const handleMessage = async () => {
+     if (!user || !firestore || isOwner) return;
+
+    try {
+        // Check if a conversation already exists
+        const conversationsRef = collection(firestore, 'conversations');
+        const q = query(conversationsRef, where('participantIds', 'array-contains', user.uid));
+        const querySnapshot = await getDocs(q);
+
+        let existingConversation: WithId<Conversation> | null = null;
+        querySnapshot.forEach(doc => {
+            const conv = doc.data() as Conversation;
+            if (conv.participantIds.includes(post.authorId)) {
+                existingConversation = { ...conv, id: doc.id };
+            }
         });
-      } catch (error) {
-        // Silently fail. The user likely canceled the share action.
-      }
-    } else {
-      toast({
-        variant: "destructive",
-        title: "Not Supported",
-        description: "Your browser does not support the Web Share API.",
-      });
+
+        if (existingConversation) {
+            router.push(`/messages/${existingConversation.id}`);
+        } else {
+            // Create a new conversation
+            const newConversationRef = await addDoc(conversationsRef, {
+                participantIds: [user.uid, post.authorId],
+                lastMessage: '',
+                lastUpdated: serverTimestamp(),
+            });
+            router.push(`/messages/${newConversationRef.id}`);
+        }
+    } catch (error) {
+        console.error("Error starting conversation:", error);
+        toast({
+            variant: "destructive",
+            title: "Error",
+            description: "Could not start a conversation.",
+        });
     }
   };
 
@@ -254,9 +275,11 @@ function PostDetailItem({ post }: { post: WithId<Post> }) {
                 <button className="flex items-center space-x-1 hover:text-green-500">
                     <Repeat className={cn("h-5 w-5")} />
                 </button>
-                <button onClick={handleShare} className="flex items-center space-x-1 hover:text-primary">
+                {!isOwner && (
+                  <button onClick={handleMessage} className="flex items-center space-x-1 hover:text-primary">
                     <Send className="h-5 w-5" />
-                </button>
+                  </button>
+                )}
             </div>
           </div>
         </div>
@@ -561,3 +584,5 @@ export default function PostDetailPage() {
     </AppLayout>
   );
 }
+
+    
