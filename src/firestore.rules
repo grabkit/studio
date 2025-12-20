@@ -13,7 +13,7 @@ service cloud.firestore {
 
     match /users/{userId} {
       allow get, list: if isSignedIn();
-      allow create: if isOwner(userId);
+      allow create: if request.auth.uid == userId;
       allow update, delete: if false; // Profile updates/deletes not implemented
     }
     
@@ -111,5 +111,3 @@ service cloud.firestore {
     }
   }
 }
-
-    

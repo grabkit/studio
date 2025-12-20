@@ -10,6 +10,7 @@ import { MessageSquare, Mail } from "lucide-react";
 import { useFirebase, useMemoFirebase } from "@/firebase";
 import { collection, query, where, orderBy, doc, updateDoc } from "firebase/firestore";
 import { useCollection, type WithId } from "@/firebase/firestore/use-collection";
+import { useDoc } from "@/firebase/firestore/use-doc";
 import type { Conversation, User } from "@/lib/types";
 import { useMemo } from "react";
 import Link from "next/link";
@@ -26,7 +27,7 @@ function ConversationItem({ conversation, currentUser }: { conversation: WithId<
         return doc(firestore, 'users', otherParticipantId);
     }, [firestore, otherParticipantId]);
 
-    const { data: otherUser } = useDoc<User>(otherUserRef as any);
+    const { data: otherUser } = useDoc<User>(otherUserRef);
 
     const name = otherUser?.name || 'User';
 
@@ -59,7 +60,7 @@ function RequestItem({ request, onAccept }: { request: WithId<Conversation>, onA
         return doc(firestore, 'users', requesterId);
     }, [firestore, requesterId]);
 
-    const { data: requesterUser } = useDoc<User>(requesterUserRef as any);
+    const { data: requesterUser } = useDoc<User>(requesterUserRef);
     const name = requesterUser?.name || 'User';
 
 
