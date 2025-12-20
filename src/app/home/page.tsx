@@ -4,13 +4,13 @@
 
 import AppLayout from "@/components/AppLayout";
 import { useFirebase, useMemoFirebase, useUser } from "@/firebase";
-import { collection, query, orderBy, limit, doc, updateDoc, arrayUnion, arrayRemove, increment, deleteDoc, setDoc, serverTimestamp, deleteDoc as deleteBookmarkDoc, runTransaction } from "firebase/firestore";
+import { collection, query, orderBy, limit, doc, updateDoc, arrayUnion, arrayRemove, increment, deleteDoc, setDoc, serverTimestamp, getDoc } from "firebase/firestore";
 import { useCollection, type WithId } from "@/firebase/firestore/use-collection";
 import { Card, CardContent } from "@/components/ui/card";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Skeleton } from "@/components/ui/skeleton";
-import type { Post, Bookmark, PollOption, Notification } from "@/lib/types";
-import { Heart, MessageCircle, Repeat, ArrowUpRight, MoreHorizontal, Edit, Trash2, Bookmark as BookmarkIcon, CheckCircle2, Send } from "lucide-react";
+import type { Post, Bookmark, PollOption, Notification, Conversation, User } from "@/lib/types";
+import { Heart, MessageCircle, Repeat, ArrowUpRight, MoreHorizontal, Edit, Trash2, Bookmark as BookmarkIcon, CheckCircle2, MessageSquare } from "lucide-react";
 import { cn, formatTimestamp, getInitials } from "@/lib/utils";
 import { useToast } from "@/hooks/use-toast";
 import { FirestorePermissionError } from "@/firebase/errors";
@@ -41,6 +41,10 @@ const formatUserId = (uid: string | undefined) => {
   if (!uid) return "blur??????";
   return `blur${uid.substring(uid.length - 6)}`;
 };
+
+const getConversationId = (uid1: string, uid2: string) => {
+    return [uid1, uid2].sort().join('_');
+}
 
 
 function PollComponent({ post, user }: { post: WithId<Post>, user: any }) {
@@ -280,7 +284,7 @@ function PostItem({ post, bookmarks }: { post: WithId<Post>, bookmarks: WithId<B
     const bookmarkRef = doc(firestore, 'users', user.uid, 'bookmarks', post.id);
 
     if (isBookmarked) {
-        deleteBookmarkDoc(bookmarkRef).catch(serverError => {
+        deleteDoc(bookmarkRef).catch(serverError => {
             const permissionError = new FirestorePermissionError({
                 path: bookmarkRef.path,
                 operation: 'delete',
@@ -300,6 +304,42 @@ function PostItem({ post, bookmarks }: { post: WithId<Post>, bookmarks: WithId<B
             });
             errorEmitter.emit('permission-error', permissionError);
         });
+    }
+  };
+
+  const handleStartConversation = async () => {
+    if (!user || !firestore || isOwner) return;
+
+    const peerId = post.authorId;
+    const conversationId = getConversationId(user.uid, peerId);
+    const conversationRef = doc(firestore, 'conversations', conversationId);
+
+    try {
+        const docSnap = await getDoc(conversationRef);
+        if (!docSnap.exists()) {
+            const peerUserDoc = await getDoc(doc(firestore, 'users', peerId));
+            const peerUser = peerUserDoc.data() as User;
+
+            const newConversation: Omit<Conversation, 'id'> = {
+                participantIds: [user.uid, peerId].sort(),
+                participants: {
+                    [user.uid]: { id: user.uid, name: user.displayName || "Anonymous" },
+                    [peerId]: { id: peerUser.id, name: peerUser.name || "Anonymous" },
+                },
+                lastMessage: null,
+                status: 'pending',
+                requesterId: user.uid,
+            };
+            await setDoc(conversationRef, { ...newConversation, id: conversationId });
+        }
+        router.push(`/messages/${peerId}`);
+    } catch (e) {
+        console.error("Error starting conversation:", e);
+        const permissionError = new FirestorePermissionError({
+            path: conversationRef.path,
+            operation: 'write',
+        });
+        errorEmitter.emit('permission-error', permissionError);
     }
   };
 
@@ -323,10 +363,8 @@ function PostItem({ post, bookmarks }: { post: WithId<Post>, bookmarks: WithId<B
                 </div>
                <div className="flex items-center">
                     {!isOwner && user && (
-                        <Button variant="ghost" size="icon" className="h-8 w-8" asChild>
-                            <Link href={`/messages/${post.authorId}`}>
-                                <Send className="h-4 w-4" />
-                            </Link>
+                        <Button variant="ghost" size="icon" className="h-8 w-8" onClick={handleStartConversation}>
+                            <MessageSquare className="h-4 w-4" />
                         </Button>
                     )}
                  {isOwner && (

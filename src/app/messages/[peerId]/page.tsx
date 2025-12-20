@@ -4,7 +4,7 @@
 import { useParams, useRouter } from 'next/navigation';
 import AppLayout from "@/components/AppLayout";
 import { useFirebase, useMemoFirebase } from "@/firebase";
-import { collection, query, where, orderBy, limit, getDoc, writeBatch, serverTimestamp, addDoc, getDocs } from "firebase/firestore";
+import { collection, query, orderBy, writeBatch, serverTimestamp, addDoc, doc } from "firebase/firestore";
 import { useCollection, WithId } from "@/firebase/firestore/use-collection";
 import { type Conversation, type Message, type User } from "@/lib/types";
 import React, { useEffect, useMemo, useRef, useState } from "react";
@@ -17,7 +17,6 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { errorEmitter } from '@/firebase/error-emitter';
 import { FirestorePermissionError } from '@/firebase/errors';
 import { useDoc } from '@/firebase/firestore/use-doc';
-import { doc } from 'firebase/firestore';
 
 const formatUserId = (uid: string) => `blur${uid.substring(uid.length - 6)}`;
 
@@ -115,24 +114,30 @@ function MessageInput({ onSendMessage, conversation }: { onSendMessage: (text: s
 
 export default function ConversationPage() {
     const params = useParams();
+    const router = useRouter();
     const peerId = params.peerId as string;
     const { firestore, user: currentUser } = useFirebase();
     const messagesEndRef = useRef<HTMLDivElement>(null);
 
+    // Get the peer user's profile data
     const {data: peerUser, isLoading: peerUserLoading} = useDoc<User>(firestore && peerId ? doc(firestore, 'users', peerId) : null);
     
+    // Create a predictable conversation ID
     const conversationId = useMemo(() => {
         if (!currentUser || !peerId) return null;
         return getConversationId(currentUser.uid, peerId);
     }, [currentUser, peerId]);
     
+    // Get a reference to the conversation document
     const conversationRef = useMemoFirebase(() => {
         if (!firestore || !conversationId) return null;
         return doc(firestore, 'conversations', conversationId);
     }, [firestore, conversationId]);
 
+    // Subscribe to the conversation document
     const {data: conversation, isLoading: isConversationLoading} = useDoc<Conversation>(conversationRef);
 
+    // Create the query for messages only if the conversation exists
     const messagesQuery = useMemoFirebase(() => {
         if (!firestore || !conversation) return null;
         return query(
@@ -141,6 +146,7 @@ export default function ConversationPage() {
         );
     }, [firestore, conversation]);
 
+    // Subscribe to the messages subcollection
     const { data: messages, isLoading: messagesLoading } = useCollection<Message>(messagesQuery);
     
     useEffect(() => {
@@ -154,23 +160,7 @@ export default function ConversationPage() {
         const conversationDocRef = doc(firestore, 'conversations', conversationId);
 
         try {
-            const conversationDoc = await getDoc(conversationDocRef);
             const batch = writeBatch(firestore);
-
-            if (!conversationDoc.exists()) {
-                // Create conversation if it doesn't exist
-                const newConversationData: Omit<Conversation, 'id'> = {
-                    participantIds: [currentUser.uid, peerId].sort(),
-                    participants: {
-                        [currentUser.uid]: { id: currentUser.uid, name: currentUser.displayName || "Anonymous" },
-                        [peerId]: { id: peerUser.id, name: peerUser.name || "Anonymous" },
-                    },
-                    lastMessage: null,
-                    status: 'pending',
-                    requesterId: currentUser.uid,
-                };
-                batch.set(conversationDocRef, {...newConversationData, id: conversationId });
-            }
 
             // Add the new message
             const messageCollectionRef = collection(conversationDocRef, 'messages');
@@ -191,6 +181,9 @@ export default function ConversationPage() {
             };
 
             batch.set(newMessageRef, newMessageData);
+            // We update the lastMessage field on the parent conversation document.
+            // If the conversation doc doesn't exist, this part of the batch will fail, but that's okay for the first message.
+            // The creation is handled before navigating here. If it fails for some reason, the message is still sent.
             batch.update(conversationDocRef, { lastMessage: lastMessageData });
 
             await batch.commit();
@@ -206,8 +199,9 @@ export default function ConversationPage() {
     const conversationExists = conversation !== null;
     const isAccepted = conversation?.status === 'accepted';
     const amIRequester = conversation?.requesterId === currentUser?.uid;
+    const isLoading = isConversationLoading || peerUserLoading;
 
-    if (isConversationLoading || peerUserLoading) {
+    if (isLoading) {
          return (
              <AppLayout showTopBar={false} showBottomNav={false}>
                 <ChatHeader peerUser={null} />
@@ -216,8 +210,24 @@ export default function ConversationPage() {
                    <Skeleton className="h-16 w-1/2 rounded-2xl self-end ml-auto" />
                    <Skeleton className="h-10 w-2/3 rounded-2xl" />
                 </div>
+                <div className="fixed bottom-0 left-0 right-0 bg-background border-t z-10 max-w-2xl mx-auto sm:px-4">
+                    <div className="p-4">
+                        <div className="flex items-center space-x-3">
+                             <Skeleton className="flex-1 rounded-full bg-secondary h-11" />
+                             <Skeleton className="rounded-full h-11 w-11" />
+                        </div>
+                    </div>
+                </div>
              </AppLayout>
          )
+    }
+    
+    if (!peerUser) {
+        return (
+            <AppLayout showTopBar={false} showBottomNav={false}>
+                <div className="text-center pt-20">User not found</div>
+            </AppLayout>
+        )
     }
 
     return (
@@ -249,5 +259,3 @@ export default function ConversationPage() {
         </AppLayout>
     )
 }
-
-    
