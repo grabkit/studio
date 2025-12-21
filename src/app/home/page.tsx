@@ -224,34 +224,36 @@ const handleStartConversation = async () => {
     const conversationId = [currentUserId, peerId].sort().join('_');
     const conversationRef = doc(firestore, 'conversations', conversationId);
 
-    // This data will be used to create the conversation if it doesn't exist.
-    const newConversationData = {
-        id: conversationId,
-        participantIds: [currentUserId, peerId].sort(),
-        lastMessage: '',
-        lastUpdated: serverTimestamp(),
-        status: 'pending',
-        requesterId: currentUserId,
-    };
-
     try {
-        // Use setDoc with { merge: true } to create or update.
-        // If the doc exists, it merges data. If not, it creates it.
-        // This avoids the need for a prior getDoc call, which caused permission errors.
-        await setDoc(conversationRef, newConversationData, { merge: true });
+        const conversationSnap = await getDoc(conversationRef);
+
+        if (!conversationSnap.exists()) {
+            // Conversation doesn't exist, create a new pending request
+            const newConversationData = {
+                id: conversationId,
+                participantIds: [currentUserId, peerId].sort(),
+                lastMessage: '',
+                lastUpdated: serverTimestamp(),
+                status: 'pending',
+                requesterId: currentUserId,
+            };
+            await setDoc(conversationRef, newConversationData);
+        }
         
-        // After ensuring the conversation exists (or is created), navigate.
+        // If it exists (pending or accepted), just navigate.
         router.push(`/messages/${peerId}`);
 
     } catch (error: any) {
         console.error("Error handling conversation:", error);
         
-        const permissionError = new FirestorePermissionError({
-            path: conversationRef.path,
-            operation: 'write', // 'set' with merge is a 'write' operation
-            requestResourceData: newConversationData,
-        });
-        errorEmitter.emit('permission-error', permissionError);
+        // Emit a contextual error if it's a permission issue on getDoc
+        if (error.code === 'permission-denied') {
+             const permissionError = new FirestorePermissionError({
+                path: `conversations/${conversationId}`,
+                operation: 'get', 
+            });
+            errorEmitter.emit('permission-error', permissionError);
+        }
         
         toast({
             variant: "destructive",
@@ -524,3 +526,4 @@ export default function HomePage() {
     
 
     
+
