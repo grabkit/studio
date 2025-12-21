@@ -216,53 +216,6 @@ function PostItem({ post, bookmarks }: { post: WithId<Post>, bookmarks: WithId<B
     }
   };
 
-const handleStartConversation = async () => {
-    if (!user || !firestore || isOwner) return;
-
-    const peerId = post.authorId;
-    const currentUserId = user.uid;
-    const conversationId = [currentUserId, peerId].sort().join('_');
-    const conversationRef = doc(firestore, 'conversations', conversationId);
-
-    try {
-        const conversationSnap = await getDoc(conversationRef);
-
-        if (!conversationSnap.exists()) {
-            // Conversation doesn't exist, create a new pending request
-            const newConversationData = {
-                id: conversationId,
-                participantIds: [currentUserId, peerId].sort(),
-                lastMessage: '',
-                lastUpdated: serverTimestamp(),
-                status: 'pending',
-                requesterId: currentUserId,
-            };
-            await setDoc(conversationRef, newConversationData);
-        }
-        
-        // If it exists (pending or accepted), just navigate.
-        router.push(`/messages/${peerId}`);
-
-    } catch (error: any) {
-        console.error("Error handling conversation:", error);
-        
-        // Emit a contextual error if it's a permission issue on getDoc
-        if (error.code === 'permission-denied') {
-             const permissionError = new FirestorePermissionError({
-                path: `conversations/${conversationId}`,
-                operation: 'get', 
-            });
-            errorEmitter.emit('permission-error', permissionError);
-        }
-        
-        toast({
-            variant: "destructive",
-            title: "Error",
-            description: "Could not start or open the conversation.",
-        });
-    }
-};
-
   const handleDeletePost = async () => {
     if (!firestore || !isOwner) return;
     const postRef = doc(firestore, 'posts', post.id);
@@ -368,11 +321,6 @@ const handleStartConversation = async () => {
                     </span>
                 </div>
                <div className="flex items-center">
-                 {!isOwner && (
-                    <Button variant="ghost" size="icon" className="h-6 w-6" onClick={handleStartConversation}>
-                        <MessageSquare className="h-4 w-4 text-muted-foreground" />
-                    </Button>
-                 )}
                  {isOwner && (
                     <DropdownMenu>
                       <DropdownMenuTrigger asChild>
@@ -526,4 +474,5 @@ export default function HomePage() {
     
 
     
+
 

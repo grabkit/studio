@@ -3,20 +3,23 @@
 
 import { useParams, useRouter } from "next/navigation";
 import { useFirebase, useMemoFirebase } from "@/firebase";
-import { doc, collection, query, where, getDocs } from "firebase/firestore";
+import { doc, collection, query, where, getDocs, serverTimestamp, setDoc, getDoc } from "firebase/firestore";
 import { useDoc } from "@/firebase/firestore/use-doc";
 import { useCollection } from "@/firebase/firestore/use-collection";
 import type { Post, User, UserPost, Bookmark } from "@/lib/types";
 import React, { useMemo, useState, useEffect } from "react";
 import Link from "next/link";
+import { useToast } from "@/hooks/use-toast";
 
 import AppLayout from "@/components/AppLayout";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Grid3x3, FileText, ArrowLeft, Bookmark as BookmarkIcon } from "lucide-react";
+import { Grid3x3, FileText, ArrowLeft, Bookmark as BookmarkIcon, MessageSquare } from "lucide-react";
 import { getInitials } from "@/lib/utils";
+import { FirestorePermissionError } from "@/firebase/errors";
+import { errorEmitter } from "@/firebase/error-emitter";
 
 const PostGrid = ({ posts, isLoading, emptyState }: { posts: (Post | UserPost)[] | null, isLoading: boolean, emptyState: React.ReactNode }) => {
     return (
@@ -76,6 +79,7 @@ function ProfilePageSkeleton() {
 export default function UserProfilePage() {
     const params = useParams();
     const router = useRouter();
+    const { toast } = useToast();
     const userId = params.userId as string;
     const { firestore, user: currentUser } = useFirebase();
 
@@ -116,6 +120,52 @@ export default function UserProfilePage() {
         return `blur${uid.substring(uid.length - 6)}`;
     };
 
+    const handleStartConversation = async () => {
+        if (!currentUser || !firestore || !userId || currentUser.uid === userId) return;
+
+        const currentUserId = currentUser.uid;
+        const conversationId = [currentUserId, userId].sort().join('_');
+        const conversationRef = doc(firestore, 'conversations', conversationId);
+
+        try {
+            const conversationSnap = await getDoc(conversationRef);
+
+            if (!conversationSnap.exists()) {
+                // Conversation doesn't exist, create a new pending request
+                const newConversationData = {
+                    id: conversationId,
+                    participantIds: [currentUserId, userId].sort(),
+                    lastMessage: '',
+                    lastUpdated: serverTimestamp(),
+                    status: 'pending',
+                    requesterId: currentUserId,
+                };
+                await setDoc(conversationRef, newConversationData);
+            }
+            
+            // If it exists (pending or accepted), just navigate.
+            router.push(`/messages/${userId}`);
+
+        } catch (error: any) {
+            console.error("Error handling conversation:", error);
+            
+            if (error.code === 'permission-denied') {
+                 const permissionError = new FirestorePermissionError({
+                    path: `conversations/${conversationId}`,
+                    operation: 'get', 
+                });
+                errorEmitter.emit('permission-error', permissionError);
+            }
+            
+            toast({
+                variant: "destructive",
+                title: "Error",
+                description: "Could not start or open the conversation.",
+            });
+        }
+    };
+
+
     if (userLoading || (currentUser && userId === currentUser.uid)) {
         return (
             <AppLayout showTopBar={false}>
@@ -148,7 +198,7 @@ export default function UserProfilePage() {
     return (
         <AppLayout showTopBar={false}>
             <div className="px-4">
-                <div className="grid grid-cols-3 items-center mb-6 px-2">
+                <div className="grid grid-cols-3 items-center mb-6">
                      <Button variant="ghost" size="icon" onClick={() => router.back()}>
                         <ArrowLeft className="h-6 w-6" />
                     </Button>
@@ -202,6 +252,12 @@ export default function UserProfilePage() {
                     {/* Hiding email for privacy on public profiles */}
                 </div>
                 
+                <div className="mb-4">
+                    <Button onClick={handleStartConversation} className="w-full">
+                        <MessageSquare className="mr-2 h-4 w-4" /> Message
+                    </Button>
+                </div>
+
                 <Tabs defaultValue="posts" className="w-full">
                     <TabsList className="grid w-full grid-cols-1">
                         <TabsTrigger value="posts" className="gap-2"><Grid3x3 className="h-5 w-5" /> Posts</TabsTrigger>
