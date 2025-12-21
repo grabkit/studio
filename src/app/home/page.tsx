@@ -216,7 +216,7 @@ function PostItem({ post, bookmarks }: { post: WithId<Post>, bookmarks: WithId<B
     }
   };
 
-  const handleStartConversation = async () => {
+const handleStartConversation = async () => {
     if (!user || !firestore || isOwner) return;
 
     const peerId = post.authorId;
@@ -224,28 +224,35 @@ function PostItem({ post, bookmarks }: { post: WithId<Post>, bookmarks: WithId<B
     const conversationId = [currentUserId, peerId].sort().join('_');
     const conversationRef = doc(firestore, 'conversations', conversationId);
 
+    // This data will be used to create the conversation if it doesn't exist.
+    const newConversationData = {
+        id: conversationId,
+        participantIds: [currentUserId, peerId].sort(),
+        lastMessage: '',
+        lastUpdated: serverTimestamp(),
+        status: 'pending',
+        requesterId: currentUserId,
+    };
+
     try {
-        const conversationSnap = await getDoc(conversationRef);
+        // Use setDoc with { merge: true } to create or update.
+        // If the doc exists, it merges data. If not, it creates it.
+        // This avoids the need for a prior getDoc call, which caused permission errors.
+        await setDoc(conversationRef, newConversationData, { merge: true });
+        
+        // After ensuring the conversation exists (or is created), navigate.
+        router.push(`/messages/${peerId}`);
 
-        if (conversationSnap.exists()) {
-            // Conversation already exists, just navigate to it.
-            router.push(`/messages/${peerId}`);
-        } else {
-            // Conversation does not exist, create a new pending one.
-            const newConversation: Partial<Conversation> = {
-                id: conversationId,
-                participantIds: [currentUserId, peerId].sort(),
-                lastMessage: '',
-                lastUpdated: serverTimestamp(),
-                status: 'pending',
-                requesterId: currentUserId,
-            };
-
-            await setDoc(conversationRef, newConversation);
-            router.push(`/messages/${peerId}`);
-        }
     } catch (error: any) {
         console.error("Error handling conversation:", error);
+        
+        const permissionError = new FirestorePermissionError({
+            path: conversationRef.path,
+            operation: 'write', // 'set' with merge is a 'write' operation
+            requestResourceData: newConversationData,
+        });
+        errorEmitter.emit('permission-error', permissionError);
+        
         toast({
             variant: "destructive",
             title: "Error",
