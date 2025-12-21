@@ -8,7 +8,7 @@ import { useCollection, type WithId } from "@/firebase/firestore/use-collection"
 import { Card, CardContent } from "@/components/ui/card";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Skeleton } from "@/components/ui/skeleton";
-import type { Post, Bookmark, PollOption, Notification, User } from "@/lib/types";
+import type { Post, Bookmark, PollOption, Notification, User, Conversation } from "@/lib/types";
 import { Heart, MessageCircle, Repeat, ArrowUpRight, MoreHorizontal, Edit, Trash2, Bookmark as BookmarkIcon, CheckCircle2, MessageSquare } from "lucide-react";
 import { cn, formatTimestamp, getInitials } from "@/lib/utils";
 import { useToast } from "@/hooks/use-toast";
@@ -221,43 +221,45 @@ function PostItem({ post, bookmarks }: { post: WithId<Post>, bookmarks: WithId<B
 
     const peerId = post.authorId;
     const currentUserId = user.uid;
+    const conversationId = [currentUserId, peerId].sort().join('_');
+    const conversationRef = doc(firestore, 'conversations', conversationId);
 
-    const participantIds = [currentUserId, peerId].sort();
-    const conversationId = participantIds.join('_');
-    
     try {
-        const conversationRef = doc(firestore, 'conversations', conversationId);
-        
-        // This is a fire-and-forget write.
-        // We don't check if it exists first. We just create/merge it.
-        // This avoids the 'get' permission error.
-        const newConversation: Partial<Conversation> = {
-            id: conversationId,
-            participantIds,
-            lastMessage: '',
-            lastUpdated: serverTimestamp(),
-            status: 'pending',
-            requesterId: currentUserId,
-        };
+        const conversationSnap = await getDoc(conversationRef);
 
-        await setDoc(conversationRef, newConversation, { merge: true });
+        if (conversationSnap.exists()) {
+            // Conversation already exists, just navigate to it.
+            // No need to check status, the chat page will handle 'pending' vs 'accepted'.
+            router.push(`/messages/${peerId}`);
+        } else {
+            // Conversation does not exist, create a new pending one.
+            const newConversation: Partial<Conversation> = {
+                id: conversationId,
+                participantIds: [currentUserId, peerId].sort(),
+                lastMessage: '',
+                lastUpdated: serverTimestamp(),
+                status: 'pending',
+                requesterId: currentUserId,
+            };
 
-        // On success, navigate to the conversation page
-        router.push(`/messages/${peerId}`);
-
+            await setDoc(conversationRef, newConversation);
+            router.push(`/messages/${peerId}`);
+        }
     } catch (error: any) {
-        console.error("Error starting conversation:", error);
+        console.error("Error handling conversation:", error);
         toast({
             variant: "destructive",
             title: "Error",
-            description: "Could not start a conversation.",
+            description: "Could not start or open the conversation.",
         });
-        // Emit a contextual error if it's a permission issue
-        const permissionError = new FirestorePermissionError({
-            path: `conversations/${conversationId}`,
-            operation: 'create', // or 'write'
-        });
-        errorEmitter.emit('permission-error', permissionError);
+        // Emit a contextual error if it's a permission issue on getDoc
+        if (error.code === 'permission-denied') {
+             const permissionError = new FirestorePermissionError({
+                path: `conversations/${conversationId}`,
+                operation: 'get', 
+            });
+            errorEmitter.emit('permission-error', permissionError);
+        }
     }
 };
 
