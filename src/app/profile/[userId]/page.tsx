@@ -119,12 +119,12 @@ export default function UserProfilePage() {
     if (userLoading || (currentUser && userId === currentUser.uid)) {
         return (
             <AppLayout showTopBar={false}>
-                 <div className="flex items-center justify-between mb-6 px-4">
+                 <div className="grid grid-cols-3 items-center mb-6 px-2">
                     <Button variant="ghost" size="icon" onClick={() => router.back()}>
                         <ArrowLeft className="h-6 w-6" />
                     </Button>
-                    <h2 className="text-2xl font-semibold font-headline -translate-x-1/2 relative left-1/2">
-                        <Skeleton className="h-8 w-32" />
+                    <h2 className="text-2xl font-semibold font-headline text-center">
+                        <Skeleton className="h-8 w-32 mx-auto" />
                     </h2>
                 </div>
                 <ProfilePageSkeleton />
@@ -148,11 +148,11 @@ export default function UserProfilePage() {
     return (
         <AppLayout showTopBar={false}>
             <div className="px-4">
-                <div className="flex items-center justify-between mb-6">
+                <div className="grid grid-cols-3 items-center mb-6 px-2">
                      <Button variant="ghost" size="icon" onClick={() => router.back()}>
                         <ArrowLeft className="h-6 w-6" />
                     </Button>
-                    <h2 className="text-2xl font-semibold font-headline -translate-x-1/2 relative left-1/2">
+                    <h2 className="text-2xl font-semibold font-headline text-center">
                       {formatUserId(user?.id)}
                     </h2>
                 </div>
