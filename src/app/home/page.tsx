@@ -229,7 +229,6 @@ function PostItem({ post, bookmarks }: { post: WithId<Post>, bookmarks: WithId<B
 
         if (conversationSnap.exists()) {
             // Conversation already exists, just navigate to it.
-            // No need to check status, the chat page will handle 'pending' vs 'accepted'.
             router.push(`/messages/${peerId}`);
         } else {
             // Conversation does not exist, create a new pending one.
@@ -252,14 +251,6 @@ function PostItem({ post, bookmarks }: { post: WithId<Post>, bookmarks: WithId<B
             title: "Error",
             description: "Could not start or open the conversation.",
         });
-        // Emit a contextual error if it's a permission issue on getDoc
-        if (error.code === 'permission-denied') {
-             const permissionError = new FirestorePermissionError({
-                path: `conversations/${conversationId}`,
-                operation: 'get', 
-            });
-            errorEmitter.emit('permission-error', permissionError);
-        }
     }
 };
 
