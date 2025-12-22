@@ -6,13 +6,13 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { getInitials, formatTimestamp } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
-import { MessageSquare, Mail, Dot } from "lucide-react";
+import { MessageSquare, Mail } from "lucide-react";
 import { useFirebase, useMemoFirebase } from "@/firebase";
-import { collection, query, where, orderBy, doc, updateDoc } from "firebase/firestore";
+import { collection, query, where, doc, updateDoc } from "firebase/firestore";
 import { useCollection, type WithId } from "@/firebase/firestore/use-collection";
 import { useDoc } from "@/firebase/firestore/use-doc";
 import type { Conversation, User } from "@/lib/types";
-import { useMemo } from "react";
+import { useMemo, useState, useEffect } from "react";
 import Link from "next/link";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useToast } from "@/hooks/use-toast";
@@ -195,6 +195,8 @@ function ConversationsList({
 export default function MessagesPage() {
     const { firestore, user } = useFirebase();
     const { toast } = useToast();
+    const [hasNewRequests, setHasNewRequests] = useState(false);
+    const storageKey = `lastCheckedRequests_${user?.uid}`;
 
     const conversationsQuery = useMemoFirebase(() => {
         if (!user || !firestore) return null;
@@ -218,6 +220,28 @@ export default function MessagesPage() {
         });
         return { chats, requests };
     }, [conversations]);
+
+    useEffect(() => {
+        if (requests && user) {
+            const lastChecked = localStorage.getItem(storageKey);
+            const lastCheckedTimestamp = lastChecked ? parseInt(lastChecked, 10) : 0;
+            
+            const newRequestExists = requests.some(req =>
+                req.requesterId !== user.uid &&
+                req.lastUpdated?.toMillis() > lastCheckedTimestamp
+            );
+
+            setHasNewRequests(newRequestExists);
+        }
+    }, [requests, user, storageKey]);
+
+
+    const handleTabChange = (value: string) => {
+        if (value === 'requests') {
+            localStorage.setItem(storageKey, Date.now().toString());
+            setHasNewRequests(false);
+        }
+    };
 
     const handleAcceptRequest = async (conversationId: string) => {
         if (!firestore) return;
@@ -252,10 +276,15 @@ export default function MessagesPage() {
                 <h1 className="text-2xl font-bold font-headline">Messages</h1>
             </div>
             
-            <Tabs defaultValue="chats" className="w-full">
+            <Tabs defaultValue="chats" className="w-full" onValueChange={handleTabChange}>
                 <TabsList className="grid w-full grid-cols-2">
                     <TabsTrigger value="chats">Chats</TabsTrigger>
-                    <TabsTrigger value="requests">Requests</TabsTrigger>
+                    <TabsTrigger value="requests" className="relative">
+                        Requests
+                        {hasNewRequests && (
+                            <div className="absolute top-1 right-2 h-2 w-2 rounded-full bg-red-500"></div>
+                        )}
+                    </TabsTrigger>
                 </TabsList>
                 <TabsContent value="chats">
                     <ConversationsList 
@@ -280,7 +309,3 @@ export default function MessagesPage() {
         </AppLayout>
     )
 }
-
-    
-
-    
