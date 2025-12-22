@@ -263,7 +263,8 @@ export default function ChatPage() {
 
         const userUnreadCount = conversation.unreadCounts?.[user.uid] ?? 0;
 
-        // Condition 1: If there are unread messages for the current user, clear them.
+        // CRITICAL: Only update if there are unread messages.
+        // This prevents an infinite write loop.
         if (userUnreadCount > 0) {
             const updates: any = {
                 [`unreadCounts.${user.uid}`]: 0,
@@ -272,25 +273,6 @@ export default function ChatPage() {
             updateDoc(conversationRef, updates).catch(error => {
                 console.warn("Could not mark messages as read:", error.message);
             });
-            return; // Exit after updating to avoid the next condition check in the same render
-        }
-
-        // Condition 2: If the conversation is accepted and the user has no unread messages,
-        // we might still need to update the timestamp for the "seen" status.
-        if (conversation.status === 'accepted') {
-            const lastRead = conversation.lastReadTimestamps?.[user.uid]?.toDate();
-            const lastUpdate = conversation.lastUpdated?.toDate();
-
-            // Only update if the last message is newer than the last time the user read.
-            // This prevents writing to Firestore on every render.
-            if (lastUpdate && (!lastRead || lastRead < lastUpdate)) {
-                 const updates: any = {
-                    [`lastReadTimestamps.${user.uid}`]: serverTimestamp()
-                };
-                updateDoc(conversationRef, updates).catch(error => {
-                    console.warn("Could not update last read timestamp:", error.message);
-                });
-            }
         }
     }, [conversation, conversationRef, firestore, user]);
 
