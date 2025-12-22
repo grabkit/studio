@@ -11,15 +11,6 @@ service cloud.firestore {
       return request.auth.uid == userId;
     }
 
-    function documentExists(path) {
-      return exists(path);
-    }
-    
-    function canAccessConversation(conversationId) {
-      let conversation = get(/databases/$(database)/documents/conversations/$(conversationId));
-      return request.auth.uid in conversation.data.participantIds;
-    }
-
     match /users/{userId} {
       allow get: if isSignedIn();
       allow list: if isSignedIn();
@@ -63,7 +54,8 @@ service cloud.firestore {
     }
 
     match /conversations/{conversationId} {
-      allow read: if documentExists(path) == false || canAccessConversation(conversationId);
+      // Allow read if the document doesn't exist yet (for creation check) OR if the user is a participant.
+      allow read: if !exists(/databases/$(database)/documents/conversations/$(conversationId)) || request.auth.uid in get(/databases/$(database)/documents/conversations/$(conversationId)).data.participantIds;
       // A user can create a conversation if their UID is in the new document's participantIds
       allow create: if isSignedIn() && request.auth.uid in request.resource.data.participantIds;
       // A participant can update the status (e.g., to accept a request) or last message
@@ -74,9 +66,9 @@ service cloud.firestore {
 
     match /conversations/{conversationId}/messages/{messageId} {
       // A participant of the conversation can read messages
-      allow read, list: if isSignedIn() && get(/databases/$(database)/documents/conversations/$(conversationId)).data.participantIds.hasAny([request.auth.uid]);
+      allow read, list: if isSignedIn() && get(/databases/$(database)/documents/conversations/$(conversationId)).data.status == 'accepted' && request.auth.uid in get(/databases/$(database)/documents/conversations/$(conversationId)).data.participantIds;
       // A participant can create a message and they must be the sender
-      allow create: if isSignedIn() && get(/databases/$(database)/documents/conversations/$(conversationId)).data.participantIds.hasAny([request.auth.uid]) && request.resource.data.senderId == request.auth.uid;
+      allow create: if isSignedIn() && get(/databases/$(database)/documents/conversations/$(conversationId)).data.status == 'accepted' && request.auth.uid in get(/databases/$(database)/documents/conversations/$(conversationId)).data.participantIds && request.resource.data.senderId == request.auth.uid;
     }
     
     function isNewTextPost() {
