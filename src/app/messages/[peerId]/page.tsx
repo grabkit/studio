@@ -23,6 +23,7 @@ import type { Conversation, Message, User } from '@/lib/types';
 import { WithId } from '@/firebase/firestore/use-collection';
 import { FirestorePermissionError } from '@/firebase/errors';
 import { errorEmitter } from '@/firebase/error-emitter';
+import { formatDistanceToNowStrict } from 'date-fns';
 
 const messageFormSchema = z.object({
   text: z.string().min(1, "Message cannot be empty").max(1000),
@@ -81,7 +82,7 @@ function ChatHeader({ peerId }: { peerId: string }) {
     )
 }
 
-function ChatMessages({ conversationId }: { conversationId: string }) {
+function ChatMessages({ conversationId, conversation }: { conversationId: string, conversation: WithId<Conversation> | null }) {
     const { firestore, user } = useFirebase();
     const messagesEndRef = React.useRef<HTMLDivElement | null>(null);
 
@@ -94,6 +95,28 @@ function ChatMessages({ conversationId }: { conversationId: string }) {
     }, [firestore, conversationId]);
 
     const { data: messages, isLoading } = useCollection<Message>(messagesQuery);
+    
+    const seenStatus = useMemo(() => {
+        if (!conversation || !messages || messages.length === 0 || !user) return null;
+
+        const lastMessage = messages[messages.length - 1];
+        if (lastMessage.senderId !== user.uid) return null; // Only show seen for user's own messages
+
+        const peerId = conversation.participantIds.find(id => id !== user.uid);
+        if (!peerId) return null;
+        
+        const peerLastReadTimestamp = conversation.lastReadTimestamps?.[peerId]?.toDate();
+        const lastMessageTimestamp = lastMessage.timestamp?.toDate();
+
+        if (peerLastReadTimestamp && lastMessageTimestamp && peerLastReadTimestamp >= lastMessageTimestamp) {
+             const timeAgo = formatDistanceToNowStrict(peerLastReadTimestamp, { addSuffix: true });
+             return `Seen ${timeAgo}`;
+        }
+        
+        return null;
+
+    }, [messages, conversation, user]);
+
 
     React.useEffect(() => {
         messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
@@ -110,11 +133,18 @@ function ChatMessages({ conversationId }: { conversationId: string }) {
     }
 
     return (
-        <div className="p-4 space-y-4">
-            {messages?.map(message => (
-                <MessageBubble key={message.id} message={message} isOwnMessage={message.senderId === user?.uid} />
-            ))}
+        <div className="p-4">
+            <div className="space-y-4">
+                {messages?.map(message => (
+                    <MessageBubble key={message.id} message={message} isOwnMessage={message.senderId === user?.uid} />
+                ))}
+            </div>
              <div ref={messagesEndRef} />
+             {seenStatus && (
+                <div className="text-right text-xs text-muted-foreground pr-2 pt-1">
+                    {seenStatus}
+                </div>
+            )}
         </div>
     )
 }
@@ -246,6 +276,15 @@ export default function ChatPage() {
                     // This can fail if rules are restrictive, but we can fail silently.
                     console.warn("Could not mark messages as read:", error.message);
                 });
+            } else if (conversation.status === 'accepted') {
+                // Even if there are no "new" messages, we should update the read timestamp
+                // to signal "seen" status. We only do this for accepted chats.
+                 const updatePayload = {
+                    [`lastReadTimestamps.${user.uid}`]: serverTimestamp()
+                };
+                updateDoc(conversationRef, updatePayload).catch(error => {
+                    console.warn("Could not update last read timestamp:", error.message);
+                });
             }
         }
     }, [conversation, conversationRef, firestore, user]);
@@ -256,12 +295,10 @@ export default function ChatPage() {
             <ChatHeader peerId={peerId} />
 
             <div className="pt-14 pb-24">
-                {conversationId && <ChatMessages conversationId={conversationId} />}
+                {conversationId && <ChatMessages conversationId={conversationId} conversation={conversation} />}
             </div>
 
             {conversationId && <MessageInput conversationId={conversationId} conversation={conversation}/>}
         </AppLayout>
     )
 }
-
-    
