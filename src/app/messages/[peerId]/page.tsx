@@ -254,28 +254,34 @@ export default function ChatPage() {
 
     const { data: conversation, isLoading: isConversationLoading } = useDoc<Conversation>(conversationRef);
 
+    // This is the value that will be used as a dependency in the effect.
+    // It's a primitive (number) and will only change when the unread count actually changes.
+    const userUnreadCount = conversation?.unreadCounts?.[user?.uid ?? ''] ?? 0;
+
      // Effect to mark messages as read
     useEffect(() => {
-        if (!firestore || !user || !conversationRef || !conversation) {
+        // We only want to run this logic if we have all the necessary data AND if there are unread messages.
+        if (!firestore || !user || !conversationRef || userUnreadCount === 0) {
             return;
         }
 
-        const userUnreadCount = conversation.unreadCounts?.[user.uid] ?? 0;
+        // The update is now only triggered when userUnreadCount > 0.
+        // Once this runs, userUnreadCount will become 0 from the Firestore listener,
+        // and this effect will not run again until a new message arrives and increments the count.
+        const updates: any = {
+            [`unreadCounts.${user.uid}`]: 0,
+            [`lastReadTimestamps.${user.uid}`]: serverTimestamp()
+        };
+        
+        updateDoc(conversationRef, updates).catch(error => {
+            // This might fail due to security rules, but we shouldn't retry,
+            // as that could cause a loop. Log it for debugging.
+            console.warn("Could not mark messages as read:", error.message);
+        });
 
-        // CRITICAL: Only update if there are unread messages.
-        // This is the key to preventing an infinite write loop.
-        if (userUnreadCount > 0) {
-            const updates: any = {
-                [`unreadCounts.${user.uid}`]: 0,
-                [`lastReadTimestamps.${user.uid}`]: serverTimestamp()
-            };
-            updateDoc(conversationRef, updates).catch(error => {
-                // This might fail due to security rules, but we shouldn't retry,
-                // as that could cause a loop. Log it for debugging.
-                console.warn("Could not mark messages as read:", error.message);
-            });
-        }
-    }, [conversation, conversationRef, firestore, user]);
+    // The dependency array is key. It no longer depends on the entire 'conversation' object.
+    // It only depends on the specific values that should trigger it.
+    }, [userUnreadCount, conversationRef, firestore, user]);
 
 
     return (
