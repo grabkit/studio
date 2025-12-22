@@ -127,16 +127,30 @@ export default function AuthForm() {
       
       // After creating the user in Auth, create their profile document in Firestore.
       if (user && firestore) {
-        await updateProfile(user, { displayName: values.name });
-        
-        const userDocRef = doc(firestore, "users", user.uid);
-        const newUser: UserType = {
-            id: user.uid,
-            name: values.name,
-            email: values.email,
-        };
-        // This setDoc creates the user document in the 'users' collection.
-        await setDoc(userDocRef, newUser);
+        try {
+            await updateProfile(user, { displayName: values.name });
+            
+            const userDocRef = doc(firestore, "users", user.uid);
+            const newUser: UserType = {
+                id: user.uid,
+                name: values.name,
+                email: values.email,
+            };
+            // This setDoc creates the user document in the 'users' collection.
+            await setDoc(userDocRef, newUser);
+        } catch (firestoreError: any) {
+            // This is the critical change. If Firestore write fails, inform the user.
+            console.error("Firestore profile creation error:", firestoreError);
+            toast({ 
+                variant: "destructive", 
+                title: "Profile Creation Failed", 
+                description: "Your account was created, but we couldn't save your profile due to a temporary issue (the database limit might be reached). Please try logging in again later.",
+                duration: 9000,
+            });
+             // We still proceed to the home page, as the auth account is created.
+            router.push("/home");
+            return;
+        }
       }
 
       router.push("/home");
@@ -324,5 +338,3 @@ function ForgotPasswordDialog({form, onSubmit, loading}: {form: UseFormReturn<an
         </AlertDialog>
     );
 }
-
-    
