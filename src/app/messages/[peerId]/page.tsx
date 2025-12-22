@@ -9,7 +9,7 @@ import { useDoc } from '@/firebase/firestore/use-doc';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
-import React, { useMemo, useEffect } from 'react';
+import React, { useMemo, useEffect, useRef } from 'react';
 
 import AppLayout from '@/components/AppLayout';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
@@ -257,37 +257,39 @@ export default function ChatPage() {
 
      // Effect to mark messages as read
     useEffect(() => {
-        if (firestore && user && conversationRef && conversation) {
-            // Check if the current user has unread messages that need to be marked as read.
-            const userUnreadCount = conversation.unreadCounts?.[user.uid] ?? 0;
-            
-            if (userUnreadCount > 0) {
-                // If there are unread messages, reset the count and update the timestamp.
-                // This is a single, conditional write operation.
-                const updatePayload = {
-                    [`unreadCounts.${user.uid}`]: 0,
+        if (!firestore || !user || !conversationRef || !conversation) {
+            return;
+        }
+
+        const userUnreadCount = conversation.unreadCounts?.[user.uid] ?? 0;
+
+        // Condition 1: If there are unread messages for the current user, clear them.
+        if (userUnreadCount > 0) {
+            const updates: any = {
+                [`unreadCounts.${user.uid}`]: 0,
+                [`lastReadTimestamps.${user.uid}`]: serverTimestamp()
+            };
+            updateDoc(conversationRef, updates).catch(error => {
+                console.warn("Could not mark messages as read:", error.message);
+            });
+            return; // Exit after updating to avoid the next condition check in the same render
+        }
+
+        // Condition 2: If the conversation is accepted and the user has no unread messages,
+        // we might still need to update the timestamp for the "seen" status.
+        if (conversation.status === 'accepted') {
+            const lastRead = conversation.lastReadTimestamps?.[user.uid]?.toDate();
+            const lastUpdate = conversation.lastUpdated?.toDate();
+
+            // Only update if the last message is newer than the last time the user read.
+            // This prevents writing to Firestore on every render.
+            if (lastUpdate && (!lastRead || lastRead < lastUpdate)) {
+                 const updates: any = {
                     [`lastReadTimestamps.${user.uid}`]: serverTimestamp()
                 };
-                updateDoc(conversationRef, updatePayload).catch(error => {
-                    // This can fail if rules are restrictive, but we can fail silently.
-                    console.warn("Could not mark messages as read:", error.message);
+                updateDoc(conversationRef, updates).catch(error => {
+                    console.warn("Could not update last read timestamp:", error.message);
                 });
-            } else if (conversation.status === 'accepted') {
-                // If there are no new unread messages, we only need to update the timestamp
-                // for the "seen" status. This avoids writing on every single render.
-                // We compare the last read time with the last message time.
-                const lastRead = conversation.lastReadTimestamps?.[user.uid]?.toDate();
-                const lastUpdate = conversation.lastUpdated?.toDate();
-                
-                // Only update if the last read time is older than the last message time.
-                if (lastUpdate && (!lastRead || lastRead < lastUpdate)) {
-                    const updatePayload = {
-                        [`lastReadTimestamps.${user.uid}`]: serverTimestamp()
-                    };
-                    updateDoc(conversationRef, updatePayload).catch(error => {
-                        console.warn("Could not update last read timestamp:", error.message);
-                    });
-                }
             }
         }
     }, [conversation, conversationRef, firestore, user]);
