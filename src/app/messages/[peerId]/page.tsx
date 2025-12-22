@@ -99,7 +99,7 @@ function ChatMessages({ conversationId, conversation }: { conversationId: string
         if (!conversation || !messages || messages.length === 0 || !user) return null;
 
         const lastMessage = messages[messages.length - 1];
-        if (lastMessage.senderId !== user.uid) return null; // Only show seen for user's own messages
+        if (lastMessage.senderId !== user.uid) return null; 
 
         const peerId = conversation.participantIds.find(id => id !== user.uid);
         if (!peerId) return null;
@@ -155,14 +155,13 @@ function MessageInput({ conversationId, conversation }: { conversationId: string
         defaultValues: { text: "" },
     });
 
-    const onSubmit = async (values: z.infer<typeof messageFormSchema>) => {
+    const onSubmit = (values: z.infer<typeof messageFormSchema>) => {
         if (!firestore || !user || !conversationId || !conversation) return;
 
         form.reset();
         
         const peerId = conversation.participantIds.find(id => id !== user.uid);
         if (!peerId) return;
-
 
         const messageRef = doc(collection(firestore, 'conversations', conversationId, 'messages'));
         const conversationRef = doc(firestore, 'conversations', conversationId);
@@ -173,30 +172,26 @@ function MessageInput({ conversationId, conversation }: { conversationId: string
             text: values.text,
         };
         
-        try {
-            const batch = writeBatch(firestore);
-            
-            batch.set(messageRef, { ...newMessage, timestamp: serverTimestamp() });
-            
-            // Update conversation's last message, timestamp, and peer's unread count
-            const updatePayload: any = {
-                lastMessage: values.text,
-                lastUpdated: serverTimestamp(),
-                [`unreadCounts.${peerId}`]: increment(1)
-            };
-            
-            batch.update(conversationRef, updatePayload);
+        const batch = writeBatch(firestore);
+        
+        batch.set(messageRef, { ...newMessage, timestamp: serverTimestamp() });
+        
+        const updatePayload: any = {
+            lastMessage: values.text,
+            lastUpdated: serverTimestamp(),
+            [`unreadCounts.${peerId}`]: increment(1)
+        };
+        
+        batch.update(conversationRef, updatePayload);
 
-            await batch.commit();
-
-        } catch (error) {
+        batch.commit().catch(error => {
              const permissionError = new FirestorePermissionError({
                 path: messageRef.path,
                 operation: 'create',
                 requestResourceData: newMessage,
             });
             errorEmitter.emit('permission-error', permissionError);
-        }
+        });
     }
     
     if (conversation && conversation.status !== 'accepted') {
