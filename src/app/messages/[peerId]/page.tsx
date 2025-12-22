@@ -23,7 +23,6 @@ import type { Conversation, Message, User } from '@/lib/types';
 import { WithId } from '@/firebase/firestore/use-collection';
 import { FirestorePermissionError } from '@/firebase/errors';
 import { errorEmitter } from '@/firebase/error-emitter';
-import { formatDistanceToNowStrict } from 'date-fns';
 
 const messageFormSchema = z.object({
   text: z.string().min(1, "Message cannot be empty").max(1000),
@@ -109,8 +108,7 @@ function ChatMessages({ conversationId, conversation }: { conversationId: string
         const lastMessageTimestamp = lastMessage.timestamp?.toDate();
 
         if (peerLastReadTimestamp && lastMessageTimestamp && peerLastReadTimestamp >= lastMessageTimestamp) {
-             const timeAgo = formatDistanceToNowStrict(peerLastReadTimestamp, { addSuffix: true });
-             return `Seen ${timeAgo}`;
+             return 'Seen';
         }
         
         return null;
@@ -247,6 +245,7 @@ function MessageInput({ conversationId, conversation }: { conversationId: string
 export default function ChatPage() {
     const { firestore, user } = useFirebase();
     const params = useParams();
+    const router = useRouter();
     const peerId = params.peerId as string;
 
     const conversationId = useMemo(() => {
@@ -302,5 +301,3 @@ export default function ChatPage() {
         </AppLayout>
     )
 }
-
-    
