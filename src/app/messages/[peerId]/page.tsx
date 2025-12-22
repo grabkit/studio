@@ -240,7 +240,6 @@ function MessageInput({ conversationId, conversation }: { conversationId: string
 export default function ChatPage() {
     const { firestore, user } = useFirebase();
     const params = useParams();
-    const router = useRouter();
     const peerId = params.peerId as string;
 
     const conversationId = useMemo(() => {
@@ -264,13 +263,15 @@ export default function ChatPage() {
         const userUnreadCount = conversation.unreadCounts?.[user.uid] ?? 0;
 
         // CRITICAL: Only update if there are unread messages.
-        // This prevents an infinite write loop.
+        // This is the key to preventing an infinite write loop.
         if (userUnreadCount > 0) {
             const updates: any = {
                 [`unreadCounts.${user.uid}`]: 0,
                 [`lastReadTimestamps.${user.uid}`]: serverTimestamp()
             };
             updateDoc(conversationRef, updates).catch(error => {
+                // This might fail due to security rules, but we shouldn't retry,
+                // as that could cause a loop. Log it for debugging.
                 console.warn("Could not mark messages as read:", error.message);
             });
         }
