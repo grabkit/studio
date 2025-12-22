@@ -127,40 +127,43 @@ export default function UserProfilePage() {
         const conversationId = [currentUserId, userId].sort().join('_');
         const conversationRef = doc(firestore, 'conversations', conversationId);
     
+        // This is the data for a new conversation.
+        const newConversationData = {
+            id: conversationId,
+            participantIds: [currentUserId, userId].sort(),
+            lastMessage: '',
+            lastUpdated: serverTimestamp(),
+            status: 'pending',
+            requesterId: currentUserId,
+            unreadCounts: { [currentUserId]: 0, [userId]: 0 },
+            lastReadTimestamps: { [currentUserId]: serverTimestamp() }
+        };
+
         try {
-            const conversationSnap = await getDoc(conversationRef);
-    
-            if (!conversationSnap.exists()) {
-                 const newConversationData = {
-                    id: conversationId,
-                    participantIds: [currentUserId, userId].sort(),
-                    lastMessage: '',
-                    lastUpdated: serverTimestamp(),
-                    status: 'pending',
-                    requesterId: currentUserId,
-                    unreadCounts: { [currentUserId]: 0, [userId]: 0 },
-                    lastReadTimestamps: { [currentUserId]: serverTimestamp() }
-                };
-                await setDoc(conversationRef, newConversationData);
-            }
+            // Use setDoc with { merge: true }.
+            // If the document doesn't exist, it will be created with newConversationData.
+            // If it already exists, this operation does nothing because we are not changing any fields.
+            // This avoids the need for a `getDoc` call first.
+            await setDoc(conversationRef, newConversationData, { merge: true });
             
+            // After ensuring the conversation doc exists (or is created), navigate to the chat.
             router.push(`/messages/${userId}`);
     
         } catch (error: any) {
             console.error("Error handling conversation:", error);
             
-            if (error.code === 'permission-denied') {
-                 const permissionError = new FirestorePermissionError({
-                    path: `conversations/${conversationId}`,
-                    operation: 'get', 
-                });
-                errorEmitter.emit('permission-error', permissionError);
-            }
+            // The `create` operation is now the one that might fail due to rules.
+            const permissionError = new FirestorePermissionError({
+                path: conversationRef.path,
+                operation: 'create', // We are attempting to create if it doesn't exist.
+                requestResourceData: newConversationData
+            });
+            errorEmitter.emit('permission-error', permissionError);
             
             toast({
                 variant: "destructive",
                 title: "Error",
-                description: "Could not start or open the conversation.",
+                description: "Could not start the conversation. You may not have the required permissions.",
             });
         }
     };
