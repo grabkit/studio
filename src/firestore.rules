@@ -54,25 +54,17 @@ service cloud.firestore {
     }
 
     match /conversations/{conversationId} {
-      // Allow a user to read a conversation document if they are a participant.
-      // This rule is evaluated on the server against queries for 'list' and document reads for 'get'.
       allow read: if isSignedIn() && request.auth.uid in resource.data.participantIds;
-
-      // Allow a user to create a conversation if their UID is in the new document's participantIds.
-      // Use request.resource.data for create operations.
       allow create: if isSignedIn() && request.auth.uid in request.resource.data.participantIds;
-      
-      // A participant can update the status (e.g., to accept a request) or other message-related fields
       allow update: if isSignedIn() && request.auth.uid in resource.data.participantIds &&
                        request.resource.data.diff(resource.data).affectedKeys().hasAny(['lastMessage', 'lastUpdated', 'status', 'unreadCounts', 'lastReadTimestamps']);
     }
 
-
     match /conversations/{conversationId}/messages/{messageId} {
       // A participant of the conversation can read messages regardless of status
       allow read, list: if isSignedIn() && request.auth.uid in get(/databases/$(database)/documents/conversations/$(conversationId)).data.participantIds;
-      // A participant can create a message and they must be the sender, but only if the convo is accepted
-      allow create: if isSignedIn() && get(/databases/$(database)/documents/conversations/$(conversationId)).data.status == 'accepted' && request.auth.uid in get(/databases/$(database)/documents/conversations/$(conversationId)).data.participantIds && request.resource.data.senderId == request.auth.uid;
+      // A participant can create a message and they must be the sender, regardless of status
+      allow create: if isSignedIn() && request.auth.uid in get(/databases/$(database)/documents/conversations/$(conversationId)).data.participantIds && request.resource.data.senderId == request.auth.uid;
     }
     
     function isNewTextPost() {
