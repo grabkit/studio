@@ -3,13 +3,13 @@
 
 import { useParams, useRouter } from 'next/navigation';
 import { useFirebase, useMemoFirebase } from '@/firebase';
-import { collection, query, orderBy, doc, setDoc, serverTimestamp, updateDoc, writeBatch } from 'firebase/firestore';
+import { collection, query, orderBy, doc, setDoc, serverTimestamp, updateDoc, writeBatch, increment } from 'firebase/firestore';
 import { useCollection } from '@/firebase/firestore/use-collection';
 import { useDoc } from '@/firebase/firestore/use-doc';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
-import React, { useMemo } from 'react';
+import React, { useMemo, useEffect } from 'react';
 
 import AppLayout from '@/components/AppLayout';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
@@ -128,9 +128,13 @@ function MessageInput({ conversationId, conversation }: { conversationId: string
     });
 
     const onSubmit = async (values: z.infer<typeof messageFormSchema>) => {
-        if (!firestore || !user || !conversationId) return;
+        if (!firestore || !user || !conversationId || !conversation) return;
 
         form.reset();
+        
+        const peerId = conversation.participantIds.find(id => id !== user.uid);
+        if (!peerId) return;
+
 
         const messageRef = doc(collection(firestore, 'conversations', conversationId, 'messages'));
         const conversationRef = doc(firestore, 'conversations', conversationId);
@@ -146,11 +150,14 @@ function MessageInput({ conversationId, conversation }: { conversationId: string
             
             batch.set(messageRef, { ...newMessage, timestamp: serverTimestamp() });
             
-            // Update conversation's last message and timestamp
-            batch.update(conversationRef, {
+            // Update conversation's last message, timestamp, and peer's unread count
+            const updatePayload: any = {
                 lastMessage: values.text,
-                lastUpdated: serverTimestamp()
-            });
+                lastUpdated: serverTimestamp(),
+                [`unreadCounts.${peerId}`]: increment(1)
+            };
+            
+            batch.update(conversationRef, updatePayload);
 
             await batch.commit();
 
@@ -224,6 +231,26 @@ export default function ChatPage() {
 
     const { data: conversation, isLoading: isConversationLoading } = useDoc<Conversation>(conversationRef);
 
+     // Effect to mark messages as read
+    useEffect(() => {
+        if (firestore && user && conversationRef && conversation) {
+            // Check if current user has unread messages
+            const userUnreadCount = conversation.unreadCounts?.[user.uid] ?? 0;
+            
+            if (userUnreadCount > 0) {
+                const updatePayload = {
+                    [`unreadCounts.${user.uid}`]: 0,
+                    [`lastReadTimestamps.${user.uid}`]: serverTimestamp()
+                };
+                updateDoc(conversationRef, updatePayload).catch(error => {
+                    // This can fail if rules are restrictive, but we can fail silently.
+                    console.warn("Could not mark messages as read:", error.message);
+                });
+            }
+        }
+    }, [conversation, conversationRef, firestore, user]);
+
+
     return (
         <AppLayout showTopBar={false} showBottomNav={false}>
             <ChatHeader peerId={peerId} />
@@ -236,3 +263,5 @@ export default function ChatPage() {
         </AppLayout>
     )
 }
+
+    

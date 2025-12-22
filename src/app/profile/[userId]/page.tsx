@@ -121,31 +121,31 @@ export default function UserProfilePage() {
     };
 
     const handleStartConversation = async () => {
-        if (!currentUser || !firestore || !userId || currentUser.uid === userId) return;
-
+        if (!currentUser || !firestore || !userId || !user || currentUser.uid === userId) return;
+    
         const currentUserId = currentUser.uid;
         const conversationId = [currentUserId, userId].sort().join('_');
         const conversationRef = doc(firestore, 'conversations', conversationId);
-
+    
         try {
             const conversationSnap = await getDoc(conversationRef);
-
+    
             if (!conversationSnap.exists()) {
-                // Conversation doesn't exist, create a new pending request
-                const newConversationData = {
+                 const newConversationData = {
                     id: conversationId,
                     participantIds: [currentUserId, userId].sort(),
                     lastMessage: '',
                     lastUpdated: serverTimestamp(),
                     status: 'pending',
                     requesterId: currentUserId,
+                    unreadCounts: { [currentUserId]: 0, [userId]: 0 },
+                    lastReadTimestamps: { [currentUserId]: serverTimestamp() }
                 };
                 await setDoc(conversationRef, newConversationData);
             }
             
-            // If it exists (pending or accepted), just navigate.
             router.push(`/messages/${userId}`);
-
+    
         } catch (error: any) {
             console.error("Error handling conversation:", error);
             
@@ -281,3 +281,5 @@ export default function UserProfilePage() {
         </AppLayout>
     );
 }
+
+    

@@ -6,7 +6,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { getInitials, formatTimestamp } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
-import { MessageSquare, Mail } from "lucide-react";
+import { MessageSquare, Mail, Dot } from "lucide-react";
 import { useFirebase, useMemoFirebase } from "@/firebase";
 import { collection, query, where, orderBy, doc, updateDoc } from "firebase/firestore";
 import { useCollection, type WithId } from "@/firebase/firestore/use-collection";
@@ -16,6 +16,7 @@ import { useMemo } from "react";
 import Link from "next/link";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useToast } from "@/hooks/use-toast";
+import { cn } from "@/lib/utils";
 
 
 function ConversationItem({ conversation, currentUser }: { conversation: WithId<Conversation>, currentUser: User }) {
@@ -30,6 +31,15 @@ function ConversationItem({ conversation, currentUser }: { conversation: WithId<
     const { data: otherUser } = useDoc<User>(otherUserRef);
 
     const name = otherUser?.name || 'User';
+    const unreadCount = conversation.unreadCounts?.[currentUser.uid] ?? 0;
+    const hasUnread = unreadCount > 0;
+
+    const getUnreadMessageText = (count: number) => {
+        if (count === 1) return "1 new message";
+        if (count > 1 && count < 4) return `${count} new messages`;
+        if (count >= 4) return "4+ new messages";
+        return conversation.lastMessage || 'No messages yet';
+    }
 
     return (
         <Link href={`/messages/${otherParticipantId}`} className="p-4 border-b flex justify-between items-center hover:bg-accent cursor-pointer">
@@ -38,15 +48,25 @@ function ConversationItem({ conversation, currentUser }: { conversation: WithId<
                     <AvatarFallback>{getInitials(name)}</AvatarFallback>
                 </Avatar>
                 <div>
-                    <p className="font-semibold">{name}</p>
-                    <p className="text-sm text-muted-foreground truncate max-w-xs">{conversation.lastMessage || 'No messages yet'}</p>
+                    <p className={cn("font-semibold", hasUnread && "text-primary")}>{name}</p>
+                    <p className={cn(
+                        "text-sm text-muted-foreground truncate max-w-xs",
+                        hasUnread && "text-primary font-medium"
+                    )}>
+                        {getUnreadMessageText(unreadCount)}
+                    </p>
                 </div>
             </div>
-            {conversation.lastUpdated && (
-                <p className="text-xs text-muted-foreground self-start shrink-0">
-                    {formatTimestamp(conversation.lastUpdated.toDate())}
-                </p>
-            )}
+            <div className="flex flex-col items-end self-start shrink-0">
+                 {conversation.lastUpdated && (
+                    <p className="text-xs text-muted-foreground">
+                        {formatTimestamp(conversation.lastUpdated.toDate())}
+                    </p>
+                )}
+                {hasUnread && (
+                    <div className="w-2.5 h-2.5 bg-blue-500 rounded-full mt-2"></div>
+                )}
+            </div>
         </Link>
     );
 }
@@ -132,9 +152,14 @@ function ConversationsList({
     }
     
     if (type === 'chats') {
+         const sortedChats = [...conversations].sort((a, b) => {
+            if (!a.lastUpdated) return 1;
+            if (!b.lastUpdated) return -1;
+            return b.lastUpdated.toMillis() - a.lastUpdated.toMillis();
+        });
         return (
             <div className="divide-y">
-                {conversations.map(convo => <ConversationItem key={convo.id} conversation={convo} currentUser={currentUser} />)}
+                {sortedChats.map(convo => <ConversationItem key={convo.id} conversation={convo} currentUser={currentUser} />)}
             </div>
         )
     }
@@ -255,3 +280,5 @@ export default function MessagesPage() {
         </AppLayout>
     )
 }
+
+    
