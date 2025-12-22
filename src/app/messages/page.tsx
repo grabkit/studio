@@ -200,6 +200,8 @@ export default function MessagesPage() {
 
     const conversationsQuery = useMemoFirebase(() => {
         if (!user || !firestore) return null;
+        // This query is now secure and will be allowed by the new security rules.
+        // It only fetches conversations where the current user is a participant.
         return query(
             collection(firestore, 'conversations'),
             where('participantIds', 'array-contains', user.uid)
