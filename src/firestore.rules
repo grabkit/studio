@@ -58,7 +58,6 @@ service cloud.firestore {
       allow get: if !exists(/databases/$(database)/documents/conversations/$(conversationId)) || request.auth.uid in get(/databases/$(database)/documents/conversations/$(conversationId)).data.participantIds;
       
       // IMPORTANT: Allow list ONLY for queries that explicitly filter by the user's UID.
-      // This is the key to preventing users from listing all conversations.
       allow list: if isSignedIn() && request.query.where['participantIds']['array-contains'] == request.auth.uid;
       
       // A user can create a conversation if their UID is in the new document's participantIds
