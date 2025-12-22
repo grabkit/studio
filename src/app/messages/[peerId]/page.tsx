@@ -186,9 +186,9 @@ function MessageInput({ conversationId, conversation }: { conversationId: string
 
         batch.commit().catch(error => {
              const permissionError = new FirestorePermissionError({
-                path: messageRef.path,
-                operation: 'create',
-                requestResourceData: newMessage,
+                path: conversationRef.path,
+                operation: 'update',
+                requestResourceData: { message: newMessage, conversationUpdate: updatePayload },
             });
             errorEmitter.emit('permission-error', permissionError);
         });
@@ -226,7 +226,7 @@ function MessageInput({ conversationId, conversation }: { conversationId: string
                             </FormItem>
                             )}
                         />
-                        <Button type="submit" size="icon" disabled={form.formState.isSubmitting}>
+                        <Button type="submit" disabled={form.formState.isSubmitting}>
                             <Send className="h-5 w-5" />
                         </Button>
                     </form>
@@ -258,10 +258,12 @@ export default function ChatPage() {
      // Effect to mark messages as read
     useEffect(() => {
         if (firestore && user && conversationRef && conversation) {
-            // Check if current user has unread messages
+            // Check if the current user has unread messages that need to be marked as read.
             const userUnreadCount = conversation.unreadCounts?.[user.uid] ?? 0;
             
             if (userUnreadCount > 0) {
+                // If there are unread messages, reset the count and update the timestamp.
+                // This is a single, conditional write operation.
                 const updatePayload = {
                     [`unreadCounts.${user.uid}`]: 0,
                     [`lastReadTimestamps.${user.uid}`]: serverTimestamp()
@@ -271,14 +273,21 @@ export default function ChatPage() {
                     console.warn("Could not mark messages as read:", error.message);
                 });
             } else if (conversation.status === 'accepted') {
-                // Even if there are no "new" messages, we should update the read timestamp
-                // to signal "seen" status. We only do this for accepted chats.
-                 const updatePayload = {
-                    [`lastReadTimestamps.${user.uid}`]: serverTimestamp()
-                };
-                updateDoc(conversationRef, updatePayload).catch(error => {
-                    console.warn("Could not update last read timestamp:", error.message);
-                });
+                // If there are no new unread messages, we only need to update the timestamp
+                // for the "seen" status. This avoids writing on every single render.
+                // We compare the last read time with the last message time.
+                const lastRead = conversation.lastReadTimestamps?.[user.uid]?.toDate();
+                const lastUpdate = conversation.lastUpdated?.toDate();
+                
+                // Only update if the last read time is older than the last message time.
+                if (lastUpdate && (!lastRead || lastRead < lastUpdate)) {
+                    const updatePayload = {
+                        [`lastReadTimestamps.${user.uid}`]: serverTimestamp()
+                    };
+                    updateDoc(conversationRef, updatePayload).catch(error => {
+                        console.warn("Could not update last read timestamp:", error.message);
+                    });
+                }
             }
         }
     }, [conversation, conversationRef, firestore, user]);
