@@ -121,7 +121,7 @@ export default function UserProfilePage() {
     };
 
     const handleStartConversation = async () => {
-        if (!currentUser || !firestore || !userId || !user || currentUser.uid === userId) return;
+        if (!currentUser || !firestore || !userId || currentUser.uid === userId) return;
     
         const currentUserId = currentUser.uid;
         const conversationId = [currentUserId, userId].sort().join('_');
@@ -281,5 +281,7 @@ export default function UserProfilePage() {
         </AppLayout>
     );
 }
+
+    
 
     

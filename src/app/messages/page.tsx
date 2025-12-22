@@ -58,7 +58,7 @@ function ConversationItem({ conversation, currentUser }: { conversation: WithId<
                 </div>
             </div>
             <div className="flex flex-col items-end self-start shrink-0">
-                 {conversation.lastUpdated && (
+                 {conversation.lastUpdated?.toDate && (
                     <p className="text-xs text-muted-foreground">
                         {formatTimestamp(conversation.lastUpdated.toDate())}
                     </p>
@@ -153,8 +153,8 @@ function ConversationsList({
     
     if (type === 'chats') {
          const sortedChats = [...conversations].sort((a, b) => {
-            if (!a.lastUpdated) return 1;
-            if (!b.lastUpdated) return -1;
+            if (!a.lastUpdated?.toMillis) return 1;
+            if (!b.lastUpdated?.toMillis) return -1;
             return b.lastUpdated.toMillis() - a.lastUpdated.toMillis();
         });
         return (
@@ -280,5 +280,7 @@ export default function MessagesPage() {
         </AppLayout>
     )
 }
+
+    
 
     

@@ -9,7 +9,7 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Skeleton } from "@/components/ui/skeleton";
 import type { Post, Bookmark, PollOption, Notification, User, Conversation } from "@/lib/types";
-import { Heart, MessageCircle, Repeat, ArrowUpRight, MoreHorizontal, Edit, Trash2, Bookmark as BookmarkIcon, CheckCircle2, MessageSquare } from "lucide-react";
+import { Heart, MessageCircle, Repeat, ArrowUpRight, MoreHorizontal, Edit, Trash2, Bookmark as BookmarkIcon, CheckCircle2 } from "lucide-react";
 import { cn, formatTimestamp, getInitials } from "@/lib/utils";
 import { useToast } from "@/hooks/use-toast";
 import { FirestorePermissionError } from "@/firebase/errors";
@@ -476,3 +476,6 @@ export default function HomePage() {
     
 
 
+
+
+    
