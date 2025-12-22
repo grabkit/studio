@@ -69,9 +69,9 @@ service cloud.firestore {
 
 
     match /conversations/{conversationId}/messages/{messageId} {
-      // A participant of the conversation can read messages
-      allow read, list: if isSignedIn() && get(/databases/$(database)/documents/conversations/$(conversationId)).data.status == 'accepted' && request.auth.uid in get(/databases/$(database)/documents/conversations/$(conversationId)).data.participantIds;
-      // A participant can create a message and they must be the sender
+      // A participant of the conversation can read messages regardless of status
+      allow read, list: if isSignedIn() && request.auth.uid in get(/databases/$(database)/documents/conversations/$(conversationId)).data.participantIds;
+      // A participant can create a message and they must be the sender, but only if the convo is accepted
       allow create: if isSignedIn() && get(/databases/$(database)/documents/conversations/$(conversationId)).data.status == 'accepted' && request.auth.uid in get(/databases/$(database)/documents/conversations/$(conversationId)).data.participantIds && request.resource.data.senderId == request.auth.uid;
     }
     
