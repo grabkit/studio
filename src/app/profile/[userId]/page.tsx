@@ -5,7 +5,7 @@ import { useFirebase, useMemoFirebase } from "@/firebase";
 import { doc, collection, query, where, getDocs, serverTimestamp, setDoc, getDoc } from "firebase/firestore";
 import { useDoc } from "@/firebase/firestore/use-doc";
 import { useCollection } from "@/firebase/firestore/use-collection";
-import type { Post, User, UserPost, Bookmark } from "@/lib/types";
+import type { Post, User, UserPost } from "@/lib/types";
 import React, { useMemo, useState, useEffect } from "react";
 import Link from "next/link";
 import { useToast } from "@/hooks/use-toast";
@@ -15,7 +15,7 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Grid3x3, FileText, ArrowLeft, Bookmark as BookmarkIcon, MessageSquare, ArrowUpRight } from "lucide-react";
+import { FileText, ArrowLeft, MessageSquare, ArrowUpRight } from "lucide-react";
 import { getInitials } from "@/lib/utils";
 import { FirestorePermissionError } from "@/firebase/errors";
 import { errorEmitter } from "@/firebase/error-emitter";
@@ -194,9 +194,6 @@ export default function UserProfilePage() {
         }
     };
 
-    const allPosts = useMemo(() => posts?.filter(p => p.type !== 'poll') ?? [], [posts]);
-    const pollPosts = useMemo(() => posts?.filter(p => p.type === 'poll') ?? [], [posts]);
-
     if (userLoading || (currentUser && userId === currentUser.uid)) {
         return (
             <AppLayout showTopBar={false}>
@@ -293,15 +290,13 @@ export default function UserProfilePage() {
                 </div>
 
                 <Tabs defaultValue="posts" className="w-full">
-                    <TabsList className="grid w-full grid-cols-4">
+                    <TabsList className="grid w-full grid-cols-2">
                         <TabsTrigger value="posts">Posts</TabsTrigger>
-                        <TabsTrigger value="polls">Polls</TabsTrigger>
-                        <TabsTrigger value="reposts">Reposts</TabsTrigger>
                         <TabsTrigger value="replies">Replies</TabsTrigger>
                     </TabsList>
                     <TabsContent value="posts">
                         <PostGrid
-                            posts={allPosts}
+                            posts={posts}
                             isLoading={postsLoading}
                             emptyState={
                                 <div className="col-span-3 text-center py-16">
@@ -310,24 +305,6 @@ export default function UserProfilePage() {
                                 </div>
                             }
                         />
-                    </TabsContent>
-                    <TabsContent value="polls">
-                        <PostGrid
-                            posts={pollPosts}
-                            isLoading={postsLoading}
-                            emptyState={
-                                <div className="col-span-3 text-center py-16">
-                                    <h3 className="text-xl font-headline text-primary">No Polls Yet</h3>
-                                    <p className="text-muted-foreground">This user hasn't created any polls.</p>
-                                </div>
-                            }
-                        />
-                    </TabsContent>
-                    <TabsContent value="reposts">
-                        <div className="text-center py-16">
-                            <h3 className="text-xl font-headline text-primary">No Reposts Yet</h3>
-                            <p className="text-muted-foreground">Posts shared by this user will appear here.</p>
-                        </div>
                     </TabsContent>
                     <TabsContent value="replies">
                         <div className="text-center py-16">

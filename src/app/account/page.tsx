@@ -7,7 +7,7 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
 import { collection, query, where, orderBy, getDocs } from "firebase/firestore";
 import { useCollection } from "@/firebase/firestore/use-collection";
-import { Settings, LogOut, Grid3x3, FileText, Bookmark as BookmarkIcon } from "lucide-react";
+import { Settings, LogOut, FileText } from "lucide-react";
 import { signOut } from "firebase/auth";
 import { useToast } from "@/hooks/use-toast";
 import type { Post, UserPost, Bookmark } from "@/lib/types";
@@ -151,9 +151,6 @@ export default function AccountPage() {
     return `blur${uid.substring(uid.length - 6)}`;
   };
 
-  const allPosts = useMemo(() => posts?.filter(p => p.type !== 'poll') ?? [], [posts]);
-  const pollPosts = useMemo(() => posts?.filter(p => p.type === 'poll') ?? [], [posts]);
-
 
   return (
     <AppLayout showTopBar={false}>
@@ -223,15 +220,13 @@ export default function AccountPage() {
 
 
         <Tabs defaultValue="posts" className="w-full">
-            <TabsList className="grid w-full grid-cols-4">
+            <TabsList className="grid w-full grid-cols-2">
                 <TabsTrigger value="posts">Posts</TabsTrigger>
-                <TabsTrigger value="polls">Polls</TabsTrigger>
-                <TabsTrigger value="reposts">Reposts</TabsTrigger>
                 <TabsTrigger value="replies">Replies</TabsTrigger>
             </TabsList>
             <TabsContent value="posts">
                 <PostGrid
-                    posts={allPosts}
+                    posts={posts}
                     isLoading={postsLoading}
                     emptyState={
                         <div className="col-span-3 text-center py-16">
@@ -240,24 +235,6 @@ export default function AccountPage() {
                         </div>
                     }
                 />
-            </TabsContent>
-             <TabsContent value="polls">
-                <PostGrid
-                    posts={pollPosts}
-                    isLoading={postsLoading}
-                    emptyState={
-                        <div className="col-span-3 text-center py-16">
-                            <h3 className="text-xl font-headline text-primary">No Polls Yet</h3>
-                            <p className="text-muted-foreground">Create a poll to get feedback.</p>
-                        </div>
-                    }
-                />
-            </TabsContent>
-            <TabsContent value="reposts">
-                 <div className="text-center py-16">
-                    <h3 className="text-xl font-headline text-primary">No Reposts Yet</h3>
-                    <p className="text-muted-foreground">Posts you share will appear here.</p>
-                </div>
             </TabsContent>
              <TabsContent value="replies">
                  <div className="text-center py-16">
