@@ -4,7 +4,7 @@
 
 import { useParams, useRouter } from "next/navigation";
 import { useFirebase, useMemoFirebase } from "@/firebase";
-import { doc, collection, query, where, getDocs, serverTimestamp, setDoc, getDoc } from "firebase/firestore";
+import { doc, collection, query, where, getDocs, serverTimestamp, setDoc, getDoc } from "firestore";
 import { useDoc } from "@/firebase/firestore/use-doc";
 import { useCollection } from "@/firebase/firestore/use-collection";
 import type { Post, User, UserPost, Bookmark } from "@/lib/types";
@@ -17,7 +17,7 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Grid3x3, FileText, ArrowLeft, Bookmark as BookmarkIcon, MessageSquare } from "lucide-react";
+import { Grid3x3, FileText, ArrowLeft, Bookmark as BookmarkIcon, MessageSquare, ArrowUpRight } from "lucide-react";
 import { getInitials } from "@/lib/utils";
 import { FirestorePermissionError } from "@/firebase/errors";
 import { errorEmitter } from "@/firebase/error-emitter";
@@ -168,6 +168,33 @@ export default function UserProfilePage() {
             });
         }
     };
+    
+    const handleShareProfile = async () => {
+        if (!user) return;
+        const shareData = {
+            title: `Check out ${user.name || formatUserId(user.id)} on Blur`,
+            text: `View ${user.name || formatUserId(user.id)}'s profile on Blur.`,
+            url: window.location.href,
+        };
+        try {
+            if (navigator.share) {
+                await navigator.share(shareData);
+            } else {
+                await navigator.clipboard.writeText(shareData.url);
+                toast({
+                    title: "Profile Link Copied",
+                    description: "Link to this profile has been copied to your clipboard.",
+                });
+            }
+        } catch (error) {
+            console.error("Error sharing profile:", error);
+            toast({
+                variant: "destructive",
+                title: "Could not share",
+                description: "There was an error trying to share this profile.",
+            });
+        }
+    };
 
 
     if (userLoading || (currentUser && userId === currentUser.uid)) {
@@ -256,9 +283,12 @@ export default function UserProfilePage() {
                     {/* Hiding email for privacy on public profiles */}
                 </div>
                 
-                <div className="mb-4">
-                    <Button onClick={handleStartConversation} className="w-full">
+                 <div className="mb-4 flex items-center space-x-2">
+                    <Button onClick={handleStartConversation} className="flex-1">
                         <MessageSquare className="mr-2 h-4 w-4" /> Message
+                    </Button>
+                    <Button onClick={handleShareProfile} variant="secondary" className="flex-1">
+                        <ArrowUpRight className="mr-2 h-4 w-4" /> Share Profile
                     </Button>
                 </div>
 
@@ -289,4 +319,5 @@ export default function UserProfilePage() {
     
 
     
+
 
