@@ -65,6 +65,8 @@ service cloud.firestore {
       allow read, list: if isSignedIn() && request.auth.uid in get(/databases/$(database)/documents/conversations/$(conversationId)).data.participantIds;
       // A participant can create a message and they must be the sender, regardless of status
       allow create: if isSignedIn() && request.auth.uid in get(/databases/$(database)/documents/conversations/$(conversationId)).data.participantIds && request.resource.data.senderId == request.auth.uid;
+      // A user can delete their own message.
+      allow delete: if isSignedIn() && isOwner(resource.data.senderId);
     }
     
     function isNewTextPost() {
