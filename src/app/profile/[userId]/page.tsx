@@ -284,11 +284,11 @@ export default function UserProfilePage() {
                 </div>
                 
                  <div className="mb-4 flex items-center space-x-2">
-                    <Button onClick={handleStartConversation} className="flex-1">
-                        <MessageSquare className="mr-2 h-4 w-4" /> Message
-                    </Button>
                     <Button onClick={handleShareProfile} variant="secondary" className="flex-1">
                         <ArrowUpRight className="mr-2 h-4 w-4" /> Share Profile
+                    </Button>
+                    <Button onClick={handleStartConversation} className="flex-1">
+                        <MessageSquare className="mr-2 h-4 w-4" /> Message
                     </Button>
                 </div>
 
