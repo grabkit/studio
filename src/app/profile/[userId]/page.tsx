@@ -1,4 +1,5 @@
 
+
 "use client";
 
 import { useParams, useRouter } from "next/navigation";
@@ -127,36 +128,36 @@ export default function UserProfilePage() {
         const conversationId = [currentUserId, userId].sort().join('_');
         const conversationRef = doc(firestore, 'conversations', conversationId);
     
-        // This is the data for a new conversation.
-        const newConversationData = {
-            id: conversationId,
-            participantIds: [currentUserId, userId].sort(),
-            lastMessage: '',
-            lastUpdated: serverTimestamp(),
-            status: 'pending',
-            requesterId: currentUserId,
-            unreadCounts: { [currentUserId]: 0, [userId]: 0 },
-            lastReadTimestamps: { [currentUserId]: serverTimestamp() }
-        };
-
         try {
-            // Use setDoc with { merge: true }.
-            // If the document doesn't exist, it will be created with newConversationData.
-            // If it already exists, this operation does nothing because we are not changing any fields.
-            // This avoids the need for a `getDoc` call first.
-            await setDoc(conversationRef, newConversationData, { merge: true });
-            
-            // After ensuring the conversation doc exists (or is created), navigate to the chat.
-            router.push(`/messages/${userId}`);
-    
+            const conversationSnap = await getDoc(conversationRef);
+
+            if (conversationSnap.exists()) {
+                // If conversation already exists (pending or accepted), just navigate.
+                router.push(`/messages/${userId}`);
+            } else {
+                // If it doesn't exist, create a new pending request.
+                const newConversationData = {
+                    id: conversationId,
+                    participantIds: [currentUserId, userId].sort(),
+                    lastMessage: '',
+                    lastUpdated: serverTimestamp(),
+                    status: 'pending',
+                    requesterId: currentUserId,
+                    unreadCounts: { [currentUserId]: 0, [userId]: 0 },
+                    lastReadTimestamps: { [currentUserId]: serverTimestamp() }
+                };
+                
+                await setDoc(conversationRef, newConversationData);
+                router.push(`/messages/${userId}`);
+            }
         } catch (error: any) {
             console.error("Error handling conversation:", error);
             
-            // The `create` operation is now the one that might fail due to rules.
+            // This error is more likely to happen on the 'setDoc' (create) operation
             const permissionError = new FirestorePermissionError({
                 path: conversationRef.path,
                 operation: 'create', // We are attempting to create if it doesn't exist.
-                requestResourceData: newConversationData
+                requestResourceData: { status: 'pending' } // A sample of what we tried to create
             });
             errorEmitter.emit('permission-error', permissionError);
             
@@ -288,3 +289,4 @@ export default function UserProfilePage() {
     
 
     
+
