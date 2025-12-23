@@ -44,9 +44,9 @@ function MessageBubble({ message, isOwnMessage }: { message: WithId<Message>, is
     }
 
     return (
-        <DropdownMenu>
-            <DropdownMenuTrigger asChild>
-                 <div className={cn("flex items-end gap-2 group", isOwnMessage ? "justify-end" : "justify-start")}>
+        <div className={cn("flex items-end gap-2 group", isOwnMessage ? "justify-end" : "justify-start")}>
+            <DropdownMenu>
+                <DropdownMenuTrigger asChild>
                     <div className={cn(
                         "max-w-[70%] rounded-2xl px-4 py-2 cursor-pointer",
                         isOwnMessage ? "bg-primary text-primary-foreground rounded-br-none" : "bg-secondary rounded-bl-none"
@@ -58,29 +58,29 @@ function MessageBubble({ message, isOwnMessage }: { message: WithId<Message>, is
                              </p>
                          )}
                     </div>
-                </div>
-            </DropdownMenuTrigger>
-            <DropdownMenuContent align={isOwnMessage ? "end" : "start"} className="w-56">
-                <DropdownMenuItem>
-                    <Reply className="mr-2 h-4 w-4" />
-                    <span>Reply</span>
-                </DropdownMenuItem>
-                 <DropdownMenuItem>
-                    <Forward className="mr-2 h-4 w-4" />
-                    <span>Forward</span>
-                </DropdownMenuItem>
-                <DropdownMenuItem onClick={handleCopy}>
-                    <Copy className="mr-2 h-4 w-4" />
-                    <span>Copy</span>
-                </DropdownMenuItem>
-                {isOwnMessage && (
-                     <DropdownMenuItem className="text-destructive">
-                        <Trash2 className="mr-2 h-4 w-4" />
-                        <span>Unsend</span>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align={isOwnMessage ? "end" : "start"} className="w-56">
+                    <DropdownMenuItem>
+                        <Reply className="mr-2 h-4 w-4" />
+                        <span>Reply</span>
                     </DropdownMenuItem>
-                )}
-            </DropdownMenuContent>
-        </DropdownMenu>
+                     <DropdownMenuItem>
+                        <Forward className="mr-2 h-4 w-4" />
+                        <span>Forward</span>
+                    </DropdownMenuItem>
+                    <DropdownMenuItem onClick={handleCopy}>
+                        <Copy className="mr-2 h-4 w-4" />
+                        <span>Copy</span>
+                    </DropdownMenuItem>
+                    {isOwnMessage && (
+                         <DropdownMenuItem className="text-destructive">
+                            <Trash2 className="mr-2 h-4 w-4" />
+                            <span>Unsend</span>
+                        </DropdownMenuItem>
+                    )}
+                </DropdownMenuContent>
+            </DropdownMenu>
+        </div>
     )
 }
 
