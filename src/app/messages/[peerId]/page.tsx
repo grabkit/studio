@@ -332,6 +332,7 @@ function MessageInput({ conversationId, conversation, replyingTo, onCancelReply 
 export default function ChatPage() {
     const { firestore, user } = useFirebase();
     const params = useParams();
+    const router = useRouter();
     const peerId = params.peerId as string;
     const [replyingTo, setReplyingTo] = useState<WithId<Message> | null>(null);
 
@@ -372,6 +373,21 @@ export default function ChatPage() {
         });
 
     }, [userUnreadCount, conversationRef, firestore, user]);
+
+    if (!user || isConversationLoading) {
+      return (
+        <AppLayout showTopBar={false} showBottomNav={false}>
+          <ChatHeader peerId={peerId} />
+          <div className="pt-14">
+            <div className="space-y-4 p-4">
+                <Skeleton className="h-10 w-3/5" />
+                <Skeleton className="h-10 w-3/5 ml-auto" />
+                <Skeleton className="h-16 w-4/5" />
+            </div>
+          </div>
+        </AppLayout>
+      )
+    }
 
 
     return (

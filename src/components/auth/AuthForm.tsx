@@ -208,7 +208,7 @@ export default function AuthForm() {
                         <FormControl>
                             <div className="relative">
                                 <UserIcon className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-muted-foreground" />
-                                <Input placeholder="Name" {...field} className="h-12 text-base pl-10 rounded-full bg-secondary" />
+                                <Input placeholder="Name" {...field} className="h-12 text-base pl-10 rounded-full" />
                             </div>
                         </FormControl>
                       <FormMessage />
@@ -226,7 +226,7 @@ export default function AuthForm() {
                   <FormControl>
                     <div className="relative">
                         <Mail className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-muted-foreground" />
-                        <Input type="email" placeholder="Email" {...field} className="h-12 text-base pl-10 rounded-full bg-secondary" />
+                        <Input type="email" placeholder="Email" {...field} className="h-12 text-base pl-10 rounded-full" />
                     </div>
                   </FormControl>
                   <FormMessage />
@@ -242,7 +242,7 @@ export default function AuthForm() {
                   <FormControl>
                     <div className="relative">
                         <Lock className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-muted-foreground" />
-                        <Input type="password" placeholder="Password" {...field} className="h-12 text-base pl-10 rounded-full bg-secondary" />
+                        <Input type="password" placeholder="Password" {...field} className="h-12 text-base pl-10 rounded-full" />
                     </div>
                   </FormControl>
                   <FormMessage />
