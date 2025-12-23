@@ -3,7 +3,7 @@
 
 import { useParams, useRouter } from 'next/navigation';
 import { useFirebase, useMemoFirebase } from '@/firebase';
-import { collection, query, orderBy, doc, setDoc, serverTimestamp, updateDoc, writeBatch, increment } from 'firebase/firestore';
+import { collection, query, orderBy, doc, setDoc, serverTimestamp, updateDoc, writeBatch, increment, deleteDoc } from 'firebase/firestore';
 import { useCollection } from '@/firebase/firestore/use-collection';
 import { useDoc } from '@/firebase/firestore/use-doc';
 import { useForm } from 'react-hook-form';
@@ -35,12 +35,31 @@ const formatUserId = (uid: string | undefined) => {
     return `blur${uid.substring(uid.length - 6)}`;
 };
 
-function MessageBubble({ message, isOwnMessage }: { message: WithId<Message>, isOwnMessage: boolean }) {
+function MessageBubble({ message, isOwnMessage, conversationId }: { message: WithId<Message>, isOwnMessage: boolean, conversationId: string }) {
     const { toast } = useToast();
+    const { firestore } = useFirebase();
 
     const handleCopy = () => {
         navigator.clipboard.writeText(message.text);
         toast({ title: "Copied to clipboard" });
+    }
+
+    const handleUnsend = () => {
+        if (!firestore || !isOwnMessage) return;
+
+        const messageRef = doc(firestore, 'conversations', conversationId, 'messages', message.id);
+        deleteDoc(messageRef).catch(serverError => {
+            const permissionError = new FirestorePermissionError({
+                path: messageRef.path,
+                operation: 'delete',
+            });
+            errorEmitter.emit('permission-error', permissionError);
+             toast({
+                variant: "destructive",
+                title: "Error",
+                description: "Could not unsend message.",
+            });
+        });
     }
 
     return (
@@ -73,7 +92,7 @@ function MessageBubble({ message, isOwnMessage }: { message: WithId<Message>, is
                         <span>Copy</span>
                     </DropdownMenuItem>
                     {isOwnMessage && (
-                         <DropdownMenuItem className="text-destructive">
+                         <DropdownMenuItem className="text-destructive" onClick={handleUnsend}>
                             <Trash2 className="mr-2 h-4 w-4" />
                             <span>Unsend</span>
                         </DropdownMenuItem>
@@ -167,7 +186,7 @@ function ChatMessages({ conversationId, conversation }: { conversationId: string
         <div className="p-4">
             <div className="space-y-4">
                 {messages?.map(message => (
-                    <MessageBubble key={message.id} message={message} isOwnMessage={message.senderId === user?.uid} />
+                    <MessageBubble key={message.id} message={message} isOwnMessage={message.senderId === user?.uid} conversationId={conversationId} />
                 ))}
             </div>
              <div ref={messagesEndRef} />
@@ -329,3 +348,5 @@ export default function ChatPage() {
         </AppLayout>
     )
 }
+
+    
