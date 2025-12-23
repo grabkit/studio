@@ -64,47 +64,47 @@ function MessageBubble({ message, isOwnMessage, conversationId, onSetReply }: { 
 
     return (
         <div className={cn("flex items-end gap-2 group", isOwnMessage ? "justify-end" : "justify-start")}>
-            <div className={cn(
-                "max-w-[70%] rounded-2xl px-3 py-2",
-                isOwnMessage ? "bg-primary text-primary-foreground rounded-br-none" : "bg-secondary rounded-bl-none"
-            )}>
-                 {message.replyToMessageText && (
-                    <div className="border-l-2 border-primary-foreground/50 pl-2 mb-1 opacity-80">
-                        <p className="text-xs font-semibold truncate">{message.senderId === (isOwnMessage ? message.senderId : '') ? "You" : formatUserId(message.senderId)}</p>
-                        <p className="text-xs truncate">{message.replyToMessageText}</p>
-                    </div>
-                )}
-                <DropdownMenu>
-                    <DropdownMenuTrigger asChild>
-                       <p className="text-sm whitespace-pre-wrap cursor-pointer">{message.text}</p>
-                    </DropdownMenuTrigger>
-                    <DropdownMenuContent align={isOwnMessage ? "end" : "start"} className="w-56">
-                        <DropdownMenuItem onClick={() => onSetReply(message)}>
-                            <Reply className="mr-2 h-4 w-4" />
-                            <span>Reply</span>
-                        </DropdownMenuItem>
-                         <DropdownMenuItem>
-                            <Forward className="mr-2 h-4 w-4" />
-                            <span>Forward</span>
-                        </DropdownMenuItem>
-                        <DropdownMenuItem onClick={handleCopy}>
-                            <Copy className="mr-2 h-4 w-4" />
-                            <span>Copy</span>
-                        </DropdownMenuItem>
-                        {isOwnMessage && (
-                             <DropdownMenuItem className="text-destructive" onClick={handleUnsend}>
-                                <Trash2 className="mr-2 h-4 w-4" />
-                                <span>Unsend</span>
-                            </DropdownMenuItem>
+            <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                    <div className={cn(
+                        "max-w-[70%] rounded-2xl px-3 py-2 cursor-pointer",
+                        isOwnMessage ? "bg-primary text-primary-foreground rounded-br-none" : "bg-secondary rounded-bl-none"
+                    )}>
+                        {message.replyToMessageText && (
+                            <div className="border-l-2 border-primary-foreground/50 pl-2 mb-1 opacity-80">
+                                <p className="text-xs font-semibold truncate">{formatUserId(message.senderId)}</p>
+                                <p className="text-xs truncate">{message.replyToMessageText}</p>
+                            </div>
                         )}
-                    </DropdownMenuContent>
-                </DropdownMenu>
-                 {message.timestamp?.toDate && (
-                     <p className={cn("text-xs mt-1 text-right", isOwnMessage ? "text-primary-foreground/70" : "text-muted-foreground")}>
-                        {formatTimestamp(message.timestamp.toDate())}
-                     </p>
-                 )}
-            </div>
+                        <p className="text-sm whitespace-pre-wrap">{message.text}</p>
+                        {message.timestamp?.toDate && (
+                            <p className={cn("text-xs mt-1 text-right", isOwnMessage ? "text-primary-foreground/70" : "text-muted-foreground")}>
+                                {formatTimestamp(message.timestamp.toDate())}
+                            </p>
+                        )}
+                    </div>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align={isOwnMessage ? "end" : "start"} className="w-56">
+                    <DropdownMenuItem onClick={() => onSetReply(message)}>
+                        <Reply className="mr-2 h-4 w-4" />
+                        <span>Reply</span>
+                    </DropdownMenuItem>
+                        <DropdownMenuItem>
+                        <Forward className="mr-2 h-4 w-4" />
+                        <span>Forward</span>
+                    </DropdownMenuItem>
+                    <DropdownMenuItem onClick={handleCopy}>
+                        <Copy className="mr-2 h-4 w-4" />
+                        <span>Copy</span>
+                    </DropdownMenuItem>
+                    {isOwnMessage && (
+                            <DropdownMenuItem className="text-destructive" onClick={handleUnsend}>
+                            <Trash2 className="mr-2 h-4 w-4" />
+                            <span>Unsend</span>
+                        </DropdownMenuItem>
+                    )}
+                </DropdownMenuContent>
+            </DropdownMenu>
         </div>
     )
 }
@@ -225,7 +225,7 @@ function MessageInput({ conversationId, conversation, replyingTo, onCancelReply 
         const messageRef = doc(collection(firestore, 'conversations', conversationId, 'messages'));
         const conversationRef = doc(firestore, 'conversations', conversationId);
 
-        const newMessage: Omit<Message, 'timestamp'> = {
+        const newMessage: Omit<Message, 'timestamp' | 'id'> & { id?: string } = {
             id: messageRef.id,
             senderId: user.uid,
             text: values.text,
@@ -369,7 +369,7 @@ export default function ChatPage() {
         <AppLayout showTopBar={false} showBottomNav={false}>
             <ChatHeader peerId={peerId} />
 
-            <div className="pt-14 pb-32">
+            <div className="pt-14 pb-20">
                 {conversationId && <ChatMessages conversationId={conversationId} conversation={conversation} onSetReply={handleSetReply} />}
             </div>
 
