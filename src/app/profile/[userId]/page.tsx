@@ -200,7 +200,7 @@ export default function UserProfilePage() {
     if (userLoading || (currentUser && userId === currentUser.uid)) {
         return (
             <AppLayout showTopBar={false}>
-                 <div className="grid grid-cols-3 items-center mb-6 px-2">
+                 <div className="grid grid-cols-3 items-center mb-6 px-2 -ml-2">
                     <Button variant="ghost" size="icon" onClick={() => router.back()}>
                         <ArrowLeft className="h-6 w-6" />
                     </Button>
@@ -229,7 +229,7 @@ export default function UserProfilePage() {
     return (
         <AppLayout showTopBar={false}>
             <div className="px-4">
-                <div className="grid grid-cols-3 items-center mb-6">
+                <div className="grid grid-cols-3 items-center mb-6 -ml-2">
                      <Button variant="ghost" size="icon" onClick={() => router.back()}>
                         <ArrowLeft className="h-6 w-6" />
                     </Button>
@@ -284,10 +284,10 @@ export default function UserProfilePage() {
                 </div>
                 
                  <div className="mb-4 flex items-center space-x-2">
-                    <Button onClick={handleShareProfile} className="flex-1">
+                    <Button onClick={handleShareProfile} variant="secondary" className="flex-1">
                         <ArrowUpRight className="mr-2 h-4 w-4" /> Share Profile
                     </Button>
-                    <Button onClick={handleStartConversation} variant="secondary" className="flex-1">
+                    <Button onClick={handleStartConversation}  className="flex-1">
                         <MessageSquare className="mr-2 h-4 w-4" /> Message
                     </Button>
                 </div>
