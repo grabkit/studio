@@ -31,7 +31,8 @@ service cloud.firestore {
     }
 
     match /posts/{postId} {
-      allow get, list: if isSignedIn();
+      allow get: if isSignedIn();
+      allow list: if isSignedIn() && (request.query.limit <= 50);
       // Allow create if the user is signed in and the new data is a valid text post OR a valid poll post.
       allow create: if isSignedIn() && (isNewTextPost() || isNewPollPost());
       allow delete: if isSignedIn() && isOwner(resource.data.authorId);
