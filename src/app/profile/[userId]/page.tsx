@@ -1,3 +1,4 @@
+
 "use client";
 
 import { useParams, useRouter } from "next/navigation";
@@ -19,61 +20,8 @@ import { FileText, ArrowLeft, MessageSquare, ArrowUpRight } from "lucide-react";
 import { getInitials } from "@/lib/utils";
 import { FirestorePermissionError } from "@/firebase/errors";
 import { errorEmitter } from "@/firebase/error-emitter";
-
-const PostGrid = ({ posts, isLoading, emptyState }: { posts: (Post | UserPost)[] | null, isLoading: boolean, emptyState: React.ReactNode }) => {
-    return (
-        <>
-            <div className="grid grid-cols-3 gap-1 mt-1">
-                {isLoading && Array.from({length: 6}).map((_, i) => (
-                    <Skeleton key={i} className="aspect-square w-full" />
-                ))}
-                {posts?.map((post) => (
-                <Link key={post.id} href={`/post/${post.id}`}>
-                    <div className="aspect-square bg-muted flex items-center justify-center hover:bg-accent transition-colors">
-                        <FileText className="h-8 w-8 text-muted-foreground" />
-                    </div>
-                </Link>
-                ))}
-            </div>
-            {!isLoading && posts?.length === 0 && emptyState}
-        </>
-    )
-}
-
-function ProfilePageSkeleton() {
-    return (
-        <div className="px-4">
-             <div className="flex items-center space-x-5 mb-6">
-                <Skeleton className="h-20 w-20 md:h-24 md:w-24 rounded-full" />
-                 <div className="flex-1 flex justify-around text-center">
-                    <div>
-                        <div className="font-bold text-lg"><Skeleton className="h-6 w-8 mx-auto" /></div>
-                        <p className="text-sm text-muted-foreground">Posts</p>
-                    </div>
-                    <div>
-                        <div className="font-bold text-lg"><Skeleton className="h-6 w-8 mx-auto" /></div>
-                        <p className="text-sm text-muted-foreground">Likes</p>
-                    </div>
-                     <div>
-                        <div className="font-bold text-lg"><Skeleton className="h-6 w-8 mx-auto" /></div>
-                        <p className="text-sm text-muted-foreground">Comments</p>
-                    </div>
-                </div>
-            </div>
-            <div className="mb-4">
-                 <Skeleton className="h-5 w-32 mb-2" />
-                 <Skeleton className="h-4 w-48" />
-            </div>
-             <Skeleton className="h-px w-full" />
-             <div className="grid grid-cols-3 gap-1 mt-4">
-                {Array.from({length: 3}).map((_, i) => (
-                    <Skeleton key={i} className="aspect-square w-full" />
-                ))}
-            </div>
-        </div>
-    )
-}
-
+import { PostItem as HomePostItem, PostSkeleton } from "@/app/home/page";
+import type { Bookmark } from "@/lib/types";
 
 export default function UserProfilePage() {
     const params = useParams();
@@ -97,12 +45,21 @@ export default function UserProfilePage() {
         if (!firestore || !userId) return null;
         return query(
         collection(firestore, "posts"),
-        where("authorId", "==", userId)
+            where("authorId", "==", userId),
+            orderBy("timestamp", "desc")
         );
     }, [firestore, userId]);
 
     const { data: user, isLoading: userLoading } = useDoc<User>(userRef);
     const { data: posts, isLoading: postsLoading } = useCollection<Post>(userPostsQuery);
+
+    const bookmarksQuery = useMemoFirebase(() => {
+        if (!firestore || !currentUser) return null;
+        return collection(firestore, 'users', currentUser.uid, 'bookmarks');
+    }, [firestore, currentUser]);
+
+    const { data: bookmarks, isLoading: bookmarksLoading } = useCollection<Bookmark>(bookmarksQuery);
+
 
     const totalLikes = useMemo(() => {
         if (!posts) return 0;
@@ -205,7 +162,33 @@ export default function UserProfilePage() {
                         <Skeleton className="h-8 w-32 mx-auto" />
                     </h2>
                 </div>
-                <ProfilePageSkeleton />
+                <div className="px-4">
+                    <div className="flex items-center space-x-5 mb-6">
+                        <Skeleton className="h-20 w-20 md:h-24 md:w-24 rounded-full" />
+                        <div className="flex-1 flex justify-around text-center">
+                            <div>
+                                <div className="font-bold text-lg"><Skeleton className="h-6 w-8 mx-auto" /></div>
+                                <p className="text-sm text-muted-foreground">Posts</p>
+                            </div>
+                            <div>
+                                <div className="font-bold text-lg"><Skeleton className="h-6 w-8 mx-auto" /></div>
+                                <p className="text-sm text-muted-foreground">Likes</p>
+                            </div>
+                            <div>
+                                <div className="font-bold text-lg"><Skeleton className="h-6 w-8 mx-auto" /></div>
+                                <p className="text-sm text-muted-foreground">Comments</p>
+                            </div>
+                        </div>
+                    </div>
+                    <div className="mb-4">
+                        <Skeleton className="h-5 w-32 mb-2" />
+                        <Skeleton className="h-4 w-48" />
+                    </div>
+                    <Skeleton className="h-px w-full" />
+                    <div className="divide-y border-b">
+                        <PostSkeleton />
+                    </div>
+                </div>
             </AppLayout>
         )
     }
@@ -295,16 +278,23 @@ export default function UserProfilePage() {
                         <TabsTrigger value="replies">Replies</TabsTrigger>
                     </TabsList>
                     <TabsContent value="posts">
-                        <PostGrid
-                            posts={posts}
-                            isLoading={postsLoading}
-                            emptyState={
-                                <div className="col-span-3 text-center py-16">
+                       <div className="divide-y border-b">
+                            {(postsLoading || bookmarksLoading) && (
+                                <>
+                                    <PostSkeleton />
+                                    <PostSkeleton />
+                                </>
+                            )}
+                            {!(postsLoading || bookmarksLoading) && posts?.length === 0 && (
+                                <div className="text-center py-16">
                                     <h3 className="text-xl font-headline text-primary">No Posts Yet</h3>
                                     <p className="text-muted-foreground">This user hasn't posted anything.</p>
                                 </div>
-                            }
-                        />
+                            )}
+                            {posts?.map((post) => (
+                                <HomePostItem key={post.id} post={post} bookmarks={bookmarks} />
+                            ))}
+                        </div>
                     </TabsContent>
                     <TabsContent value="replies">
                         <div className="text-center py-16">

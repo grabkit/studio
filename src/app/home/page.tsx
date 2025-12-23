@@ -162,7 +162,7 @@ function PollComponent({ post, user }: { post: WithId<Post>, user: any }) {
     );
 }
 
-function PostItem({ post, bookmarks }: { post: WithId<Post>, bookmarks: WithId<Bookmark>[] | null }) {
+export function PostItem({ post, bookmarks }: { post: WithId<Post>, bookmarks: WithId<Bookmark>[] | null }) {
   const { user, firestore } = useFirebase();
   const { toast } = useToast();
   const router = useRouter();
@@ -398,7 +398,7 @@ function PostItem({ post, bookmarks }: { post: WithId<Post>, bookmarks: WithId<B
   );
 }
 
-function PostSkeleton() {
+export function PostSkeleton() {
   return (
     <Card className="w-full shadow-none border-x-0 border-t-0 rounded-none">
       <CardContent className="p-4">
