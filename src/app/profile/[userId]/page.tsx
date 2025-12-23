@@ -3,7 +3,7 @@
 
 import { useParams, useRouter } from "next/navigation";
 import { useFirebase, useMemoFirebase } from "@/firebase";
-import { doc, collection, query, where, getDocs, serverTimestamp, setDoc, getDoc } from "firebase/firestore";
+import { doc, collection, query, where, getDocs, serverTimestamp, setDoc, getDoc, orderBy } from "firebase/firestore";
 import { useDoc } from "@/firebase/firestore/use-doc";
 import { useCollection } from "@/firebase/firestore/use-collection";
 import type { Post, User, UserPost } from "@/lib/types";
@@ -308,4 +308,5 @@ export default function UserProfilePage() {
             </div>
         </AppLayout>
     );
-}
+
+    
