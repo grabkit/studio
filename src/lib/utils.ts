@@ -37,6 +37,14 @@ export function formatTimestamp(date: Date): string {
   return distance;
 }
 
+export function formatMessageTimestamp(date: Date): string {
+  return new Intl.DateTimeFormat(undefined, {
+    hour: 'numeric',
+    minute: '2-digit',
+    hour12: true,
+  }).format(date);
+}
+
 
 export const getInitials = (name: string | null | undefined) => {
     if (!name) return "U";

@@ -18,7 +18,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { Form, FormControl, FormField, FormItem, FormMessage } from '@/components/ui/form';
 import { Skeleton } from '@/components/ui/skeleton';
 import { ArrowLeft, Send, Reply, Forward, Copy, Trash2, X } from 'lucide-react';
-import { cn, getInitials, formatTimestamp } from '@/lib/utils';
+import { cn, getInitials, formatMessageTimestamp } from '@/lib/utils';
 import type { Conversation, Message, User } from '@/lib/types';
 import { WithId } from '@/firebase/firestore/use-collection';
 import { FirestorePermissionError } from '@/firebase/errors';
@@ -68,7 +68,7 @@ function MessageBubble({ message, isOwnMessage, conversationId, onSetReply }: { 
                 "flex items-center",
                 isOwnMessage ? "flex-row-reverse" : "flex-row"
             )}>
-                 <DropdownMenu>
+                <DropdownMenu>
                     <DropdownMenuTrigger asChild>
                          <div className={cn(
                             "max-w-[70%] rounded-2xl px-3 py-2 cursor-pointer",
@@ -83,7 +83,7 @@ function MessageBubble({ message, isOwnMessage, conversationId, onSetReply }: { 
                             <p className="text-sm whitespace-pre-wrap">{message.text}</p>
                             {message.timestamp?.toDate && (
                                 <p className={cn("text-xs mt-1 text-right", isOwnMessage ? "text-primary-foreground/70" : "text-muted-foreground")}>
-                                    {formatTimestamp(message.timestamp.toDate())}
+                                    {formatMessageTimestamp(message.timestamp.toDate())}
                                 </p>
                             )}
                         </div>
@@ -375,7 +375,7 @@ export default function ChatPage() {
         <AppLayout showTopBar={false} showBottomNav={false}>
             <ChatHeader peerId={peerId} />
 
-            <div>
+            <div className="pt-14">
                 {conversationId && <ChatMessages conversationId={conversationId} conversation={conversation} onSetReply={handleSetReply} replyingTo={replyingTo} />}
             </div>
 
