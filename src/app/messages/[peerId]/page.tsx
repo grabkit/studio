@@ -321,7 +321,7 @@ export default function ChatPage() {
         <AppLayout showTopBar={false} showBottomNav={false}>
             <ChatHeader peerId={peerId} />
 
-            <div className="pt-14 pb-24">
+            <div className="pt-14 pb-20">
                 {conversationId && <ChatMessages conversationId={conversationId} conversation={conversation} />}
             </div>
 
