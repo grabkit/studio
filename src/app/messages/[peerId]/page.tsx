@@ -71,7 +71,7 @@ function MessageBubble({ message, isOwnMessage, conversationId, onSetReply }: { 
                 <DropdownMenu>
                     <DropdownMenuTrigger asChild>
                          <div className={cn(
-                            "max-w-[70%] rounded-2xl px-3 py-2 cursor-pointer",
+                            "max-w-[70%] max-w-fit rounded-2xl px-3 py-2 cursor-pointer",
                             isOwnMessage ? "bg-primary text-primary-foreground rounded-br-none" : "bg-secondary rounded-bl-none"
                         )}>
                             {message.replyToMessageText && (
@@ -206,7 +206,7 @@ function ChatMessages({ conversationId, conversation, onSetReply, replyingTo }: 
                     {seenStatus}
                 </div>
             )}
-            <div className={cn(replyingTo ? "h-24" : "h-14")} />
+             <div className={cn(replyingTo ? "h-24" : "h-14")} />
         </div>
     )
 }
@@ -231,7 +231,7 @@ function MessageInput({ conversationId, conversation, replyingTo, onCancelReply 
         const messageRef = doc(collection(firestore, 'conversations', conversationId, 'messages'));
         const conversationRef = doc(firestore, 'conversations', conversationId);
 
-        const newMessage: Omit<Message, 'timestamp' | 'id'> & { id?: string } = {
+        const newMessage: Omit<Message, 'timestamp' | 'id'> & { id?: string, replyToMessageId?: string, replyToMessageText?: string } = {
             id: messageRef.id,
             senderId: user.uid,
             text: values.text,
@@ -375,7 +375,7 @@ export default function ChatPage() {
         <AppLayout showTopBar={false} showBottomNav={false}>
             <ChatHeader peerId={peerId} />
 
-            <div className="pt-14 pb-16">
+            <div className="pt-14">
                 {conversationId && <ChatMessages conversationId={conversationId} conversation={conversation} onSetReply={handleSetReply} replyingTo={replyingTo} />}
             </div>
 
