@@ -76,7 +76,7 @@ function MessageBubble({ message, isOwnMessage, conversationId, onSetReply }: { 
                         )}>
                             {message.replyToMessageText && (
                                 <div className="border-l-2 border-primary-foreground/50 pl-2 mb-1 opacity-80">
-                                    <p className="text-xs font-semibold truncate">{formatUserId(message.senderId)}</p>
+                                    <p className="text-xs font-semibold truncate">{formatUserId(message.replyToMessageId === message.senderId ? message.senderId : undefined)}</p>
                                     <p className="text-xs truncate">{message.replyToMessageText}</p>
                                 </div>
                             )}
@@ -180,7 +180,7 @@ function ChatMessages({ conversationId, conversation, onSetReply, replyingTo }: 
 
 
     React.useEffect(() => {
-        messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
+        messagesEndRef.current?.scrollIntoView({ behavior: "auto" });
     }, [messages]);
     
     if (isLoading) {
@@ -315,7 +315,7 @@ function MessageInput({ conversationId, conversation, replyingTo, onCancelReply 
                             </FormItem>
                             )}
                         />
-                        <Button type="submit" disabled={form.formState.isSubmitting} className="bg-black hover:bg-black/90">
+                        <Button type="submit" size="icon" disabled={form.formState.isSubmitting} className="bg-black hover:bg-black/90 rounded-full">
                             <Send className="h-5 w-5" />
                         </Button>
                     </form>
