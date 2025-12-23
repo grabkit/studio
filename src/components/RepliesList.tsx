@@ -3,7 +3,7 @@
 
 import React, { useState, useEffect } from 'react';
 import { useFirebase } from '@/firebase';
-import { collectionGroup, query, where, getDocs, orderBy, limit, collection } from 'firebase/firestore';
+import { collectionGroup, query, where, getDocs, orderBy, limit, collection, getDoc, doc } from 'firebase/firestore';
 import type { WithId } from '@/firebase/firestore/use-collection';
 import type { Comment, Post, ReplyItem } from '@/lib/types';
 import { Skeleton } from './ui/skeleton';
@@ -66,13 +66,21 @@ export function RepliesList({ userId }: { userId: string }) {
                 for (let i = 0; i < postIds.length; i += MAX_COMMENTS_FETCH) {
                     const chunk = postIds.slice(i, i + MAX_COMMENTS_FETCH);
                     if (chunk.length > 0) {
-                        const commentsQuery = query(
-                            collectionGroup(firestore, 'comments'),
-                            where('postId', 'in', chunk)
-                        );
-                        const commentsSnapshot = await getDocs(commentsQuery);
-                        const chunkComments = commentsSnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as WithId<Comment>));
-                        allComments = [...allComments, ...chunkComments];
+                        // This query requires an index, which we want to avoid.
+                        // const commentsQuery = query(
+                        //     collectionGroup(firestore, 'comments'),
+                        //     where('postId', 'in', chunk)
+                        // );
+                        
+                        // New approach: Query each subcollection individually
+                        for (const postId of chunk) {
+                             const commentsSubcollectionQuery = query(
+                                collection(firestore, 'posts', postId, 'comments')
+                            );
+                            const commentsSnapshot = await getDocs(commentsSubcollectionQuery);
+                            const chunkComments = commentsSnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as WithId<Comment>));
+                            allComments = [...allComments, ...chunkComments];
+                        }
                     }
                 }
 
@@ -167,3 +175,4 @@ export function RepliesList({ userId }: { userId: string }) {
         </div>
     );
 }
+
