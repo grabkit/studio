@@ -222,6 +222,12 @@ export default function MessagesPage() {
         });
         return { chats, requests };
     }, [conversations]);
+    
+    const hasUnreadChats = useMemo(() => {
+        if (!chats || !user) return false;
+        return chats.some(chat => (chat.unreadCounts?.[user.uid] ?? 0) > 0);
+    }, [chats, user]);
+
 
     useEffect(() => {
         if (requests && user) {
@@ -281,8 +287,13 @@ export default function MessagesPage() {
             <Tabs defaultValue="chats" className="w-full" onValueChange={handleTabChange}>
                 <div className="flex justify-center p-1">
                     <TabsList className="inline-flex h-10 items-center justify-center rounded-full bg-muted p-1 text-muted-foreground">
-                        <TabsTrigger value="chats" className="rounded-full px-8">Chats</TabsTrigger>
-                        <TabsTrigger value="requests" className="rounded-full px-8">
+                        <TabsTrigger value="chats" className="rounded-full px-8 flex items-center">
+                            Chats
+                            {hasUnreadChats && (
+                                <div className="ml-2 h-1.5 w-1.5 rounded-full bg-red-500"></div>
+                            )}
+                        </TabsTrigger>
+                        <TabsTrigger value="requests" className="rounded-full px-8 flex items-center">
                             Requests
                             {hasNewRequests && (
                                 <div className="ml-2 h-1.5 w-1.5 rounded-full bg-red-500"></div>
