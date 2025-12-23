@@ -65,13 +65,13 @@ function MessageBubble({ message, isOwnMessage, conversationId, onSetReply }: { 
     return (
         <div className={cn("flex items-end gap-2 group", isOwnMessage ? "justify-end" : "justify-start")}>
              <div className={cn(
-                "flex items-center",
+                "flex items-center max-w-[70%]",
                 isOwnMessage ? "flex-row-reverse" : "flex-row"
             )}>
                 <DropdownMenu>
                     <DropdownMenuTrigger asChild>
                          <div className={cn(
-                            "max-w-[70%] max-w-fit rounded-2xl px-3 py-2 cursor-pointer",
+                            "max-w-fit rounded-2xl px-3 py-2 cursor-pointer",
                             isOwnMessage ? "bg-primary text-primary-foreground rounded-br-none" : "bg-secondary rounded-bl-none"
                         )}>
                             {message.replyToMessageText && (
@@ -206,7 +206,7 @@ function ChatMessages({ conversationId, conversation, onSetReply, replyingTo }: 
                     {seenStatus}
                 </div>
             )}
-             <div className={cn(replyingTo ? "h-24" : "h-14")} />
+            <div className={cn(replyingTo ? "h-24" : "h-14")} />
         </div>
     )
 }
