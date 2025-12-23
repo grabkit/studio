@@ -3,7 +3,7 @@
 
 import { useParams, useRouter } from "next/navigation";
 import { useFirebase, useMemoFirebase } from "@/firebase";
-import { doc, collection, query, where, getDocs, serverTimestamp, setDoc, getDoc, orderBy } from "firebase/firestore";
+import { doc, collection, query, where, getDocs, serverTimestamp, setDoc, getDoc } from "firebase/firestore";
 import { useDoc } from "@/firebase/firestore/use-doc";
 import { useCollection } from "@/firebase/firestore/use-collection";
 import type { Post, User, UserPost } from "@/lib/types";
@@ -52,13 +52,21 @@ export default function UserProfilePage() {
         const fetchPosts = async () => {
             setPostsLoading(true);
             try {
+                // Query without ordering by timestamp to avoid composite index requirement
                 const postsQuery = query(
                     collection(firestore, "posts"),
-                    where("authorId", "==", userId),
-                    orderBy("timestamp", "desc")
+                    where("authorId", "==", userId)
                 );
                 const querySnapshot = await getDocs(postsQuery);
                 const userPosts = querySnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as WithId<Post>));
+                
+                // Sort posts on the client-side
+                userPosts.sort((a, b) => {
+                    const timeA = a.timestamp?.toMillis() || 0;
+                    const timeB = b.timestamp?.toMillis() || 0;
+                    return timeB - timeA; // For descending order
+                });
+
                 setPosts(userPosts);
             } catch (error) {
                 console.error("Error fetching user posts:", error);
@@ -174,8 +182,8 @@ export default function UserProfilePage() {
     if (userLoading || (currentUser && userId === currentUser.uid)) {
         return (
             <AppLayout showTopBar={false}>
-                 <div className="grid grid-cols-3 items-center mb-6 -ml-2 px-2">
-                    <Button variant="ghost" size="icon" onClick={() => router.back()}>
+                 <div className="grid grid-cols-3 items-center mb-6 px-4">
+                    <Button variant="ghost" size="icon" className="-ml-2" onClick={() => router.back()}>
                         <ArrowLeft className="h-6 w-6" />
                     </Button>
                     <h2 className="text-2xl font-semibold font-headline text-center">
@@ -216,7 +224,12 @@ export default function UserProfilePage() {
     if (!user) {
         return (
              <AppLayout showTopBar={false}>
-                <div className="text-center py-20 pt-32">
+                <div className="grid grid-cols-3 items-center mb-6 px-4">
+                    <Button variant="ghost" size="icon" className="-ml-2" onClick={() => router.back()}>
+                        <ArrowLeft className="h-6 w-6" />
+                    </Button>
+                </div>
+                <div className="text-center py-20">
                     <h2 className="text-2xl font-headline text-primary">User not found</h2>
                     <p className="text-muted-foreground mt-2">
                         This user may not exist.
@@ -228,9 +241,9 @@ export default function UserProfilePage() {
 
     return (
         <AppLayout showTopBar={false}>
-            <div className="px-4">
-                <div className="grid grid-cols-3 items-center mb-6 -ml-2">
-                     <Button variant="ghost" size="icon" onClick={() => router.back()}>
+            <div>
+                <div className="grid grid-cols-3 items-center mb-6 px-4">
+                     <Button variant="ghost" size="icon" className="-ml-2" onClick={() => router.back()}>
                         <ArrowLeft className="h-6 w-6" />
                     </Button>
                     <h2 className="text-2xl font-semibold font-headline text-center">
@@ -238,58 +251,61 @@ export default function UserProfilePage() {
                     </h2>
                 </div>
 
-                <div className="flex items-center space-x-5 mb-6">
-                <Avatar className="h-20 w-20 md:h-24 md:w-24">
-                    <AvatarImage
-                    src={undefined} // No photoURL for other users for now
-                    alt={user?.name || "User"}
-                    />
-                    <AvatarFallback className="text-3xl font-headline bg-primary text-primary-foreground">
-                    {getInitials(user?.name)}
-                    </AvatarFallback>
-                </Avatar>
-                <div className="flex-1 flex justify-around text-center">
-                    <div>
-                        {postsLoading ? (
-                            <div className="font-bold text-lg"><Skeleton className="h-6 w-8 mx-auto" /></div>
-                        ) : (
-                            <div className="font-bold text-lg">{posts?.length ?? 0}</div>
-                        )}
-                        <p className="text-sm text-muted-foreground">Posts</p>
+                <div className="px-4">
+                    <div className="flex items-center space-x-5 mb-6">
+                        <Avatar className="h-20 w-20 md:h-24 md:w-24">
+                            <AvatarImage
+                            src={undefined} // No photoURL for other users for now
+                            alt={user?.name || "User"}
+                            />
+                            <AvatarFallback className="text-3xl font-headline bg-primary text-primary-foreground">
+                            {getInitials(user?.name)}
+                            </AvatarFallback>
+                        </Avatar>
+                        <div className="flex-1 flex justify-around text-center">
+                            <div>
+                                {postsLoading ? (
+                                    <div className="font-bold text-lg"><Skeleton className="h-6 w-8 mx-auto" /></div>
+                                ) : (
+                                    <div className="font-bold text-lg">{posts?.length ?? 0}</div>
+                                )}
+                                <p className="text-sm text-muted-foreground">Posts</p>
+                            </div>
+                            <div>
+                                {postsLoading ? (
+                                    <div className="font-bold text-lg"><Skeleton className="h-6 w-8 mx-auto" /></div>
+                                ) : (
+                                    <div className="font-bold text-lg">{totalLikes}</div>
+                                )}
+                                <p className="text-sm text-muted-foreground">Likes</p>
+                            </div>
+                            <div>
+                                {postsLoading ? (
+                                <div className="font-bold text-lg"><Skeleton className="h-6 w-8 mx-auto" /></div>
+                                ) : (
+                                <div className="font-bold text-lg">{totalComments}</div>
+                                )}
+                                <p className="text-sm text-muted-foreground">Comments</p>
+                            </div>
+                        </div>
                     </div>
-                    <div>
-                        {postsLoading ? (
-                            <div className="font-bold text-lg"><Skeleton className="h-6 w-8 mx-auto" /></div>
-                        ) : (
-                            <div className="font-bold text-lg">{totalLikes}</div>
-                        )}
-                        <p className="text-sm text-muted-foreground">Likes</p>
-                    </div>
-                    <div>
-                        {postsLoading ? (
-                        <div className="font-bold text-lg"><Skeleton className="h-6 w-8 mx-auto" /></div>
-                        ) : (
-                        <div className="font-bold text-lg">{totalComments}</div>
-                        )}
-                        <p className="text-sm text-muted-foreground">Comments</p>
-                    </div>
-                </div>
-                </div>
 
 
-                {/* User Name and Bio */}
-                <div className="mb-4">
-                    <h1 className="font-bold text-base">{user?.name}</h1>
-                    {/* Hiding email for privacy on public profiles */}
-                </div>
-                
-                 <div className="mb-4 flex items-center space-x-2">
-                    <Button onClick={handleShareProfile} className="flex-1">
-                        <ArrowUpRight className="mr-2 h-4 w-4" /> Share Profile
-                    </Button>
-                    <Button onClick={handleStartConversation} variant="secondary" className="flex-1">
-                        <MessageSquare className="mr-2 h-4 w-4" /> Message
-                    </Button>
+                    {/* User Name and Bio */}
+                    <div className="mb-4">
+                        <h1 className="font-bold text-base">{user?.name}</h1>
+                        {/* Hiding email for privacy on public profiles */}
+                    </div>
+                    
+                    <div className="mb-4 flex items-center space-x-2">
+                        <Button onClick={handleShareProfile} className="flex-1">
+                            <ArrowUpRight className="mr-2 h-4 w-4" /> Share Profile
+                        </Button>
+                        <Button onClick={handleStartConversation} variant="secondary" className="flex-1">
+                            <MessageSquare className="mr-2 h-4 w-4" /> Message
+                        </Button>
+                    </div>
+
                 </div>
 
                 <Tabs defaultValue="posts" className="w-full">
@@ -331,3 +347,5 @@ export default function UserProfilePage() {
 
     
 }
+
+    
