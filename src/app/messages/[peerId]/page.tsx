@@ -17,12 +17,14 @@ import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
 import { Form, FormControl, FormField, FormItem, FormMessage } from '@/components/ui/form';
 import { Skeleton } from '@/components/ui/skeleton';
-import { ArrowLeft, Send } from 'lucide-react';
+import { ArrowLeft, Send, Reply, Forward, Copy, Trash2 } from 'lucide-react';
 import { cn, getInitials, formatTimestamp } from '@/lib/utils';
 import type { Conversation, Message, User } from '@/lib/types';
 import { WithId } from '@/firebase/firestore/use-collection';
 import { FirestorePermissionError } from '@/firebase/errors';
 import { errorEmitter } from '@/firebase/error-emitter';
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
+import { useToast } from '@/hooks/use-toast';
 
 const messageFormSchema = z.object({
   text: z.string().min(1, "Message cannot be empty").max(1000),
@@ -34,20 +36,51 @@ const formatUserId = (uid: string | undefined) => {
 };
 
 function MessageBubble({ message, isOwnMessage }: { message: WithId<Message>, isOwnMessage: boolean }) {
+    const { toast } = useToast();
+
+    const handleCopy = () => {
+        navigator.clipboard.writeText(message.text);
+        toast({ title: "Copied to clipboard" });
+    }
+
     return (
-        <div className={cn("flex items-end gap-2", isOwnMessage ? "justify-end" : "justify-start")}>
-            <div className={cn(
-                "max-w-[70%] rounded-2xl px-4 py-2",
-                isOwnMessage ? "bg-primary text-primary-foreground rounded-br-none" : "bg-secondary rounded-bl-none"
-            )}>
-                <p className="text-sm whitespace-pre-wrap">{message.text}</p>
-                 {message.timestamp?.toDate && (
-                     <p className={cn("text-xs mt-1", isOwnMessage ? "text-primary-foreground/70" : "text-muted-foreground")}>
-                        {formatTimestamp(message.timestamp.toDate())}
-                     </p>
-                 )}
-            </div>
-        </div>
+        <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+                 <div className={cn("flex items-end gap-2 group", isOwnMessage ? "justify-end" : "justify-start")}>
+                    <div className={cn(
+                        "max-w-[70%] rounded-2xl px-4 py-2 cursor-pointer",
+                        isOwnMessage ? "bg-primary text-primary-foreground rounded-br-none" : "bg-secondary rounded-bl-none"
+                    )}>
+                        <p className="text-sm whitespace-pre-wrap">{message.text}</p>
+                         {message.timestamp?.toDate && (
+                             <p className={cn("text-xs mt-1", isOwnMessage ? "text-primary-foreground/70" : "text-muted-foreground")}>
+                                {formatTimestamp(message.timestamp.toDate())}
+                             </p>
+                         )}
+                    </div>
+                </div>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent className="w-56">
+                <DropdownMenuItem>
+                    <Reply className="mr-2 h-4 w-4" />
+                    <span>Reply</span>
+                </DropdownMenuItem>
+                 <DropdownMenuItem>
+                    <Forward className="mr-2 h-4 w-4" />
+                    <span>Forward</span>
+                </DropdownMenuItem>
+                <DropdownMenuItem onClick={handleCopy}>
+                    <Copy className="mr-2 h-4 w-4" />
+                    <span>Copy</span>
+                </DropdownMenuItem>
+                {isOwnMessage && (
+                     <DropdownMenuItem className="text-destructive">
+                        <Trash2 className="mr-2 h-4 w-4" />
+                        <span>Unsend</span>
+                    </DropdownMenuItem>
+                )}
+            </DropdownMenuContent>
+        </DropdownMenu>
     )
 }
 
@@ -296,3 +329,5 @@ export default function ChatPage() {
         </AppLayout>
     )
 }
+
+    
