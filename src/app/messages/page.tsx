@@ -279,15 +279,17 @@ export default function MessagesPage() {
             </div>
             
             <Tabs defaultValue="chats" className="w-full" onValueChange={handleTabChange}>
-                <TabsList className="grid w-full grid-cols-2 rounded-full">
-                    <TabsTrigger value="chats" className="rounded-full">Chats</TabsTrigger>
-                    <TabsTrigger value="requests" className="relative rounded-full">
-                        Requests
-                        {hasNewRequests && (
-                            <div className="absolute top-1 right-2 h-2 w-2 rounded-full bg-red-500"></div>
-                        )}
-                    </TabsTrigger>
-                </TabsList>
+                <div className="flex justify-center p-1">
+                    <TabsList className="inline-flex h-10 items-center justify-center rounded-full bg-muted p-1 text-muted-foreground">
+                        <TabsTrigger value="chats" className="rounded-full">Chats</TabsTrigger>
+                        <TabsTrigger value="requests" className="relative rounded-full">
+                            Requests
+                            {hasNewRequests && (
+                                <div className="absolute top-1 right-2 h-2 w-2 rounded-full bg-red-500"></div>
+                            )}
+                        </TabsTrigger>
+                    </TabsList>
+                </div>
                 <TabsContent value="chats">
                     <ConversationsList 
                         conversations={chats}
