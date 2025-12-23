@@ -60,7 +60,7 @@ function MessageBubble({ message, isOwnMessage }: { message: WithId<Message>, is
                     </div>
                 </div>
             </DropdownMenuTrigger>
-            <DropdownMenuContent className="w-56">
+            <DropdownMenuContent align={isOwnMessage ? "end" : "start"} className="w-56">
                 <DropdownMenuItem>
                     <Reply className="mr-2 h-4 w-4" />
                     <span>Reply</span>
@@ -329,5 +329,3 @@ export default function ChatPage() {
         </AppLayout>
     )
 }
-
-    
