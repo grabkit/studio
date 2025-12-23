@@ -4,7 +4,7 @@
 import AppLayout from "@/components/AppLayout";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
-import { getInitials, formatTimestamp } from "@/lib/utils";
+import { getInitials, formatMessageTimestamp } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import { MessageSquare, Mail } from "lucide-react";
 import { useFirebase, useMemoFirebase } from "@/firebase";
@@ -60,7 +60,7 @@ function ConversationItem({ conversation, currentUser }: { conversation: WithId<
             <div className="flex flex-col items-end self-start shrink-0">
                  {conversation.lastUpdated?.toDate && (
                     <p className="text-xs text-muted-foreground">
-                        {formatTimestamp(conversation.lastUpdated.toDate())}
+                        {formatMessageTimestamp(conversation.lastUpdated.toDate())}
                     </p>
                 )}
                 {hasUnread && (
@@ -324,3 +324,5 @@ export default function MessagesPage() {
         </AppLayout>
     )
 }
+
+    

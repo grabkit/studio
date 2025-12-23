@@ -55,3 +55,5 @@ export const getInitials = (name: string | null | undefined) => {
       .substring(0, 2)
       .toUpperCase();
 };
+
+    
