@@ -42,11 +42,11 @@ export function RepliesList({ userId }: { userId: string }) {
         const fetchUserReplies = async () => {
             setIsLoading(true);
             try {
-                // Step 1: Get all comments by the user
+                // Step 1: Get all comments by the user.
+                // orderBy is removed to prevent needing a composite index. Sorting will be done client-side.
                 const commentsByUserQuery = query(
                     collectionGroup(firestore, 'comments'), 
                     where('authorId', '==', userId),
-                    orderBy('timestamp', 'desc'),
                     limit(50)
                 );
 
@@ -56,15 +56,22 @@ export function RepliesList({ userId }: { userId: string }) {
                     setIsLoading(false);
                     return;
                 }
+                
+                const userComments = commentsSnapshot.docs.map(doc => doc.data() as Comment);
+                
+                // Sort comments client-side
+                userComments.sort((a, b) => {
+                    const timeA = a.timestamp?.toMillis() || 0;
+                    const timeB = b.timestamp?.toMillis() || 0;
+                    return timeB - timeA;
+                });
 
-                const postIds = [...new Set(commentsSnapshot.docs.map(doc => doc.data().postId))];
+                const postIds = [...new Set(userComments.map(comment => comment.postId))];
                 
                 // Step 2: Fetch the corresponding posts
                 const postsData: { [key: string]: Post } = {};
-                // Firestore 'in' query is limited to 30 items. We might need to batch this.
                 const MAX_POSTS_FETCH = 30;
                 if (postIds.length > 0) {
-                    // Create chunks of postIds to fetch
                     for (let i = 0; i < postIds.length; i += MAX_POSTS_FETCH) {
                         const chunk = postIds.slice(i, i + MAX_POSTS_FETCH);
                         if (chunk.length > 0) {
@@ -77,13 +84,12 @@ export function RepliesList({ userId }: { userId: string }) {
                     }
                 }
                 
-                const fetchedReplies = commentsSnapshot.docs.map(doc => {
-                    const comment = doc.data() as Comment;
+                const fetchedReplies = userComments.map(comment => {
                     const post = postsData[comment.postId];
                     const postAuthor = post?.authorId;
                     return {
                         ...comment,
-                        id: doc.id,
+                        id: comment.id,
                         postContent: post?.content || "Original post content not found.",
                         postAuthorId: postAuthor,
                     } as WithId<ReplyItem>;
@@ -93,7 +99,6 @@ export function RepliesList({ userId }: { userId: string }) {
 
             } catch (error) {
                 console.error("Error fetching user replies:", error);
-                // Note: This could be a missing index error. The console will provide a link to create it.
             } finally {
                 setIsLoading(false);
             }
