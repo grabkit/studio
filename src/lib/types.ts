@@ -73,6 +73,8 @@ export interface Message {
     senderId: string;
     text: string;
     timestamp: any; // Can be Timestamp or FieldValue
+    replyToMessageId?: string;
+    replyToMessageText?: string;
 }
 
     

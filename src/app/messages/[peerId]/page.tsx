@@ -9,7 +9,7 @@ import { useDoc } from '@/firebase/firestore/use-doc';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
-import React, { useMemo, useEffect, useRef } from 'react';
+import React, { useMemo, useEffect, useRef, useState } from 'react';
 
 import AppLayout from '@/components/AppLayout';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
@@ -17,7 +17,7 @@ import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
 import { Form, FormControl, FormField, FormItem, FormMessage } from '@/components/ui/form';
 import { Skeleton } from '@/components/ui/skeleton';
-import { ArrowLeft, Send, Reply, Forward, Copy, Trash2 } from 'lucide-react';
+import { ArrowLeft, Send, Reply, Forward, Copy, Trash2, X } from 'lucide-react';
 import { cn, getInitials, formatTimestamp } from '@/lib/utils';
 import type { Conversation, Message, User } from '@/lib/types';
 import { WithId } from '@/firebase/firestore/use-collection';
@@ -35,7 +35,7 @@ const formatUserId = (uid: string | undefined) => {
     return `blur${uid.substring(uid.length - 6)}`;
 };
 
-function MessageBubble({ message, isOwnMessage, conversationId }: { message: WithId<Message>, isOwnMessage: boolean, conversationId: string }) {
+function MessageBubble({ message, isOwnMessage, conversationId, onSetReply }: { message: WithId<Message>, isOwnMessage: boolean, conversationId: string, onSetReply: (message: WithId<Message>) => void }) {
     const { toast } = useToast();
     const { firestore } = useFirebase();
 
@@ -64,41 +64,47 @@ function MessageBubble({ message, isOwnMessage, conversationId }: { message: Wit
 
     return (
         <div className={cn("flex items-end gap-2 group", isOwnMessage ? "justify-end" : "justify-start")}>
-            <DropdownMenu>
-                <DropdownMenuTrigger asChild>
-                    <div className={cn(
-                        "max-w-[70%] rounded-2xl px-4 py-2 cursor-pointer",
-                        isOwnMessage ? "bg-primary text-primary-foreground rounded-br-none" : "bg-secondary rounded-bl-none"
-                    )}>
-                        <p className="text-sm whitespace-pre-wrap">{message.text}</p>
-                         {message.timestamp?.toDate && (
-                             <p className={cn("text-xs mt-1", isOwnMessage ? "text-primary-foreground/70" : "text-muted-foreground")}>
-                                {formatTimestamp(message.timestamp.toDate())}
-                             </p>
-                         )}
+            <div className={cn(
+                "max-w-[70%] rounded-2xl px-3 py-2",
+                isOwnMessage ? "bg-primary text-primary-foreground rounded-br-none" : "bg-secondary rounded-bl-none"
+            )}>
+                 {message.replyToMessageText && (
+                    <div className="border-l-2 border-primary-foreground/50 pl-2 mb-1 opacity-80">
+                        <p className="text-xs font-semibold truncate">{message.senderId === (isOwnMessage ? message.senderId : '') ? "You" : formatUserId(message.senderId)}</p>
+                        <p className="text-xs truncate">{message.replyToMessageText}</p>
                     </div>
-                </DropdownMenuTrigger>
-                <DropdownMenuContent align={isOwnMessage ? "end" : "start"} className="w-56">
-                    <DropdownMenuItem>
-                        <Reply className="mr-2 h-4 w-4" />
-                        <span>Reply</span>
-                    </DropdownMenuItem>
-                     <DropdownMenuItem>
-                        <Forward className="mr-2 h-4 w-4" />
-                        <span>Forward</span>
-                    </DropdownMenuItem>
-                    <DropdownMenuItem onClick={handleCopy}>
-                        <Copy className="mr-2 h-4 w-4" />
-                        <span>Copy</span>
-                    </DropdownMenuItem>
-                    {isOwnMessage && (
-                         <DropdownMenuItem className="text-destructive" onClick={handleUnsend}>
-                            <Trash2 className="mr-2 h-4 w-4" />
-                            <span>Unsend</span>
+                )}
+                <DropdownMenu>
+                    <DropdownMenuTrigger asChild>
+                       <p className="text-sm whitespace-pre-wrap cursor-pointer">{message.text}</p>
+                    </DropdownMenuTrigger>
+                    <DropdownMenuContent align={isOwnMessage ? "end" : "start"} className="w-56">
+                        <DropdownMenuItem onClick={() => onSetReply(message)}>
+                            <Reply className="mr-2 h-4 w-4" />
+                            <span>Reply</span>
                         </DropdownMenuItem>
-                    )}
-                </DropdownMenuContent>
-            </DropdownMenu>
+                         <DropdownMenuItem>
+                            <Forward className="mr-2 h-4 w-4" />
+                            <span>Forward</span>
+                        </DropdownMenuItem>
+                        <DropdownMenuItem onClick={handleCopy}>
+                            <Copy className="mr-2 h-4 w-4" />
+                            <span>Copy</span>
+                        </DropdownMenuItem>
+                        {isOwnMessage && (
+                             <DropdownMenuItem className="text-destructive" onClick={handleUnsend}>
+                                <Trash2 className="mr-2 h-4 w-4" />
+                                <span>Unsend</span>
+                            </DropdownMenuItem>
+                        )}
+                    </DropdownMenuContent>
+                </DropdownMenu>
+                 {message.timestamp?.toDate && (
+                     <p className={cn("text-xs mt-1 text-right", isOwnMessage ? "text-primary-foreground/70" : "text-muted-foreground")}>
+                        {formatTimestamp(message.timestamp.toDate())}
+                     </p>
+                 )}
+            </div>
         </div>
     )
 }
@@ -133,7 +139,7 @@ function ChatHeader({ peerId }: { peerId: string }) {
     )
 }
 
-function ChatMessages({ conversationId, conversation }: { conversationId: string, conversation: WithId<Conversation> | null }) {
+function ChatMessages({ conversationId, conversation, onSetReply }: { conversationId: string, conversation: WithId<Conversation> | null, onSetReply: (message: WithId<Message>) => void }) {
     const { firestore, user } = useFirebase();
     const messagesEndRef = React.useRef<HTMLDivElement | null>(null);
 
@@ -186,7 +192,7 @@ function ChatMessages({ conversationId, conversation }: { conversationId: string
         <div className="p-4">
             <div className="space-y-4">
                 {messages?.map(message => (
-                    <MessageBubble key={message.id} message={message} isOwnMessage={message.senderId === user?.uid} conversationId={conversationId} />
+                    <MessageBubble key={message.id} message={message} isOwnMessage={message.senderId === user?.uid} conversationId={conversationId} onSetReply={onSetReply} />
                 ))}
             </div>
              <div ref={messagesEndRef} />
@@ -200,7 +206,7 @@ function ChatMessages({ conversationId, conversation }: { conversationId: string
 }
 
 
-function MessageInput({ conversationId, conversation }: { conversationId: string, conversation: WithId<Conversation> | null }) {
+function MessageInput({ conversationId, conversation, replyingTo, onCancelReply }: { conversationId: string, conversation: WithId<Conversation> | null, replyingTo: WithId<Message> | null, onCancelReply: () => void }) {
     const { firestore, user } = useFirebase();
     const form = useForm<z.infer<typeof messageFormSchema>>({
         resolver: zodResolver(messageFormSchema),
@@ -211,6 +217,7 @@ function MessageInput({ conversationId, conversation }: { conversationId: string
         if (!firestore || !user || !conversationId || !conversation) return;
 
         form.reset();
+        onCancelReply();
         
         const peerId = conversation.participantIds.find(id => id !== user.uid);
         if (!peerId) return;
@@ -223,6 +230,11 @@ function MessageInput({ conversationId, conversation }: { conversationId: string
             senderId: user.uid,
             text: values.text,
         };
+
+        if (replyingTo) {
+            newMessage.replyToMessageId = replyingTo.id;
+            newMessage.replyToMessageText = replyingTo.text;
+        }
         
         const batch = writeBatch(firestore);
         
@@ -258,6 +270,19 @@ function MessageInput({ conversationId, conversation }: { conversationId: string
 
     return (
          <div className="fixed bottom-0 left-0 right-0 bg-background border-t z-10 max-w-2xl mx-auto sm:px-4">
+            {replyingTo && (
+                <div className="p-2 border-b border-dashed bg-secondary/50 text-sm">
+                    <div className="flex justify-between items-center">
+                        <div>
+                            <p className="font-semibold text-primary">Replying to {replyingTo.senderId === user?.uid ? 'yourself' : formatUserId(replyingTo.senderId)}</p>
+                            <p className="text-muted-foreground truncate max-w-xs">{replyingTo.text}</p>
+                        </div>
+                        <Button variant="ghost" size="icon" onClick={onCancelReply}>
+                            <X className="h-4 w-4" />
+                        </Button>
+                    </div>
+                </div>
+            )}
             <div className="p-2">
                 <Form {...form}>
                     <form onSubmit={form.handleSubmit(onSubmit)} className="flex items-center space-x-2">
@@ -272,6 +297,12 @@ function MessageInput({ conversationId, conversation }: { conversationId: string
                                     className="text-base border-none focus-visible:ring-0 shadow-none p-2"
                                     rows={1}
                                     {...field}
+                                    onKeyDown={(e) => {
+                                        if (e.key === 'Enter' && !e.shiftKey) {
+                                            e.preventDefault();
+                                            form.handleSubmit(onSubmit)();
+                                        }
+                                    }}
                                 />
                                 </FormControl>
                                 <FormMessage />
@@ -293,6 +324,15 @@ export default function ChatPage() {
     const { firestore, user } = useFirebase();
     const params = useParams();
     const peerId = params.peerId as string;
+    const [replyingTo, setReplyingTo] = useState<WithId<Message> | null>(null);
+
+    const handleSetReply = (message: WithId<Message>) => {
+        setReplyingTo(message);
+    }
+    
+    const handleCancelReply = () => {
+        setReplyingTo(null);
+    }
 
     const conversationId = useMemo(() => {
         if (!user || !peerId) return null;
@@ -306,33 +346,22 @@ export default function ChatPage() {
 
     const { data: conversation, isLoading: isConversationLoading } = useDoc<Conversation>(conversationRef);
 
-    // This is the value that will be used as a dependency in the effect.
-    // It's a primitive (number) and will only change when the unread count actually changes.
     const userUnreadCount = conversation?.unreadCounts?.[user?.uid ?? ''] ?? 0;
 
-     // Effect to mark messages as read
     useEffect(() => {
-        // We only want to run this logic if we have all the necessary data AND if there are unread messages.
         if (!firestore || !user || !conversationRef || userUnreadCount === 0) {
             return;
         }
 
-        // The update is now only triggered when userUnreadCount > 0.
-        // Once this runs, userUnreadCount will become 0 from the Firestore listener,
-        // and this effect will not run again until a new message arrives and increments the count.
         const updates: any = {
             [`unreadCounts.${user.uid}`]: 0,
             [`lastReadTimestamps.${user.uid}`]: serverTimestamp()
         };
         
         updateDoc(conversationRef, updates).catch(error => {
-            // This might fail due to security rules, but we shouldn't retry,
-            // as that could cause a loop. Log it for debugging.
             console.warn("Could not mark messages as read:", error.message);
         });
 
-    // The dependency array is key. It no longer depends on the entire 'conversation' object.
-    // It only depends on the specific values that should trigger it.
     }, [userUnreadCount, conversationRef, firestore, user]);
 
 
@@ -340,13 +369,12 @@ export default function ChatPage() {
         <AppLayout showTopBar={false} showBottomNav={false}>
             <ChatHeader peerId={peerId} />
 
-            <div className="pt-14 pb-12">
-                {conversationId && <ChatMessages conversationId={conversationId} conversation={conversation} />}
+            <div className="pt-14 pb-32">
+                {conversationId && <ChatMessages conversationId={conversationId} conversation={conversation} onSetReply={handleSetReply} />}
             </div>
 
-            {conversationId && <MessageInput conversationId={conversationId} conversation={conversation}/>}
+            {conversationId && <MessageInput conversationId={conversationId} conversation={conversation} replyingTo={replyingTo} onCancelReply={handleCancelReply} />}
         </AppLayout>
     )
 }
-
     

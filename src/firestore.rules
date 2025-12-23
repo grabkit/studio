@@ -64,11 +64,25 @@ service cloud.firestore {
       // A participant of the conversation can read messages regardless of status
       allow read, list: if isSignedIn() && request.auth.uid in get(/databases/$(database)/documents/conversations/$(conversationId)).data.participantIds;
       // A participant can create a message and they must be the sender, regardless of status
-      allow create: if isSignedIn() && request.auth.uid in get(/databases/$(database)/documents/conversations/$(conversationId)).data.participantIds && request.resource.data.senderId == request.auth.uid;
+      allow create: if isSignedIn() && request.auth.uid in get(/databases/$(database)/documents/conversations/$(conversationId)).data.participantIds && isValidNewMessage();
       // A user can delete their own message.
       allow delete: if isSignedIn() && isOwner(resource.data.senderId);
     }
     
+    function isValidNewMessage() {
+      let data = request.resource.data;
+      // Common validations
+      return data.senderId == request.auth.uid
+        && data.text is string && data.text.size() > 0 && data.text.size() <= 1000
+        // Reply-specific validations (if reply fields exist)
+        && (
+             (!data.keys().hasAny(['replyToMessageId', 'replyToMessageText'])) ||
+             (data.replyToMessageId is string && data.replyToMessageText is string)
+           )
+        // Ensure no other fields are present
+        && data.keys().hasOnly(['id', 'senderId', 'text', 'timestamp', 'replyToMessageId', 'replyToMessageText']);
+    }
+
     function isNewTextPost() {
       let data = request.resource.data;
       return data.type == 'text'
