@@ -194,7 +194,7 @@ function ChatMessages({ conversationId, conversation, onSetReply, replyingTo }: 
     }
 
     return (
-        <div className="p-4 pt-14">
+        <div className="p-4">
             <div className="space-y-4">
                 {messages?.map(message => (
                     <MessageBubble key={message.id} message={message} isOwnMessage={message.senderId === user?.uid} conversationId={conversationId} onSetReply={onSetReply} />
@@ -315,7 +315,7 @@ function MessageInput({ conversationId, conversation, replyingTo, onCancelReply 
                             </FormItem>
                             )}
                         />
-                        <Button type="submit" disabled={form.formState.isSubmitting}>
+                        <Button type="submit" disabled={form.formState.isSubmitting} className="bg-black hover:bg-black/90">
                             <Send className="h-5 w-5" />
                         </Button>
                     </form>
@@ -375,7 +375,7 @@ export default function ChatPage() {
         <AppLayout showTopBar={false} showBottomNav={false}>
             <ChatHeader peerId={peerId} />
 
-            <div className="pt-14">
+            <div className="pt-14 pb-16">
                 {conversationId && <ChatMessages conversationId={conversationId} conversation={conversation} onSetReply={handleSetReply} replyingTo={replyingTo} />}
             </div>
 
