@@ -64,7 +64,7 @@ function MessageBubble({ message, isOwnMessage, conversationId, onSetReply }: { 
 
     return (
         <div className={cn("flex items-end gap-2 group", isOwnMessage ? "justify-end" : "justify-start")}>
-            <div className={cn(
+             <div className={cn(
                 "flex items-center",
                 isOwnMessage ? "flex-row-reverse" : "flex-row"
             )}>
@@ -206,7 +206,7 @@ function ChatMessages({ conversationId, conversation, onSetReply, replyingTo }: 
                     {seenStatus}
                 </div>
             )}
-            <div className={cn(replyingTo ? "h-28" : "h-16")} />
+            <div className={cn(replyingTo ? "h-24" : "h-14")} />
         </div>
     )
 }
@@ -383,4 +383,6 @@ export default function ChatPage() {
         </AppLayout>
     )
 }
+    
+
     
