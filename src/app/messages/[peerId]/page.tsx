@@ -75,9 +75,12 @@ function MessageBubble({ message, isOwnMessage, conversationId, onSetReply }: { 
                             isOwnMessage ? "bg-primary text-primary-foreground rounded-br-none" : "bg-secondary rounded-bl-none"
                         )}>
                             {message.replyToMessageText && (
-                                <div className="border-l-2 border-primary-foreground/50 pl-2 mb-1 opacity-80">
+                                <div className={cn(
+                                    "p-2 rounded-md mb-2",
+                                    isOwnMessage ? "bg-black/10" : "bg-black/5"
+                                )}>
                                     <p className="text-xs font-semibold truncate">{formatUserId(message.replyToMessageId === message.senderId ? message.senderId : undefined)}</p>
-                                    <p className="text-xs truncate">{message.replyToMessageText}</p>
+                                    <p className="text-xs truncate opacity-80">{message.replyToMessageText}</p>
                                 </div>
                             )}
                             <p className="text-sm whitespace-pre-wrap">{message.text}</p>
