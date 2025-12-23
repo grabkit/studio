@@ -62,15 +62,19 @@ export function RepliesList({ userId }: { userId: string }) {
                 // Step 2: Fetch the corresponding posts
                 const postsData: { [key: string]: Post } = {};
                 // Firestore 'in' query is limited to 30 items. We might need to batch this.
-                // For now, let's assume it's less than 30 for simplicity.
                 const MAX_POSTS_FETCH = 30;
                 if (postIds.length > 0) {
-                    const postsToFetch = postIds.slice(0, MAX_POSTS_FETCH);
-                    const postsQuery = query(collection(firestore, 'posts'), where('id', 'in', postsToFetch));
-                    const postsSnapshot = await getDocs(postsQuery);
-                    postsSnapshot.forEach(doc => {
-                        postsData[doc.id] = doc.data() as Post;
-                    });
+                    // Create chunks of postIds to fetch
+                    for (let i = 0; i < postIds.length; i += MAX_POSTS_FETCH) {
+                        const chunk = postIds.slice(i, i + MAX_POSTS_FETCH);
+                        if (chunk.length > 0) {
+                           const postsQuery = query(collection(firestore, 'posts'), where('id', 'in', chunk));
+                            const postsSnapshot = await getDocs(postsQuery);
+                            postsSnapshot.forEach(doc => {
+                                postsData[doc.id] = doc.data() as Post;
+                            });
+                        }
+                    }
                 }
                 
                 const fetchedReplies = commentsSnapshot.docs.map(doc => {
