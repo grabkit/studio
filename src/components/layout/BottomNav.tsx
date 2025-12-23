@@ -6,7 +6,7 @@ import { Home, User, HomeIcon, UserIcon, Plus, Heart as HeartIcon, Send } from "
 import { cn } from "@/lib/utils";
 import { useFirebase, useMemoFirebase } from "@/firebase";
 import { collection, query, where, limit } from "firebase/firestore";
-import type { Notification } from "@/lib/types";
+import type { Notification, Conversation } from "@/lib/types";
 import { useCollection } from "@/firebase/firestore/use-collection";
 import { useMemo } from "react";
 
@@ -31,9 +31,33 @@ export default function BottomNav() {
     );
   }, [firestore, user]);
 
-  const { data: unreadNotifications } = useCollection<Notification>(unreadNotifsQuery);
+  const conversationsQuery = useMemoFirebase(() => {
+    if (!user || !firestore) return null;
+    return query(
+        collection(firestore, 'conversations'),
+        where('participantIds', 'array-contains', user.uid)
+    );
+  }, [user, firestore]);
 
-  const hasUnread = useMemo(() => (unreadNotifications?.length ?? 0) > 0, [unreadNotifications]);
+  const { data: unreadNotifications } = useCollection<Notification>(unreadNotifsQuery);
+  const { data: conversations } = useCollection<Conversation>(conversationsQuery);
+
+
+  const hasUnreadActivity = useMemo(() => (unreadNotifications?.length ?? 0) > 0, [unreadNotifications]);
+  
+  const hasUnreadMessagesOrRequests = useMemo(() => {
+    if (!conversations || !user) return false;
+
+    return conversations.some(convo => {
+      // Check for unread messages in accepted chats
+      const hasUnreadMsg = convo.status === 'accepted' && (convo.unreadCounts?.[user.uid] ?? 0) > 0;
+      // Check for new pending requests from other users
+      const isNewRequest = convo.status === 'pending' && convo.requesterId !== user.uid;
+      
+      return hasUnreadMsg || isNewRequest;
+    });
+  }, [conversations, user]);
+
 
   const isMessagesActive = pathname.startsWith('/messages');
 
@@ -44,6 +68,7 @@ export default function BottomNav() {
           const isActive = item.href === '/messages' ? isMessagesActive : pathname === item.href;
           const Icon = isActive ? item.activeIcon : item.icon;
           const isActivityTab = item.href === '/activity';
+          const isMessagesTab = item.href === '/messages';
 
           return (
             <Link
@@ -59,7 +84,10 @@ export default function BottomNav() {
                 "p-3 rounded-full relative"
               )}>
                 <Icon className={cn("h-7 w-7")} fill={(isActive && item.href !== '/post') ? "currentColor" : "none"} />
-                {isActivityTab && hasUnread && (
+                {(isActivityTab && hasUnreadActivity) && (
+                    <div className="absolute top-3 right-2.5 w-2.5 h-2.5 bg-destructive rounded-full border-2 border-background"></div>
+                )}
+                {(isMessagesTab && hasUnreadMessagesOrRequests) && (
                     <div className="absolute top-3 right-2.5 w-2.5 h-2.5 bg-destructive rounded-full border-2 border-background"></div>
                 )}
               </div>
