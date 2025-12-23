@@ -64,47 +64,52 @@ function MessageBubble({ message, isOwnMessage, conversationId, onSetReply }: { 
 
     return (
         <div className={cn("flex items-end gap-2 group", isOwnMessage ? "justify-end" : "justify-start")}>
-            <DropdownMenu>
-                <DropdownMenuTrigger asChild>
-                    <div className={cn(
-                        "max-w-[70%] rounded-2xl px-3 py-2 cursor-pointer",
-                        isOwnMessage ? "bg-primary text-primary-foreground rounded-br-none" : "bg-secondary rounded-bl-none"
-                    )}>
-                        {message.replyToMessageText && (
-                            <div className="border-l-2 border-primary-foreground/50 pl-2 mb-1 opacity-80">
-                                <p className="text-xs font-semibold truncate">{formatUserId(message.senderId)}</p>
-                                <p className="text-xs truncate">{message.replyToMessageText}</p>
-                            </div>
-                        )}
-                        <p className="text-sm whitespace-pre-wrap">{message.text}</p>
-                        {message.timestamp?.toDate && (
-                            <p className={cn("text-xs mt-1 text-right", isOwnMessage ? "text-primary-foreground/70" : "text-muted-foreground")}>
-                                {formatTimestamp(message.timestamp.toDate())}
-                            </p>
-                        )}
-                    </div>
-                </DropdownMenuTrigger>
-                <DropdownMenuContent align={isOwnMessage ? "end" : "start"} className="w-56">
-                    <DropdownMenuItem onClick={() => onSetReply(message)}>
-                        <Reply className="mr-2 h-4 w-4" />
-                        <span>Reply</span>
-                    </DropdownMenuItem>
-                        <DropdownMenuItem>
-                        <Forward className="mr-2 h-4 w-4" />
-                        <span>Forward</span>
-                    </DropdownMenuItem>
-                    <DropdownMenuItem onClick={handleCopy}>
-                        <Copy className="mr-2 h-4 w-4" />
-                        <span>Copy</span>
-                    </DropdownMenuItem>
-                    {isOwnMessage && (
-                            <DropdownMenuItem className="text-destructive" onClick={handleUnsend}>
-                            <Trash2 className="mr-2 h-4 w-4" />
-                            <span>Unsend</span>
+            <div className={cn(
+                "flex items-center",
+                isOwnMessage ? "flex-row-reverse" : "flex-row"
+            )}>
+                 <DropdownMenu>
+                    <DropdownMenuTrigger asChild>
+                         <div className={cn(
+                            "max-w-[70%] rounded-2xl px-3 py-2 cursor-pointer",
+                            isOwnMessage ? "bg-primary text-primary-foreground rounded-br-none" : "bg-secondary rounded-bl-none"
+                        )}>
+                            {message.replyToMessageText && (
+                                <div className="border-l-2 border-primary-foreground/50 pl-2 mb-1 opacity-80">
+                                    <p className="text-xs font-semibold truncate">{formatUserId(message.senderId)}</p>
+                                    <p className="text-xs truncate">{message.replyToMessageText}</p>
+                                </div>
+                            )}
+                            <p className="text-sm whitespace-pre-wrap">{message.text}</p>
+                            {message.timestamp?.toDate && (
+                                <p className={cn("text-xs mt-1 text-right", isOwnMessage ? "text-primary-foreground/70" : "text-muted-foreground")}>
+                                    {formatTimestamp(message.timestamp.toDate())}
+                                </p>
+                            )}
+                        </div>
+                    </DropdownMenuTrigger>
+                    <DropdownMenuContent align={isOwnMessage ? "end" : "start"} className="w-56">
+                        <DropdownMenuItem onClick={() => onSetReply(message)}>
+                            <Reply className="mr-2 h-4 w-4" />
+                            <span>Reply</span>
                         </DropdownMenuItem>
-                    )}
-                </DropdownMenuContent>
-            </DropdownMenu>
+                            <DropdownMenuItem>
+                            <Forward className="mr-2 h-4 w-4" />
+                            <span>Forward</span>
+                        </DropdownMenuItem>
+                        <DropdownMenuItem onClick={handleCopy}>
+                            <Copy className="mr-2 h-4 w-4" />
+                            <span>Copy</span>
+                        </DropdownMenuItem>
+                        {isOwnMessage && (
+                                <DropdownMenuItem className="text-destructive" onClick={handleUnsend}>
+                                <Trash2 className="mr-2 h-4 w-4" />
+                                <span>Unsend</span>
+                            </DropdownMenuItem>
+                        )}
+                    </DropdownMenuContent>
+                </DropdownMenu>
+            </div>
         </div>
     )
 }
@@ -139,7 +144,7 @@ function ChatHeader({ peerId }: { peerId: string }) {
     )
 }
 
-function ChatMessages({ conversationId, conversation, onSetReply }: { conversationId: string, conversation: WithId<Conversation> | null, onSetReply: (message: WithId<Message>) => void }) {
+function ChatMessages({ conversationId, conversation, onSetReply, replyingTo }: { conversationId: string, conversation: WithId<Conversation> | null, onSetReply: (message: WithId<Message>) => void, replyingTo: WithId<Message> | null }) {
     const { firestore, user } = useFirebase();
     const messagesEndRef = React.useRef<HTMLDivElement | null>(null);
 
@@ -189,7 +194,7 @@ function ChatMessages({ conversationId, conversation, onSetReply }: { conversati
     }
 
     return (
-        <div className="p-4">
+        <div className="p-4 pt-14">
             <div className="space-y-4">
                 {messages?.map(message => (
                     <MessageBubble key={message.id} message={message} isOwnMessage={message.senderId === user?.uid} conversationId={conversationId} onSetReply={onSetReply} />
@@ -201,6 +206,7 @@ function ChatMessages({ conversationId, conversation, onSetReply }: { conversati
                     {seenStatus}
                 </div>
             )}
+            <div className={cn(replyingTo ? "h-28" : "h-16")} />
         </div>
     )
 }
@@ -369,14 +375,12 @@ export default function ChatPage() {
         <AppLayout showTopBar={false} showBottomNav={false}>
             <ChatHeader peerId={peerId} />
 
-            <div className="pt-14 pb-16">
-                {conversationId && <ChatMessages conversationId={conversationId} conversation={conversation} onSetReply={handleSetReply} />}
+            <div>
+                {conversationId && <ChatMessages conversationId={conversationId} conversation={conversation} onSetReply={handleSetReply} replyingTo={replyingTo} />}
             </div>
 
             {conversationId && <MessageInput conversationId={conversationId} conversation={conversation} replyingTo={replyingTo} onCancelReply={handleCancelReply} />}
         </AppLayout>
     )
 }
-    
-
     
