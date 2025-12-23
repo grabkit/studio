@@ -1,5 +1,3 @@
-
-
 "use client";
 
 import { useParams, useRouter } from "next/navigation";
@@ -196,6 +194,8 @@ export default function UserProfilePage() {
         }
     };
 
+    const allPosts = useMemo(() => posts?.filter(p => p.type !== 'poll') ?? [], [posts]);
+    const pollPosts = useMemo(() => posts?.filter(p => p.type === 'poll') ?? [], [posts]);
 
     if (userLoading || (currentUser && userId === currentUser.uid)) {
         return (
@@ -293,12 +293,15 @@ export default function UserProfilePage() {
                 </div>
 
                 <Tabs defaultValue="posts" className="w-full">
-                    <TabsList className="grid w-full grid-cols-1">
-                        <TabsTrigger value="posts" className="gap-2"><Grid3x3 className="h-5 w-5" /> Posts</TabsTrigger>
+                    <TabsList className="grid w-full grid-cols-4">
+                        <TabsTrigger value="posts">Posts</TabsTrigger>
+                        <TabsTrigger value="polls">Polls</TabsTrigger>
+                        <TabsTrigger value="reposts">Reposts</TabsTrigger>
+                        <TabsTrigger value="replies">Replies</TabsTrigger>
                     </TabsList>
                     <TabsContent value="posts">
                         <PostGrid
-                            posts={posts}
+                            posts={allPosts}
                             isLoading={postsLoading}
                             emptyState={
                                 <div className="col-span-3 text-center py-16">
@@ -308,6 +311,30 @@ export default function UserProfilePage() {
                             }
                         />
                     </TabsContent>
+                    <TabsContent value="polls">
+                        <PostGrid
+                            posts={pollPosts}
+                            isLoading={postsLoading}
+                            emptyState={
+                                <div className="col-span-3 text-center py-16">
+                                    <h3 className="text-xl font-headline text-primary">No Polls Yet</h3>
+                                    <p className="text-muted-foreground">This user hasn't created any polls.</p>
+                                </div>
+                            }
+                        />
+                    </TabsContent>
+                    <TabsContent value="reposts">
+                        <div className="text-center py-16">
+                            <h3 className="text-xl font-headline text-primary">No Reposts Yet</h3>
+                            <p className="text-muted-foreground">Posts shared by this user will appear here.</p>
+                        </div>
+                    </TabsContent>
+                    <TabsContent value="replies">
+                        <div className="text-center py-16">
+                            <h3 className="text-xl font-headline text-primary">No Replies Yet</h3>
+                            <p className="text-muted-foreground">Replies from this user will appear here.</p>
+                        </div>
+                    </TabsContent>
                 </Tabs>
 
 
@@ -315,5 +342,3 @@ export default function UserProfilePage() {
         </AppLayout>
     );
 }
-
-    

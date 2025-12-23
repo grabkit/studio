@@ -151,6 +151,10 @@ export default function AccountPage() {
     return `blur${uid.substring(uid.length - 6)}`;
   };
 
+  const allPosts = useMemo(() => posts?.filter(p => p.type !== 'poll') ?? [], [posts]);
+  const pollPosts = useMemo(() => posts?.filter(p => p.type === 'poll') ?? [], [posts]);
+
+
   return (
     <AppLayout showTopBar={false}>
       <div className="px-4">
@@ -219,13 +223,15 @@ export default function AccountPage() {
 
 
         <Tabs defaultValue="posts" className="w-full">
-            <TabsList className="grid w-full grid-cols-2">
-                <TabsTrigger value="posts" className="gap-2"><Grid3x3 className="h-5 w-5" /> Posts</TabsTrigger>
-                <TabsTrigger value="bookmarked" className="gap-2"><BookmarkIcon className="h-5 w-5" /> Bookmarked</TabsTrigger>
+            <TabsList className="grid w-full grid-cols-4">
+                <TabsTrigger value="posts">Posts</TabsTrigger>
+                <TabsTrigger value="polls">Polls</TabsTrigger>
+                <TabsTrigger value="reposts">Reposts</TabsTrigger>
+                <TabsTrigger value="replies">Replies</TabsTrigger>
             </TabsList>
             <TabsContent value="posts">
                 <PostGrid
-                    posts={posts}
+                    posts={allPosts}
                     isLoading={postsLoading}
                     emptyState={
                         <div className="col-span-3 text-center py-16">
@@ -235,8 +241,29 @@ export default function AccountPage() {
                     }
                 />
             </TabsContent>
-            <TabsContent value="bookmarked">
-                <BookmarkedPosts />
+             <TabsContent value="polls">
+                <PostGrid
+                    posts={pollPosts}
+                    isLoading={postsLoading}
+                    emptyState={
+                        <div className="col-span-3 text-center py-16">
+                            <h3 className="text-xl font-headline text-primary">No Polls Yet</h3>
+                            <p className="text-muted-foreground">Create a poll to get feedback.</p>
+                        </div>
+                    }
+                />
+            </TabsContent>
+            <TabsContent value="reposts">
+                 <div className="text-center py-16">
+                    <h3 className="text-xl font-headline text-primary">No Reposts Yet</h3>
+                    <p className="text-muted-foreground">Posts you share will appear here.</p>
+                </div>
+            </TabsContent>
+             <TabsContent value="replies">
+                 <div className="text-center py-16">
+                    <h3 className="text-xl font-headline text-primary">No Replies Yet</h3>
+                    <p className="text-muted-foreground">Your replies to other posts will appear here.</p>
+                </div>
             </TabsContent>
         </Tabs>
       </div>
