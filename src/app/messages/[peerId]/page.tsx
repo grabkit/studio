@@ -80,7 +80,7 @@ function MessageBubble({ message, isOwnMessage, conversationId, onSetReply }: { 
                                     isOwnMessage ? "bg-black/10" : "bg-black/5"
                                 )}>
                                     <p className="text-xs font-semibold truncate">{formatUserId(message.replyToMessageId === message.senderId ? message.senderId : undefined)}</p>
-                                    <p className="text-xs truncate opacity-80">{message.replyToMessageText}</p>
+                                    <p className="text-xs opacity-80 whitespace-pre-wrap break-words">{message.replyToMessageText}</p>
                                 </div>
                             )}
                             <p className="text-sm whitespace-pre-wrap">{message.text}</p>
