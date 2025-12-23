@@ -285,7 +285,7 @@ export default function MessagesPage() {
                         <TabsTrigger value="requests" className="rounded-full px-8">
                             Requests
                             {hasNewRequests && (
-                                <div className="ml-1 h-2 w-2 rounded-full bg-red-500"></div>
+                                <div className="ml-2 h-1.5 w-1.5 rounded-full bg-red-500"></div>
                             )}
                         </TabsTrigger>
                     </TabsList>
