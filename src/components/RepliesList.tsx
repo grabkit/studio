@@ -42,60 +42,61 @@ export function RepliesList({ userId }: { userId: string }) {
         const fetchUserReplies = async () => {
             setIsLoading(true);
             try {
-                // Step 1: Get all comments by the user.
-                // orderBy is removed to prevent needing a composite index. Sorting will be done client-side.
-                const commentsByUserQuery = query(
-                    collectionGroup(firestore, 'comments'), 
-                    where('authorId', '==', userId),
-                    limit(50)
-                );
+                // Step 1: Get all posts created by the user.
+                const userPostsQuery = query(collection(firestore, 'posts'), where('authorId', '==', userId));
+                const postsSnapshot = await getDocs(userPostsQuery);
 
-                const commentsSnapshot = await getDocs(commentsByUserQuery);
-                if (commentsSnapshot.empty) {
+                if (postsSnapshot.empty) {
                     setReplies([]);
                     setIsLoading(false);
                     return;
                 }
+
+                const postsData: { [key: string]: Post } = {};
+                postsSnapshot.forEach(doc => {
+                    postsData[doc.id] = { id: doc.id, ...doc.data() } as Post;
+                });
+                const postIds = Object.keys(postsData);
+
+                // Step 2: Fetch all comments where 'postId' is in the list of the user's post IDs.
+                // Firestore 'in' queries are limited to 30 items per query.
+                const MAX_COMMENTS_FETCH = 30;
+                let allComments: WithId<Comment>[] = [];
+
+                for (let i = 0; i < postIds.length; i += MAX_COMMENTS_FETCH) {
+                    const chunk = postIds.slice(i, i + MAX_COMMENTS_FETCH);
+                    if (chunk.length > 0) {
+                        const commentsQuery = query(
+                            collectionGroup(firestore, 'comments'),
+                            where('postId', 'in', chunk)
+                        );
+                        const commentsSnapshot = await getDocs(commentsQuery);
+                        const chunkComments = commentsSnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as WithId<Comment>));
+                        allComments = [...allComments, ...chunkComments];
+                    }
+                }
+
+                // Filter out replies made by the user themselves
+                const receivedReplies = allComments.filter(comment => comment.authorId !== userId);
                 
-                const userComments = commentsSnapshot.docs.map(doc => doc.data() as Comment);
-                
-                // Sort comments client-side
-                userComments.sort((a, b) => {
+                // Sort replies by timestamp client-side
+                receivedReplies.sort((a, b) => {
                     const timeA = a.timestamp?.toMillis() || 0;
                     const timeB = b.timestamp?.toMillis() || 0;
                     return timeB - timeA;
                 });
 
-                const postIds = [...new Set(userComments.map(comment => comment.postId))];
-                
-                // Step 2: Fetch the corresponding posts
-                const postsData: { [key: string]: Post } = {};
-                // Firestore 'in' query supports up to 30 elements
-                const MAX_POSTS_FETCH = 30;
-                if (postIds.length > 0) {
-                    for (let i = 0; i < postIds.length; i += MAX_POSTS_FETCH) {
-                        const chunk = postIds.slice(i, i + MAX_POSTS_FETCH);
-                        if (chunk.length > 0) {
-                           const postsQuery = query(collection(firestore, 'posts'), where('id', 'in', chunk));
-                            const postsSnapshot = await getDocs(postsQuery);
-                            postsSnapshot.forEach(doc => {
-                                postsData[doc.id] = doc.data() as Post;
-                            });
-                        }
-                    }
-                }
-                
-                const fetchedReplies = userComments.map(comment => {
+                // Step 3: Combine comment data with original post data
+                const fetchedReplies: WithId<ReplyItem>[] = receivedReplies.map(comment => {
                     const post = postsData[comment.postId];
-                    const postAuthor = post?.authorId;
                     return {
                         ...comment,
                         id: comment.id,
                         postContent: post?.content || "Original post content not found.",
-                        postAuthorId: postAuthor,
-                    } as WithId<ReplyItem>;
+                        postAuthorId: post?.authorId, // The author of the original post
+                    };
                 });
-
+                
                 setReplies(fetchedReplies);
 
             } catch (error) {
@@ -123,7 +124,7 @@ export function RepliesList({ userId }: { userId: string }) {
         return (
             <div className="text-center py-16">
                 <h3 className="text-xl font-headline text-primary">No Replies Yet</h3>
-                <p className="text-muted-foreground">This user hasn't replied to any posts.</p>
+                <p className="text-muted-foreground">Replies to this user's posts will appear here.</p>
             </div>
         );
     }
@@ -133,8 +134,8 @@ export function RepliesList({ userId }: { userId: string }) {
             {replies.map(reply => (
                 <div key={reply.id} className="p-4 space-y-3">
                     {/* Original Post Snippet */}
-                    <div className="text-sm text-muted-foreground pl-10">
-                        Replying to <Link href={`/profile/${reply.postAuthorId}`} className="text-primary hover:underline">{formatUserId(reply.postAuthorId)}'s post</Link>: 
+                     <div className="text-sm text-muted-foreground pl-10">
+                        <Link href={`/profile/${reply.authorId}`} className="text-primary hover:underline">{formatUserId(reply.authorId)}</Link> replied to your post: 
                         <span className="italic"> "{reply.postContent.substring(0, 50)}..."</span>
                     </div>
 
