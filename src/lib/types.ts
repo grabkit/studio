@@ -28,6 +28,7 @@ export interface Comment {
     authorId: string;
     content: string;
     timestamp: Timestamp;
+    postAuthorId?: string; // This might be added in the fetch logic
 }
 
 export interface User {
@@ -77,4 +78,9 @@ export interface Message {
     replyToMessageText?: string;
 }
 
+
+// Specific type for the replies list
+export interface ReplyItem extends Comment {
+    postContent: string;
+}
     

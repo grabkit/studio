@@ -6,7 +6,7 @@ import { useFirebase, useMemoFirebase } from "@/firebase";
 import { doc, collection, query, where, getDocs, serverTimestamp, setDoc, getDoc } from "firebase/firestore";
 import { useDoc } from "@/firebase/firestore/use-doc";
 import { useCollection } from "@/firebase/firestore/use-collection";
-import type { Post, User, UserPost } from "@/lib/types";
+import type { Post, User } from "@/lib/types";
 import React, { useMemo, useState, useEffect } from "react";
 import Link from "next/link";
 import { useToast } from "@/hooks/use-toast";
@@ -16,13 +16,14 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { FileText, ArrowLeft, MessageSquare, ArrowUpRight } from "lucide-react";
+import { ArrowLeft, MessageSquare, ArrowUpRight } from "lucide-react";
 import { getInitials } from "@/lib/utils";
 import { FirestorePermissionError } from "@/firebase/errors";
 import { errorEmitter } from "@/firebase/error-emitter";
 import { PostItem as HomePostItem, PostSkeleton } from "@/app/home/page";
 import type { Bookmark } from "@/lib/types";
 import { WithId } from "@/firebase/firestore/use-collection";
+import { RepliesList } from "@/components/RepliesList";
 
 
 export default function UserProfilePage() {
@@ -52,7 +53,6 @@ export default function UserProfilePage() {
         const fetchPosts = async () => {
             setPostsLoading(true);
             try {
-                // Query without ordering by timestamp to avoid composite index requirement
                 const postsQuery = query(
                     collection(firestore, "posts"),
                     where("authorId", "==", userId)
@@ -60,11 +60,10 @@ export default function UserProfilePage() {
                 const querySnapshot = await getDocs(postsQuery);
                 const userPosts = querySnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as WithId<Post>));
                 
-                // Sort posts on the client-side
                 userPosts.sort((a, b) => {
                     const timeA = a.timestamp?.toMillis() || 0;
                     const timeB = b.timestamp?.toMillis() || 0;
-                    return timeB - timeA; // For descending order
+                    return timeB - timeA; 
                 });
 
                 setPosts(userPosts);
@@ -115,10 +114,8 @@ export default function UserProfilePage() {
             const conversationSnap = await getDoc(conversationRef);
 
             if (conversationSnap.exists()) {
-                // If conversation already exists (pending or accepted), just navigate.
                 router.push(`/messages/${userId}`);
             } else {
-                // If it doesn't exist, create a new pending request.
                 const newConversationData = {
                     id: conversationId,
                     participantIds: [currentUserId, userId].sort(),
@@ -136,11 +133,10 @@ export default function UserProfilePage() {
         } catch (error: any) {
             console.error("Error handling conversation:", error);
             
-            // This error is more likely to happen on the 'setDoc' (create) operation
             const permissionError = new FirestorePermissionError({
                 path: conversationRef.path,
-                operation: 'create', // We are attempting to create if it doesn't exist.
-                requestResourceData: { status: 'pending' } // A sample of what we tried to create
+                operation: 'create', 
+                requestResourceData: { status: 'pending' } 
             });
             errorEmitter.emit('permission-error', permissionError);
             
@@ -182,8 +178,8 @@ export default function UserProfilePage() {
     if (userLoading || (currentUser && userId === currentUser.uid)) {
         return (
             <AppLayout showTopBar={false}>
-                 <div className="grid grid-cols-3 items-center mb-6 px-4">
-                    <Button variant="ghost" size="icon" className="-ml-2" onClick={() => router.back()}>
+                 <div className="grid grid-cols-3 items-center mb-6 px-4 -ml-2">
+                    <Button variant="ghost" size="icon" onClick={() => router.back()}>
                         <ArrowLeft className="h-6 w-6" />
                     </Button>
                     <h2 className="text-2xl font-semibold font-headline text-center">
@@ -224,8 +220,8 @@ export default function UserProfilePage() {
     if (!user) {
         return (
              <AppLayout showTopBar={false}>
-                <div className="grid grid-cols-3 items-center mb-6 px-4">
-                    <Button variant="ghost" size="icon" className="-ml-2" onClick={() => router.back()}>
+                <div className="grid grid-cols-3 items-center mb-6 px-4 -ml-2">
+                    <Button variant="ghost" size="icon" onClick={() => router.back()}>
                         <ArrowLeft className="h-6 w-6" />
                     </Button>
                 </div>
@@ -242,8 +238,8 @@ export default function UserProfilePage() {
     return (
         <AppLayout showTopBar={false}>
             <div>
-                <div className="grid grid-cols-3 items-center mb-6 px-4">
-                     <Button variant="ghost" size="icon" className="-ml-2" onClick={() => router.back()}>
+                <div className="grid grid-cols-3 items-center mb-6 px-4 -ml-2">
+                     <Button variant="ghost" size="icon" onClick={() => router.back()}>
                         <ArrowLeft className="h-6 w-6" />
                     </Button>
                     <h2 className="text-2xl font-semibold font-headline text-center">
@@ -333,10 +329,7 @@ export default function UserProfilePage() {
                         </div>
                     </TabsContent>
                     <TabsContent value="replies">
-                        <div className="text-center py-16">
-                            <h3 className="text-xl font-headline text-primary">No Replies Yet</h3>
-                            <p className="text-muted-foreground">Replies from this user will appear here.</p>
-                        </div>
+                        {userId && <RepliesList userId={userId} />}
                     </TabsContent>
                 </Tabs>
 
@@ -347,5 +340,3 @@ export default function UserProfilePage() {
 
     
 }
-
-    

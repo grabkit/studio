@@ -6,37 +6,19 @@ import { useUser, useFirebase, useMemoFirebase } from "@/firebase";
 import { useRouter } from "next/navigation";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
-import { collection, query, where, getDocs, doc, updateDoc, arrayUnion, arrayRemove, increment, deleteDoc, setDoc, serverTimestamp, runTransaction } from "firebase/firestore";
+import { collection, query, where, getDocs } from "firebase/firestore";
 import { useCollection, type WithId } from "@/firebase/firestore/use-collection";
 import { Settings, LogOut } from "lucide-react";
 import { signOut } from "firebase/auth";
 import { useToast } from "@/hooks/use-toast";
-import type { Post, Bookmark, PollOption, Notification, User } from "@/lib/types";
+import type { Post, Bookmark } from "@/lib/types";
 import { Skeleton } from "@/components/ui/skeleton";
-import Link from "next/link";
 import React, { useMemo, useState, useEffect } from "react";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { cn, getInitials, formatTimestamp } from "@/lib/utils";
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu";
-import {
-  AlertDialog,
-  AlertDialogAction,
-  AlertDialogCancel,
-  AlertDialogContent,
-  AlertDialogDescription,
-  AlertDialogFooter,
-  AlertDialogHeader,
-  AlertDialogTitle,
-} from "@/components/ui/alert-dialog";
-import { buttonVariants } from "@/components/ui/button";
-import { errorEmitter } from "@/firebase/error-emitter";
-import { FirestorePermissionError } from "@/firebase/errors";
+import { getInitials } from "@/lib/utils";
+
 import { PostItem as HomePostItem, PostSkeleton } from "@/app/home/page";
+import { RepliesList } from "@/components/RepliesList";
 
 
 export default function AccountPage() {
@@ -212,10 +194,7 @@ export default function AccountPage() {
                 </div>
             </TabsContent>
              <TabsContent value="replies">
-                 <div className="text-center py-16">
-                    <h3 className="text-xl font-headline text-primary">No Replies Yet</h3>
-                    <p className="text-muted-foreground">Your replies to other posts will appear here.</p>
-                </div>
+                 {user?.uid && <RepliesList userId={user.uid} />}
             </TabsContent>
         </Tabs>
       </div>
