@@ -1,6 +1,6 @@
 import { clsx, type ClassValue } from "clsx"
 import { twMerge } from "tailwind-merge"
-import { formatDistanceToNowStrict } from "date-fns";
+import { formatDistanceToNowStrict, isToday, isYesterday, format, isThisWeek } from "date-fns";
 
 export function cn(...inputs: ClassValue[]) {
   return twMerge(clsx(inputs))
@@ -38,11 +38,20 @@ export function formatTimestamp(date: Date): string {
 }
 
 export function formatMessageTimestamp(date: Date): string {
-  return new Intl.DateTimeFormat(undefined, {
-    hour: 'numeric',
-    minute: '2-digit',
-    hour12: true,
-  }).format(date);
+  if (isToday(date)) {
+    return new Intl.DateTimeFormat(undefined, {
+      hour: 'numeric',
+      minute: '2-digit',
+      hour12: true,
+    }).format(date);
+  }
+  if (isYesterday(date)) {
+    return "Yesterday";
+  }
+  if (isThisWeek(date, { weekStartsOn: 1 /* Monday */ })) {
+    return format(date, 'EEEE'); // e.g., "Sunday"
+  }
+  return format(date, 'P'); // e.g., 09/15/2024
 }
 
 
