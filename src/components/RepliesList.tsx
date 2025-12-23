@@ -3,7 +3,7 @@
 
 import React, { useState, useEffect } from 'react';
 import { useFirebase } from '@/firebase';
-import { collectionGroup, query, where, getDocs, orderBy, limit } from 'firebase/firestore';
+import { collectionGroup, query, where, getDocs, orderBy, limit, collection } from 'firebase/firestore';
 import type { WithId } from '@/firebase/firestore/use-collection';
 import type { Comment, Post, ReplyItem } from '@/lib/types';
 import { Skeleton } from './ui/skeleton';
@@ -42,38 +42,46 @@ export function RepliesList({ userId }: { userId: string }) {
         const fetchUserReplies = async () => {
             setIsLoading(true);
             try {
-                // Step 1: Get all posts by the user
-                const postsQuery = query(collection(firestore, 'posts'), where('authorId', '==', userId));
-                const postsSnapshot = await getDocs(postsQuery);
-                const postIds = postsSnapshot.docs.map(doc => doc.id);
+                // Step 1: Get all comments by the user
+                const commentsByUserQuery = query(
+                    collectionGroup(firestore, 'comments'), 
+                    where('authorId', '==', userId),
+                    orderBy('timestamp', 'desc'),
+                    limit(50)
+                );
 
-                if (postIds.length === 0) {
+                const commentsSnapshot = await getDocs(commentsByUserQuery);
+                if (commentsSnapshot.empty) {
                     setReplies([]);
                     setIsLoading(false);
                     return;
                 }
-                
-                const postsData = Object.fromEntries(
-                    postsSnapshot.docs.map(doc => [doc.id, doc.data() as Post])
-                );
 
-                // Step 2: Use a collection group query to get all comments on those posts
-                const commentsQuery = query(
-                    collectionGroup(firestore, 'comments'),
-                    where('postId', 'in', postIds),
-                    orderBy('timestamp', 'desc'),
-                    limit(50)
-                );
+                const postIds = [...new Set(commentsSnapshot.docs.map(doc => doc.data().postId))];
                 
-                const commentsSnapshot = await getDocs(commentsQuery);
+                // Step 2: Fetch the corresponding posts
+                const postsData: { [key: string]: Post } = {};
+                // Firestore 'in' query is limited to 30 items. We might need to batch this.
+                // For now, let's assume it's less than 30 for simplicity.
+                const MAX_POSTS_FETCH = 30;
+                if (postIds.length > 0) {
+                    const postsToFetch = postIds.slice(0, MAX_POSTS_FETCH);
+                    const postsQuery = query(collection(firestore, 'posts'), where('id', 'in', postsToFetch));
+                    const postsSnapshot = await getDocs(postsQuery);
+                    postsSnapshot.forEach(doc => {
+                        postsData[doc.id] = doc.data() as Post;
+                    });
+                }
                 
                 const fetchedReplies = commentsSnapshot.docs.map(doc => {
                     const comment = doc.data() as Comment;
                     const post = postsData[comment.postId];
+                    const postAuthor = post?.authorId;
                     return {
                         ...comment,
                         id: doc.id,
-                        postContent: post?.content || "Original post content not found."
+                        postContent: post?.content || "Original post content not found.",
+                        postAuthorId: postAuthor,
                     } as WithId<ReplyItem>;
                 });
 
@@ -105,7 +113,7 @@ export function RepliesList({ userId }: { userId: string }) {
         return (
             <div className="text-center py-16">
                 <h3 className="text-xl font-headline text-primary">No Replies Yet</h3>
-                <p className="text-muted-foreground">Replies to this user's posts will appear here.</p>
+                <p className="text-muted-foreground">This user hasn't replied to any posts.</p>
             </div>
         );
     }
@@ -116,7 +124,7 @@ export function RepliesList({ userId }: { userId: string }) {
                 <div key={reply.id} className="p-4 space-y-3">
                     {/* Original Post Snippet */}
                     <div className="text-sm text-muted-foreground pl-10">
-                        Replying to <Link href={`/post/${reply.postId}`} className="text-primary hover:underline">your post</Link>: 
+                        Replying to <Link href={`/profile/${reply.postAuthorId}`} className="text-primary hover:underline">{formatUserId(reply.postAuthorId)}'s post</Link>: 
                         <span className="italic"> "{reply.postContent.substring(0, 50)}..."</span>
                     </div>
 
@@ -138,7 +146,9 @@ export function RepliesList({ userId }: { userId: string }) {
                                     </span>
                                 </div>
                             </div>
-                            <p className="text-sm text-foreground whitespace-pre-wrap">{reply.content}</p>
+                            <Link href={`/post/${reply.postId}`}>
+                                <p className="text-sm text-foreground whitespace-pre-wrap hover:bg-secondary/50 rounded p-1 -m-1">{reply.content}</p>
+                            </Link>
                         </div>
                     </div>
                 </div>
