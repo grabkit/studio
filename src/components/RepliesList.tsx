@@ -70,6 +70,7 @@ export function RepliesList({ userId }: { userId: string }) {
                 
                 // Step 2: Fetch the corresponding posts
                 const postsData: { [key: string]: Post } = {};
+                // Firestore 'in' query supports up to 30 elements
                 const MAX_POSTS_FETCH = 30;
                 if (postIds.length > 0) {
                     for (let i = 0; i < postIds.length; i += MAX_POSTS_FETCH) {
