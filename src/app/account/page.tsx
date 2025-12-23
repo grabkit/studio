@@ -6,12 +6,12 @@ import { useUser, useFirebase, useMemoFirebase } from "@/firebase";
 import { useRouter } from "next/navigation";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
-import { collection, query, where, orderBy, getDocs, doc, updateDoc, arrayUnion, arrayRemove, increment, deleteDoc, setDoc, serverTimestamp, runTransaction } from "firebase/firestore";
+import { collection, query, where, getDocs, doc, updateDoc, arrayUnion, arrayRemove, increment, deleteDoc, setDoc, serverTimestamp, runTransaction } from "firebase/firestore";
 import { useCollection, type WithId } from "@/firebase/firestore/use-collection";
-import { Settings, LogOut, FileText, Heart, MessageCircle, Repeat, ArrowUpRight, MoreHorizontal, Edit, Trash2, Bookmark as BookmarkIcon } from "lucide-react";
+import { Settings, LogOut } from "lucide-react";
 import { signOut } from "firebase/auth";
 import { useToast } from "@/hooks/use-toast";
-import type { Post, UserPost, Bookmark, PollOption, Notification, User } from "@/lib/types";
+import type { Post, Bookmark, PollOption, Notification, User } from "@/lib/types";
 import { Skeleton } from "@/components/ui/skeleton";
 import Link from "next/link";
 import React, { useMemo, useState, useEffect } from "react";
@@ -45,16 +45,39 @@ export default function AccountPage() {
   const router = useRouter();
   const { toast } = useToast();
 
-  const userPostsQuery = useMemoFirebase(() => {
-    if (!firestore || !user) return null;
-    return query(
-      collection(firestore, "posts"),
-      where("authorId", "==", user.uid),
-      orderBy("timestamp", "desc")
-    );
-  }, [firestore, user]);
+  const [posts, setPosts] = useState<WithId<Post>[]>([]);
+  const [postsLoading, setPostsLoading] = useState(true);
 
-  const { data: posts, isLoading: postsLoading } = useCollection<Post>(userPostsQuery);
+  useEffect(() => {
+    if (!firestore || !user) return;
+
+    const fetchPosts = async () => {
+        setPostsLoading(true);
+        try {
+            const postsQuery = query(
+                collection(firestore, "posts"),
+                where("authorId", "==", user.uid)
+            );
+            const querySnapshot = await getDocs(postsQuery);
+            const userPosts = querySnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as WithId<Post>));
+            
+            userPosts.sort((a, b) => {
+                const timeA = a.timestamp?.toMillis() || 0;
+                const timeB = b.timestamp?.toMillis() || 0;
+                return timeB - timeA;
+            });
+
+            setPosts(userPosts);
+        } catch (error) {
+            console.error("Error fetching user posts:", error);
+        } finally {
+            setPostsLoading(false);
+        }
+    };
+
+    fetchPosts();
+}, [firestore, user]);
+
 
   const bookmarksQuery = useMemoFirebase(() => {
     if (!firestore || !user) return null;
