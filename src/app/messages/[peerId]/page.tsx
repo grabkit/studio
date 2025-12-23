@@ -318,7 +318,7 @@ function MessageInput({ conversationId, conversation, replyingTo, onCancelReply 
                             </FormItem>
                             )}
                         />
-                        <Button type="submit" size="icon" disabled={form.formState.isSubmitting} className="bg-black hover:bg-black/90 rounded-full">
+                        <Button type="submit" size="icon" disabled={form.formState.isSubmitting} className="bg-primary hover:bg-primary/90 rounded-full">
                             <Send className="h-5 w-5" />
                         </Button>
                     </form>
