@@ -1,3 +1,4 @@
+
 "use client";
 
 import { useFirebase, useUser } from "@/firebase";
@@ -88,3 +89,10 @@ export default function AppLayout({
           showTopBar ? "pt-16" : "pt-8",
           showBottomNav ? "pb-16" : "pb-8"
         )}
+      >
+        {children}
+      </main>
+      {showBottomNav && <BottomNav />}
+    </div>
+  );
+}
