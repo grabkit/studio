@@ -393,10 +393,12 @@ export default function UserProfilePage() {
                                     <MinusCircle className="h-5 w-5" />
                                 </Button>
                              </div>
-                             <Button variant="ghost" className="justify-between text-base py-6 rounded-2xl">
-                                <span>About this profile</span>
-                                <Info className="h-5 w-5" />
-                            </Button>
+                             <div className="border rounded-2xl">
+                                <Button variant="ghost" className="justify-between text-base py-6 rounded-2xl w-full">
+                                    <span>About this profile</span>
+                                    <Info className="h-5 w-5" />
+                                </Button>
+                            </div>
                              <div className="border rounded-2xl">
                                 <Button variant="ghost" className="justify-between text-base py-6 rounded-2xl w-full" onClick={handleShare}>
                                     <span>Share via...</span>
