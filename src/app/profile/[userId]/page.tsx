@@ -382,14 +382,17 @@ export default function UserProfilePage() {
                             </SheetDescription>
                         </SheetHeader>
                          <div className="grid gap-2 py-4">
-                            <Button variant="ghost" className="justify-between text-base py-6 rounded-2xl">
-                                <span>Mute</span>
-                                <VolumeX className="h-5 w-5" />
-                            </Button>
-                             <Button variant="ghost" className="justify-between text-base py-6 rounded-2xl">
-                                <span>Restrict</span>
-                                <MinusCircle className="h-5 w-5" />
-                            </Button>
+                             <div className="border rounded-2xl">
+                                <Button variant="ghost" className="justify-between text-base py-6 rounded-2xl w-full">
+                                    <span>Mute</span>
+                                    <VolumeX className="h-5 w-5" />
+                                </Button>
+                                <div className="border-t"></div>
+                                <Button variant="ghost" className="justify-between text-base py-6 rounded-2xl w-full">
+                                    <span>Restrict</span>
+                                    <MinusCircle className="h-5 w-5" />
+                                </Button>
+                             </div>
                              <Button variant="ghost" className="justify-between text-base py-6 rounded-2xl">
                                 <span>About this profile</span>
                                 <Info className="h-5 w-5" />
@@ -430,3 +433,5 @@ export default function UserProfilePage() {
 
     
 }
+
+    
