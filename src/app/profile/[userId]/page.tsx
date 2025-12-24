@@ -9,22 +9,66 @@ import type { Post, User } from "@/lib/types";
 import React, { useMemo, useState, useEffect } from "react";
 import Link from "next/link";
 import { useToast } from "@/hooks/use-toast";
+import { format } from "date-fns";
 
 import AppLayout from "@/components/AppLayout";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { ArrowLeft, MessageSquare, ArrowUpRight, ArrowUp, MoreHorizontal, ShieldAlert, Flag, VolumeX, Info, MinusCircle, Link as LinkIcon, QrCode } from "lucide-react";
+import { ArrowLeft, MessageSquare, ArrowUpRight, ArrowUp, MoreHorizontal, ShieldAlert, Flag, VolumeX, Info, MinusCircle, Link as LinkIcon, QrCode, Calendar, Badge, User as UserIcon } from "lucide-react";
 import { getInitials, cn } from "@/lib/utils";
 import { FirestorePermissionError } from "@/firebase/errors";
 import { errorEmitter } from "@/firebase/error-emitter";
 import { PostItem as HomePostItem, PostSkeleton } from "@/app/home/page";
 import type { Bookmark } from "@/lib/types";
 import { RepliesList } from "@/components/RepliesList";
-import { Sheet, SheetContent, SheetTrigger, SheetHeader, SheetTitle, SheetDescription } from "@/components/ui/sheet";
+import { Sheet, SheetContent, SheetTrigger, SheetHeader, SheetTitle, SheetDescription, SheetClose } from "@/components/ui/sheet";
 import { ReportDialog } from "@/components/ReportDialog";
 import { QrCodeDialog } from "@/components/QrCodeDialog";
+
+
+function AboutProfileSheet({ user, isOpen, onOpenChange }: { user: User, isOpen: boolean, onOpenChange: (open: boolean) => void }) {
+    const formatUserId = (uid: string | undefined) => {
+        if (!uid) return "blur??????";
+        return `blur${uid.substring(uid.length - 6)}`;
+    };
+
+    return (
+        <Sheet open={isOpen} onOpenChange={onOpenChange}>
+            <SheetContent side="bottom" className="rounded-t-lg">
+                <SheetHeader className="text-left mb-4">
+                    <SheetTitle>About this account</SheetTitle>
+                </SheetHeader>
+                <div className="space-y-4">
+                    <div className="flex items-center">
+                        <UserIcon className="h-5 w-5 mr-3 text-muted-foreground" />
+                        <div>
+                            <p className="text-sm text-muted-foreground">User ID</p>
+                            <p className="font-mono text-sm">{formatUserId(user.id)}</p>
+                        </div>
+                    </div>
+                    {user.createdAt && (
+                        <div className="flex items-center">
+                            <Calendar className="h-5 w-5 mr-3 text-muted-foreground" />
+                            <div>
+                                <p className="text-sm text-muted-foreground">Joined</p>
+                                <p className="font-semibold">{format(user.createdAt.toDate(), "MMMM yyyy")}</p>
+                            </div>
+                        </div>
+                    )}
+                    <div className="flex items-center">
+                        <Badge className="h-5 w-5 mr-3 text-muted-foreground" />
+                        <div>
+                            <p className="text-sm text-muted-foreground">Account Status</p>
+                            <p className="font-semibold capitalize">{user.status || 'Active'}</p>
+                        </div>
+                    </div>
+                </div>
+            </SheetContent>
+        </Sheet>
+    )
+}
 
 
 export default function UserProfilePage() {
@@ -36,7 +80,8 @@ export default function UserProfilePage() {
 
     const [posts, setPosts] = useState<WithId<Post>[]>([]);
     const [postsLoading, setPostsLoading] = useState(true);
-    const [isSheetOpen, setIsSheetOpen] = useState(false);
+    const [isMoreOptionsSheetOpen, setIsMoreOptionsSheetOpen] = useState(false);
+    const [isAboutSheetOpen, setIsAboutSheetOpen] = useState(false);
     const [isQrDialogOpen, setIsQrDialogOpen] = useState(false);
 
 
@@ -137,7 +182,7 @@ export default function UserProfilePage() {
             errorEmitter.emit('permission-error', permissionError);
             toast({ variant: "destructive", title: "Error", description: "Could not complete the action." });
         } finally {
-            setIsSheetOpen(false);
+            setIsMoreOptionsSheetOpen(false);
         }
     };
 
@@ -211,7 +256,7 @@ export default function UserProfilePage() {
                 description: "There was an error trying to share this profile.",
             });
         } finally {
-            setIsSheetOpen(false);
+            setIsMoreOptionsSheetOpen(false);
         }
     };
 
@@ -221,14 +266,19 @@ export default function UserProfilePage() {
             title: "Profile Link Copied",
             description: "Link to this profile has been copied to your clipboard.",
         });
-        setIsSheetOpen(false);
+        setIsMoreOptionsSheetOpen(false);
     }
     
     const handleOpenQrCode = () => {
-        setIsSheetOpen(false);
+        setIsMoreOptionsSheetOpen(false);
         setIsQrDialogOpen(true);
     }
 
+    const handleOpenAbout = () => {
+        setIsMoreOptionsSheetOpen(false);
+        setIsAboutSheetOpen(true);
+    }
+    
     const hasUpvotedUser = useMemo(() => {
         if (!user || !currentUser) return false;
         return user.upvotedBy?.includes(currentUser.uid) || false;
@@ -324,7 +374,7 @@ export default function UserProfilePage() {
     return (
         <AppLayout showTopBar={false}>
             <div>
-                 <Sheet open={isSheetOpen} onOpenChange={setIsSheetOpen}>
+                 <Sheet open={isMoreOptionsSheetOpen} onOpenChange={setIsMoreOptionsSheetOpen}>
                     <div className="grid grid-cols-3 items-center mb-6 px-4">
                          <Button variant="ghost" size="icon" onClick={() => router.back()}>
                             <ArrowLeft className="h-6 w-6" />
@@ -444,7 +494,7 @@ export default function UserProfilePage() {
                                 </Button>
                              </div>
                              <div className="border rounded-2xl">
-                                <Button variant="ghost" className="justify-between text-base py-6 rounded-2xl w-full">
+                                <Button variant="ghost" className="justify-between text-base py-6 rounded-2xl w-full" onClick={handleOpenAbout}>
                                     <span>About this profile</span>
                                     <Info className="h-5 w-5" />
                                 </Button>
@@ -481,6 +531,7 @@ export default function UserProfilePage() {
                         </div>
                     </SheetContent>
                 </Sheet>
+                {user && <AboutProfileSheet user={user} isOpen={isAboutSheetOpen} onOpenChange={setIsAboutSheetOpen} />}
                  <QrCodeDialog
                     isOpen={isQrDialogOpen}
                     onOpenChange={setIsQrDialogOpen}
@@ -492,5 +543,3 @@ export default function UserProfilePage() {
 
     
 }
-
-    

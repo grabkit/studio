@@ -36,6 +36,7 @@ export interface User {
     name: string;
     email: string;
     anonymousId?: string;
+    createdAt?: Timestamp;
     upvotes?: number;
     upvotedBy?: string[];
     status?: 'active' | 'suspended' | 'banned';

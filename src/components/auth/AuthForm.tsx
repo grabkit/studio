@@ -1,3 +1,4 @@
+
 "use client";
 
 import { useState } from "react";
@@ -35,7 +36,7 @@ import { Loader2, Mail, Lock, User as UserIcon } from "lucide-react";
 import { createUserWithEmailAndPassword, signInWithEmailAndPassword, updateProfile } from "firebase/auth";
 import { cn, getInitials } from "@/lib/utils";
 import { Checkbox } from "@/components/ui/checkbox";
-import { doc, setDoc } from "firebase/firestore";
+import { doc, serverTimestamp, setDoc } from "firebase/firestore";
 import type { User as UserType } from "@/lib/types";
 
 const signUpSchema = z.object({
@@ -134,6 +135,7 @@ export default function AuthForm() {
                 id: user.uid,
                 name: values.name,
                 email: values.email,
+                createdAt: serverTimestamp(),
                 status: 'active',
             };
             await setDoc(userDocRef, newUser, { merge: true });
