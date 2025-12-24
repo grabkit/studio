@@ -6,7 +6,7 @@ import { useUser, useFirebase, useMemoFirebase } from "@/firebase";
 import { useRouter } from "next/navigation";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
-import { collection, query, where, getDocs } from "firebase/firestore";
+import { collection, query, where, getDocs, getDoc, doc } from "firebase/firestore";
 import { useCollection, type WithId } from "@/firebase/firestore/use-collection";
 import { Settings, LogOut } from "lucide-react";
 import { signOut } from "firebase/auth";
@@ -19,6 +19,80 @@ import { getInitials } from "@/lib/utils";
 
 import { PostItem as HomePostItem, PostSkeleton } from "@/app/home/page";
 import { RepliesList } from "@/components/RepliesList";
+
+
+function BookmarksList({ bookmarks, bookmarksLoading }: { bookmarks: WithId<Bookmark>[] | null, bookmarksLoading: boolean }) {
+    const { firestore } = useFirebase();
+    const [bookmarkedPosts, setBookmarkedPosts] = useState<WithId<Post>[]>([]);
+    const [isLoading, setIsLoading] = useState(true);
+
+    useEffect(() => {
+        if (!firestore || bookmarksLoading) return;
+
+        if (!bookmarks || bookmarks.length === 0) {
+            setBookmarkedPosts([]);
+            setIsLoading(false);
+            return;
+        }
+
+        const fetchBookmarkedPosts = async () => {
+            setIsLoading(true);
+            const postIds = bookmarks.map(b => b.postId);
+            const posts: WithId<Post>[] = [];
+
+            // Firestore 'in' query is limited to 30 items. 
+            // For simplicity, we fetch one by one. For a real app, batching would be better.
+            for (const postId of postIds) {
+                const postRef = doc(firestore, 'posts', postId);
+                const postSnap = await getDoc(postRef);
+                if (postSnap.exists()) {
+                    posts.push({ id: postSnap.id, ...postSnap.data() } as WithId<Post>);
+                }
+            }
+
+            // Sort by bookmark timestamp, not post timestamp
+             posts.sort((a, b) => {
+                const bookmarkA = bookmarks.find(bm => bm.postId === a.id);
+                const bookmarkB = bookmarks.find(bm => bm.postId === b.id);
+                const timeA = bookmarkA?.timestamp?.toMillis() || 0;
+                const timeB = bookmarkB?.timestamp?.toMillis() || 0;
+                return timeB - timeA;
+            });
+
+            setBookmarkedPosts(posts);
+            setIsLoading(false);
+        };
+
+        fetchBookmarkedPosts();
+
+    }, [firestore, bookmarks, bookmarksLoading]);
+
+    if (isLoading) {
+        return (
+            <>
+                <PostSkeleton />
+                <PostSkeleton />
+            </>
+        );
+    }
+
+    if (bookmarkedPosts.length === 0) {
+        return (
+            <div className="text-center py-16">
+                <h3 className="text-xl font-headline text-primary">No Bookmarks Yet</h3>
+                <p className="text-muted-foreground">You haven't bookmarked any posts.</p>
+            </div>
+        )
+    }
+
+    return (
+        <div className="divide-y border-b">
+            {bookmarkedPosts.map(post => (
+                <HomePostItem key={post.id} post={post} bookmarks={bookmarks} />
+            ))}
+        </div>
+    )
+}
 
 
 export default function AccountPage() {
@@ -170,9 +244,10 @@ export default function AccountPage() {
 
 
         <Tabs defaultValue="posts" className="w-full">
-            <TabsList className="grid w-full grid-cols-2">
+            <TabsList className="grid w-full grid-cols-3">
                 <TabsTrigger value="posts">Posts</TabsTrigger>
                 <TabsTrigger value="replies">Replies</TabsTrigger>
+                <TabsTrigger value="bookmarks">Bookmarks</TabsTrigger>
             </TabsList>
             <TabsContent value="posts">
                 <div className="divide-y border-b">
@@ -195,6 +270,9 @@ export default function AccountPage() {
             </TabsContent>
              <TabsContent value="replies">
                  {user?.uid && <RepliesList userId={user.uid} />}
+            </TabsContent>
+             <TabsContent value="bookmarks">
+                 <BookmarksList bookmarks={bookmarks} bookmarksLoading={bookmarksLoading} />
             </TabsContent>
         </Tabs>
       </div>
