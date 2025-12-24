@@ -15,7 +15,7 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { ArrowLeft, MessageSquare, ArrowUpRight, ArrowUp, MoreHorizontal, ShieldAlert, Flag } from "lucide-react";
+import { ArrowLeft, MessageSquare, ArrowUpRight, ArrowUp, MoreHorizontal, ShieldAlert, Flag, VolumeX, Info, MinusCircle } from "lucide-react";
 import { getInitials, cn } from "@/lib/utils";
 import { FirestorePermissionError } from "@/firebase/errors";
 import { errorEmitter } from "@/firebase/error-emitter";
@@ -374,7 +374,19 @@ export default function UserProfilePage() {
                                 Manage your interaction with this user.
                             </SheetDescription>
                         </SheetHeader>
-                        <div className="grid gap-2 py-4">
+                         <div className="grid gap-2 py-4">
+                            <Button variant="outline" className="justify-between text-base py-6 rounded-2xl">
+                                <span>Mute</span>
+                                <VolumeX className="h-5 w-5" />
+                            </Button>
+                             <Button variant="outline" className="justify-between text-base py-6 rounded-2xl">
+                                <span>Restrict</span>
+                                <MinusCircle className="h-5 w-5" />
+                            </Button>
+                             <Button variant="outline" className="justify-between text-base py-6 rounded-2xl">
+                                <span>About this profile</span>
+                                <Info className="h-5 w-5" />
+                            </Button>
                             <Button variant="outline" className="justify-between text-base py-6 rounded-2xl" onClick={() => { handleShareProfile(); setIsSheetOpen(false); }}>
                                 <span>Share Profile</span>
                                 <ArrowUpRight className="h-5 w-5" />
