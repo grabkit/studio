@@ -19,7 +19,7 @@ service cloud.firestore {
     }
 
     match /users/{userId} {
-      allow get: if isSignedIn();
+      allow get: if true; // Allow public read for profiles
       allow list: if isSignedIn();
       // On user creation (signup), the status field is not present, so no need to check isUserActive.
       // The user document is created with a default 'active' status by the client.
