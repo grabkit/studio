@@ -5,7 +5,6 @@ import { useParams, useRouter } from "next/navigation";
 import { useFirebase, useMemoFirebase } from "@/firebase";
 import { doc, collection, query, where, getDocs, serverTimestamp, setDoc, getDoc, updateDoc, increment, arrayUnion, arrayRemove } from "firebase/firestore";
 import { useDoc } from "@/firebase/firestore/use-doc";
-import { useCollection } from "@/firebase/firestore/use-collection";
 import type { Post, User } from "@/lib/types";
 import React, { useMemo, useState, useEffect } from "react";
 import Link from "next/link";
@@ -16,7 +15,7 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { ArrowLeft, MessageSquare, ArrowUpRight, ArrowUp } from "lucide-react";
+import { ArrowLeft, MessageSquare, ArrowUpRight, ArrowUp, MoreHorizontal, ShieldAlert, Flag } from "lucide-react";
 import { getInitials, cn } from "@/lib/utils";
 import { FirestorePermissionError } from "@/firebase/errors";
 import { errorEmitter } from "@/firebase/error-emitter";
@@ -24,6 +23,7 @@ import { PostItem as HomePostItem, PostSkeleton } from "@/app/home/page";
 import type { Bookmark } from "@/lib/types";
 import { WithId } from "@/firebase/firestore/use-collection";
 import { RepliesList } from "@/components/RepliesList";
+import { Sheet, SheetContent, SheetTrigger, SheetHeader, SheetTitle, SheetDescription } from "@/components/ui/sheet";
 
 
 export default function UserProfilePage() {
@@ -35,6 +35,7 @@ export default function UserProfilePage() {
 
     const [posts, setPosts] = useState<WithId<Post>[]>([]);
     const [postsLoading, setPostsLoading] = useState(true);
+    const [isSheetOpen, setIsSheetOpen] = useState(false);
 
     useEffect(() => {
         if (currentUser && userId === currentUser.uid) {
@@ -160,7 +161,7 @@ export default function UserProfilePage() {
                 });
             }
         } catch (error: any) {
-            // Ignore user cancellation of share sheet
+             // Ignore user cancellation of share sheet
             if (error.name === 'NotAllowedError') return;
             
             console.error("Error sharing profile:", error);
@@ -205,7 +206,7 @@ export default function UserProfilePage() {
     if (userLoading || (currentUser && userId === currentUser.uid)) {
         return (
             <AppLayout showTopBar={false}>
-                 <div className="grid grid-cols-3 items-center mb-6 px-4 -ml-2">
+                 <div className="grid grid-cols-3 items-center mb-6 px-4">
                     <Button variant="ghost" size="icon" onClick={() => router.back()}>
                         <ArrowLeft className="h-6 w-6" />
                     </Button>
@@ -247,7 +248,7 @@ export default function UserProfilePage() {
     if (!user) {
         return (
              <AppLayout showTopBar={false}>
-                <div className="grid grid-cols-3 items-center mb-6 px-4 -ml-2">
+                <div className="grid grid-cols-3 items-center mb-6 px-4">
                     <Button variant="ghost" size="icon" onClick={() => router.back()}>
                         <ArrowLeft className="h-6 w-6" />
                     </Button>
@@ -267,108 +268,134 @@ export default function UserProfilePage() {
     return (
         <AppLayout showTopBar={false}>
             <div>
-                <div className="grid grid-cols-3 items-center mb-6 px-4 -ml-2">
-                     <Button variant="ghost" size="icon" onClick={() => router.back()}>
-                        <ArrowLeft className="h-6 w-6" />
-                    </Button>
-                    <h2 className="text-2xl font-semibold font-headline text-center">
-                      {formatUserId(user?.id)}
-                    </h2>
-                </div>
-
-                <div className="px-4">
-                    <div className="flex items-center space-x-5 mb-6">
-                        <Avatar className="h-20 w-20 md:h-24 md:w-24">
-                            <AvatarImage
-                            src={undefined}
-                            alt={user?.name || "User"}
-                            />
-                            <AvatarFallback className="text-3xl font-headline bg-primary text-primary-foreground">
-                            {getInitials(user?.name)}
-                            </AvatarFallback>
-                        </Avatar>
-                        <div className="flex-1 flex justify-around text-center">
-                            <div>
-                                {isLoading ? (
-                                    <div className="font-bold text-lg"><Skeleton className="h-6 w-8 mx-auto" /></div>
-                                ) : (
-                                    <div className="font-bold text-lg">{posts?.length ?? 0}</div>
-                                )}
-                                <p className="text-sm text-muted-foreground">Posts</p>
-                            </div>
-                            <div>
-                                {isLoading ? (
-                                    <div className="font-bold text-lg"><Skeleton className="h-6 w-8 mx-auto" /></div>
-                                ) : (
-                                    <div className="font-bold text-lg">{karmaScore}</div>
-                                )}
-                                <p className="text-sm text-muted-foreground">Karma</p>
-                            </div>
-                            <div>
-                                {isLoading ? (
-                                <div className="font-bold text-lg"><Skeleton className="h-6 w-8 mx-auto" /></div>
-                                ) : (
-                                <div className="font-bold text-lg">{user?.upvotes || 0}</div>
-                                )}
-                                <p className="text-sm text-muted-foreground">Upvotes</p>
-                            </div>
-                        </div>
+                 <Sheet open={isSheetOpen} onOpenChange={setIsSheetOpen}>
+                    <div className="grid grid-cols-3 items-center mb-6 px-4">
+                         <Button variant="ghost" size="icon" onClick={() => router.back()}>
+                            <ArrowLeft className="h-6 w-6" />
+                        </Button>
+                        <h2 className="text-2xl font-semibold font-headline text-center">
+                          {formatUserId(user?.id)}
+                        </h2>
+                        <SheetTrigger asChild>
+                            <Button variant="ghost" size="icon" className="justify-self-end">
+                                <MoreHorizontal className="h-6 w-6" />
+                            </Button>
+                        </SheetTrigger>
                     </div>
 
-
-                    {/* User Name and Bio */}
-                    <div className="mb-4">
-                        <h1 className="font-bold text-base">{user?.name}</h1>
-                        {/* Hiding email for privacy on public profiles */}
-                    </div>
-                    
-                    <div className="mb-4 flex items-center space-x-2">
-                         <Button onClick={handleUpvoteUser} variant={hasUpvotedUser ? "default" : "secondary"} className="flex-1">
-                            <ArrowUp className={cn("mr-2 h-4 w-4", hasUpvotedUser && "fill-current")} /> {hasUpvotedUser ? "Upvoted" : "Upvote"}
-                        </Button>
-                        <Button onClick={handleStartConversation} variant="secondary" className="flex-1">
-                            <MessageSquare className="mr-2 h-4 w-4" /> Message
-                        </Button>
-                         <Button onClick={handleShareProfile} variant="secondary" size="icon">
-                            <ArrowUpRight className="h-4 w-4" />
-                        </Button>
-                    </div>
-
-                </div>
-
-                <Tabs defaultValue="posts" className="w-full">
-                    <TabsList className="grid w-full grid-cols-2">
-                        <TabsTrigger value="posts">Posts</TabsTrigger>
-                        <TabsTrigger value="replies">Replies</TabsTrigger>
-                    </TabsList>
-                    <TabsContent value="posts">
-                       <div className="divide-y border-b">
-                            {(postsLoading || bookmarksLoading) && (
-                                <>
-                                    <PostSkeleton />
-                                    <PostSkeleton />
-                                </>
-                            )}
-                            {!(postsLoading || bookmarksLoading) && posts?.length === 0 && (
-                                <div className="text-center py-16">
-                                    <h3 className="text-xl font-headline text-primary">No Posts Yet</h3>
-                                    <p className="text-muted-foreground">This user hasn't posted anything.</p>
+                    <div className="px-4">
+                        <div className="flex items-center space-x-5 mb-6">
+                            <Avatar className="h-20 w-20 md:h-24 md:w-24">
+                                <AvatarImage
+                                src={undefined}
+                                alt={user?.name || "User"}
+                                />
+                                <AvatarFallback className="text-3xl font-headline bg-primary text-primary-foreground">
+                                {getInitials(user?.name)}
+                                </AvatarFallback>
+                            </Avatar>
+                            <div className="flex-1 flex justify-around text-center">
+                                <div>
+                                    {isLoading ? (
+                                        <div className="font-bold text-lg"><Skeleton className="h-6 w-8 mx-auto" /></div>
+                                    ) : (
+                                        <div className="font-bold text-lg">{posts?.length ?? 0}</div>
+                                    )}
+                                    <p className="text-sm text-muted-foreground">Posts</p>
                                 </div>
-                            )}
-                            {posts?.map((post) => (
-                                <HomePostItem key={post.id} post={post} bookmarks={bookmarks} />
-                            ))}
+                                <div>
+                                    {isLoading ? (
+                                        <div className="font-bold text-lg"><Skeleton className="h-6 w-8 mx-auto" /></div>
+                                    ) : (
+                                        <div className="font-bold text-lg">{karmaScore}</div>
+                                    )}
+                                    <p className="text-sm text-muted-foreground">Karma</p>
+                                </div>
+                                <div>
+                                    {isLoading ? (
+                                    <div className="font-bold text-lg"><Skeleton className="h-6 w-8 mx-auto" /></div>
+                                    ) : (
+                                    <div className="font-bold text-lg">{user?.upvotes || 0}</div>
+                                    )}
+                                    <p className="text-sm text-muted-foreground">Upvotes</p>
+                                </div>
+                            </div>
                         </div>
-                    </TabsContent>
-                    <TabsContent value="replies">
-                        {userId && <RepliesList userId={userId} />}
-                    </TabsContent>
-                </Tabs>
 
 
+                        {/* User Name and Bio */}
+                        <div className="mb-4">
+                            <h1 className="font-bold text-base">{user?.name}</h1>
+                            {/* Hiding email for privacy on public profiles */}
+                        </div>
+                        
+                        <div className="mb-4 flex items-center space-x-2">
+                             <Button onClick={handleUpvoteUser} variant={hasUpvotedUser ? "default" : "secondary"} className="flex-1">
+                                <ArrowUp className={cn("mr-2 h-4 w-4", hasUpvotedUser && "fill-current")} /> {hasUpvotedUser ? "Upvoted" : "Upvote"}
+                            </Button>
+                            <Button onClick={handleStartConversation} variant="secondary" className="flex-1">
+                                <MessageSquare className="mr-2 h-4 w-4" /> Message
+                            </Button>
+                        </div>
+
+                    </div>
+
+                    <Tabs defaultValue="posts" className="w-full">
+                        <TabsList className="grid w-full grid-cols-2">
+                            <TabsTrigger value="posts">Posts</TabsTrigger>
+                            <TabsTrigger value="replies">Replies</TabsTrigger>
+                        </TabsList>
+                        <TabsContent value="posts">
+                           <div className="divide-y border-b">
+                                {(postsLoading || bookmarksLoading) && (
+                                    <>
+                                        <PostSkeleton />
+                                        <PostSkeleton />
+                                    </>
+                                )}
+                                {!(postsLoading || bookmarksLoading) && posts?.length === 0 && (
+                                    <div className="text-center py-16">
+                                        <h3 className="text-xl font-headline text-primary">No Posts Yet</h3>
+                                        <p className="text-muted-foreground">This user hasn't posted anything.</p>
+                                    </div>
+                                )}
+                                {posts?.map((post) => (
+                                    <HomePostItem key={post.id} post={post} bookmarks={bookmarks} />
+                                ))}
+                            </div>
+                        </TabsContent>
+                        <TabsContent value="replies">
+                            {userId && <RepliesList userId={userId} />}
+                        </TabsContent>
+                    </Tabs>
+                    <SheetContent side="bottom" className="rounded-t-lg">
+                        <SheetHeader className="text-left">
+                            <SheetTitle>Options for {formatUserId(user?.id)}</SheetTitle>
+                            <SheetDescription>
+                                Manage your interaction with this user.
+                            </SheetDescription>
+                        </SheetHeader>
+                        <div className="grid gap-2 py-4">
+                            <Button variant="outline" className="justify-start text-base py-6" onClick={() => { handleShareProfile(); setIsSheetOpen(false); }}>
+                                <ArrowUpRight className="mr-3 h-5 w-5" />
+                                Share Profile
+                            </Button>
+                             <Button variant="outline" className="justify-start text-base py-6">
+                                <Flag className="mr-3 h-5 w-5" />
+                                Report User
+                            </Button>
+                             <Button variant="destructive" className="justify-start text-base py-6">
+                                <ShieldAlert className="mr-3 h-5 w-5" />
+                                Block User
+                            </Button>
+                        </div>
+                    </SheetContent>
+                </Sheet>
             </div>
         </AppLayout>
     );
 
     
 }
+
+    
