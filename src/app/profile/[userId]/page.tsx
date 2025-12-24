@@ -1,4 +1,5 @@
 
+
 "use client";
 
 import { useParams, useRouter } from "next/navigation";
@@ -88,14 +89,14 @@ export default function UserProfilePage() {
     const { data: bookmarks, isLoading: bookmarksLoading } = useCollection<Bookmark>(bookmarksQuery);
 
 
-    const totalLikes = useMemo(() => {
+    const totalUpvotes = useMemo(() => {
         if (!posts) return 0;
         return posts.reduce((acc, post) => acc + (post.likeCount || 0), 0);
     }, [posts]);
     
-    const totalComments = useMemo(() => {
+    const karmaScore = useMemo(() => {
         if (!posts) return 0;
-        return posts.reduce((acc, post) => acc + (post.commentCount || 0), 0);
+        return posts.reduce((acc, post) => acc + (post.likeCount || 0), 0);
     }, [posts]);
 
     const formatUserId = (uid: string | undefined) => {
@@ -196,11 +197,11 @@ export default function UserProfilePage() {
                             </div>
                             <div>
                                 <div className="font-bold text-lg"><Skeleton className="h-6 w-8 mx-auto" /></div>
-                                <p className="text-sm text-muted-foreground">Likes</p>
+                                <p className="text-sm text-muted-foreground">Karma</p>
                             </div>
                             <div>
                                 <div className="font-bold text-lg"><Skeleton className="h-6 w-8 mx-auto" /></div>
-                                <p className="text-sm text-muted-foreground">Comments</p>
+                                <p className="text-sm text-muted-foreground">Upvotes</p>
                             </div>
                         </div>
                     </div>
@@ -271,17 +272,17 @@ export default function UserProfilePage() {
                                 {postsLoading ? (
                                     <div className="font-bold text-lg"><Skeleton className="h-6 w-8 mx-auto" /></div>
                                 ) : (
-                                    <div className="font-bold text-lg">{totalLikes}</div>
+                                    <div className="font-bold text-lg">{karmaScore}</div>
                                 )}
-                                <p className="text-sm text-muted-foreground">Likes</p>
+                                <p className="text-sm text-muted-foreground">Karma</p>
                             </div>
                             <div>
                                 {postsLoading ? (
                                 <div className="font-bold text-lg"><Skeleton className="h-6 w-8 mx-auto" /></div>
                                 ) : (
-                                <div className="font-bold text-lg">{totalComments}</div>
+                                <div className="font-bold text-lg">{totalUpvotes}</div>
                                 )}
-                                <p className="text-sm text-muted-foreground">Comments</p>
+                                <p className="text-sm text-muted-foreground">Upvotes</p>
                             </div>
                         </div>
                     </div>

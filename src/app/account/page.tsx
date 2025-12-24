@@ -142,14 +142,15 @@ export default function AccountPage() {
 
   const { data: bookmarks, isLoading: bookmarksLoading } = useCollection<Bookmark>(bookmarksQuery);
 
-  const totalLikes = useMemo(() => {
+  const totalUpvotes = useMemo(() => {
     if (!posts) return 0;
     return posts.reduce((acc, post) => acc + (post.likeCount || 0), 0);
   }, [posts]);
   
-  const totalComments = useMemo(() => {
+  const karmaScore = useMemo(() => {
     if (!posts) return 0;
-    return posts.reduce((acc, post) => acc + (post.commentCount || 0), 0);
+    // For now, karma is just total upvotes. Can be extended later.
+    return posts.reduce((acc, post) => acc + (post.likeCount || 0), 0);
   }, [posts]);
 
 
@@ -217,16 +218,17 @@ export default function AccountPage() {
                  {postsLoading ? (
                     <div className="font-bold text-lg"><Skeleton className="h-6 w-8 mx-auto" /></div>
                 ) : (
-                    <div className="font-bold text-lg">{totalLikes}</div>
+                    <div className="font-bold text-lg">{karmaScore}</div>
                 )}
-                <p className="text-sm text-muted-foreground">Likes</p>              </div>
+                <p className="text-sm text-muted-foreground">Karma</p>
+              </div>
               <div>
                 {postsLoading ? (
                   <div className="font-bold text-lg"><Skeleton className="h-6 w-8 mx-auto" /></div>
                 ) : (
-                  <div className="font-bold text-lg">{totalComments}</div>
+                  <div className="font-bold text-lg">{totalUpvotes}</div>
                 )}
-                <p className="text-sm text-muted-foreground">Comments</p>
+                <p className="text-sm text-muted-foreground">Upvotes</p>
               </div>
           </div>
         </div>
