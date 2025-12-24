@@ -134,9 +134,9 @@ export default function AuthForm() {
                 id: user.uid,
                 name: values.name,
                 email: values.email,
-                status: 'active'
+                status: 'active',
             };
-            await setDoc(userDocRef, newUser);
+            await setDoc(userDocRef, newUser, { merge: true });
         } catch (firestoreError: any) {
             console.error("Firestore profile creation error:", firestoreError);
             toast({ 
@@ -145,6 +145,7 @@ export default function AuthForm() {
                 description: "Your account was created, but we couldn't save your profile. Please try logging in again later.",
                 duration: 9000,
             });
+            // still navigate to home as auth user was created
             router.push("/home");
             return;
         }
