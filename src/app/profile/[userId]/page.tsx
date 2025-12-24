@@ -31,7 +31,7 @@ export default function UserProfilePage() {
     const router = useRouter();
     const { toast } = useToast();
     const userId = params.userId as string;
-    const { firestore, user: currentUser } = useFirebase();
+    const { firestore, user: currentUser, userProfile: currentUserProfile } = useFirebase();
 
     const [posts, setPosts] = useState<WithId<Post>[]>([]);
     const [postsLoading, setPostsLoading] = useState(true);
@@ -97,6 +97,47 @@ export default function UserProfilePage() {
         if (!uid) return "blur??????";
         return `blur${uid.substring(uid.length - 6)}`;
     };
+    
+    const isBlocked = useMemo(() => {
+        return currentUserProfile?.blockedUsers?.includes(userId) ?? false;
+    }, [currentUserProfile, userId]);
+
+    const handleBlockUser = async () => {
+        if (!currentUser || !firestore) {
+             toast({ variant: "destructive", title: "You must be logged in to block a user." });
+            return;
+        }
+
+        const currentUserDocRef = doc(firestore, "users", currentUser.uid);
+
+        try {
+            if (isBlocked) {
+                // Unblock user
+                await updateDoc(currentUserDocRef, {
+                    blockedUsers: arrayRemove(userId)
+                });
+                toast({ title: "User Unblocked", description: `You will now see posts and comments from ${user?.name || formatUserId(userId)}.` });
+            } else {
+                // Block user
+                await updateDoc(currentUserDocRef, {
+                    blockedUsers: arrayUnion(userId)
+                });
+                toast({ title: "User Blocked", description: `You will no longer see posts or comments from ${user?.name || formatUserId(userId)}.` });
+            }
+        } catch (error) {
+            console.error("Error blocking/unblocking user:", error);
+            const permissionError = new FirestorePermissionError({
+                path: currentUserDocRef.path,
+                operation: 'update',
+                requestResourceData: { blockedUsers: `[... ${userId}]` },
+            });
+            errorEmitter.emit('permission-error', permissionError);
+            toast({ variant: "destructive", title: "Error", description: "Could not complete the action." });
+        } finally {
+            setIsSheetOpen(false);
+        }
+    };
+
 
     const handleStartConversation = async () => {
         if (!currentUser || !firestore || !userId || currentUser.uid === userId) return;
@@ -417,15 +458,15 @@ export default function UserProfilePage() {
                                 </Button>
                             </div>
                             <div className="border rounded-2xl">
-                                <ReportDialog reportedUserId={user.id} reportedUserName={user.name}>
+                                <ReportDialog reportedUserId={user.id} reportedUserName={user.name || formatUserId(user.id)}>
                                     <Button variant="ghost" className="justify-between text-base py-6 rounded-2xl w-full text-destructive hover:text-destructive">
                                         <span>Report</span>
                                         <Flag className="h-5 w-5" />
                                     </Button>
                                 </ReportDialog>
                                 <div className="border-t"></div>
-                                <Button variant="ghost" className="justify-between text-base py-6 rounded-2xl w-full text-destructive hover:text-destructive">
-                                    <span>Block</span>
+                                <Button variant="ghost" className="justify-between text-base py-6 rounded-2xl w-full text-destructive hover:text-destructive" onClick={handleBlockUser}>
+                                    <span>{isBlocked ? "Unblock" : "Block"}</span>
                                     <ShieldAlert className="h-5 w-5" />
                                 </Button>
                             </div>

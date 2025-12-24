@@ -14,7 +14,8 @@ service cloud.firestore {
     function isUserActive() {
       // Default to active if status is not set, for backward compatibility with existing users.
       // This allows existing users to continue using the app until their status is explicitly set.
-      return get(/databases/$(database)/documents/users/$(request.auth.uid)).data.get('status', 'active') == 'active';
+      let userDoc = get(/databases/$(database)/documents/users/$(request.auth.uid));
+      return userDoc.data.get('status', 'active') == 'active';
     }
 
     match /users/{userId} {
@@ -25,7 +26,7 @@ service cloud.firestore {
       allow create: if request.auth.uid == userId;
       allow update: if isSignedIn() && (
         // Allow a user to update their own profile fields (excluding status).
-        (isOwner(userId) && !('status' in request.resource.data.diff(resource.data).affectedKeys())) ||
+        (isOwner(userId) && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['name', 'email', 'blockedUsers'])) ||
         // Allow any signed-in user to update only 'upvotes' and 'upvotedBy' on another user's profile.
         (request.resource.data.diff(resource.data).affectedKeys().hasAll(['upvotes', 'upvotedBy']))
       );
@@ -146,4 +147,7 @@ service cloud.firestore {
             && data.authorId == request.auth.uid && data.postId == postId
             && data.content is string && data.content.size() > 0
             && data.id == commentId
-            && data.keys().hasOnly(['id', 'postId', '
+            && data.keys().hasOnly(['id', 'postId', 'content', 'authorId', 'timestamp']);
+    }
+  }
+}
