@@ -1,12 +1,35 @@
 "use client";
 
-import { useUser } from "@/firebase";
+import { useFirebase, useUser } from "@/firebase";
 import { useRouter } from "next/navigation";
 import { useEffect } from "react";
 import TopBar from "./layout/TopBar";
 import BottomNav from "./layout/BottomNav";
-import { Loader2 } from "lucide-react";
+import { Loader2, ShieldAlert } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { Button } from "./ui/button";
+import { signOut } from "firebase/auth";
+
+function AccountStatusScreen({ status, onLogout }: { status: 'suspended' | 'banned', onLogout: () => void }) {
+    const title = status === 'suspended' ? 'Account Suspended' : 'Account Banned';
+    const description = status === 'suspended'
+        ? "Your account has been temporarily suspended due to a violation of our community guidelines. You cannot post, comment, or interact with other users during this time."
+        : "Your account has been permanently banned due to repeated or severe violations of our community guidelines.";
+
+    return (
+        <div className="flex h-screen w-full flex-col items-center justify-center bg-background text-center p-4">
+            <div className="flex flex-col items-center space-y-4 max-w-sm">
+                <ShieldAlert className="h-16 w-16 text-destructive" />
+                <h1 className="text-2xl font-bold font-headline">{title}</h1>
+                <p className="text-muted-foreground">
+                    {description}
+                </p>
+                <Button onClick={onLogout} variant="outline">Logout</Button>
+            </div>
+        </div>
+    );
+}
+
 
 export default function AppLayout({
   children,
@@ -17,7 +40,7 @@ export default function AppLayout({
   showTopBar?: boolean;
   showBottomNav?: boolean;
 }) {
-  const { user, isUserLoading } = useUser();
+  const { user, isUserLoading, userProfile, isUserProfileLoading, auth } = useFirebase();
   const router = useRouter();
 
   useEffect(() => {
@@ -26,7 +49,13 @@ export default function AppLayout({
     }
   }, [user, isUserLoading, router]);
 
-  if (isUserLoading || !user) {
+  const handleLogout = async () => {
+    if (!auth) return;
+    await signOut(auth);
+    router.push("/auth");
+  }
+
+  if (isUserLoading || isUserProfileLoading) {
     return (
       <div className="flex h-screen w-full flex-col items-center justify-center bg-background space-y-4">
         <Loader2 className="h-10 w-10 animate-spin text-primary" />
@@ -34,6 +63,21 @@ export default function AppLayout({
       </div>
     );
   }
+  
+  if (userProfile && (userProfile.status === 'suspended' || userProfile.status === 'banned')) {
+    return <AccountStatusScreen status={userProfile.status} onLogout={handleLogout} />;
+  }
+
+
+  if (!user) {
+    // This case will be hit briefly during the redirect, show a loader
+     return (
+      <div className="flex h-screen w-full flex-col items-center justify-center bg-background space-y-4">
+        <Loader2 className="h-10 w-10 animate-spin text-primary" />
+      </div>
+    );
+  }
+
 
   return (
     <div className="relative min-h-screen bg-background">
@@ -44,10 +88,3 @@ export default function AppLayout({
           showTopBar ? "pt-16" : "pt-8",
           showBottomNav ? "pb-16" : "pb-8"
         )}
-      >
-        {children}
-      </main>
-      {showBottomNav && <BottomNav />}
-    </div>
-  );
-}
