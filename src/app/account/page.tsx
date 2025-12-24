@@ -2,7 +2,7 @@
 "use client";
 
 import AppLayout from "@/components/AppLayout";
-import { useUser, useFirebase, useMemoFirebase, useDoc } from "@/firebase";
+import { useFirebase, useMemoFirebase, useDoc } from "@/firebase";
 import { useRouter } from "next/navigation";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
@@ -19,6 +19,7 @@ import { getInitials } from "@/lib/utils";
 
 import { PostItem as HomePostItem, PostSkeleton } from "@/app/home/page";
 import { RepliesList } from "@/components/RepliesList";
+import Link from "next/link";
 
 
 function BookmarksList({ bookmarks, bookmarksLoading }: { bookmarks: WithId<Bookmark>[] | null, bookmarksLoading: boolean }) {
@@ -96,20 +97,13 @@ function BookmarksList({ bookmarks, bookmarksLoading }: { bookmarks: WithId<Book
 
 
 export default function AccountPage() {
-  const { user: authUser } = useUser();
+  const { user: authUser, userProfile } = useFirebase();
   const { auth, firestore } = useFirebase();
   const router = useRouter();
   const { toast } = useToast();
 
   const [posts, setPosts] = useState<WithId<Post>[]>([]);
   const [postsLoading, setPostsLoading] = useState(true);
-
-  const userRef = useMemoFirebase(() => {
-    if (!firestore || !authUser) return null;
-    return doc(firestore, "users", authUser.uid);
-  }, [firestore, authUser]);
-
-  const { data: user, isLoading: userLoading } = useDoc<User>(userRef);
 
   useEffect(() => {
     if (!firestore || !authUser) return;
@@ -178,7 +172,7 @@ export default function AccountPage() {
     return `blur${uid.substring(uid.length - 6)}`;
   };
 
-  const isLoading = postsLoading || userLoading;
+  const isLoading = postsLoading || bookmarksLoading;
 
 
   return (
@@ -190,8 +184,10 @@ export default function AccountPage() {
               {formatUserId(authUser?.uid)}
             </h2>
             <div className="flex items-center space-x-2">
-                <Button variant="ghost" size="icon">
-                    <Settings className="h-6 w-6" />
+                <Button variant="ghost" size="icon" asChild>
+                    <Link href="/account/settings">
+                        <Settings className="h-6 w-6" />
+                    </Link>
                 </Button>
                 <Button variant="ghost" size="icon" onClick={handleLogout}>
                     <LogOut className="h-6 w-6 text-destructive" />
@@ -230,7 +226,7 @@ export default function AccountPage() {
                 {isLoading ? (
                   <div className="font-bold text-lg"><Skeleton className="h-6 w-8 mx-auto" /></div>
                 ) : (
-                  <div className="font-bold text-lg">{user?.upvotes || 0}</div>
+                  <div className="font-bold text-lg">{userProfile?.upvotes || 0}</div>
                 )}
                 <p className="text-sm text-muted-foreground">Upvotes</p>
               </div>
