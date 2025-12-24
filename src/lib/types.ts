@@ -29,6 +29,7 @@ export interface Comment {
     content: string;
     timestamp: Timestamp;
     postAuthorId?: string; // This might be added in the fetch logic
+    status: 'approved' | 'pending_approval';
 }
 
 export interface User {
@@ -42,6 +43,7 @@ export interface User {
     status?: 'active' | 'suspended' | 'banned';
     blockedUsers?: string[];
     mutedUsers?: string[];
+    restrictedUsers?: string[];
 }
 
 export interface Bookmark {

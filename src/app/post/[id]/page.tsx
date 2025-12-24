@@ -15,11 +15,12 @@ import {
   arrayUnion,
   deleteDoc,
   setDoc,
-  updateDoc
+  updateDoc,
+  getDoc
 } from "firebase/firestore";
 import { useCollection, type WithId } from "@/firebase/firestore/use-collection";
 import { useDoc } from "@/firebase/firestore/use-doc";
-import type { Post, Comment, Notification } from "@/lib/types";
+import type { Post, Comment, Notification, User as UserProfile } from "@/lib/types";
 import { useParams, useRouter } from "next/navigation";
 import React, { useState } from "react";
 import Link from 'next/link';
@@ -31,7 +32,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { Button, buttonVariants } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { Form, FormControl, FormField, FormItem, FormMessage } from "@/components/ui/form";
-import { Heart, MessageCircle, ArrowUpRight, Trash2, MoreHorizontal, Edit, ArrowLeft, Repeat } from "lucide-react";
+import { Heart, MessageCircle, ArrowUpRight, Trash2, MoreHorizontal, Edit, ArrowLeft, Repeat, Check } from "lucide-react";
 import { cn, formatTimestamp, getInitials } from "@/lib/utils";
 import { useToast } from "@/hooks/use-toast";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -270,12 +271,20 @@ const CommentFormSchema = z.object({
 
 function CommentForm({ post, commentsAllowed }: { post: WithId<Post>, commentsAllowed?: boolean }) {
   const { user } = useUser();
-  const { firestore } = useFirebase();
+  const { firestore, userProfile } = useFirebase();
   const { toast } = useToast();
   const form = useForm<z.infer<typeof CommentFormSchema>>({
     resolver: zodResolver(CommentFormSchema),
     defaultValues: { content: "" },
   });
+  
+  // A bit of a hack: we need the post author's profile to check if the current user is restricted.
+  // This is not ideal as it's an extra read, but necessary for the restrict logic.
+  const postAuthorRef = useMemoFirebase(() => {
+    if (!firestore || !post) return null;
+    return doc(firestore, 'users', post.authorId);
+  }, [firestore, post]);
+  const { data: postAuthorProfile } = useDoc<UserProfile>(postAuthorRef);
 
   const onSubmit = async (values: z.infer<typeof CommentFormSchema>) => {
     if (!user || !firestore) {
@@ -285,12 +294,18 @@ function CommentForm({ post, commentsAllowed }: { post: WithId<Post>, commentsAl
 
     const postRef = doc(firestore, "posts", post.id);
     const commentRef = doc(collection(firestore, "posts", post.id, "comments"));
+    
+    // Determine comment status based on whether the commenter is restricted by the post author
+    const isRestricted = postAuthorProfile?.restrictedUsers?.includes(user.uid);
+    const commentStatus = isRestricted ? 'pending_approval' : 'approved';
+
 
     const newComment: Omit<Comment, 'timestamp'> = {
       id: commentRef.id,
       postId: post.id,
       authorId: user.uid,
       content: values.content,
+      status: commentStatus,
     };
     
     const batch = writeBatch(firestore);
@@ -300,8 +315,13 @@ function CommentForm({ post, commentsAllowed }: { post: WithId<Post>, commentsAl
     batch.commit()
       .then(() => {
         form.reset();
+        
+        if(isRestricted) {
+             toast({ title: "Comment submitted for approval", description: "The author has restricted comments, so your comment will be visible after they approve it." });
+        }
+        
         // Create notification if not the post owner
-        if (user.uid !== post.authorId) {
+        if (user.uid !== post.authorId && !isRestricted) {
             const notificationRef = doc(collection(firestore, 'users', post.authorId, 'notifications'));
             const notificationData: Omit<Notification, 'id'> = {
                 type: 'comment',
@@ -377,8 +397,12 @@ function CommentForm({ post, commentsAllowed }: { post: WithId<Post>, commentsAl
 function CommentItem({ comment, postAuthorId }: { comment: WithId<Comment>, postAuthorId?: string }) {
   const { user } = useUser();
   const { firestore } = useFirebase();
+  const { toast } = useToast();
 
-  const canDelete = user && (user.uid === comment.authorId || user.uid === postAuthorId);
+  const isPostOwner = user && user.uid === postAuthorId;
+  const isCommentOwner = user && user.uid === comment.authorId;
+  const canDelete = isPostOwner || isCommentOwner;
+  const isPendingApproval = comment.status === 'pending_approval';
 
   const handleDelete = () => {
     if (!firestore || !canDelete) return;
@@ -397,10 +421,33 @@ function CommentItem({ comment, postAuthorId }: { comment: WithId<Comment>, post
         });
         errorEmitter.emit('permission-error', permissionError);
     });
+  };
+  
+  const handleApprove = () => {
+      if (!firestore || !isPostOwner) return;
+      const commentRef = doc(firestore, "posts", comment.postId, "comments", comment.id);
+      updateDoc(commentRef, { status: 'approved' })
+        .then(() => {
+            toast({ title: "Comment Approved" });
+        })
+        .catch(serverError => {
+            const permissionError = new FirestorePermissionError({
+                path: commentRef.path,
+                operation: 'update',
+                requestResourceData: { status: 'approved' }
+            });
+            errorEmitter.emit('permission-error', permissionError);
+      });
+  }
+  
+  // Decide if the current user can see the comment
+  if (isPendingApproval && !isPostOwner && !isCommentOwner) {
+    return null; // Don't render the comment at all for others
   }
 
+
   return (
-    <div className="flex space-x-3 p-4 border-b">
+    <div className={cn("flex space-x-3 p-4 border-b", isPendingApproval && "bg-amber-50")}>
       <Avatar className="h-8 w-8">
         <AvatarFallback>{getInitials(comment.authorId)}</AvatarFallback>
       </Avatar>
@@ -425,6 +472,16 @@ function CommentItem({ comment, postAuthorId }: { comment: WithId<Comment>, post
             </div>
         </div>
         <p className="text-sm text-foreground whitespace-pre-wrap">{comment.content}</p>
+        
+        {isPendingApproval && isPostOwner && (
+            <div className="mt-2 flex items-center gap-2">
+                <p className="text-xs text-amber-600">Pending approval</p>
+                <Button size="xs" variant="outline" onClick={handleApprove}>
+                    <Check className="h-3 w-3 mr-1" />
+                    Approve
+                </Button>
+            </div>
+        )}
       </div>
     </div>
   );
@@ -460,7 +517,7 @@ function PostPageSkeleton() {
 
 
 export default function PostDetailPage() {
-  const { firestore } = useFirebase();
+  const { firestore, user } = useFirebase();
   const params = useParams();
   const router = useRouter();
   const id = params.id as string;
@@ -516,6 +573,12 @@ export default function PostDetailPage() {
     );
   }
 
+  const filteredComments = comments?.filter(comment => {
+     const isPostOwner = user && user.uid === post.authorId;
+     const isCommentOwner = user && user.uid === comment.authorId;
+     return comment.status === 'approved' || isPostOwner || isCommentOwner;
+  });
+
   return (
     <AppLayout showTopBar={false} showBottomNav={false}>
         <div className="fixed top-0 left-0 right-0 z-10 flex items-center p-2 bg-background border-b h-14 max-w-2xl mx-auto sm:px-4">
@@ -528,10 +591,12 @@ export default function PostDetailPage() {
             <PostDetailItem post={post} />
             <div>
                 {(post.commentsAllowed !== false && areCommentsLoading) && <div className="p-4 text-center">Loading comments...</div>}
-                {post.commentsAllowed !== false && comments?.map((comment) => (
+                
+                {post.commentsAllowed !== false && filteredComments?.map((comment) => (
                     <CommentItem key={comment.id} comment={comment} postAuthorId={post.authorId} />
                 ))}
-                {(post.commentsAllowed !== false && !areCommentsLoading && comments?.length === 0) && (
+
+                {(post.commentsAllowed !== false && !areCommentsLoading && filteredComments?.length === 0) && (
                 <div className="text-center py-10">
                     <p className="text-muted-foreground">No comments yet. Be the first to reply!</p>
                 </div>

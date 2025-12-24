@@ -4,7 +4,7 @@
 import React from "react";
 import AppLayout from "@/components/AppLayout";
 import { Button } from "@/components/ui/button";
-import { ArrowLeft, ChevronRight, User, Bell, UserX, HelpCircle, Info, LogOut, UserPlus, VolumeX } from "lucide-react";
+import { ArrowLeft, ChevronRight, User, Bell, UserX, HelpCircle, Info, LogOut, UserPlus, VolumeX, MinusCircle } from "lucide-react";
 import { useRouter } from "next/navigation";
 import Link from 'next/link';
 import { useFirebase } from "@/firebase";
@@ -15,6 +15,7 @@ const settingsItems = [
     { href: "/account/settings/account-status", label: "Account status", icon: User },
     { href: "#", label: "Follow and invite", icon: UserPlus },
     { href: "/account/settings/notifications", label: "Notifications", icon: Bell },
+    { href: "/account/settings/restricted-users", label: "Restricted accounts", icon: MinusCircle },
     { href: "/account/settings/blocked-users", label: "Blocked users", icon: UserX },
     { href: "/account/settings/muted-users", label: "Muted accounts", icon: VolumeX },
     { href: "/account/settings/help", label: "Help", icon: HelpCircle },

@@ -154,6 +154,10 @@ export default function UserProfilePage() {
         return currentUserProfile?.mutedUsers?.includes(userId) ?? false;
     }, [currentUserProfile, userId]);
 
+    const isRestricted = useMemo(() => {
+        return currentUserProfile?.restrictedUsers?.includes(userId) ?? false;
+    }, [currentUserProfile, userId]);
+
     const handleBlockUser = async () => {
         if (!currentUser || !firestore) {
              toast({ variant: "destructive", title: "You must be logged in to block a user." });
@@ -219,6 +223,36 @@ export default function UserProfilePage() {
             setIsMoreOptionsSheetOpen(false);
         }
     };
+    
+    const handleRestrictUser = async () => {
+        if (!currentUser || !firestore) {
+            toast({ variant: "destructive", title: "You must be logged in to restrict a user." });
+            return;
+        }
+
+        const currentUserDocRef = doc(firestore, "users", currentUser.uid);
+
+        try {
+            if (isRestricted) {
+                await updateDoc(currentUserDocRef, { restrictedUsers: arrayRemove(userId) });
+                toast({ title: "User Unrestricted", description: `Comments from ${user?.name || formatUserId(userId)} will now appear publicly.` });
+            } else {
+                await updateDoc(currentUserDocRef, { restrictedUsers: arrayUnion(userId) });
+                toast({ title: "User Restricted", description: `Comments from ${user?.name || formatUserId(userId)} will require your approval.` });
+            }
+        } catch (error) {
+            console.error("Error restricting user:", error);
+            const permissionError = new FirestorePermissionError({
+                path: currentUserDocRef.path,
+                operation: 'update',
+                requestResourceData: { restrictedUsers: `arrayUnion/arrayRemove ${userId}` },
+            });
+            errorEmitter.emit('permission-error', permissionError);
+            toast({ variant: "destructive", title: "Error", description: "Could not restrict user." });
+        } finally {
+            setIsMoreOptionsSheetOpen(false);
+        }
+    }
 
 
     const handleStartConversation = async () => {
@@ -522,8 +556,8 @@ export default function UserProfilePage() {
                                     {isMuted ? <Volume2 className="h-5 w-5" /> : <VolumeX className="h-5 w-5" />}
                                 </Button>
                                 <div className="border-t"></div>
-                                <Button variant="ghost" className="justify-between text-base py-6 rounded-2xl w-full">
-                                    <span>Restrict</span>
+                                <Button variant="ghost" className="justify-between text-base py-6 rounded-2xl w-full" onClick={handleRestrictUser}>
+                                    <span>{isRestricted ? "Unrestrict" : "Restrict"}</span>
                                     <MinusCircle className="h-5 w-5" />
                                 </Button>
                              </div>

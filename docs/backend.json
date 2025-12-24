@@ -58,6 +58,13 @@
             "items": {
                 "type": "string"
             }
+        },
+        "restrictedUsers": {
+            "type": "array",
+            "description": "An array of user IDs that this user has restricted.",
+            "items": {
+                "type": "string"
+            }
         }
       },
       "required": [
@@ -175,6 +182,11 @@
           "type": "string",
           "description": "Timestamp indicating when the comment was created.",
           "format": "date-time"
+        },
+        "status": {
+          "type": "string",
+          "enum": ["approved", "pending_approval"],
+          "description": "The status of the comment, used for the restrict feature."
         }
       },
       "required": [
@@ -182,7 +194,8 @@
         "postId",
         "authorId",
         "content",
-        "timestamp"
+        "timestamp",
+        "status"
       ]
     },
     "Bookmark": {
