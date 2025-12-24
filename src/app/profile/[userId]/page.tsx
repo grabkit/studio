@@ -24,6 +24,7 @@ import type { Bookmark } from "@/lib/types";
 import { RepliesList } from "@/components/RepliesList";
 import { Sheet, SheetContent, SheetTrigger, SheetHeader, SheetTitle, SheetDescription } from "@/components/ui/sheet";
 import { ReportDialog } from "@/components/ReportDialog";
+import { QrCodeDialog } from "@/components/QrCodeDialog";
 
 
 export default function UserProfilePage() {
@@ -36,6 +37,8 @@ export default function UserProfilePage() {
     const [posts, setPosts] = useState<WithId<Post>[]>([]);
     const [postsLoading, setPostsLoading] = useState(true);
     const [isSheetOpen, setIsSheetOpen] = useState(false);
+    const [isQrDialogOpen, setIsQrDialogOpen] = useState(false);
+
 
     useEffect(() => {
         if (currentUser && userId === currentUser.uid) {
@@ -219,6 +222,11 @@ export default function UserProfilePage() {
             description: "Link to this profile has been copied to your clipboard.",
         });
         setIsSheetOpen(false);
+    }
+    
+    const handleOpenQrCode = () => {
+        setIsSheetOpen(false);
+        setIsQrDialogOpen(true);
     }
 
     const hasUpvotedUser = useMemo(() => {
@@ -452,7 +460,7 @@ export default function UserProfilePage() {
                                     <LinkIcon className="h-5 w-5" />
                                 </Button>
                                  <div className="border-t"></div>
-                                <Button variant="ghost" className="justify-between text-base py-6 rounded-2xl w-full">
+                                <Button variant="ghost" className="justify-between text-base py-6 rounded-2xl w-full" onClick={handleOpenQrCode}>
                                     <span>QR Code</span>
                                     <QrCode className="h-5 w-5" />
                                 </Button>
@@ -473,9 +481,16 @@ export default function UserProfilePage() {
                         </div>
                     </SheetContent>
                 </Sheet>
+                 <QrCodeDialog
+                    isOpen={isQrDialogOpen}
+                    onOpenChange={setIsQrDialogOpen}
+                    user={user}
+                />
             </div>
         </AppLayout>
     );
 
     
 }
+
+    
