@@ -15,7 +15,9 @@ service cloud.firestore {
       allow get: if isSignedIn();
       allow list: if isSignedIn();
       allow create: if request.auth.uid == userId;
-      allow update, delete: if false; // Profile updates/deletes not implemented
+      // Allow signed-in users to update only the 'upvotes' and 'upvotedBy' fields.
+      allow update: if isSignedIn() && request.resource.data.diff(resource.data).affectedKeys().hasAll(['upvotes', 'upvotedBy']);
+      allow delete: if false; // Deletes are not allowed.
     }
     
     match /users/{userId}/bookmarks/{postId} {
