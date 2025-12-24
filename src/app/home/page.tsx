@@ -189,28 +189,30 @@ export function PostItem({ post, bookmarks }: { post: WithId<Post>, bookmarks: W
         likeCount: increment(hasLiked ? -1 : 1)
     };
     
-    updateDoc(postRef, payload).catch((serverError) => {
+    try {
+        await updateDoc(postRef, payload);
+
+        if (!isOwner && !hasLiked) {
+            const notificationRef = doc(collection(firestore, 'users', post.authorId, 'notifications'));
+            const notificationData: Omit<Notification, 'id'> = {
+                type: 'like',
+                postId: post.id,
+                postContent: post.content.substring(0, 100), // snippet of post content
+                fromUserId: user.uid,
+                timestamp: serverTimestamp(),
+                read: false,
+            };
+            setDoc(notificationRef, { ...notificationData, id: notificationRef.id }).catch(serverError => {
+                console.error("Failed to create like notification:", serverError);
+            });
+        }
+    } catch (serverError) {
         const permissionError = new FirestorePermissionError({
             path: postRef.path,
             operation: 'update',
             requestResourceData: payload,
         });
         errorEmitter.emit('permission-error', permissionError);
-    });
-
-    if (!isOwner && !hasLiked) {
-        const notificationRef = doc(collection(firestore, 'users', post.authorId, 'notifications'));
-        const notificationData: Omit<Notification, 'id'> = {
-            type: 'like',
-            postId: post.id,
-            postContent: post.content.substring(0, 100), // snippet of post content
-            fromUserId: user.uid,
-            timestamp: serverTimestamp(),
-            read: false,
-        };
-        setDoc(notificationRef, { ...notificationData, id: notificationRef.id }).catch(serverError => {
-            console.error("Failed to create like notification:", serverError);
-        });
     }
   };
 
@@ -472,3 +474,5 @@ export default function HomePage() {
     </AppLayout>
   );
 }
+
+    

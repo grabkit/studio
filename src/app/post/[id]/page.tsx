@@ -14,7 +14,8 @@ import {
   arrayRemove,
   arrayUnion,
   deleteDoc,
-  setDoc
+  setDoc,
+  updateDoc
 } from "firebase/firestore";
 import { useCollection, type WithId } from "@/firebase/firestore/use-collection";
 import { useDoc } from "@/firebase/firestore/use-doc";
@@ -81,48 +82,35 @@ function PostDetailItem({ post }: { post: WithId<Post> }) {
     }
 
     const postRef = doc(firestore, "posts", post.id);
-    const batch = writeBatch(firestore);
+    const payload = {
+        likes: hasLiked ? arrayRemove(user.uid) : arrayUnion(user.uid),
+        likeCount: increment(hasLiked ? -1 : 1),
+    };
 
-    if (hasLiked) {
-      batch.update(postRef, {
-        likes: arrayRemove(user.uid),
-        likeCount: increment(-1),
-      });
-    } else {
-      batch.update(postRef, {
-        likes: arrayUnion(user.uid),
-        likeCount: increment(1),
-      });
-    }
+    try {
+        await updateDoc(postRef, payload);
 
-    batch.commit().catch((serverError) => {
-      const payload = {
-          likes: hasLiked
-            ? arrayRemove(user.uid)
-            : arrayUnion(user.uid),
-          likeCount: increment(hasLiked ? -1 : 1),
-      };
-      const permissionError = new FirestorePermissionError({
-          path: postRef.path,
-          operation: 'update',
-          requestResourceData: payload,
-      });
-      errorEmitter.emit('permission-error', permissionError);
-    });
-
-    if (!isOwner && !hasLiked) {
-        const notificationRef = doc(collection(firestore, 'users', post.authorId, 'notifications'));
-        const notificationData: Omit<Notification, 'id'> = {
-            type: 'like',
-            postId: post.id,
-            postContent: post.content.substring(0, 100),
-            fromUserId: user.uid,
-            timestamp: serverTimestamp(),
-            read: false,
-        };
-        setDoc(notificationRef, { ...notificationData, id: notificationRef.id }).catch(serverError => {
-            console.error("Failed to create like notification:", serverError);
+        if (!isOwner && !hasLiked) {
+            const notificationRef = doc(collection(firestore, 'users', post.authorId, 'notifications'));
+            const notificationData: Omit<Notification, 'id'> = {
+                type: 'like',
+                postId: post.id,
+                postContent: post.content.substring(0, 100),
+                fromUserId: user.uid,
+                timestamp: serverTimestamp(),
+                read: false,
+            };
+            setDoc(notificationRef, { ...notificationData, id: notificationRef.id }).catch(serverError => {
+                console.error("Failed to create like notification:", serverError);
+            });
+        }
+    } catch (serverError) {
+        const permissionError = new FirestorePermissionError({
+            path: postRef.path,
+            operation: 'update',
+            requestResourceData: payload,
         });
+        errorEmitter.emit('permission-error', permissionError);
     }
   };
 
@@ -555,4 +543,5 @@ export default function PostDetailPage() {
   );
 }
 
+    
     
