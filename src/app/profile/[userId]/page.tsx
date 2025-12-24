@@ -3,7 +3,7 @@
 
 import { useParams, useRouter } from "next/navigation";
 import { useFirebase, useMemoFirebase, useCollection, type WithId } from "@/firebase";
-import { doc, collection, query, where, getDocs, serverTimestamp, setDoc, getDoc, updateDoc, increment, arrayUnion, arrayRemove } from "firebase/firestore";
+import { doc, collection, query, where, getDocs, serverTimestamp, setDoc, getDoc, updateDoc, increment, arrayUnion, arrayRemove } from "firestore";
 import { useDoc } from "@/firebase/firestore/use-doc";
 import type { Post, User } from "@/lib/types";
 import React, { useMemo, useState, useEffect } from "react";
@@ -375,15 +375,15 @@ export default function UserProfilePage() {
                             </SheetDescription>
                         </SheetHeader>
                         <div className="grid gap-2 py-4">
-                            <Button variant="outline" className="justify-start text-base py-6" onClick={() => { handleShareProfile(); setIsSheetOpen(false); }}>
+                            <Button variant="outline" className="justify-start text-base py-6 rounded-2xl" onClick={() => { handleShareProfile(); setIsSheetOpen(false); }}>
                                 <ArrowUpRight className="mr-3 h-5 w-5" />
                                 Share Profile
                             </Button>
-                             <Button variant="outline" className="justify-start text-base py-6">
+                             <Button variant="outline" className="justify-start text-base py-6 rounded-2xl">
                                 <Flag className="mr-3 h-5 w-5" />
                                 Report User
                             </Button>
-                             <Button variant="destructive" className="justify-start text-base py-6">
+                             <Button variant="destructive" className="justify-start text-base py-6 rounded-2xl">
                                 <ShieldAlert className="mr-3 h-5 w-5" />
                                 Block User
                             </Button>
