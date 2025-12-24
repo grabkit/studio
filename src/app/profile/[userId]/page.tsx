@@ -410,14 +410,17 @@ export default function UserProfilePage() {
                                     <QrCode className="h-5 w-5" />
                                 </Button>
                             </div>
-                             <Button variant="outline" className="justify-between text-base py-6 rounded-2xl text-destructive hover:text-destructive">
-                                <span>Report User</span>
-                                <Flag className="h-5 w-5" />
-                            </Button>
-                             <Button variant="outline" className="justify-between text-base py-6 rounded-2xl text-destructive hover:text-destructive">
-                                <span>Block User</span>
-                                <ShieldAlert className="h-5 w-5" />
-                            </Button>
+                            <div className="border rounded-2xl">
+                                <Button variant="outline" className="justify-between text-base py-6 rounded-2xl w-full text-destructive hover:text-destructive">
+                                    <span>Report User</span>
+                                    <Flag className="h-5 w-5" />
+                                </Button>
+                                <div className="border-t"></div>
+                                <Button variant="outline" className="justify-between text-base py-6 rounded-2xl w-full text-destructive hover:text-destructive">
+                                    <span>Block User</span>
+                                    <ShieldAlert className="h-5 w-5" />
+                                </Button>
+                            </div>
                         </div>
                     </SheetContent>
                 </Sheet>
@@ -427,3 +430,5 @@ export default function UserProfilePage() {
 
     
 }
+
+    
