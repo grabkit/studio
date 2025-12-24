@@ -1,3 +1,4 @@
+
 "use client";
 
 import AppLayout from "@/components/AppLayout";
@@ -8,7 +9,7 @@ import type { Notification } from "@/lib/types";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import Link from "next/link";
-import { Heart, MessageCircle } from "lucide-react";
+import { Heart, MessageCircle, AlertTriangle } from "lucide-react";
 import { cn, formatTimestamp, getInitials } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import { useEffect } from "react";
@@ -18,9 +19,28 @@ const formatUserId = (uid: string | undefined) => {
   return `blur${uid.substring(uid.length - 6)}`;
 };
 
+const notificationInfo = {
+    like: {
+        icon: Heart,
+        text: "liked your post",
+        color: "text-pink-500"
+    },
+    comment: {
+        icon: MessageCircle,
+        text: "commented on your post",
+        color: "text-blue-500"
+    },
+    comment_approval: {
+        icon: AlertTriangle,
+        text: "reply needs your approval",
+        color: "text-amber-500"
+    }
+}
+
+
 function NotificationItem({ notification }: { notification: WithId<Notification> }) {
-    const Icon = notification.type === 'like' ? Heart : MessageCircle;
-    const actionText = notification.type === 'like' ? 'liked your post' : 'commented on your post';
+    const info = notificationInfo[notification.type] || notificationInfo.comment;
+    const Icon = info.icon;
 
     return (
         <Link href={`/post/${notification.postId}`} className={cn(
@@ -29,20 +49,18 @@ function NotificationItem({ notification }: { notification: WithId<Notification>
         )}>
              <div className="relative">
                 <Avatar className="h-10 w-10">
+                    {/* For comment_approval, the avatar can be a generic one or the post author's */}
                     <AvatarFallback>{getInitials(notification.fromUserId)}</AvatarFallback>
                 </Avatar>
                 <div className="absolute -bottom-1 -right-1 bg-background rounded-full p-0.5">
-                     <Icon className={cn(
-                        "h-4 w-4",
-                        notification.type === 'like' ? 'text-pink-500' : 'text-blue-500'
-                     )} />
+                     <Icon className={cn("h-4 w-4", info.color)} />
                 </div>
             </div>
             <div className="flex-1">
                 <p className="text-sm">
                     <span className="font-bold">{formatUserId(notification.fromUserId)}</span>
                     {' '}
-                    {actionText}:
+                    {info.text}:
                     <span className="text-muted-foreground italic"> "{notification.postContent}"</span>
                 </p>
                 <p className="text-xs text-muted-foreground mt-1">

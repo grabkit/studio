@@ -58,7 +58,7 @@ export interface UserPost extends Post {
 
 export interface Notification {
     id: string;
-    type: 'like' | 'comment';
+    type: 'like' | 'comment' | 'comment_approval';
     postId: string;
     postContent: string;
     fromUserId: string;

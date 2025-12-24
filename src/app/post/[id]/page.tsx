@@ -313,12 +313,23 @@ function CommentForm({ post, commentsAllowed }: { post: WithId<Post>, commentsAl
       .then(() => {
         form.reset();
         
-        if(isRestricted) {
-             toast({ title: "Comment submitted for approval", description: "The author has restricted comments, so your comment will be visible after they approve it." });
-        }
+        if (user.uid === post.authorId) return;
         
-        if (user.uid !== post.authorId && !isRestricted) {
-            const notificationRef = doc(collection(firestore, 'users', post.authorId, 'notifications'));
+        const notificationRef = doc(collection(firestore, 'users', post.authorId, 'notifications'));
+        if (isRestricted) {
+             toast({ title: "Comment submitted for approval", description: "The author has restricted comments, so your comment will be visible after they approve it." });
+             const notificationData: Omit<Notification, 'id'> = {
+                type: 'comment_approval',
+                postId: post.id,
+                postContent: post.content.substring(0, 100),
+                fromUserId: user.uid,
+                timestamp: serverTimestamp(),
+                read: false,
+            };
+            setDoc(notificationRef, { ...notificationData, id: notificationRef.id }).catch(serverError => {
+                console.error("Failed to create approval notification:", serverError);
+            });
+        } else {
             const notificationData: Omit<Notification, 'id'> = {
                 type: 'comment',
                 postId: post.id,
