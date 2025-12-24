@@ -417,12 +417,12 @@ export default function UserProfilePage() {
                             </div>
                             <div className="border rounded-2xl">
                                 <Button variant="ghost" className="justify-between text-base py-6 rounded-2xl w-full text-destructive hover:text-destructive">
-                                    <span>Report User</span>
+                                    <span>Report</span>
                                     <Flag className="h-5 w-5" />
                                 </Button>
                                 <div className="border-t"></div>
                                 <Button variant="ghost" className="justify-between text-base py-6 rounded-2xl w-full text-destructive hover:text-destructive">
-                                    <span>Block User</span>
+                                    <span>Block</span>
                                     <ShieldAlert className="h-5 w-5" />
                                 </Button>
                             </div>
@@ -435,5 +435,3 @@ export default function UserProfilePage() {
 
     
 }
-
-    
