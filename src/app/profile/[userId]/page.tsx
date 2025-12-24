@@ -4,7 +4,7 @@
 
 import { useParams, useRouter } from "next/navigation";
 import { useFirebase, useMemoFirebase } from "@/firebase";
-import { doc, collection, query, where, getDocs, serverTimestamp, setDoc, getDoc, updateDoc, increment, arrayUnion, arrayRemove } from "firebase/firestore";
+import { doc, collection, query, where, getDocs, serverTimestamp, setDoc, getDoc, updateDoc, increment, arrayUnion, arrayRemove, orderBy } from "firebase/firestore";
 import { useDoc } from "@/firebase/firestore/use-doc";
 import { useCollection } from "@/firebase/firestore/use-collection";
 import type { Post, User } from "@/lib/types";
@@ -33,9 +33,6 @@ export default function UserProfilePage() {
     const { toast } = useToast();
     const userId = params.userId as string;
     const { firestore, user: currentUser } = useFirebase();
-    
-    const [posts, setPosts] = useState<WithId<Post>[]>([]);
-    const [postsLoading, setPostsLoading] = useState(true);
 
     useEffect(() => {
         if (currentUser && userId === currentUser.uid) {
@@ -48,38 +45,17 @@ export default function UserProfilePage() {
         return doc(firestore, "users", userId);
     }, [firestore, userId]);
     
-    useEffect(() => {
-        if (!firestore || !userId) return;
-
-        const fetchPosts = async () => {
-            setPostsLoading(true);
-            try {
-                const postsQuery = query(
-                    collection(firestore, "posts"),
-                    where("authorId", "==", userId)
-                );
-                const querySnapshot = await getDocs(postsQuery);
-                const userPosts = querySnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as WithId<Post>));
-                
-                userPosts.sort((a, b) => {
-                    const timeA = a.timestamp?.toMillis() || 0;
-                    const timeB = b.timestamp?.toMillis() || 0;
-                    return timeB - timeA; 
-                });
-
-                setPosts(userPosts);
-            } catch (error) {
-                console.error("Error fetching user posts:", error);
-            } finally {
-                setPostsLoading(false);
-            }
-        };
-
-        fetchPosts();
+    const postsQuery = useMemoFirebase(() => {
+        if (!firestore || !userId) return null;
+        return query(
+            collection(firestore, "posts"),
+            where("authorId", "==", userId),
+            orderBy("timestamp", "desc")
+        );
     }, [firestore, userId]);
 
-
     const { data: user, isLoading: userLoading } = useDoc<User>(userRef);
+    const { data: posts, isLoading: postsLoading } = useCollection<Post>(postsQuery);
 
     const bookmarksQuery = useMemoFirebase(() => {
         if (!firestore || !currentUser) return null;
