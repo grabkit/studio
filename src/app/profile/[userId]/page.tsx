@@ -15,7 +15,7 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { ArrowLeft, MessageSquare, ArrowUpRight, ArrowUp, MoreHorizontal, ShieldAlert, Flag, VolumeX, Info, MinusCircle } from "lucide-react";
+import { ArrowLeft, MessageSquare, ArrowUpRight, ArrowUp, MoreHorizontal, ShieldAlert, Flag, VolumeX, Info, MinusCircle, Link as LinkIcon, QrCode } from "lucide-react";
 import { getInitials, cn } from "@/lib/utils";
 import { FirestorePermissionError } from "@/firebase/errors";
 import { errorEmitter } from "@/firebase/error-emitter";
@@ -142,7 +142,7 @@ export default function UserProfilePage() {
         }
     };
     
-    const handleShareProfile = async () => {
+    const handleShare = async () => {
         if (!user) return;
         const shareData = {
             title: `Check out ${user.name || formatUserId(user.id)} on Blur`,
@@ -153,11 +153,7 @@ export default function UserProfilePage() {
             if (navigator.share) {
                 await navigator.share(shareData);
             } else {
-                await navigator.clipboard.writeText(shareData.url);
-                toast({
-                    title: "Profile Link Copied",
-                    description: "Link to this profile has been copied to your clipboard.",
-                });
+                 handleCopyLink();
             }
         } catch (error: any) {
              // Ignore user cancellation of share sheet
@@ -169,8 +165,19 @@ export default function UserProfilePage() {
                 title: "Could not share",
                 description: "There was an error trying to share this profile.",
             });
+        } finally {
+            setIsSheetOpen(false);
         }
     };
+
+    const handleCopyLink = () => {
+         navigator.clipboard.writeText(window.location.href);
+         toast({
+            title: "Profile Link Copied",
+            description: "Link to this profile has been copied to your clipboard.",
+        });
+        setIsSheetOpen(false);
+    }
 
     const hasUpvotedUser = useMemo(() => {
         if (!user || !currentUser) return false;
@@ -387,10 +394,22 @@ export default function UserProfilePage() {
                                 <span>About this profile</span>
                                 <Info className="h-5 w-5" />
                             </Button>
-                            <Button variant="outline" className="justify-between text-base py-6 rounded-2xl" onClick={() => { handleShareProfile(); setIsSheetOpen(false); }}>
-                                <span>Share Profile</span>
-                                <ArrowUpRight className="h-5 w-5" />
-                            </Button>
+                             <div className="border rounded-2xl">
+                                <Button variant="ghost" className="justify-between text-base py-6 rounded-2xl w-full" onClick={handleShare}>
+                                    <span>Share via...</span>
+                                    <ArrowUpRight className="h-5 w-5" />
+                                </Button>
+                                <div className="border-t"></div>
+                                <Button variant="ghost" className="justify-between text-base py-6 rounded-2xl w-full" onClick={handleCopyLink}>
+                                    <span>Copy Link</span>
+                                    <LinkIcon className="h-5 w-5" />
+                                </Button>
+                                 <div className="border-t"></div>
+                                <Button variant="ghost" className="justify-between text-base py-6 rounded-2xl w-full">
+                                    <span>QR Code</span>
+                                    <QrCode className="h-5 w-5" />
+                                </Button>
+                            </div>
                              <Button variant="outline" className="justify-between text-base py-6 rounded-2xl text-destructive hover:text-destructive">
                                 <span>Report User</span>
                                 <Flag className="h-5 w-5" />
@@ -408,5 +427,3 @@ export default function UserProfilePage() {
 
     
 }
-
-    

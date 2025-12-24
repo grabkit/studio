@@ -474,5 +474,3 @@ export default function HomePage() {
     </AppLayout>
   );
 }
-
-    
