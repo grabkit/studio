@@ -375,17 +375,17 @@ export default function UserProfilePage() {
                             </SheetDescription>
                         </SheetHeader>
                         <div className="grid gap-2 py-4">
-                            <Button variant="outline" className="justify-start text-base py-6 rounded-2xl" onClick={() => { handleShareProfile(); setIsSheetOpen(false); }}>
-                                <ArrowUpRight className="mr-3 h-5 w-5" />
-                                Share Profile
+                            <Button variant="outline" className="justify-between text-base py-6 rounded-2xl" onClick={() => { handleShareProfile(); setIsSheetOpen(false); }}>
+                                <span>Share Profile</span>
+                                <ArrowUpRight className="h-5 w-5" />
                             </Button>
-                             <Button variant="outline" className="justify-start text-base py-6 rounded-2xl">
-                                <Flag className="mr-3 h-5 w-5" />
-                                Report User
+                             <Button variant="outline" className="justify-between text-base py-6 rounded-2xl text-destructive hover:text-destructive">
+                                <span>Report User</span>
+                                <Flag className="h-5 w-5" />
                             </Button>
-                             <Button variant="destructive" className="justify-start text-base py-6 rounded-2xl">
-                                <ShieldAlert className="mr-3 h-5 w-5" />
-                                Block User
+                             <Button variant="outline" className="justify-between text-base py-6 rounded-2xl text-destructive hover:text-destructive">
+                                <span>Block User</span>
+                                <ShieldAlert className="h-5 w-5" />
                             </Button>
                         </div>
                     </SheetContent>
