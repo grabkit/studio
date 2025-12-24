@@ -577,5 +577,3 @@ export default function UserProfilePage() {
 
     
 }
-
-    
