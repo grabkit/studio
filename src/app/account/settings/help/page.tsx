@@ -3,7 +3,7 @@
 
 import AppLayout from "@/components/AppLayout";
 import { Button } from "@/components/ui/button";
-import { ArrowLeft, BookOpen, MessageSquareQuestion, ShieldCheck } from "lucide-react";
+import { ArrowLeft, BookOpen, MessageSquareQuote, ShieldCheck } from "lucide-react";
 import { useRouter } from "next/navigation";
 import Link from 'next/link';
 
@@ -21,7 +21,7 @@ export default function HelpPage() {
             <div className="pt-14 p-4 space-y-4">
                 <Link href="#" className="block p-4 border rounded-lg hover:bg-accent">
                     <div className="flex items-center space-x-4">
-                        <MessageSquareQuestion className="h-8 w-8 text-primary"/>
+                        <MessageSquareQuote className="h-8 w-8 text-primary"/>
                         <div>
                             <h3 className="font-semibold">FAQs</h3>
                             <p className="text-sm text-muted-foreground">Find answers to common questions.</p>
