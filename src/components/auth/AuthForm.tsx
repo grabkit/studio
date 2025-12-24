@@ -125,7 +125,6 @@ export default function AuthForm() {
       const userCredential = await createUserWithEmailAndPassword(auth, values.email, values.password);
       const user = userCredential.user;
       
-      // After creating the user in Auth, create their profile document in Firestore.
       if (user && firestore) {
         try {
             await updateProfile(user, { displayName: values.name });
@@ -137,22 +136,231 @@ export default function AuthForm() {
                 email: values.email,
                 status: 'active'
             };
-            // This setDoc creates the user document in the 'users' collection.
             await setDoc(userDocRef, newUser);
         } catch (firestoreError: any) {
-            // This is the critical change. If Firestore write fails, inform the user.
             console.error("Firestore profile creation error:", firestoreError);
             toast({ 
                 variant: "destructive", 
                 title: "Profile Creation Failed", 
-                description: "Your account was created, but we couldn't save your profile due to a temporary issue (the database limit might be reached). Please try logging in again later.",
+                description: "Your account was created, but we couldn't save your profile. Please try logging in again later.",
                 duration: 9000,
             });
-             // We still proceed to the home page, as the auth account is created.
             router.push("/home");
             return;
         }
       }
 
       router.push("/home");
-    } catch (error: any
+    } catch (error: any) {
+      toast({ variant: "destructive", title: "Sign Up Failed", description: error.message });
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handlePasswordReset = async (values: z.infer<typeof forgotPasswordSchema>) => {
+    try {
+      await sendPasswordResetEmail(auth, values.email);
+      toast({
+        title: "Password Reset Email Sent",
+        description: "Check your inbox for a link to reset your password.",
+      });
+      return true; // Indicate success to close dialog
+    } catch (error: any) {
+      toast({
+        variant: "destructive",
+        title: "Password Reset Failed",
+        description: error.message,
+      });
+      return false; // Indicate failure
+    }
+  };
+
+  return (
+    <div className="w-full space-y-6">
+        <div className="text-center">
+             <Image src="https://blogger.googleusercontent.com/img/b/R29vZ2xl/AVvXsEh5r85BhL7rCkS72xpX_5xkFZ9y_fVMFXYp_zLN9eEAnEA_C61c1jCJFaG86d1W6_mtsla64B191MOWYEFhJAa-lyMikD80WyfBVKiQxyc71spJx3Oy2FgvfotsVVnNIXGRXunpHYYvGFoQ7V-URilBXwJzIV9zQLSO_PN9raerNaTAb0VuCYo9EBqiyVts/s320/New%20Project%2020%20%5BEFC25EE%5D.png" alt="Blur Logo" width={80} height={26} className="mx-auto" />
+            <h1 className="text-2xl font-bold font-headline mt-4">
+                {authMode === "login" ? "Welcome Back" : "Create an Account"}
+            </h1>
+             <p className="text-sm text-muted-foreground">
+                {authMode === 'login' ? 'Sign in to continue your anonymous journey.' : 'Join the community to share your thoughts.'}
+            </p>
+        </div>
+
+      <Form {...form}>
+        <form onSubmit={form.handleSubmit(handleSubmit)} className="space-y-4">
+          {authMode === "signup" && (
+            <FormField
+              control={form.control}
+              name="name"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel className="sr-only">Name</FormLabel>
+                  <FormControl>
+                     <div className="relative">
+                        <UserIcon className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-muted-foreground" />
+                        <Input placeholder="Name" {...field} className="pl-10" />
+                     </div>
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+          )}
+
+          <FormField
+            control={form.control}
+            name="email"
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel className="sr-only">Email</FormLabel>
+                <FormControl>
+                   <div className="relative">
+                        <Mail className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-muted-foreground" />
+                        <Input type="email" placeholder="Email" {...field} className="pl-10" />
+                   </div>
+                </FormControl>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
+
+          <FormField
+            control={form.control}
+            name="password"
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel className="sr-only">Password</FormLabel>
+                <FormControl>
+                  <div className="relative">
+                        <Lock className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-muted-foreground" />
+                        <Input type="password" placeholder="Password" {...field} className="pl-10" />
+                  </div>
+                </FormControl>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
+
+           {authMode === "signup" && (
+            <FormField
+              control={form.control}
+              name="terms"
+              render={({ field }) => (
+                <FormItem className="flex flex-row items-start space-x-3 space-y-0 pt-2">
+                  <FormControl>
+                    <Checkbox
+                      checked={field.value}
+                      onCheckedChange={field.onChange}
+                    />
+                  </FormControl>
+                  <div className="space-y-1 leading-none">
+                    <FormLabel className="text-sm font-normal text-muted-foreground">
+                      I agree to the{" "}
+                      <Button variant="link" type="button" className="p-0 h-auto text-sm">Terms of Service</Button>
+                      {" & "}
+                      <Button variant="link" type="button" className="p-0 h-auto text-sm">Privacy Policy</Button>.
+                    </FormLabel>
+                    <FormMessage />
+                  </div>
+                </FormItem>
+              )}
+            />
+          )}
+
+          <Button type="submit" className="w-full" disabled={loading}>
+            {loading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+            {authMode === "login" ? "Login" : "Sign Up"}
+          </Button>
+        </form>
+      </Form>
+
+       <div className="relative">
+            <div className="absolute inset-0 flex items-center">
+                <span className="w-full border-t" />
+            </div>
+            <div className="relative flex justify-center text-xs uppercase">
+                <span className="bg-background px-2 text-muted-foreground">
+                OR
+                </span>
+            </div>
+        </div>
+
+        <div className="text-center text-sm">
+            {authMode === "login" ? (
+                <>
+                    {"Don't have an account? "}
+                    <Button variant="link" onClick={() => { setAuthMode("signup"); form.reset(); }} className="p-0 h-auto">
+                        Sign Up
+                    </Button>
+                     {" · "}
+                     <ForgotPasswordDialog form={forgotPasswordForm} handlePasswordReset={handlePasswordReset} />
+                </>
+            ) : (
+                <>
+                    {"Already have an account? "}
+                    <Button variant="link" onClick={() => { setAuthMode("login"); form.reset(); }} className="p-0 h-auto">
+                        Login
+                    </Button>
+                </>
+            )}
+        </div>
+    </div>
+  );
+}
+
+
+function ForgotPasswordDialog({form, handlePasswordReset}: {form: UseFormReturn<any>, handlePasswordReset: (values: any) => Promise<boolean>}) {
+  const [isOpen, setIsOpen] = useState(false);
+  const [loading, setLoading] = useState(false);
+
+  const onSubmit = async (values: z.infer<typeof forgotPasswordSchema>) => {
+    setLoading(true);
+    const success = await handlePasswordReset(values);
+    setLoading(false);
+    if (success) {
+      setIsOpen(false);
+    }
+  };
+
+  return (
+    <AlertDialog open={isOpen} onOpenChange={setIsOpen}>
+      <AlertDialogTrigger asChild>
+        <Button variant="link" className="p-0 h-auto">Forgot Password</Button>
+      </AlertDialogTrigger>
+      <AlertDialogContent>
+        <AlertDialogHeader>
+          <AlertDialogTitle>Forgot Password?</AlertDialogTitle>
+          <AlertDialogDescription>
+            Enter your email address and we'll send you a link to reset your password.
+          </AlertDialogDescription>
+        </AlertDialogHeader>
+        <Form {...form}>
+            <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
+                 <FormField
+                    control={form.control}
+                    name="email"
+                    render={({ field }) => (
+                    <FormItem>
+                        <FormLabel>Email</FormLabel>
+                        <FormControl>
+                            <Input placeholder="your@email.com" {...field} />
+                        </FormControl>
+                        <FormMessage />
+                    </FormItem>
+                    )}
+                />
+                <AlertDialogFooter>
+                    <AlertDialogCancel>Cancel</AlertDialogCancel>
+                    <AlertDialogAction type="submit" disabled={loading}>
+                        {loading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                        Send Reset Link
+                    </AlertDialogAction>
+                </AlertDialogFooter>
+            </form>
+        </Form>
+      </AlertDialogContent>
+    </AlertDialog>
+  );
+}
