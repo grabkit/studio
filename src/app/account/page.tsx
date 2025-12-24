@@ -8,9 +8,7 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
 import { collection, query, where, getDocs, getDoc, doc } from "firebase/firestore";
 import { useCollection, type WithId } from "@/firebase/firestore/use-collection";
-import { Settings, LogOut } from "lucide-react";
-import { signOut } from "firebase/auth";
-import { useToast } from "@/hooks/use-toast";
+import { Settings } from "lucide-react";
 import type { Post, Bookmark, User } from "@/lib/types";
 import { Skeleton } from "@/components/ui/skeleton";
 import React, { useMemo, useState, useEffect } from "react";
@@ -98,9 +96,7 @@ function BookmarksList({ bookmarks, bookmarksLoading }: { bookmarks: WithId<Book
 
 export default function AccountPage() {
   const { user: authUser, userProfile } = useFirebase();
-  const { auth, firestore } = useFirebase();
-  const router = useRouter();
-  const { toast } = useToast();
+  const { firestore } = useFirebase();
 
   const [posts, setPosts] = useState<WithId<Post>[]>([]);
   const [postsLoading, setPostsLoading] = useState(true);
@@ -150,23 +146,6 @@ export default function AccountPage() {
   }, [posts]);
 
 
-  const handleLogout = async () => {
-    try {
-      await signOut(auth);
-      router.push("/auth");
-      toast({
-        title: "Logged Out",
-        description: "You have been successfully logged out.",
-      });
-    } catch (error: any) {
-      toast({
-        variant: "destructive",
-        title: "Logout Failed",
-        description: error.message,
-      });
-    }
-  };
-
   const formatUserId = (uid: string | undefined) => {
     if (!uid) return "blur??????";
     return `blur${uid.substring(uid.length - 6)}`;
@@ -188,9 +167,6 @@ export default function AccountPage() {
                     <Link href="/account/settings">
                         <Settings className="h-6 w-6" />
                     </Link>
-                </Button>
-                <Button variant="ghost" size="icon" onClick={handleLogout}>
-                    <LogOut className="h-6 w-6 text-destructive" />
                 </Button>
             </div>
         </div>
