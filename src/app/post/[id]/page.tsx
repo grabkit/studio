@@ -32,7 +32,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { Button, buttonVariants } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { Form, FormControl, FormField, FormItem, FormMessage } from "@/components/ui/form";
-import { Heart, MessageCircle, ArrowUpRight, Trash2, MoreHorizontal, Edit, ArrowLeft, Repeat, Check } from "lucide-react";
+import { Heart, MessageCircle, ArrowUpRight, Trash2, MoreHorizontal, Edit, ArrowLeft, Repeat, Check, AlertTriangle } from "lucide-react";
 import { cn, formatTimestamp, getInitials } from "@/lib/utils";
 import { useToast } from "@/hooks/use-toast";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -286,7 +286,7 @@ function CommentForm({ post, commentsAllowed }: { post: WithId<Post>, commentsAl
   }, [firestore, post]);
   const { data: postAuthorProfile } = useDoc<UserProfile>(postAuthorRef);
 
-  const onSubmit = async (values: z.infer<typeof CommentFormSchema>) => {
+  const onSubmit = async (values: z.infer<typeof CommentFormSchema>>) => {
     if (!user || !firestore) {
       toast({ variant: "destructive", title: "You must be logged in to comment." });
       return;
@@ -447,7 +447,7 @@ function CommentItem({ comment, postAuthorId }: { comment: WithId<Comment>, post
 
 
   return (
-    <div className={cn("flex space-x-3 p-4 border-b", isPendingApproval && "bg-amber-50")}>
+    <div className="flex space-x-3 p-4 border-b">
       <Avatar className="h-8 w-8">
         <AvatarFallback>{getInitials(comment.authorId)}</AvatarFallback>
       </Avatar>
@@ -463,23 +463,28 @@ function CommentItem({ comment, postAuthorId }: { comment: WithId<Comment>, post
                     : ""}
                 </span>
             </div>
-            <div className="flex items-center">
-                {canDelete && (
-                    <Button variant="ghost" size="icon" className="h-6 w-6" onClick={handleDelete}>
-                        <Trash2 className="h-4 w-4 text-muted-foreground" />
-                    </Button>
-                )}
-            </div>
         </div>
-        <p className="text-sm text-foreground whitespace-pre-wrap">{comment.content}</p>
+        <p className={cn("text-sm text-foreground whitespace-pre-wrap", isPendingApproval && "text-muted-foreground")}>{comment.content}</p>
         
         {isPendingApproval && isPostOwner && (
-            <div className="mt-2 flex items-center gap-2">
-                <p className="text-xs text-amber-600">Pending approval</p>
-                <Button size="xs" variant="outline" onClick={handleApprove}>
-                    <Check className="h-3 w-3 mr-1" />
-                    Approve
-                </Button>
+            <div className="mt-3 p-3 bg-amber-50 border border-amber-200 rounded-lg">
+                <div className="flex items-start gap-3">
+                    <AlertTriangle className="h-5 w-5 text-amber-500 mt-0.5" />
+                    <div>
+                        <p className="text-sm font-semibold text-amber-800">This reply is pending your approval</p>
+                        <p className="text-xs text-amber-600">This reply is only visible to you and {formatUserId(comment.authorId)} until you approve it.</p>
+                        <div className="mt-3 flex items-center gap-2">
+                             <Button size="sm" variant="ghost" className="h-8" onClick={handleApprove}>
+                                <Check className="h-4 w-4 mr-1" />
+                                Approve
+                            </Button>
+                            <Button size="sm" variant="ghost" className="h-8 text-destructive hover:text-destructive" onClick={handleDelete}>
+                                <Trash2 className="h-4 w-4 mr-1" />
+                                Delete
+                            </Button>
+                        </div>
+                    </div>
+                </div>
             </div>
         )}
       </div>
