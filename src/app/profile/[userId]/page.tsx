@@ -2,7 +2,7 @@
 "use client";
 
 import { useParams, useRouter } from "next/navigation";
-import { useFirebase, useMemoFirebase } from "@/firebase";
+import { useFirebase, useMemoFirebase, useCollection, type WithId } from "@/firebase";
 import { doc, collection, query, where, getDocs, serverTimestamp, setDoc, getDoc, updateDoc, increment, arrayUnion, arrayRemove } from "firebase/firestore";
 import { useDoc } from "@/firebase/firestore/use-doc";
 import type { Post, User } from "@/lib/types";
@@ -21,7 +21,6 @@ import { FirestorePermissionError } from "@/firebase/errors";
 import { errorEmitter } from "@/firebase/error-emitter";
 import { PostItem as HomePostItem, PostSkeleton } from "@/app/home/page";
 import type { Bookmark } from "@/lib/types";
-import { WithId } from "@/firebase/firestore/use-collection";
 import { RepliesList } from "@/components/RepliesList";
 import { Sheet, SheetContent, SheetTrigger, SheetHeader, SheetTitle, SheetDescription } from "@/components/ui/sheet";
 
