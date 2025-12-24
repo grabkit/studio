@@ -33,6 +33,12 @@ const nextConfig: NextConfig = {
         hostname: 'blogger.googleusercontent.com',
         port: '',
         pathname: '/**',
+      },
+      {
+        protocol: 'https',
+        hostname: 'api.qrserver.com',
+        port: '',
+        pathname: '/**',
       }
     ],
   },
