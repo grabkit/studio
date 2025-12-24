@@ -4,7 +4,7 @@
 import React from "react";
 import AppLayout from "@/components/AppLayout";
 import { Button } from "@/components/ui/button";
-import { ArrowLeft, ChevronRight, User, Bell, UserX, HelpCircle, Info, LogOut } from "lucide-react";
+import { ArrowLeft, ChevronRight, User, Bell, UserX, HelpCircle, Info, LogOut, UserPlus } from "lucide-react";
 import { useRouter } from "next/navigation";
 import Link from 'next/link';
 import { useFirebase } from "@/firebase";
@@ -13,9 +13,9 @@ import { useToast } from "@/hooks/use-toast";
 
 const settingsItems = [
     { href: "/account/settings/account-status", label: "Account status", icon: User },
+    { href: "#", label: "Follow and invite", icon: UserPlus },
     { href: "/account/settings/notifications", label: "Notifications", icon: Bell },
     { href: "/account/settings/blocked-users", label: "Blocked users", icon: UserX },
-    // { href: "/account/settings/follow-and-invite", label: "Follow and invite", icon: UserPlus },
     { href: "/account/settings/help", label: "Help", icon: HelpCircle },
     { href: "/account/settings/about", label: "About", icon: Info },
 ]
