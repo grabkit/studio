@@ -430,7 +430,7 @@ export function PostSkeleton() {
 
 
 export default function HomePage() {
-  const { firestore } = useFirebase();
+  const { firestore, userProfile } = useFirebase();
   const { user } = useUser();
 
   const postsQuery = useMemoFirebase(() => {
@@ -452,6 +452,12 @@ export default function HomePage() {
 
   const isLoading = postsLoading || bookmarksLoading;
 
+  const filteredPosts = useMemo(() => {
+    if (!posts) return [];
+    const mutedUsers = userProfile?.mutedUsers || [];
+    return posts.filter(post => !mutedUsers.includes(post.authorId));
+  }, [posts, userProfile]);
+
   return (
     <AppLayout>
       <div className="divide-y border-b">
@@ -462,16 +468,18 @@ export default function HomePage() {
             <PostSkeleton />
           </>
         )}
-        {!isLoading && posts?.length === 0 && (
+        {!isLoading && filteredPosts.length === 0 && (
           <div className="text-center py-10">
             <h2 className="text-2xl font-headline text-primary">No posts yet!</h2>
             <p className="text-muted-foreground mt-2">Be the first to post something.</p>
           </div>
         )}
-        {posts?.map((post) => (
+        {filteredPosts.map((post) => (
           <PostItem key={post.id} post={post} bookmarks={bookmarks} />
         ))}
       </div>
     </AppLayout>
   );
 }
+
+    

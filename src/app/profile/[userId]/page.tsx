@@ -16,7 +16,7 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { ArrowLeft, MessageSquare, ArrowUpRight, ArrowUp, MoreHorizontal, ShieldAlert, Flag, VolumeX, Info, MinusCircle, Link as LinkIcon, QrCode, Calendar, Badge, User as UserIcon } from "lucide-react";
+import { ArrowLeft, MessageSquare, ArrowUpRight, ArrowUp, MoreHorizontal, ShieldAlert, Flag, VolumeX, Info, MinusCircle, Link as LinkIcon, QrCode, Calendar, Badge, User as UserIcon, Volume2 } from "lucide-react";
 import { getInitials, cn } from "@/lib/utils";
 import { FirestorePermissionError } from "@/firebase/errors";
 import { errorEmitter } from "@/firebase/error-emitter";
@@ -150,6 +150,10 @@ export default function UserProfilePage() {
         return currentUserProfile?.blockedUsers?.includes(userId) ?? false;
     }, [currentUserProfile, userId]);
 
+    const isMuted = useMemo(() => {
+        return currentUserProfile?.mutedUsers?.includes(userId) ?? false;
+    }, [currentUserProfile, userId]);
+
     const handleBlockUser = async () => {
         if (!currentUser || !firestore) {
              toast({ variant: "destructive", title: "You must be logged in to block a user." });
@@ -181,6 +185,36 @@ export default function UserProfilePage() {
             });
             errorEmitter.emit('permission-error', permissionError);
             toast({ variant: "destructive", title: "Error", description: "Could not complete the action." });
+        } finally {
+            setIsMoreOptionsSheetOpen(false);
+        }
+    };
+
+    const handleMuteUser = async () => {
+        if (!currentUser || !firestore) {
+            toast({ variant: "destructive", title: "You must be logged in to mute a user." });
+            return;
+        }
+
+        const currentUserDocRef = doc(firestore, "users", currentUser.uid);
+
+        try {
+            if (isMuted) {
+                await updateDoc(currentUserDocRef, { mutedUsers: arrayRemove(userId) });
+                toast({ title: "User Unmuted", description: `Posts from ${user?.name || formatUserId(userId)} will now appear in your feed.` });
+            } else {
+                await updateDoc(currentUserDocRef, { mutedUsers: arrayUnion(userId) });
+                toast({ title: "User Muted", description: `Posts from ${user?.name || formatUserId(userId)} will no longer appear in your feed.` });
+            }
+        } catch (error) {
+            console.error("Error muting/unmuting user:", error);
+            const permissionError = new FirestorePermissionError({
+                path: currentUserDocRef.path,
+                operation: 'update',
+                requestResourceData: { mutedUsers: `arrayUnion/arrayRemove ${userId}` },
+            });
+            errorEmitter.emit('permission-error', permissionError);
+            toast({ variant: "destructive", title: "Error", description: "Could not mute user." });
         } finally {
             setIsMoreOptionsSheetOpen(false);
         }
@@ -483,9 +517,9 @@ export default function UserProfilePage() {
                         </SheetHeader>
                          <div className="grid gap-2 py-4">
                              <div className="border rounded-2xl">
-                                <Button variant="ghost" className="justify-between text-base py-6 rounded-2xl w-full">
-                                    <span>Mute</span>
-                                    <VolumeX className="h-5 w-5" />
+                                 <Button variant="ghost" className="justify-between text-base py-6 rounded-2xl w-full" onClick={handleMuteUser}>
+                                    <span>{isMuted ? "Unmute" : "Mute"}</span>
+                                    {isMuted ? <Volume2 className="h-5 w-5" /> : <VolumeX className="h-5 w-5" />}
                                 </Button>
                                 <div className="border-t"></div>
                                 <Button variant="ghost" className="justify-between text-base py-6 rounded-2xl w-full">

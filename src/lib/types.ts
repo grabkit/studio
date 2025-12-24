@@ -41,6 +41,7 @@ export interface User {
     upvotedBy?: string[];
     status?: 'active' | 'suspended' | 'banned';
     blockedUsers?: string[];
+    mutedUsers?: string[];
 }
 
 export interface Bookmark {
@@ -97,3 +98,5 @@ export interface Report {
     timestamp: any; // Can be Timestamp or FieldValue
     status: 'pending' | 'reviewed' | 'action-taken';
 }
+
+    

@@ -26,7 +26,7 @@ service cloud.firestore {
       allow create: if request.auth.uid == userId;
       allow update: if isSignedIn() && (
         // Allow a user to update their own profile fields (excluding status).
-        (isOwner(userId) && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['name', 'email', 'blockedUsers'])) ||
+        (isOwner(userId) && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['name', 'email', 'blockedUsers', 'mutedUsers'])) ||
         // Allow any signed-in user to update only 'upvotes' and 'upvotedBy' on another user's profile.
         (request.resource.data.diff(resource.data).affectedKeys().hasAll(['upvotes', 'upvotedBy']))
       );
@@ -151,3 +151,5 @@ service cloud.firestore {
     }
   }
 }
+
+    
