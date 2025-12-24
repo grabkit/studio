@@ -38,6 +38,7 @@ export interface User {
     anonymousId?: string;
     upvotes?: number;
     upvotedBy?: string[];
+    status?: 'active' | 'suspended' | 'banned';
 }
 
 export interface Bookmark {
