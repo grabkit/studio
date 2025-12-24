@@ -39,6 +39,7 @@ export interface User {
     upvotes?: number;
     upvotedBy?: string[];
     status?: 'active' | 'suspended' | 'banned';
+    blockedUsers?: string[];
 }
 
 export interface Bookmark {

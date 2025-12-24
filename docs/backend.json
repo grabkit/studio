@@ -39,6 +39,13 @@
             "type": "string",
             "enum": ["active", "suspended", "banned"],
             "description": "The status of the user's account."
+        },
+        "blockedUsers": {
+            "type": "array",
+            "description": "An array of user IDs that this user has blocked.",
+            "items": {
+                "type": "string"
+            }
         }
       },
       "required": [
