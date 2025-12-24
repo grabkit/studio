@@ -36,6 +36,8 @@ export interface User {
     name: string;
     email: string;
     anonymousId?: string;
+    upvotes?: number;
+    upvotedBy?: string[];
 }
 
 export interface Bookmark {
@@ -83,4 +85,5 @@ export interface Message {
 export interface ReplyItem extends Comment {
     postContent: string;
 }
+
     

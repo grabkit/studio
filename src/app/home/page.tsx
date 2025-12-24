@@ -9,7 +9,7 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Skeleton } from "@/components/ui/skeleton";
 import type { Post, Bookmark, PollOption, Notification, User, Conversation } from "@/lib/types";
-import { ArrowUp, MessageCircle, Repeat, ArrowUpRight, MoreHorizontal, Edit, Trash2, Bookmark as BookmarkIcon, CheckCircle2 } from "lucide-react";
+import { Heart, MessageCircle, Repeat, ArrowUpRight, MoreHorizontal, Edit, Trash2, Bookmark as BookmarkIcon, CheckCircle2 } from "lucide-react";
 import { cn, formatTimestamp, getInitials } from "@/lib/utils";
 import { useToast } from "@/hooks/use-toast";
 import { FirestorePermissionError } from "@/firebase/errors";
@@ -168,25 +168,25 @@ export function PostItem({ post, bookmarks }: { post: WithId<Post>, bookmarks: W
   const router = useRouter();
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
   
-  const hasUpvoted = user ? post.likes?.includes(user.uid) : false;
+  const hasLiked = user ? post.likes?.includes(user.uid) : false;
   const isOwner = user?.uid === post.authorId;
   const isBookmarked = useMemo(() => bookmarks?.some(b => b.postId === post.id), [bookmarks, post.id]);
 
 
-  const handleUpvote = async () => {
+  const handleLike = async () => {
     if (!user || !firestore) {
         toast({
             variant: "destructive",
             title: "Authentication Error",
-            description: "You must be logged in to upvote a post.",
+            description: "You must be logged in to like a post.",
         });
         return;
     }
 
     const postRef = doc(firestore, 'posts', post.id);
     const payload = {
-        likes: hasUpvoted ? arrayRemove(user.uid) : arrayUnion(user.uid),
-        likeCount: increment(hasUpvoted ? -1 : 1)
+        likes: hasLiked ? arrayRemove(user.uid) : arrayUnion(user.uid),
+        likeCount: increment(hasLiked ? -1 : 1)
     };
     
     updateDoc(postRef, payload).catch((serverError) => {
@@ -198,11 +198,10 @@ export function PostItem({ post, bookmarks }: { post: WithId<Post>, bookmarks: W
         errorEmitter.emit('permission-error', permissionError);
     });
 
-    // Create a notification if the user is not the owner of the post and is upvoting
-    if (!isOwner && !hasUpvoted) {
+    if (!isOwner && !hasLiked) {
         const notificationRef = doc(collection(firestore, 'users', post.authorId, 'notifications'));
         const notificationData: Omit<Notification, 'id'> = {
-            type: 'like', // Keeping as 'like' for now, can be changed to 'upvote'
+            type: 'like',
             postId: post.id,
             postContent: post.content.substring(0, 100), // snippet of post content
             fromUserId: user.uid,
@@ -210,8 +209,7 @@ export function PostItem({ post, bookmarks }: { post: WithId<Post>, bookmarks: W
             read: false,
         };
         setDoc(notificationRef, { ...notificationData, id: notificationRef.id }).catch(serverError => {
-            // Silently fail notification creation error
-            console.error("Failed to create upvote notification:", serverError);
+            console.error("Failed to create like notification:", serverError);
         });
     }
   };
@@ -355,8 +353,8 @@ export function PostItem({ post, bookmarks }: { post: WithId<Post>, bookmarks: W
 
             <div className="flex items-center justify-between pt-2 text-muted-foreground">
                 <div className="flex items-center space-x-6">
-                  <button onClick={handleUpvote} className="flex items-center space-x-1 hover:text-orange-500">
-                    <ArrowUp className={cn("h-4 w-4", hasUpvoted && "text-orange-500 fill-orange-500")} />
+                  <button onClick={handleLike} className="flex items-center space-x-1 hover:text-pink-500">
+                    <Heart className={cn("h-4 w-4", hasLiked && "text-pink-500 fill-pink-500")} />
                     <span className="text-xs">{post.likeCount > 0 ? post.likeCount : ''}</span>
                   </button>
                   <Link href={`/post/${post.id}`} className="flex items-center space-x-1 hover:text-primary">
@@ -471,3 +469,5 @@ export default function HomePage() {
     </AppLayout>
   );
 }
+
+    

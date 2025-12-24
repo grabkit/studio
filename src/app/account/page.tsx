@@ -2,7 +2,7 @@
 "use client";
 
 import AppLayout from "@/components/AppLayout";
-import { useUser, useFirebase, useMemoFirebase } from "@/firebase";
+import { useUser, useFirebase, useMemoFirebase, useDoc } from "@/firebase";
 import { useRouter } from "next/navigation";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
@@ -11,7 +11,7 @@ import { useCollection, type WithId } from "@/firebase/firestore/use-collection"
 import { Settings, LogOut } from "lucide-react";
 import { signOut } from "firebase/auth";
 import { useToast } from "@/hooks/use-toast";
-import type { Post, Bookmark } from "@/lib/types";
+import type { Post, Bookmark, User } from "@/lib/types";
 import { Skeleton } from "@/components/ui/skeleton";
 import React, { useMemo, useState, useEffect } from "react";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -96,7 +96,7 @@ function BookmarksList({ bookmarks, bookmarksLoading }: { bookmarks: WithId<Book
 
 
 export default function AccountPage() {
-  const { user } = useUser();
+  const { user: authUser } = useUser();
   const { auth, firestore } = useFirebase();
   const router = useRouter();
   const { toast } = useToast();
@@ -104,15 +104,22 @@ export default function AccountPage() {
   const [posts, setPosts] = useState<WithId<Post>[]>([]);
   const [postsLoading, setPostsLoading] = useState(true);
 
+  const userRef = useMemoFirebase(() => {
+    if (!firestore || !authUser) return null;
+    return doc(firestore, "users", authUser.uid);
+  }, [firestore, authUser]);
+
+  const { data: user, isLoading: userLoading } = useDoc<User>(userRef);
+
   useEffect(() => {
-    if (!firestore || !user) return;
+    if (!firestore || !authUser) return;
 
     const fetchPosts = async () => {
         setPostsLoading(true);
         try {
             const postsQuery = query(
                 collection(firestore, "posts"),
-                where("authorId", "==", user.uid)
+                where("authorId", "==", authUser.uid)
             );
             const querySnapshot = await getDocs(postsQuery);
             const userPosts = querySnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as WithId<Post>));
@@ -132,24 +139,19 @@ export default function AccountPage() {
     };
 
     fetchPosts();
-}, [firestore, user]);
+}, [firestore, authUser]);
 
 
   const bookmarksQuery = useMemoFirebase(() => {
-    if (!firestore || !user) return null;
-    return collection(firestore, 'users', user.uid, 'bookmarks');
-  }, [firestore, user]);
+    if (!firestore || !authUser) return null;
+    return collection(firestore, 'users', authUser.uid, 'bookmarks');
+  }, [firestore, authUser]);
 
   const { data: bookmarks, isLoading: bookmarksLoading } = useCollection<Bookmark>(bookmarksQuery);
-
-  const totalUpvotes = useMemo(() => {
-    if (!posts) return 0;
-    return posts.reduce((acc, post) => acc + (post.likeCount || 0), 0);
-  }, [posts]);
   
   const karmaScore = useMemo(() => {
     if (!posts) return 0;
-    // For now, karma is just total upvotes. Can be extended later.
+    // For now, karma is just total post likes. Can be extended later.
     return posts.reduce((acc, post) => acc + (post.likeCount || 0), 0);
   }, [posts]);
 
@@ -176,6 +178,8 @@ export default function AccountPage() {
     return `blur${uid.substring(uid.length - 6)}`;
   };
 
+  const isLoading = postsLoading || userLoading;
+
 
   return (
     <AppLayout showTopBar={false}>
@@ -183,7 +187,7 @@ export default function AccountPage() {
         {/* Profile Header */}
         <div className="flex items-center justify-between mb-6">
             <h2 className="text-2xl font-semibold font-headline">
-              {formatUserId(user?.uid)}
+              {formatUserId(authUser?.uid)}
             </h2>
             <div className="flex items-center space-x-2">
                 <Button variant="ghost" size="icon">
@@ -198,16 +202,16 @@ export default function AccountPage() {
         <div className="flex items-center space-x-5 mb-6">
           <Avatar className="h-20 w-20 md:h-24 md:w-24">
             <AvatarImage
-              src={user?.photoURL || undefined}
-              alt={user?.displayName || "User"}
+              src={authUser?.photoURL || undefined}
+              alt={authUser?.displayName || "User"}
             />
             <AvatarFallback className="text-3xl font-headline bg-primary text-primary-foreground">
-              {getInitials(user?.displayName)}
+              {getInitials(authUser?.displayName)}
             </AvatarFallback>
           </Avatar>
           <div className="flex-1 flex justify-around text-center">
               <div>
-                {postsLoading ? (
+                {isLoading ? (
                     <div className="font-bold text-lg"><Skeleton className="h-6 w-8 mx-auto" /></div>
                 ) : (
                     <div className="font-bold text-lg">{posts?.length ?? 0}</div>
@@ -215,7 +219,7 @@ export default function AccountPage() {
                 <p className="text-sm text-muted-foreground">Posts</p>
               </div>
               <div>
-                 {postsLoading ? (
+                 {isLoading ? (
                     <div className="font-bold text-lg"><Skeleton className="h-6 w-8 mx-auto" /></div>
                 ) : (
                     <div className="font-bold text-lg">{karmaScore}</div>
@@ -223,10 +227,10 @@ export default function AccountPage() {
                 <p className="text-sm text-muted-foreground">Karma</p>
               </div>
               <div>
-                {postsLoading ? (
+                {isLoading ? (
                   <div className="font-bold text-lg"><Skeleton className="h-6 w-8 mx-auto" /></div>
                 ) : (
-                  <div className="font-bold text-lg">{totalUpvotes}</div>
+                  <div className="font-bold text-lg">{user?.upvotes || 0}</div>
                 )}
                 <p className="text-sm text-muted-foreground">Upvotes</p>
               </div>
@@ -236,8 +240,8 @@ export default function AccountPage() {
 
         {/* User Name and Bio */}
         <div className="mb-4">
-            <h1 className="font-bold text-base">{user?.displayName}</h1>
-            <p className="text-sm text-muted-foreground">{user?.email}</p>
+            <h1 className="font-bold text-base">{authUser?.displayName}</h1>
+            <p className="text-sm text-muted-foreground">{authUser?.email}</p>
         </div>
 
         <div className="mb-4">
@@ -271,7 +275,7 @@ export default function AccountPage() {
                 </div>
             </TabsContent>
              <TabsContent value="replies">
-                 {user?.uid && <RepliesList userId={user.uid} />}
+                 {authUser?.uid && <RepliesList userId={authUser.uid} />}
             </TabsContent>
              <TabsContent value="bookmarks">
                  <BookmarksList bookmarks={bookmarks} bookmarksLoading={bookmarksLoading} />
@@ -281,3 +285,5 @@ export default function AccountPage() {
     </AppLayout>
   );
 }
+
+    

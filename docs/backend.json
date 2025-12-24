@@ -23,6 +23,17 @@
           "type": "string",
           "description": "User's email address.",
           "format": "email"
+        },
+        "upvotes": {
+            "type": "number",
+            "description": "Total number of upvotes the user profile has received."
+        },
+        "upvotedBy": {
+            "type": "array",
+            "description": "An array of user IDs that have upvoted this user.",
+            "items": {
+                "type": "string"
+            }
         }
       },
       "required": [

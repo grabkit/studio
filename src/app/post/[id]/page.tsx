@@ -30,7 +30,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { Button, buttonVariants } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { Form, FormControl, FormField, FormItem, FormMessage } from "@/components/ui/form";
-import { ArrowUp, MessageCircle, ArrowUpRight, Trash2, MoreHorizontal, Edit, ArrowLeft, Repeat } from "lucide-react";
+import { Heart, MessageCircle, ArrowUpRight, Trash2, MoreHorizontal, Edit, ArrowLeft, Repeat } from "lucide-react";
 import { cn, formatTimestamp, getInitials } from "@/lib/utils";
 import { useToast } from "@/hooks/use-toast";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -67,15 +67,15 @@ function PostDetailItem({ post }: { post: WithId<Post> }) {
   const router = useRouter();
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
 
-  const hasUpvoted = user ? post.likes?.includes(user.uid) : false;
+  const hasLiked = user ? post.likes?.includes(user.uid) : false;
   const isOwner = user?.uid === post.authorId;
 
-  const handleUpvote = async () => {
+  const handleLike = async () => {
     if (!user || !firestore) {
       toast({
         variant: "destructive",
         title: "Authentication Error",
-        description: "You must be logged in to upvote a post.",
+        description: "You must be logged in to like a post.",
       });
       return;
     }
@@ -83,7 +83,7 @@ function PostDetailItem({ post }: { post: WithId<Post> }) {
     const postRef = doc(firestore, "posts", post.id);
     const batch = writeBatch(firestore);
 
-    if (hasUpvoted) {
+    if (hasLiked) {
       batch.update(postRef, {
         likes: arrayRemove(user.uid),
         likeCount: increment(-1),
@@ -97,10 +97,10 @@ function PostDetailItem({ post }: { post: WithId<Post> }) {
 
     batch.commit().catch((serverError) => {
       const payload = {
-          likes: hasUpvoted
+          likes: hasLiked
             ? arrayRemove(user.uid)
             : arrayUnion(user.uid),
-          likeCount: increment(hasUpvoted ? -1 : 1),
+          likeCount: increment(hasLiked ? -1 : 1),
       };
       const permissionError = new FirestorePermissionError({
           path: postRef.path,
@@ -110,10 +110,10 @@ function PostDetailItem({ post }: { post: WithId<Post> }) {
       errorEmitter.emit('permission-error', permissionError);
     });
 
-    if (!isOwner && !hasUpvoted) {
+    if (!isOwner && !hasLiked) {
         const notificationRef = doc(collection(firestore, 'users', post.authorId, 'notifications'));
         const notificationData: Omit<Notification, 'id'> = {
-            type: 'like', // Can be changed to 'upvote'
+            type: 'like',
             postId: post.id,
             postContent: post.content.substring(0, 100),
             fromUserId: user.uid,
@@ -121,7 +121,7 @@ function PostDetailItem({ post }: { post: WithId<Post> }) {
             read: false,
         };
         setDoc(notificationRef, { ...notificationData, id: notificationRef.id }).catch(serverError => {
-            console.error("Failed to create upvote notification:", serverError);
+            console.error("Failed to create like notification:", serverError);
         });
     }
   };
@@ -220,7 +220,7 @@ function PostDetailItem({ post }: { post: WithId<Post> }) {
             <div className="border-t border-b -mx-4 my-2 px-4 py-2 text-sm text-muted-foreground flex items-center justify-around">
                 <div className="flex items-center space-x-2">
                     <span className="font-bold text-foreground">{post.likeCount}</span>
-                    <span>Upvotes</span>
+                    <span>Likes</span>
                 </div>
                  <div className="flex items-center space-x-2">
                     <span className="font-bold text-foreground">{post.commentCount}</span>
@@ -234,11 +234,11 @@ function PostDetailItem({ post }: { post: WithId<Post> }) {
 
             <div className="flex items-center justify-around pt-2 text-muted-foreground">
                 <button
-                    onClick={handleUpvote}
-                    className="flex items-center space-x-1 hover:text-orange-500"
+                    onClick={handleLike}
+                    className="flex items-center space-x-1 hover:text-pink-500"
                 >
-                    <ArrowUp
-                    className={cn("h-5 w-5", hasUpvoted && "text-orange-500 fill-orange-500")}
+                    <Heart
+                    className={cn("h-5 w-5", hasLiked && "text-pink-500 fill-pink-500")}
                     />
                 </button>
                 <button className="flex items-center space-x-1 hover:text-primary">
@@ -554,3 +554,5 @@ export default function PostDetailPage() {
     </AppLayout>
   );
 }
+
+    

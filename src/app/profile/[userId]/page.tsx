@@ -4,7 +4,7 @@
 
 import { useParams, useRouter } from "next/navigation";
 import { useFirebase, useMemoFirebase } from "@/firebase";
-import { doc, collection, query, where, getDocs, serverTimestamp, setDoc, getDoc } from "firebase/firestore";
+import { doc, collection, query, where, getDocs, serverTimestamp, setDoc, getDoc, updateDoc, increment, arrayUnion, arrayRemove } from "firebase/firestore";
 import { useDoc } from "@/firebase/firestore/use-doc";
 import { useCollection } from "@/firebase/firestore/use-collection";
 import type { Post, User } from "@/lib/types";
@@ -17,8 +17,8 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { ArrowLeft, MessageSquare, ArrowUpRight } from "lucide-react";
-import { getInitials } from "@/lib/utils";
+import { ArrowLeft, MessageSquare, ArrowUpRight, ArrowUp } from "lucide-react";
+import { getInitials, cn } from "@/lib/utils";
 import { FirestorePermissionError } from "@/firebase/errors";
 import { errorEmitter } from "@/firebase/error-emitter";
 import { PostItem as HomePostItem, PostSkeleton } from "@/app/home/page";
@@ -89,11 +89,6 @@ export default function UserProfilePage() {
     const { data: bookmarks, isLoading: bookmarksLoading } = useCollection<Bookmark>(bookmarksQuery);
 
 
-    const totalUpvotes = useMemo(() => {
-        if (!posts) return 0;
-        return posts.reduce((acc, post) => acc + (post.likeCount || 0), 0);
-    }, [posts]);
-    
     const karmaScore = useMemo(() => {
         if (!posts) return 0;
         return posts.reduce((acc, post) => acc + (post.likeCount || 0), 0);
@@ -176,6 +171,36 @@ export default function UserProfilePage() {
         }
     };
 
+    const hasUpvotedUser = useMemo(() => {
+        if (!user || !currentUser) return false;
+        return user.upvotedBy?.includes(currentUser.uid) || false;
+    }, [user, currentUser]);
+
+    const handleUpvoteUser = () => {
+        if (!currentUser || !user || !userRef) return;
+
+        const payload = {
+            upvotes: increment(hasUpvotedUser ? -1 : 1),
+            upvotedBy: hasUpvotedUser ? arrayRemove(currentUser.uid) : arrayUnion(currentUser.uid)
+        };
+
+        updateDoc(userRef, payload)
+        .catch(err => {
+            const permissionError = new FirestorePermissionError({
+                path: userRef.path,
+                operation: 'update',
+                requestResourceData: payload,
+            });
+            errorEmitter.emit('permission-error', permissionError);
+             toast({
+                variant: "destructive",
+                title: "Error",
+                description: "Could not process upvote.",
+            });
+        })
+    };
+
+
     if (userLoading || (currentUser && userId === currentUser.uid)) {
         return (
             <AppLayout showTopBar={false}>
@@ -236,6 +261,8 @@ export default function UserProfilePage() {
         )
     }
 
+    const isLoading = postsLoading || userLoading;
+
     return (
         <AppLayout showTopBar={false}>
             <div>
@@ -252,7 +279,7 @@ export default function UserProfilePage() {
                     <div className="flex items-center space-x-5 mb-6">
                         <Avatar className="h-20 w-20 md:h-24 md:w-24">
                             <AvatarImage
-                            src={undefined} // No photoURL for other users for now
+                            src={undefined}
                             alt={user?.name || "User"}
                             />
                             <AvatarFallback className="text-3xl font-headline bg-primary text-primary-foreground">
@@ -261,7 +288,7 @@ export default function UserProfilePage() {
                         </Avatar>
                         <div className="flex-1 flex justify-around text-center">
                             <div>
-                                {postsLoading ? (
+                                {isLoading ? (
                                     <div className="font-bold text-lg"><Skeleton className="h-6 w-8 mx-auto" /></div>
                                 ) : (
                                     <div className="font-bold text-lg">{posts?.length ?? 0}</div>
@@ -269,7 +296,7 @@ export default function UserProfilePage() {
                                 <p className="text-sm text-muted-foreground">Posts</p>
                             </div>
                             <div>
-                                {postsLoading ? (
+                                {isLoading ? (
                                     <div className="font-bold text-lg"><Skeleton className="h-6 w-8 mx-auto" /></div>
                                 ) : (
                                     <div className="font-bold text-lg">{karmaScore}</div>
@@ -277,10 +304,10 @@ export default function UserProfilePage() {
                                 <p className="text-sm text-muted-foreground">Karma</p>
                             </div>
                             <div>
-                                {postsLoading ? (
+                                {isLoading ? (
                                 <div className="font-bold text-lg"><Skeleton className="h-6 w-8 mx-auto" /></div>
                                 ) : (
-                                <div className="font-bold text-lg">{totalUpvotes}</div>
+                                <div className="font-bold text-lg">{user?.upvotes || 0}</div>
                                 )}
                                 <p className="text-sm text-muted-foreground">Upvotes</p>
                             </div>
@@ -295,11 +322,14 @@ export default function UserProfilePage() {
                     </div>
                     
                     <div className="mb-4 flex items-center space-x-2">
-                        <Button onClick={handleShareProfile} className="flex-1">
-                            <ArrowUpRight className="mr-2 h-4 w-4" /> Share Profile
+                         <Button onClick={handleUpvoteUser} variant={hasUpvotedUser ? "default" : "secondary"} className="flex-1">
+                            <ArrowUp className={cn("mr-2 h-4 w-4", hasUpvotedUser && "fill-current")} /> {hasUpvotedUser ? "Upvoted" : "Upvote"}
                         </Button>
                         <Button onClick={handleStartConversation} variant="secondary" className="flex-1">
                             <MessageSquare className="mr-2 h-4 w-4" /> Message
+                        </Button>
+                         <Button onClick={handleShareProfile} variant="secondary" size="icon">
+                            <ArrowUpRight className="h-4 w-4" />
                         </Button>
                     </div>
 
@@ -341,3 +371,5 @@ export default function UserProfilePage() {
 
     
 }
+
+    
