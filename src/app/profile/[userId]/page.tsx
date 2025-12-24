@@ -161,7 +161,10 @@ export default function UserProfilePage() {
                     description: "Link to this profile has been copied to your clipboard.",
                 });
             }
-        } catch (error) {
+        } catch (error: any) {
+            // Ignore user cancellation of share sheet
+            if (error.name === 'NotAllowedError') return;
+            
             console.error("Error sharing profile:", error);
             toast({
                 variant: "destructive",
@@ -371,5 +374,3 @@ export default function UserProfilePage() {
 
     
 }
-
-    

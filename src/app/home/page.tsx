@@ -255,7 +255,10 @@ export function PostItem({ post, bookmarks }: { post: WithId<Post>, bookmarks: W
             description: "Post link has been copied to your clipboard.",
         });
       }
-    } catch (error) {
+    } catch (error: any) {
+      // Ignore user cancellation of share sheet
+      if (error.name === 'NotAllowedError') return;
+
       console.error("Error sharing:", error);
       toast({
         variant: "destructive",
@@ -469,5 +472,3 @@ export default function HomePage() {
     </AppLayout>
   );
 }
-
-    
