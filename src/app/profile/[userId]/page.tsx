@@ -34,6 +34,9 @@ export default function UserProfilePage() {
     const userId = params.userId as string;
     const { firestore, user: currentUser } = useFirebase();
 
+    const [posts, setPosts] = useState<WithId<Post>[]>([]);
+    const [postsLoading, setPostsLoading] = useState(true);
+
     useEffect(() => {
         if (currentUser && userId === currentUser.uid) {
             router.replace('/account');
@@ -45,17 +48,31 @@ export default function UserProfilePage() {
         return doc(firestore, "users", userId);
     }, [firestore, userId]);
     
-    const postsQuery = useMemoFirebase(() => {
-        if (!firestore || !userId) return null;
-        return query(
-            collection(firestore, "posts"),
-            where("authorId", "==", userId),
-            orderBy("timestamp", "desc")
-        );
+    useEffect(() => {
+      if (!firestore || !userId) return;
+  
+      const fetchPosts = async () => {
+          setPostsLoading(true);
+          try {
+              const postsQuery = query(
+                  collection(firestore, "posts"),
+                  where("authorId", "==", userId),
+                  orderBy("timestamp", "desc")
+              );
+              const querySnapshot = await getDocs(postsQuery);
+              const userPosts = querySnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as WithId<Post>));
+              setPosts(userPosts);
+          } catch (error) {
+              console.error("Error fetching user posts:", error);
+          } finally {
+              setPostsLoading(false);
+          }
+      };
+  
+      fetchPosts();
     }, [firestore, userId]);
 
     const { data: user, isLoading: userLoading } = useDoc<User>(userRef);
-    const { data: posts, isLoading: postsLoading } = useCollection<Post>(postsQuery);
 
     const bookmarksQuery = useMemoFirebase(() => {
         if (!firestore || !currentUser) return null;
