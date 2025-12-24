@@ -278,15 +278,13 @@ function CommentForm({ post, commentsAllowed }: { post: WithId<Post>, commentsAl
     defaultValues: { content: "" },
   });
   
-  // A bit of a hack: we need the post author's profile to check if the current user is restricted.
-  // This is not ideal as it's an extra read, but necessary for the restrict logic.
   const postAuthorRef = useMemoFirebase(() => {
     if (!firestore || !post) return null;
     return doc(firestore, 'users', post.authorId);
   }, [firestore, post]);
   const { data: postAuthorProfile } = useDoc<UserProfile>(postAuthorRef);
 
-  const onSubmit = async (values: z.infer<typeof CommentFormSchema>>) => {
+  const onSubmit = async (values: z.infer<typeof CommentFormSchema>) => {
     if (!user || !firestore) {
       toast({ variant: "destructive", title: "You must be logged in to comment." });
       return;
@@ -295,7 +293,6 @@ function CommentForm({ post, commentsAllowed }: { post: WithId<Post>, commentsAl
     const postRef = doc(firestore, "posts", post.id);
     const commentRef = doc(collection(firestore, "posts", post.id, "comments"));
     
-    // Determine comment status based on whether the commenter is restricted by the post author
     const isRestricted = postAuthorProfile?.restrictedUsers?.includes(user.uid);
     const commentStatus = isRestricted ? 'pending_approval' : 'approved';
 
@@ -320,7 +317,6 @@ function CommentForm({ post, commentsAllowed }: { post: WithId<Post>, commentsAl
              toast({ title: "Comment submitted for approval", description: "The author has restricted comments, so your comment will be visible after they approve it." });
         }
         
-        // Create notification if not the post owner
         if (user.uid !== post.authorId && !isRestricted) {
             const notificationRef = doc(collection(firestore, 'users', post.authorId, 'notifications'));
             const notificationData: Omit<Notification, 'id'> = {
@@ -440,9 +436,8 @@ function CommentItem({ comment, postAuthorId }: { comment: WithId<Comment>, post
       });
   }
   
-  // Decide if the current user can see the comment
   if (isPendingApproval && !isPostOwner && !isCommentOwner) {
-    return null; // Don't render the comment at all for others
+    return null;
   }
 
 
