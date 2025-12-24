@@ -87,4 +87,11 @@ export interface ReplyItem extends Comment {
     postContent: string;
 }
 
-    
+export interface Report {
+    id: string;
+    reporterUserId: string;
+    reportedUserId: string;
+    reason: string;
+    timestamp: any; // Can be Timestamp or FieldValue
+    status: 'pending' | 'reviewed' | 'action-taken';
+}

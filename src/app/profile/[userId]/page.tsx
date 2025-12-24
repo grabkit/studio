@@ -23,6 +23,7 @@ import { PostItem as HomePostItem, PostSkeleton } from "@/app/home/page";
 import type { Bookmark } from "@/lib/types";
 import { RepliesList } from "@/components/RepliesList";
 import { Sheet, SheetContent, SheetTrigger, SheetHeader, SheetTitle, SheetDescription } from "@/components/ui/sheet";
+import { ReportDialog } from "@/components/ReportDialog";
 
 
 export default function UserProfilePage() {
@@ -416,10 +417,12 @@ export default function UserProfilePage() {
                                 </Button>
                             </div>
                             <div className="border rounded-2xl">
-                                <Button variant="ghost" className="justify-between text-base py-6 rounded-2xl w-full text-destructive hover:text-destructive">
-                                    <span>Report</span>
-                                    <Flag className="h-5 w-5" />
-                                </Button>
+                                <ReportDialog reportedUserId={user.id} reportedUserName={user.name}>
+                                    <Button variant="ghost" className="justify-between text-base py-6 rounded-2xl w-full text-destructive hover:text-destructive">
+                                        <span>Report</span>
+                                        <Flag className="h-5 w-5" />
+                                    </Button>
+                                </ReportDialog>
                                 <div className="border-t"></div>
                                 <Button variant="ghost" className="justify-between text-base py-6 rounded-2xl w-full text-destructive hover:text-destructive">
                                     <span>Block</span>

@@ -75,6 +75,21 @@ service cloud.firestore {
       allow delete: if isSignedIn() && isOwner(resource.data.senderId);
     }
     
+     match /reports/{reportId} {
+      allow read, list, update, delete: if false; // Only admins should be able to access reports
+      allow create: if isSignedIn() && isValidNewReport(reportId);
+    }
+
+    function isValidNewReport(reportId) {
+      let data = request.resource.data;
+      return data.id == reportId
+        && data.reporterUserId == request.auth.uid
+        && data.reportedUserId != request.auth.uid // Cannot report self
+        && data.reason is string
+        && data.status == 'pending'
+        && data.keys().hasOnly(['id', 'reporterUserId', 'reportedUserId', 'reason', 'timestamp', 'status']);
+    }
+
     function isValidNewMessage() {
       let data = request.resource.data;
       // Common validations
