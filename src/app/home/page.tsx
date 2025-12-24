@@ -430,7 +430,8 @@ export function PostSkeleton() {
 
 
 export default function HomePage() {
-  const { firestore, user } = useFirebase();
+  const { firestore } = useFirebase();
+  const { user } = useUser();
 
   const postsQuery = useMemoFirebase(() => {
     if (!firestore) return null;

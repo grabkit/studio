@@ -3,7 +3,8 @@
 import { firebaseConfig } from '@/firebase/config';
 import { initializeApp, getApps, getApp, FirebaseApp } from 'firebase/app';
 import { getAuth } from 'firebase/auth';
-import { getFirestore } from 'firebase/firestore'
+import { getFirestore } from 'firebase/firestore';
+import { useFirebase, type UserHookResult } from './provider';
 
 // IMPORTANT: DO NOT MODIFY THIS FUNCTION
 export function initializeFirebase() {
@@ -40,6 +41,16 @@ export function getSdks(firebaseApp: FirebaseApp) {
   };
 }
 
+/**
+ * Hook specifically for accessing the authenticated user's state.
+ * This provides the User object, loading status, and any auth errors.
+ * @returns {UserHookResult} Object with user, isUserLoading, userError.
+ */
+export const useUser = (): UserHookResult => {
+  const { user, isUserLoading, userError } = useFirebase();
+  return { user, isUserLoading, userError };
+};
+
 export * from './provider';
 export * from './client-provider';
 export * from './firestore/use-collection';
@@ -47,4 +58,3 @@ export * from './firestore/use-doc';
 export * from './non-blocking-updates';
 export * from './errors';
 export * from './error-emitter';
-export { useUser } from './provider';
