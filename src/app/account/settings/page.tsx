@@ -1,121 +1,60 @@
 
 "use client";
 
-import { useFirebase, useMemoFirebase } from "@/firebase";
-import { doc, getDoc, updateDoc, arrayRemove } from "firebase/firestore";
-import type { User } from "@/lib/types";
-import { WithId } from "@/firebase/firestore/use-collection";
-import React, { useEffect, useState, useMemo } from "react";
+import React from "react";
 import AppLayout from "@/components/AppLayout";
 import { Button } from "@/components/ui/button";
-import { ArrowLeft, UserX } from "lucide-react";
+import { ArrowLeft, ChevronRight, User, Bell, UserX, HelpCircle, Info, LogOut } from "lucide-react";
 import { useRouter } from "next/navigation";
-import { Avatar, AvatarFallback } from "@/components/ui/avatar";
-import { getInitials } from "@/lib/utils";
-import { Skeleton } from "@/components/ui/skeleton";
+import Link from 'next/link';
+import { useFirebase } from "@/firebase";
+import { signOut } from "firebase/auth";
 import { useToast } from "@/hooks/use-toast";
-import { FirestorePermissionError } from "@/firebase/errors";
-import { errorEmitter } from "@/firebase/error-emitter";
 
-function BlockedUserSkeleton() {
+const settingsItems = [
+    { href: "/account/settings/account-status", label: "Account status", icon: User },
+    { href: "/account/settings/notifications", label: "Notifications", icon: Bell },
+    { href: "/account/settings/blocked-users", label: "Blocked users", icon: UserX },
+    // { href: "/account/settings/follow-and-invite", label: "Follow and invite", icon: UserPlus },
+    { href: "/account/settings/help", label: "Help", icon: HelpCircle },
+    { href: "/account/settings/about", label: "About", icon: Info },
+]
+
+function SettingsItem({ href, label, icon: Icon }: { href: string, label: string, icon: React.ElementType }) {
     return (
-        <div className="flex items-center justify-between p-4 border-b">
+        <Link href={href} className="flex items-center justify-between p-4 border-b transition-colors hover:bg-accent cursor-pointer">
             <div className="flex items-center space-x-4">
-                <Skeleton className="h-10 w-10 rounded-full" />
-                <div className="space-y-2">
-                    <Skeleton className="h-4 w-24" />
-                    <Skeleton className="h-3 w-32" />
-                </div>
+                <Icon className="h-5 w-5 text-muted-foreground" />
+                <span className="text-base">{label}</span>
             </div>
-            <Skeleton className="h-9 w-24 rounded-md" />
-        </div>
-    )
-}
-
-function BlockedUserItem({ user, onUnblock }: { user: WithId<User>, onUnblock: (userId: string) => void }) {
-    
-    const formatUserId = (uid: string | undefined) => {
-        if (!uid) return "blur??????";
-        return `blur${uid.substring(uid.length - 6)}`;
-    };
-
-    return (
-        <div className="flex items-center justify-between p-4 border-b">
-            <div className="flex items-center space-x-4">
-                <Avatar>
-                    <AvatarFallback>{getInitials(user.name)}</AvatarFallback>
-                </Avatar>
-                <div>
-                    <p className="font-semibold">{user.name}</p>
-                    <p className="text-sm text-muted-foreground">{formatUserId(user.id)}</p>
-                </div>
-            </div>
-            <Button variant="outline" size="sm" onClick={() => onUnblock(user.id)}>Unblock</Button>
-        </div>
+            <ChevronRight className="h-5 w-5 text-muted-foreground" />
+        </Link>
     )
 }
 
 
 export default function SettingsPage() {
-    const { user: currentUser, firestore, userProfile } = useFirebase();
     const router = useRouter();
+    const { auth } = useFirebase();
     const { toast } = useToast();
-    const [blockedUsers, setBlockedUsers] = useState<WithId<User>[]>([]);
-    const [isLoading, setIsLoading] = useState(true);
-
-    const blockedUserIds = useMemo(() => userProfile?.blockedUsers || [], [userProfile]);
-
-    useEffect(() => {
-        if (!firestore || !currentUser) return;
-        
-        if (blockedUserIds.length === 0) {
-            setBlockedUsers([]);
-            setIsLoading(false);
-            return;
-        }
-
-        const fetchBlockedUsers = async () => {
-            setIsLoading(true);
-            const users: WithId<User>[] = [];
-            // This is inefficient for a large number of blocked users. 
-            // A real app might use a Cloud Function to denormalize user data.
-            for (const userId of blockedUserIds) {
-                const userDocRef = doc(firestore, 'users', userId);
-                const userDocSnap = await getDoc(userDocRef);
-                if (userDocSnap.exists()) {
-                    users.push({ id: userDocSnap.id, ...userDocSnap.data() } as WithId<User>);
-                }
-            }
-            setBlockedUsers(users);
-            setIsLoading(false);
-        }
-
-        fetchBlockedUsers();
-    }, [firestore, currentUser, blockedUserIds]);
     
-    const handleUnblock = async (userIdToUnblock: string) => {
-        if (!currentUser || !firestore) return;
-
-        const currentUserDocRef = doc(firestore, "users", currentUser.uid);
-
+    const handleLogout = async () => {
+        if (!auth) return;
         try {
-            await updateDoc(currentUserDocRef, {
-                blockedUsers: arrayRemove(userIdToUnblock)
-            });
-            setBlockedUsers(prev => prev.filter(u => u.id !== userIdToUnblock));
-            toast({ title: "User Unblocked", description: `You will now see content from this user.` });
-        } catch (error) {
-             console.error("Error unblocking user:", error);
-            const permissionError = new FirestorePermissionError({
-                path: currentUserDocRef.path,
-                operation: 'update',
-                requestResourceData: { blockedUsers: `arrayRemove ${userIdToUnblock}` },
-            });
-            errorEmitter.emit('permission-error', permissionError);
-            toast({ variant: "destructive", title: "Error", description: "Could not unblock user." });
+          await signOut(auth);
+          router.push("/auth");
+          toast({
+            title: "Logged Out",
+            description: "You have been successfully logged out.",
+          });
+        } catch (error: any) {
+          toast({
+            variant: "destructive",
+            title: "Logout Failed",
+            description: error.message,
+          });
         }
-    }
-
+      };
 
     return (
         <AppLayout showTopBar={false}>
@@ -127,31 +66,18 @@ export default function SettingsPage() {
             </div>
 
             <div className="pt-14">
-                <h3 className="font-headline p-4 text-primary font-semibold">Blocked Users</h3>
-                 {isLoading && (
-                    <>
-                        <BlockedUserSkeleton />
-                        <BlockedUserSkeleton />
-                    </>
-                 )}
-                 {!isLoading && blockedUsers.length === 0 && (
-                     <div className="text-center py-16">
-                         <div className="inline-block p-4 bg-secondary rounded-full">
-                            <UserX className="h-10 w-10 text-muted-foreground" />
-                        </div>
-                        <h3 className="text-xl font-headline mt-4">No Blocked Users</h3>
-                        <p className="text-muted-foreground mt-2">You haven't blocked anyone yet.</p>
-                    </div>
-                 )}
-                {!isLoading && (
-                    <div className="divide-y">
-                        {blockedUsers.map(user => (
-                            <BlockedUserItem key={user.id} user={user} onUnblock={handleUnblock} />
-                        ))}
-                    </div>
-                )}
+                <div className="divide-y">
+                    {settingsItems.map(item => (
+                        <SettingsItem key={item.href} {...item} />
+                    ))}
+                </div>
+                 <div className="p-4 mt-4">
+                     <Button variant="outline" className="w-full text-destructive" onClick={handleLogout}>
+                        <LogOut className="mr-2 h-4 w-4" />
+                        Log Out
+                    </Button>
+                </div>
             </div>
         </AppLayout>
     );
 }
-

@@ -2,7 +2,7 @@
 "use client";
 
 import AppLayout from "@/components/AppLayout";
-import { useFirebase, useMemoFirebase, useDoc } from "@/firebase";
+import { useFirebase, useMemoFirebase } from "@/firebase";
 import { useRouter } from "next/navigation";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
