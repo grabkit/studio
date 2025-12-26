@@ -13,9 +13,7 @@ service cloud.firestore {
     
     function isUserActive() {
       let userDoc = get(/databases/$(database)/documents/users/$(request.auth.uid));
-      // The `lastReadTimestamps` check is a proxy to ensure the user document has been fully initialized
-      // by our modern client, which includes the 'status' field.
-      return userDoc.data.get('status', 'active') == 'active' && 'lastReadTimestamps' in userDoc.data;
+      return userDoc.data.get('status', 'active') == 'active';
     }
 
     match /users/{userId} {
@@ -152,5 +150,3 @@ service cloud.firestore {
     }
   }
 }
-
-    
