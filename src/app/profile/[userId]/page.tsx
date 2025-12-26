@@ -1,4 +1,5 @@
 
+
 "use client";
 
 import { useParams, useRouter } from "next/navigation";
@@ -261,6 +262,17 @@ export default function UserProfilePage() {
         const currentUserId = currentUser.uid;
         const conversationId = [currentUserId, userId].sort().join('_');
         const conversationRef = doc(firestore, 'conversations', conversationId);
+        
+        const newConversationData = {
+            id: conversationId,
+            participantIds: [currentUserId, userId].sort(),
+            lastMessage: '',
+            lastUpdated: serverTimestamp(),
+            status: 'pending',
+            requesterId: currentUserId,
+            unreadCounts: { [currentUserId]: 0, [userId]: 0 },
+            lastReadTimestamps: { [currentUserId]: serverTimestamp() }
+        };
     
         try {
             const conversationSnap = await getDoc(conversationRef);
@@ -268,17 +280,6 @@ export default function UserProfilePage() {
             if (conversationSnap.exists()) {
                 router.push(`/messages/${userId}`);
             } else {
-                const newConversationData = {
-                    id: conversationId,
-                    participantIds: [currentUserId, userId].sort(),
-                    lastMessage: '',
-                    lastUpdated: serverTimestamp(),
-                    status: 'pending',
-                    requesterId: currentUserId,
-                    unreadCounts: { [currentUserId]: 0, [userId]: 0 },
-                    lastReadTimestamps: { [currentUserId]: serverTimestamp() }
-                };
-                
                 await setDoc(conversationRef, newConversationData);
                 router.push(`/messages/${userId}`);
             }
@@ -288,7 +289,7 @@ export default function UserProfilePage() {
             const permissionError = new FirestorePermissionError({
                 path: conversationRef.path,
                 operation: 'create', 
-                requestResourceData: { status: 'pending' } 
+                requestResourceData: newConversationData 
             });
             errorEmitter.emit('permission-error', permissionError);
             
