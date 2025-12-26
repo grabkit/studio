@@ -131,7 +131,7 @@ export default function AuthForm() {
             await updateProfile(user, { displayName: values.name });
             
             const userDocRef = doc(firestore, "users", user.uid);
-            const newUser: Omit<UserType, 'upvotes' | 'upvotedBy'> = {
+            const newUser: Omit<UserType, 'upvotes' | 'upvotedBy' | 'lastReadTimestamps'> = {
                 id: user.uid,
                 name: values.name,
                 email: values.email,
