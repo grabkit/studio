@@ -284,43 +284,43 @@ export default function MessagesPage() {
                 <h1 className="text-2xl font-bold font-headline">Messages</h1>
             </div>
             
-            <Tabs defaultValue="chats" className="w-full" onValueChange={handleTabChange}>
-                <TabsList className="grid w-full grid-cols-2">
-                    <TabsTrigger value="chats" className="relative">
-                        Chats
-                        {hasUnreadChats && (
-                            <div className="absolute top-1.5 right-1.5 w-2 h-2 rounded-full bg-red-500"></div>
-                        )}
-                    </TabsTrigger>
-                    <TabsTrigger value="requests" className="relative">
-                        Requests
-                        {hasNewRequests && (
-                             <div className="absolute top-1.5 right-1.5 w-2 h-2 rounded-full bg-red-500"></div>
-                        )}
-                    </TabsTrigger>
-                </TabsList>
-                <TabsContent value="chats">
-                    <ConversationsList 
-                        conversations={chats}
-                        isLoading={isLoading}
-                        type="chats"
-                        currentUser={user}
-                        onAcceptRequest={handleAcceptRequest}
-                    />
-                </TabsContent>
-                <TabsContent value="requests">
-                    <ConversationsList
-                        conversations={requests}
-                        isLoading={isLoading}
-                        type="requests"
-                        currentUser={user}
-                        onAcceptRequest={handleAcceptRequest}
-                    />
-                </TabsContent>
-            </Tabs>
+            <div className="p-2">
+                <Tabs defaultValue="chats" className="w-full" onValueChange={handleTabChange}>
+                    <TabsList className="grid w-full grid-cols-2">
+                        <TabsTrigger value="chats" className="relative">
+                            Chats
+                            {hasUnreadChats && (
+                                <div className="absolute top-1.5 right-1.5 w-2 h-2 rounded-full bg-red-500"></div>
+                            )}
+                        </TabsTrigger>
+                        <TabsTrigger value="requests" className="relative">
+                            Requests
+                            {hasNewRequests && (
+                                <div className="absolute top-1.5 right-1.5 w-2 h-2 rounded-full bg-red-500"></div>
+                            )}
+                        </TabsTrigger>
+                    </TabsList>
+                    <TabsContent value="chats">
+                        <ConversationsList 
+                            conversations={chats}
+                            isLoading={isLoading}
+                            type="chats"
+                            currentUser={user}
+                            onAcceptRequest={handleAcceptRequest}
+                        />
+                    </TabsContent>
+                    <TabsContent value="requests">
+                        <ConversationsList
+                            conversations={requests}
+                            isLoading={isLoading}
+                            type="requests"
+                            currentUser={user}
+                            onAcceptRequest={handleAcceptRequest}
+                        />
+                    </TabsContent>
+                </Tabs>
+            </div>
 
         </AppLayout>
     )
 }
-
-    
