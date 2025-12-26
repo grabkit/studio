@@ -283,11 +283,6 @@
             "type": "array",
             "description": "An array of user IDs who have muted this conversation.",
             "items": { "type": "string" }
-        },
-        "lockedBy": {
-            "type": "array",
-            "description": "An array of user IDs who have locked this conversation.",
-            "items": { "type": "string" }
         }
       },
       "required": ["id", "participantIds", "lastUpdated", "status", "requesterId"]

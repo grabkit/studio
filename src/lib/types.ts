@@ -76,7 +76,6 @@ export interface Conversation {
     unreadCounts?: Record<string, number>;
     lastReadTimestamps?: Record<string, any>;
     mutedBy?: string[];
-    lockedBy?: string[];
 }
 
 export interface Message {
