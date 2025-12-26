@@ -263,33 +263,27 @@ export default function UserProfilePage() {
         const conversationId = [currentUserId, userId].sort().join('_');
         const conversationRef = doc(firestore, 'conversations', conversationId);
         
+        const newConversationData = {
+            id: conversationId,
+            participantIds: [currentUserId, userId].sort(),
+            lastMessage: '',
+            lastUpdated: serverTimestamp(),
+            status: 'pending',
+            requesterId: currentUserId,
+            unreadCounts: { [currentUserId]: 0, [userId]: 0 },
+            lastReadTimestamps: { [currentUserId]: serverTimestamp() }
+        };
+
         try {
-            await runTransaction(firestore, async (transaction) => {
-                const conversationSnap = await transaction.get(conversationRef);
-                if (!conversationSnap.exists()) {
-                    const newConversationData = {
-                        id: conversationId,
-                        participantIds: [currentUserId, userId].sort(),
-                        lastMessage: '',
-                        lastUpdated: serverTimestamp(),
-                        status: 'pending',
-                        requesterId: currentUserId,
-                        unreadCounts: { [currentUserId]: 0, [userId]: 0 },
-                        lastReadTimestamps: { [currentUserId]: serverTimestamp() }
-                    };
-                    transaction.set(conversationRef, newConversationData);
-                }
-                // If it exists, do nothing, just proceed to navigation.
-            });
-    
+            await setDoc(conversationRef, newConversationData, { merge: true });
             router.push(`/messages/${userId}`);
-    
         } catch (error: any) {
             console.error("Error handling conversation:", error);
+            
             const permissionError = new FirestorePermissionError({
                 path: conversationRef.path,
-                operation: 'write', 
-                requestResourceData: { info: "Transaction to create conversation failed." }
+                operation: 'create', 
+                requestResourceData: newConversationData
             });
             errorEmitter.emit('permission-error', permissionError);
             
