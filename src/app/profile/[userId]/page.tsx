@@ -263,34 +263,43 @@ export default function UserProfilePage() {
         const conversationId = [currentUserId, userId].sort().join('_');
         const conversationRef = doc(firestore, 'conversations', conversationId);
         
-        const newConversationData = {
-            id: conversationId,
-            participantIds: [currentUserId, userId].sort(),
-            lastMessage: '',
-            lastUpdated: serverTimestamp(),
-            status: 'pending',
-            requesterId: currentUserId,
-            unreadCounts: { [currentUserId]: 0, [userId]: 0 },
-            lastReadTimestamps: { [currentUserId]: serverTimestamp() }
-        };
-
         try {
-            await setDoc(conversationRef, newConversationData, { merge: true });
+            const conversationSnap = await getDoc(conversationRef);
+
+            if (conversationSnap.exists()) {
+                // Conversation already exists, just navigate to it.
+                router.push(`/messages/${userId}`);
+                return;
+            }
+
+            // Conversation does not exist, create it.
+            const newConversationData = {
+                id: conversationId,
+                participantIds: [currentUserId, userId].sort(),
+                lastMessage: '',
+                lastUpdated: serverTimestamp(),
+                status: 'pending',
+                requesterId: currentUserId,
+                unreadCounts: { [currentUserId]: 0, [userId]: 0 },
+                lastReadTimestamps: { [currentUserId]: serverTimestamp() }
+            };
+    
+            await setDoc(conversationRef, newConversationData);
             router.push(`/messages/${userId}`);
         } catch (error: any) {
             console.error("Error handling conversation:", error);
             
             const permissionError = new FirestorePermissionError({
                 path: conversationRef.path,
-                operation: 'create', 
-                requestResourceData: newConversationData
+                operation: 'write', 
+                requestResourceData: { info: "Failed to start conversation." }
             });
             errorEmitter.emit('permission-error', permissionError);
             
             toast({
                 variant: "destructive",
                 title: "Error",
-                description: "Could not start the conversation. You may not have the required permissions.",
+                description: "Could not start the conversation.",
             });
         }
     };
@@ -610,3 +619,4 @@ export default function UserProfilePage() {
     
 
     
+
