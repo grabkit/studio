@@ -263,26 +263,19 @@ export default function UserProfilePage() {
         const conversationId = [currentUserId, userId].sort().join('_');
         const conversationRef = doc(firestore, 'conversations', conversationId);
         
+        const newConversationData = {
+            id: conversationId,
+            participantIds: [currentUserId, userId].sort(),
+            lastMessage: '',
+            lastUpdated: serverTimestamp(),
+            status: 'pending',
+            requesterId: currentUserId,
+            unreadCounts: { [currentUserId]: 0, [userId]: 0 },
+            lastReadTimestamps: { [currentUserId]: serverTimestamp() }
+        };
+
         try {
-            const conversationSnap = await getDoc(conversationRef);
-
-            if (conversationSnap.exists()) {
-                router.push(`/messages/${userId}`);
-                return;
-            }
-
-            const newConversationData = {
-                id: conversationId,
-                participantIds: [currentUserId, userId].sort(),
-                lastMessage: '',
-                lastUpdated: serverTimestamp(),
-                status: 'pending',
-                requesterId: currentUserId,
-                unreadCounts: { [currentUserId]: 0, [userId]: 0 },
-                lastReadTimestamps: { [currentUserId]: serverTimestamp() }
-            };
-    
-            await setDoc(conversationRef, newConversationData);
+            await setDoc(conversationRef, newConversationData, { merge: true });
             router.push(`/messages/${userId}`);
         } catch (error: any) {
             console.error("Error handling conversation:", error);
@@ -290,7 +283,7 @@ export default function UserProfilePage() {
             const permissionError = new FirestorePermissionError({
                 path: conversationRef.path,
                 operation: 'write', 
-                requestResourceData: { info: "Failed to start conversation." }
+                requestResourceData: newConversationData
             });
             errorEmitter.emit('permission-error', permissionError);
             
@@ -619,3 +612,6 @@ export default function UserProfilePage() {
     
 
 
+
+
+    
