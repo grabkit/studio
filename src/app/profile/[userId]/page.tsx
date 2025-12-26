@@ -262,37 +262,31 @@ export default function UserProfilePage() {
         const conversationId = [currentUserId, userId].sort().join('_');
         const conversationRef = doc(firestore, 'conversations', conversationId);
         
-        const newConversationData = {
-            id: conversationId,
-            participantIds: [currentUserId, userId].sort(),
-            lastMessage: '',
-            lastUpdated: serverTimestamp(),
-            status: 'pending',
-            requesterId: currentUserId,
-            unreadCounts: { [currentUserId]: 0, [userId]: 0 },
-            lastReadTimestamps: { [currentUserId]: serverTimestamp() }
-        };
-    
         try {
             const conversationSnap = await getDoc(conversationRef);
 
-            if (conversationSnap.exists()) {
-                router.push(`/messages/${userId}`);
-            } else {
-                // Atomically create the document, then update it.
-                // This two-step process can help avoid certain security rule complexities
-                // with serverTimestamp() on create operations.
-                await setDoc(conversationRef, {}); // Create an empty document first
-                await updateDoc(conversationRef, newConversationData); // Then update with the full data
-                router.push(`/messages/${userId}`);
+            if (!conversationSnap.exists()) {
+                 const newConversationData = {
+                    id: conversationId,
+                    participantIds: [currentUserId, userId].sort(),
+                    lastMessage: '',
+                    lastUpdated: serverTimestamp(),
+                    status: 'pending',
+                    requesterId: currentUserId,
+                    unreadCounts: { [currentUserId]: 0, [userId]: 0 },
+                    lastReadTimestamps: { [currentUserId]: serverTimestamp() }
+                };
+                 // Use set with merge to create or update. This is robust.
+                await setDoc(conversationRef, newConversationData, { merge: true });
             }
+
+            router.push(`/messages/${userId}`);
         } catch (error: any) {
             console.error("Error handling conversation:", error);
-            
             const permissionError = new FirestorePermissionError({
                 path: conversationRef.path,
-                operation: 'create', 
-                requestResourceData: newConversationData 
+                operation: 'write', 
+                requestResourceData: { conversationId: conversationId }
             });
             errorEmitter.emit('permission-error', permissionError);
             
