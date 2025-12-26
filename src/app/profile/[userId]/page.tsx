@@ -1,9 +1,10 @@
 
+
 "use client";
 
 import { useParams, useRouter } from "next/navigation";
 import { useFirebase, useMemoFirebase, useCollection, type WithId } from "@/firebase";
-import { doc, collection, query, where, getDocs, serverTimestamp, setDoc, getDoc, updateDoc, increment, arrayUnion, arrayRemove } from "firebase/firestore";
+import { doc, collection, query, where, getDocs, serverTimestamp, setDoc, getDoc, updateDoc, increment, arrayUnion, arrayRemove, runTransaction } from "firebase/firestore";
 import { useDoc } from "@/firebase/firestore/use-doc";
 import type { Post, User } from "@/lib/types";
 import React, { useMemo, useState, useEffect } from "react";
@@ -263,30 +264,32 @@ export default function UserProfilePage() {
         const conversationRef = doc(firestore, 'conversations', conversationId);
         
         try {
-            const conversationSnap = await getDoc(conversationRef);
-
-            if (!conversationSnap.exists()) {
-                 const newConversationData = {
-                    id: conversationId,
-                    participantIds: [currentUserId, userId].sort(),
-                    lastMessage: '',
-                    lastUpdated: serverTimestamp(),
-                    status: 'pending',
-                    requesterId: currentUserId,
-                    unreadCounts: { [currentUserId]: 0, [userId]: 0 },
-                    lastReadTimestamps: { [currentUserId]: serverTimestamp() }
-                };
-                 // Use set with merge to create or update. This is robust.
-                await setDoc(conversationRef, newConversationData, { merge: true });
-            }
-
+            await runTransaction(firestore, async (transaction) => {
+                const conversationSnap = await transaction.get(conversationRef);
+                if (!conversationSnap.exists()) {
+                    const newConversationData = {
+                        id: conversationId,
+                        participantIds: [currentUserId, userId].sort(),
+                        lastMessage: '',
+                        lastUpdated: serverTimestamp(),
+                        status: 'pending',
+                        requesterId: currentUserId,
+                        unreadCounts: { [currentUserId]: 0, [userId]: 0 },
+                        lastReadTimestamps: { [currentUserId]: serverTimestamp() }
+                    };
+                    transaction.set(conversationRef, newConversationData);
+                }
+                // If it exists, do nothing, just proceed to navigation.
+            });
+    
             router.push(`/messages/${userId}`);
+    
         } catch (error: any) {
             console.error("Error handling conversation:", error);
             const permissionError = new FirestorePermissionError({
                 path: conversationRef.path,
                 operation: 'write', 
-                requestResourceData: { conversationId: conversationId }
+                requestResourceData: { info: "Transaction to create conversation failed." }
             });
             errorEmitter.emit('permission-error', permissionError);
             
@@ -609,5 +612,7 @@ export default function UserProfilePage() {
 
     
 }
+
+    
 
     
