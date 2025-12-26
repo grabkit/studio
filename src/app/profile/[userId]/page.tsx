@@ -267,12 +267,10 @@ export default function UserProfilePage() {
             const conversationSnap = await getDoc(conversationRef);
 
             if (conversationSnap.exists()) {
-                // Conversation already exists, just navigate to it.
                 router.push(`/messages/${userId}`);
                 return;
             }
 
-            // Conversation does not exist, create it.
             const newConversationData = {
                 id: conversationId,
                 participantIds: [currentUserId, userId].sort(),
@@ -619,4 +617,5 @@ export default function UserProfilePage() {
     
 
     
+
 
