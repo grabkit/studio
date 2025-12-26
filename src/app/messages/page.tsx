@@ -18,6 +18,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { useToast } from "@/hooks/use-toast";
 import { cn } from "@/lib/utils";
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from "@/components/ui/sheet";
+import { useRouter } from "next/navigation";
 
 
 function ConversationItem({ conversation, currentUser, onLongPress }: { conversation: WithId<Conversation>, currentUser: User, onLongPress: (conversation: WithId<Conversation>) => void }) {
@@ -374,14 +375,14 @@ export default function MessagesPage() {
             
             <div className="p-2">
                 <Tabs defaultValue="chats" className="w-full" onValueChange={handleTabChange}>
-                    <TabsList className="grid w-full grid-cols-2">
-                        <TabsTrigger value="chats" className="relative flex items-center justify-center gap-2">
+                    <TabsList className="grid w-full grid-cols-2 rounded-full">
+                        <TabsTrigger value="chats" className="relative flex items-center justify-center gap-2 rounded-full">
                             {hasUnreadChats && (
                                 <div className="w-2 h-2 rounded-full bg-red-500"></div>
                             )}
                             Chats
                         </TabsTrigger>
-                        <TabsTrigger value="requests" className="relative flex items-center justify-center gap-2">
+                        <TabsTrigger value="requests" className="relative flex items-center justify-center gap-2 rounded-full">
                             {hasNewRequests && (
                                 <div className="w-2 h-2 rounded-full bg-red-500"></div>
                             )}
@@ -436,4 +437,3 @@ export default function MessagesPage() {
         </AppLayout>
     )
 }
-
