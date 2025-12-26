@@ -368,5 +368,3 @@ function ForgotPasswordDialog({form, handlePasswordReset}: {form: UseFormReturn<
     </AlertDialog>
   );
 }
-
-    
