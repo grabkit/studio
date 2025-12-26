@@ -6,7 +6,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { getInitials, formatMessageTimestamp } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
-import { MessageSquare, Mail, Trash2, BellOff, CheckCircle, User as UserIcon, Bell } from "lucide-react";
+import { MessageSquare, Mail, Trash2, BellOff, CheckCircle, User as UserIcon, Bell, Lock, Unlock } from "lucide-react";
 import { useFirebase, useMemoFirebase } from "@/firebase";
 import { collection, query, where, doc, updateDoc, deleteDoc, arrayUnion, arrayRemove } from "firebase/firestore";
 import { useCollection, type WithId } from "@/firebase/firestore/use-collection";
@@ -40,8 +40,10 @@ function ConversationItem({ conversation, currentUser, onLongPress }: { conversa
     const unreadCount = conversation.unreadCounts?.[currentUser.uid] ?? 0;
     const hasUnread = unreadCount > 0;
     const isMuted = useMemo(() => conversation.mutedBy?.includes(currentUser.uid) || false, [conversation, currentUser]);
+    const isLocked = useMemo(() => conversation.lockedBy?.includes(currentUser.uid) || false, [conversation, currentUser]);
 
     const getUnreadMessageText = (count: number) => {
+        if (isLocked) return "Chat Locked";
         if (count === 1) return "1 new message";
         if (count > 1 && count < 4) return `${count} new messages`;
         if (count >= 4) return "4+ new messages";
@@ -92,14 +94,16 @@ function ConversationItem({ conversation, currentUser, onLongPress }: { conversa
                     </div>
                     <p className={cn(
                         "text-sm text-muted-foreground truncate max-w-xs flex items-center gap-1",
-                        hasUnread && "text-primary font-medium"
+                        hasUnread && !isLocked && "text-primary font-medium",
+                        isLocked && "font-medium"
                     )}>
+                        {isLocked && <Lock className="h-3 w-3" />}
                         <span className="truncate">{getUnreadMessageText(unreadCount)}</span>
                     </p>
                 </div>
             </div>
             <div className="flex flex-col items-end self-start shrink-0">
-                 {conversation.lastUpdated?.toDate && (
+                 {!isLocked && conversation.lastUpdated?.toDate && (
                     <p className="text-xs text-muted-foreground">
                         {formatMessageTimestamp(conversation.lastUpdated.toDate())}
                     </p>
@@ -397,9 +401,40 @@ export default function MessagesPage() {
             });
     }
 
+    const handleLockChat = () => {
+        if (!firestore || !selectedConvo || !user) return;
+        
+        const convoRef = doc(firestore, 'conversations', selectedConvo.id);
+        const isLocked = selectedConvo.lockedBy?.includes(user.uid);
+        const updatePayload = { 
+            lockedBy: isLocked ? arrayRemove(user.uid) : arrayUnion(user.uid)
+        };
+
+        updateDoc(convoRef, updatePayload)
+            .then(() => {
+                toast({ title: isLocked ? "Chat Unlocked" : "Chat Locked" });
+            })
+            .catch(serverError => {
+                const permissionError = new FirestorePermissionError({
+                    path: convoRef.path,
+                    operation: 'update',
+                    requestResourceData: updatePayload,
+                });
+                errorEmitter.emit('permission-error', permissionError);
+            })
+            .finally(() => {
+                setIsSheetOpen(false);
+            });
+    }
+
     const isSelectedConvoMuted = useMemo(() => {
         if (!selectedConvo || !user) return false;
         return selectedConvo.mutedBy?.includes(user.uid) || false;
+    }, [selectedConvo, user]);
+
+    const isSelectedConvoLocked = useMemo(() => {
+        if (!selectedConvo || !user) return false;
+        return selectedConvo.lockedBy?.includes(user.uid) || false;
     }, [selectedConvo, user]);
 
 
@@ -471,6 +506,10 @@ export default function MessagesPage() {
                         <Button variant="ghost" className="justify-start gap-3 text-base p-4" onClick={handleMute}>
                            {isSelectedConvoMuted ? <Bell /> : <BellOff />} 
                            {isSelectedConvoMuted ? "Unmute" : "Mute"}
+                        </Button>
+                        <Button variant="ghost" className="justify-start gap-3 text-base p-4" onClick={handleLockChat}>
+                           {isSelectedConvoLocked ? <Unlock /> : <Lock />}
+                           {isSelectedConvoLocked ? "Unlock Chat" : "Lock Chat"}
                         </Button>
                          <Button variant="ghost" className="justify-start gap-3 text-base p-4 text-destructive hover:text-destructive" onClick={handleDeleteChat}>
                             <Trash2 /> Delete Chat
