@@ -6,9 +6,9 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { getInitials, formatMessageTimestamp } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
-import { MessageSquare, Mail, Trash2, BellOff, CheckCircle, User as UserIcon } from "lucide-react";
+import { MessageSquare, Mail, Trash2, BellOff, CheckCircle, User as UserIcon, Bell } from "lucide-react";
 import { useFirebase, useMemoFirebase } from "@/firebase";
-import { collection, query, where, doc, updateDoc, deleteDoc } from "firebase/firestore";
+import { collection, query, where, doc, updateDoc, deleteDoc, arrayUnion, arrayRemove } from "firebase/firestore";
 import { useCollection, type WithId } from "@/firebase/firestore/use-collection";
 import { useDoc } from "@/firebase/firestore/use-doc";
 import type { Conversation, User } from "@/lib/types";
@@ -39,6 +39,7 @@ function ConversationItem({ conversation, currentUser, onLongPress }: { conversa
     const name = otherUser?.name || 'User';
     const unreadCount = conversation.unreadCounts?.[currentUser.uid] ?? 0;
     const hasUnread = unreadCount > 0;
+    const isMuted = useMemo(() => conversation.mutedBy?.includes(currentUser.uid) || false, [conversation, currentUser]);
 
     const getUnreadMessageText = (count: number) => {
         if (count === 1) return "1 new message";
@@ -87,10 +88,11 @@ function ConversationItem({ conversation, currentUser, onLongPress }: { conversa
                 <div>
                     <p className={cn("font-semibold", hasUnread && "text-primary")}>{name}</p>
                     <p className={cn(
-                        "text-sm text-muted-foreground truncate max-w-xs",
+                        "text-sm text-muted-foreground truncate max-w-xs flex items-center gap-1",
                         hasUnread && "text-primary font-medium"
                     )}>
-                        {getUnreadMessageText(unreadCount)}
+                        {isMuted && <BellOff className="h-3 w-3 shrink-0" />}
+                        <span className="truncate">{getUnreadMessageText(unreadCount)}</span>
                     </p>
                 </div>
             </div>
@@ -100,7 +102,7 @@ function ConversationItem({ conversation, currentUser, onLongPress }: { conversa
                         {formatMessageTimestamp(conversation.lastUpdated.toDate())}
                     </p>
                 )}
-                {hasUnread && (
+                {hasUnread && !isMuted && (
                     <div className="w-2.5 h-2.5 bg-blue-500 rounded-full mt-2"></div>
                 )}
             </div>
@@ -368,9 +370,35 @@ export default function MessagesPage() {
     }
     
      const handleMute = () => {
-        toast({ title: "Mute (Coming Soon)", description: "This feature is not yet implemented."});
-        setIsSheetOpen(false);
+        if (!firestore || !selectedConvo || !user) return;
+        
+        const convoRef = doc(firestore, 'conversations', selectedConvo.id);
+        const isMuted = selectedConvo.mutedBy?.includes(user.uid);
+        const updatePayload = { 
+            mutedBy: isMuted ? arrayRemove(user.uid) : arrayUnion(user.uid)
+        };
+
+        updateDoc(convoRef, updatePayload)
+            .then(() => {
+                toast({ title: isMuted ? "Notifications Unmuted" : "Notifications Muted" });
+            })
+            .catch(serverError => {
+                const permissionError = new FirestorePermissionError({
+                    path: convoRef.path,
+                    operation: 'update',
+                    requestResourceData: updatePayload,
+                });
+                errorEmitter.emit('permission-error', permissionError);
+            })
+            .finally(() => {
+                setIsSheetOpen(false);
+            });
     }
+
+    const isSelectedConvoMuted = useMemo(() => {
+        if (!selectedConvo || !user) return false;
+        return selectedConvo.mutedBy?.includes(user.uid) || false;
+    }, [selectedConvo, user]);
 
 
     if (!user) {
@@ -439,7 +467,8 @@ export default function MessagesPage() {
                             <CheckCircle /> Mark as Unread
                         </Button>
                         <Button variant="ghost" className="justify-start gap-3 text-base p-4" onClick={handleMute}>
-                            <BellOff /> Mute Notifications
+                           {isSelectedConvoMuted ? <Bell /> : <BellOff />} 
+                           {isSelectedConvoMuted ? "Unmute Notifications" : "Mute Notifications"}
                         </Button>
                          <Button variant="ghost" className="justify-start gap-3 text-base p-4 text-destructive hover:text-destructive" onClick={handleDeleteChat}>
                             <Trash2 /> Delete Chat

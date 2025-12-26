@@ -75,6 +75,7 @@ export interface Conversation {
     requesterId: string;
     unreadCounts?: Record<string, number>;
     lastReadTimestamps?: Record<string, any>;
+    mutedBy?: string[];
 }
 
 export interface Message {

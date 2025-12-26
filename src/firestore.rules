@@ -74,7 +74,7 @@ service cloud.firestore {
       allow read: if isSignedIn() && request.auth.uid in resource.data.participantIds;
       allow create: if isSignedIn() && isUserActive() && request.auth.uid in request.resource.data.participantIds;
       allow update: if isSignedIn() && isUserActive() && request.auth.uid in resource.data.participantIds &&
-                       request.resource.data.diff(resource.data).affectedKeys().hasAny(['lastMessage', 'lastUpdated', 'status', 'unreadCounts', 'lastReadTimestamps']);
+                       request.resource.data.diff(resource.data).affectedKeys().hasAny(['lastMessage', 'lastUpdated', 'status', 'unreadCounts', 'lastReadTimestamps', 'mutedBy']);
       allow delete: if isSignedIn() && request.auth.uid in resource.data.participantIds;
     }
 
