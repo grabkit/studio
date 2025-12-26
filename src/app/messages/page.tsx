@@ -19,6 +19,8 @@ import { useToast } from "@/hooks/use-toast";
 import { cn } from "@/lib/utils";
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from "@/components/ui/sheet";
 import { useRouter } from "next/navigation";
+import { FirestorePermissionError } from "@/firebase/errors";
+import { errorEmitter } from "@/firebase/error-emitter";
 
 
 function ConversationItem({ conversation, currentUser, onLongPress }: { conversation: WithId<Conversation>, currentUser: User, onLongPress: (conversation: WithId<Conversation>) => void }) {
@@ -314,34 +316,46 @@ export default function MessagesPage() {
         setIsSheetOpen(true);
     };
 
-    const handleDeleteChat = async () => {
+    const handleDeleteChat = () => {
         if (!firestore || !selectedConvo) return;
         const convoRef = doc(firestore, 'conversations', selectedConvo.id);
-        try {
-            await deleteDoc(convoRef);
-            toast({ title: "Chat Deleted", description: "The conversation has been removed." });
-        } catch (error) {
-            console.error("Error deleting chat:", error);
-            toast({ variant: "destructive", title: "Error", description: "Could not delete the chat." });
-        } finally {
-            setIsSheetOpen(false);
-        }
+        
+        deleteDoc(convoRef)
+            .then(() => {
+                toast({ title: "Chat Deleted", description: "The conversation has been removed." });
+            })
+            .catch(serverError => {
+                const permissionError = new FirestorePermissionError({
+                    path: convoRef.path,
+                    operation: 'delete',
+                });
+                errorEmitter.emit('permission-error', permissionError);
+            })
+            .finally(() => {
+                setIsSheetOpen(false);
+            });
     }
     
-    const handleMarkAsUnread = async () => {
+    const handleMarkAsUnread = () => {
         if (!firestore || !selectedConvo || !user) return;
         const convoRef = doc(firestore, 'conversations', selectedConvo.id);
-        try {
-            await updateDoc(convoRef, {
-                [`unreadCounts.${user.uid}`]: 1
+        const updatePayload = { [`unreadCounts.${user.uid}`]: 1 };
+        
+        updateDoc(convoRef, updatePayload)
+            .then(() => {
+                 toast({ title: "Marked as Unread" });
+            })
+            .catch(serverError => {
+                const permissionError = new FirestorePermissionError({
+                    path: convoRef.path,
+                    operation: 'update',
+                    requestResourceData: updatePayload,
+                });
+                errorEmitter.emit('permission-error', permissionError);
+            })
+            .finally(() => {
+                setIsSheetOpen(false);
             });
-             toast({ title: "Marked as Unread" });
-        } catch(error) {
-            console.error("Error marking as unread:", error);
-            toast({ variant: "destructive", title: "Error", description: "Could not mark as unread." });
-        } finally {
-            setIsSheetOpen(false);
-        }
     }
     
     const handleViewProfile = () => {
