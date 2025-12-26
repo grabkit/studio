@@ -382,7 +382,7 @@ export default function MessagesPage() {
 
         updateDoc(convoRef, updatePayload)
             .then(() => {
-                toast({ title: isMuted ? "Notifications Unmuted" : "Notifications Muted" });
+                toast({ title: isMuted ? "Unmuted" : "Muted" });
             })
             .catch(serverError => {
                 const permissionError = new FirestorePermissionError({
@@ -470,7 +470,7 @@ export default function MessagesPage() {
                         </Button>
                         <Button variant="ghost" className="justify-start gap-3 text-base p-4" onClick={handleMute}>
                            {isSelectedConvoMuted ? <Bell /> : <BellOff />} 
-                           {isSelectedConvoMuted ? "Unmute Notifications" : "Mute Notifications"}
+                           {isSelectedConvoMuted ? "Unmute" : "Mute"}
                         </Button>
                          <Button variant="ghost" className="justify-start gap-3 text-base p-4 text-destructive hover:text-destructive" onClick={handleDeleteChat}>
                             <Trash2 /> Delete Chat
