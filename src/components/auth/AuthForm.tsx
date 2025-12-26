@@ -131,12 +131,13 @@ export default function AuthForm() {
             await updateProfile(user, { displayName: values.name });
             
             const userDocRef = doc(firestore, "users", user.uid);
-            const newUser: Omit<UserType, 'upvotes' | 'upvotedBy'> = {
+            const newUser: Omit<UserType, 'upvotes' | 'upvotedBy'> & {lastReadTimestamps?: any} = {
                 id: user.uid,
                 name: values.name,
                 email: values.email,
                 createdAt: serverTimestamp(),
                 status: 'active',
+                lastReadTimestamps: {}
             };
             await setDoc(userDocRef, newUser, { merge: true });
         } catch (firestoreError: any) {
@@ -367,3 +368,5 @@ function ForgotPasswordDialog({form, handlePasswordReset}: {form: UseFormReturn<
     </AlertDialog>
   );
 }
+
+    

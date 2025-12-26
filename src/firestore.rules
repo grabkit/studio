@@ -12,21 +12,19 @@ service cloud.firestore {
     }
     
     function isUserActive() {
-      // Default to active if status is not set, for backward compatibility with existing users.
-      // This allows existing users to continue using the app until their status is explicitly set.
       let userDoc = get(/databases/$(database)/documents/users/$(request.auth.uid));
-      return userDoc.data.get('status', 'active') == 'active';
+      // The `lastReadTimestamps` check is a proxy to ensure the user document has been fully initialized
+      // by our modern client, which includes the 'status' field.
+      return userDoc.data.get('status', 'active') == 'active' && 'lastReadTimestamps' in userDoc.data;
     }
 
     match /users/{userId} {
       allow get: if true; // Allow public read for profiles
       allow list: if isSignedIn();
-      // On user creation (signup), the status field is not present, so no need to check isUserActive.
-      // The user document is created with a default 'active' status by the client.
       allow create: if request.auth.uid == userId;
       allow update: if isSignedIn() && (
         // Allow a user to update their own profile fields (excluding status).
-        (isOwner(userId) && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['name', 'email', 'blockedUsers', 'mutedUsers', 'restrictedUsers'])) ||
+        (isOwner(userId) && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['name', 'email', 'blockedUsers', 'mutedUsers', 'restrictedUsers', 'lastReadTimestamps'])) ||
         // Allow any signed-in user to update only 'upvotes' and 'upvotedBy' on another user's profile.
         (request.resource.data.diff(resource.data).affectedKeys().hasAll(['upvotes', 'upvotedBy']))
       );
@@ -154,3 +152,5 @@ service cloud.firestore {
     }
   }
 }
+
+    

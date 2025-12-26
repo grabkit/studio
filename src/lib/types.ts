@@ -44,6 +44,7 @@ export interface User {
     blockedUsers?: string[];
     mutedUsers?: string[];
     restrictedUsers?: string[];
+    lastReadTimestamps?: Record<string, any>;
 }
 
 export interface Bookmark {
@@ -101,5 +102,7 @@ export interface Report {
     timestamp: any; // Can be Timestamp or FieldValue
     status: 'pending' | 'reviewed' | 'action-taken';
 }
+
+    
 
     
