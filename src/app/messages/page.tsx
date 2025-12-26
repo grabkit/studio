@@ -6,22 +6,25 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { getInitials, formatMessageTimestamp } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
-import { MessageSquare, Mail } from "lucide-react";
+import { MessageSquare, Mail, Trash2, BellOff, CheckCircle, User as UserIcon } from "lucide-react";
 import { useFirebase, useMemoFirebase } from "@/firebase";
-import { collection, query, where, doc, updateDoc } from "firebase/firestore";
+import { collection, query, where, doc, updateDoc, deleteDoc } from "firebase/firestore";
 import { useCollection, type WithId } from "@/firebase/firestore/use-collection";
 import { useDoc } from "@/firebase/firestore/use-doc";
 import type { Conversation, User } from "@/lib/types";
-import { useMemo, useState, useEffect } from "react";
+import { useMemo, useState, useEffect, useRef } from "react";
 import Link from "next/link";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useToast } from "@/hooks/use-toast";
 import { cn } from "@/lib/utils";
+import { Sheet, SheetContent, SheetHeader, SheetTitle } from "@/components/ui/sheet";
 
 
-function ConversationItem({ conversation, currentUser }: { conversation: WithId<Conversation>, currentUser: User }) {
+function ConversationItem({ conversation, currentUser, onLongPress }: { conversation: WithId<Conversation>, currentUser: User, onLongPress: (conversation: WithId<Conversation>) => void }) {
     const otherParticipantId = conversation.participantIds.find(p => p !== currentUser.uid);
     const { firestore } = useFirebase();
+    const router = useRouter();
+    const pressTimer = useRef<NodeJS.Timeout | null>(null);
 
     const otherUserRef = useMemoFirebase(() => {
         if (!firestore || !otherParticipantId) return null;
@@ -41,8 +44,39 @@ function ConversationItem({ conversation, currentUser }: { conversation: WithId<
         return conversation.lastMessage || 'No messages yet';
     }
 
+    const handlePointerDown = () => {
+      pressTimer.current = setTimeout(() => {
+        onLongPress(conversation);
+      }, 500); // 500ms for a long press
+    };
+
+    const handlePointerUp = () => {
+      if (pressTimer.current) {
+        clearTimeout(pressTimer.current);
+        pressTimer.current = null;
+      }
+    };
+    
+    const handlePointerMove = () => {
+        // Cancel long press if pointer moves
+        handlePointerUp();
+    }
+
+    const handleClick = () => {
+        if (otherParticipantId) {
+            router.push(`/messages/${otherParticipantId}`);
+        }
+    }
+
+
     return (
-        <Link href={`/messages/${otherParticipantId}`} className="p-4 border-b flex justify-between items-center hover:bg-accent cursor-pointer">
+        <div
+            onClick={handleClick}
+            onPointerDown={handlePointerDown}
+            onPointerUp={handlePointerUp}
+            onPointerMove={handlePointerMove}
+            className="p-4 border-b flex justify-between items-center hover:bg-accent cursor-pointer"
+        >
             <div className="flex items-center space-x-3">
                 <Avatar className="h-12 w-12">
                     <AvatarFallback>{getInitials(name)}</AvatarFallback>
@@ -67,7 +101,7 @@ function ConversationItem({ conversation, currentUser }: { conversation: WithId<
                     <div className="w-2.5 h-2.5 bg-blue-500 rounded-full mt-2"></div>
                 )}
             </div>
-        </Link>
+        </div>
     );
 }
 
@@ -121,13 +155,15 @@ function ConversationsList({
     isLoading,
     type,
     currentUser,
-    onAcceptRequest
+    onAcceptRequest,
+    onLongPress,
 }: {
     conversations: WithId<Conversation>[] | null;
     isLoading: boolean;
     type: 'chats' | 'requests';
     currentUser: User;
     onAcceptRequest: (id: string) => void;
+    onLongPress: (conversation: WithId<Conversation>) => void;
 }) {
     const emptyStateTitle = type === 'chats' ? "No Chats Yet" : "No New Requests";
     const emptyStateDescription = type === 'chats' ? "Accepted requests will appear here." : "When a user wants to chat, you'll see their request here.";
@@ -159,7 +195,7 @@ function ConversationsList({
         });
         return (
             <div className="divide-y">
-                {sortedChats.map(convo => <ConversationItem key={convo.id} conversation={convo} currentUser={currentUser} />)}
+                {sortedChats.map(convo => <ConversationItem key={convo.id} conversation={convo} currentUser={currentUser} onLongPress={onLongPress} />)}
             </div>
         )
     }
@@ -195,13 +231,15 @@ function ConversationsList({
 export default function MessagesPage() {
     const { firestore, user } = useFirebase();
     const { toast } = useToast();
+    const router = useRouter();
     const [hasNewRequests, setHasNewRequests] = useState(false);
     const storageKey = `lastCheckedRequests_${user?.uid}`;
 
+    const [isSheetOpen, setIsSheetOpen] = useState(false);
+    const [selectedConvo, setSelectedConvo] = useState<WithId<Conversation> | null>(null);
+
     const conversationsQuery = useMemoFirebase(() => {
         if (!user || !firestore) return null;
-        // This query is now secure and will be allowed by the new security rules.
-        // It only fetches conversations where the current user is a participant.
         return query(
             collection(firestore, 'conversations'),
             where('participantIds', 'array-contains', user.uid)
@@ -269,6 +307,56 @@ export default function MessagesPage() {
             });
         }
     }
+    
+    const handleLongPress = (conversation: WithId<Conversation>) => {
+        setSelectedConvo(conversation);
+        setIsSheetOpen(true);
+    };
+
+    const handleDeleteChat = async () => {
+        if (!firestore || !selectedConvo) return;
+        const convoRef = doc(firestore, 'conversations', selectedConvo.id);
+        try {
+            await deleteDoc(convoRef);
+            toast({ title: "Chat Deleted", description: "The conversation has been removed." });
+        } catch (error) {
+            console.error("Error deleting chat:", error);
+            toast({ variant: "destructive", title: "Error", description: "Could not delete the chat." });
+        } finally {
+            setIsSheetOpen(false);
+        }
+    }
+    
+    const handleMarkAsUnread = async () => {
+        if (!firestore || !selectedConvo || !user) return;
+        const convoRef = doc(firestore, 'conversations', selectedConvo.id);
+        try {
+            await updateDoc(convoRef, {
+                [`unreadCounts.${user.uid}`]: 1
+            });
+             toast({ title: "Marked as Unread" });
+        } catch(error) {
+            console.error("Error marking as unread:", error);
+            toast({ variant: "destructive", title: "Error", description: "Could not mark as unread." });
+        } finally {
+            setIsSheetOpen(false);
+        }
+    }
+    
+    const handleViewProfile = () => {
+        if (!selectedConvo || !user) return;
+        const otherParticipantId = selectedConvo.participantIds.find(p => p !== user.uid);
+        if (otherParticipantId) {
+            router.push(`/profile/${otherParticipantId}`);
+        }
+        setIsSheetOpen(false);
+    }
+    
+     const handleMute = () => {
+        toast({ title: "Mute (Coming Soon)", description: "This feature is not yet implemented."});
+        setIsSheetOpen(false);
+    }
+
 
     if (!user) {
         return (
@@ -307,6 +395,7 @@ export default function MessagesPage() {
                             type="chats"
                             currentUser={user}
                             onAcceptRequest={handleAcceptRequest}
+                            onLongPress={handleLongPress}
                         />
                     </TabsContent>
                     <TabsContent value="requests">
@@ -316,11 +405,35 @@ export default function MessagesPage() {
                             type="requests"
                             currentUser={user}
                             onAcceptRequest={handleAcceptRequest}
+                            onLongPress={handleLongPress}
                         />
                     </TabsContent>
                 </Tabs>
             </div>
+            
+            <Sheet open={isSheetOpen} onOpenChange={setIsSheetOpen}>
+                <SheetContent side="bottom" className="rounded-t-lg">
+                    <SheetHeader className="text-left mb-4">
+                        <SheetTitle>Chat Options</SheetTitle>
+                    </SheetHeader>
+                    <div className="grid gap-2">
+                        <Button variant="ghost" className="justify-start gap-3 text-base p-4" onClick={handleViewProfile}>
+                            <UserIcon /> View Profile
+                        </Button>
+                        <Button variant="ghost" className="justify-start gap-3 text-base p-4" onClick={handleMarkAsUnread}>
+                            <CheckCircle /> Mark as Unread
+                        </Button>
+                        <Button variant="ghost" className="justify-start gap-3 text-base p-4" onClick={handleMute}>
+                            <BellOff /> Mute Notifications
+                        </Button>
+                         <Button variant="ghost" className="justify-start gap-3 text-base p-4 text-destructive hover:text-destructive" onClick={handleDeleteChat}>
+                            <Trash2 /> Delete Chat
+                        </Button>
+                    </div>
+                </SheetContent>
+            </Sheet>
 
         </AppLayout>
     )
 }
+
