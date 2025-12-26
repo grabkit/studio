@@ -86,12 +86,14 @@ function ConversationItem({ conversation, currentUser, onLongPress }: { conversa
                     <AvatarFallback>{getInitials(name)}</AvatarFallback>
                 </Avatar>
                 <div>
-                    <p className={cn("font-semibold", hasUnread && "text-primary")}>{name}</p>
+                    <div className="flex items-center gap-2">
+                        <p className={cn("font-semibold", hasUnread && "text-primary")}>{name}</p>
+                        {isMuted && <BellOff className="h-3 w-3 text-muted-foreground" />}
+                    </div>
                     <p className={cn(
                         "text-sm text-muted-foreground truncate max-w-xs flex items-center gap-1",
                         hasUnread && "text-primary font-medium"
                     )}>
-                        {isMuted && <BellOff className="h-3 w-3 shrink-0" />}
                         <span className="truncate">{getUnreadMessageText(unreadCount)}</span>
                     </p>
                 </div>
@@ -419,14 +421,14 @@ export default function MessagesPage() {
                 <Tabs defaultValue="chats" className="w-full" onValueChange={handleTabChange}>
                     <TabsList className="grid w-full grid-cols-2 rounded-full">
                         <TabsTrigger value="chats" className="relative flex items-center justify-center gap-2 rounded-full">
-                            {hasUnreadChats && (
-                                <div className="w-2 h-2 rounded-full bg-red-500"></div>
+                             {hasUnreadChats && (
+                                <div className="w-2 h-2 rounded-full bg-blue-500"></div>
                             )}
                             Chats
                         </TabsTrigger>
                         <TabsTrigger value="requests" className="relative flex items-center justify-center gap-2 rounded-full">
                             {hasNewRequests && (
-                                <div className="w-2 h-2 rounded-full bg-red-500"></div>
+                                <div className="w-2 h-2 rounded-full bg-blue-500"></div>
                             )}
                             Requests
                         </TabsTrigger>
