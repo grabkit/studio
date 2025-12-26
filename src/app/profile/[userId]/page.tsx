@@ -1,5 +1,4 @@
 
-
 "use client";
 
 import { useParams, useRouter } from "next/navigation";
@@ -280,7 +279,11 @@ export default function UserProfilePage() {
             if (conversationSnap.exists()) {
                 router.push(`/messages/${userId}`);
             } else {
-                await setDoc(conversationRef, newConversationData);
+                // Atomically create the document, then update it.
+                // This two-step process can help avoid certain security rule complexities
+                // with serverTimestamp() on create operations.
+                await setDoc(conversationRef, {}); // Create an empty document first
+                await updateDoc(conversationRef, newConversationData); // Then update with the full data
                 router.push(`/messages/${userId}`);
             }
         } catch (error: any) {
@@ -612,3 +615,5 @@ export default function UserProfilePage() {
 
     
 }
+
+    
