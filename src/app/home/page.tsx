@@ -4,13 +4,13 @@
 
 import AppLayout from "@/components/AppLayout";
 import { useFirebase, useMemoFirebase, useUser } from "@/firebase";
-import { collection, query, orderBy, limit, doc, updateDoc, arrayUnion, arrayRemove, increment, deleteDoc, setDoc, serverTimestamp, getDoc, runTransaction } from "firebase/firestore";
+import { collection, query, orderBy, limit, doc, updateDoc, arrayUnion, arrayRemove, increment, deleteDoc, setDoc, serverTimestamp, getDoc, runTransaction, getDocs } from "firebase/firestore";
 import { useCollection, type WithId } from "@/firebase/firestore/use-collection";
 import { Card, CardContent } from "@/components/ui/card";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Skeleton } from "@/components/ui/skeleton";
 import type { Post, Bookmark, PollOption, Notification, User, Conversation, LinkMetadata } from "@/lib/types";
-import { Heart, MessageCircle, Repeat, ArrowUpRight, MoreHorizontal, Edit, Trash2, Bookmark as BookmarkIcon, CheckCircle2, Slash } from "lucide-react";
+import { Heart, MessageCircle, Repeat, ArrowUpRight, MoreHorizontal, Edit, Trash2, Bookmark as BookmarkIcon, CheckCircle2, Slash, RefreshCw } from "lucide-react";
 import { cn, formatTimestamp, getInitials } from "@/lib/utils";
 import { useToast } from "@/hooks/use-toast";
 import { FirestorePermissionError } from "@/firebase/errors";
@@ -33,7 +33,7 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
-import React, { useState, useMemo } from "react";
+import React, { useState, useMemo, useRef, TouchEvent } from "react";
 import { Button, buttonVariants } from "@/components/ui/button";
 import { useRouter } from "next/navigation";
 import { usePresence } from "@/hooks/usePresence";
@@ -488,23 +488,74 @@ export function PostSkeleton() {
 export default function HomePage() {
   const { firestore, userProfile } = useFirebase();
   const { user } = useUser();
+  const [posts, setPosts] = useState<WithId<Post>[] | null>(null);
+  const [postsLoading, setPostsLoading] = useState(true);
 
-  const postsQuery = useMemoFirebase(() => {
-    if (!firestore) return null;
-    return query(
-      collection(firestore, 'posts'),
-      orderBy("timestamp", "desc"),
-      limit(50)
-    );
-  }, [firestore]);
+  // Pull to refresh state
+  const [isRefreshing, setIsRefreshing] = useState(false);
+  const [pullPosition, setPullPosition] = useState(0);
+  const touchStartRef = useRef(0);
+  const containerRef = useRef<HTMLDivElement>(null);
+
 
   const bookmarksQuery = useMemoFirebase(() => {
     if (!firestore || !user) return null;
     return collection(firestore, 'users', user.uid, 'bookmarks');
   }, [firestore, user]);
 
-  const { data: posts, isLoading: postsLoading } = useCollection<Post>(postsQuery);
   const { data: bookmarks, isLoading: bookmarksLoading } = useCollection<Bookmark>(bookmarksQuery);
+
+  const fetchPosts = async () => {
+    if (!firestore) return;
+    try {
+        const postsQuery = query(collection(firestore, 'posts'), orderBy("timestamp", "desc"), limit(50));
+        const querySnapshot = await getDocs(postsQuery);
+        const fetchedPosts = querySnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as WithId<Post>));
+        setPosts(fetchedPosts);
+    } catch (error) {
+        console.error("Error fetching posts:", error);
+    } finally {
+        setPostsLoading(false);
+    }
+  };
+
+  React.useEffect(() => {
+      setPostsLoading(true);
+      fetchPosts();
+  }, [firestore]);
+
+
+  const handleRefresh = async () => {
+    if (isRefreshing) return;
+    setIsRefreshing(true);
+    await fetchPosts();
+    setTimeout(() => {
+      setIsRefreshing(false);
+    }, 500); // Animation delay
+  };
+
+  const handleTouchStart = (e: TouchEvent) => {
+      touchStartRef.current = e.targetTouches[0].clientY;
+  };
+
+  const handleTouchMove = (e: TouchEvent) => {
+    const touchY = e.targetTouches[0].clientY;
+    const pullDistance = touchY - touchStartRef.current;
+    
+    // Only allow pulling when scrolled to the top
+    if (containerRef.current && containerRef.current.scrollTop === 0 && pullDistance > 0) {
+      // e.preventDefault(); // Prevent scrolling the whole page
+      setPullPosition(Math.min(pullDistance, 120)); // Max pull
+    }
+  };
+
+  const handleTouchEnd = () => {
+    if (pullPosition > 70) {
+      handleRefresh();
+    }
+    setPullPosition(0);
+  };
+
 
   const isLoading = postsLoading || bookmarksLoading;
 
@@ -516,26 +567,46 @@ export default function HomePage() {
 
   return (
     <AppLayout>
-      <div className="divide-y border-b">
-        {isLoading && (
-          <>
-            <PostSkeleton />
-            <PostSkeleton />
-            <PostSkeleton />
-          </>
-        )}
-        {!isLoading && filteredPosts.length === 0 && (
-          <div className="text-center py-10">
-            <h2 className="text-2xl font-headline text-primary">No posts yet!</h2>
-            <p className="text-muted-foreground mt-2">Be the first to post something.</p>
-          </div>
-        )}
-        {filteredPosts.map((post) => (
-          <PostItem key={post.id} post={post} bookmarks={bookmarks} />
-        ))}
+       <div 
+        ref={containerRef}
+        onTouchStart={handleTouchStart}
+        onTouchMove={handleTouchMove}
+        onTouchEnd={handleTouchEnd}
+        className="relative"
+       >
+        <div 
+          className="absolute top-0 left-0 right-0 flex justify-center items-center overflow-hidden text-muted-foreground transition-all duration-300"
+          style={{ height: `${pullPosition}px`, opacity: Math.min(pullPosition/70, 1) }}
+        >
+           <div style={{ transform: `rotate(${Math.min(pullPosition, 70) * 3}deg)` }}>
+             <RefreshCw className={cn("h-5 w-5", isRefreshing && "animate-spin")} />
+           </div>
+        </div>
+        <div 
+          className="divide-y border-b transition-transform duration-300"
+          style={{ transform: `translateY(${isRefreshing ? '50px' : pullPosition}px)` }}
+        >
+          {isLoading && !isRefreshing && (
+            <>
+              <PostSkeleton />
+              <PostSkeleton />
+              <PostSkeleton />
+            </>
+          )}
+          {!isLoading && filteredPosts.length === 0 && (
+            <div className="text-center py-10 h-screen">
+              <h2 className="text-2xl font-headline text-primary">No posts yet!</h2>
+              <p className="text-muted-foreground mt-2">Be the first to post something.</p>
+            </div>
+          )}
+          {filteredPosts.map((post) => (
+            <PostItem key={post.id} post={post} bookmarks={bookmarks} />
+          ))}
+        </div>
       </div>
     </AppLayout>
   );
 }
 
     
+
