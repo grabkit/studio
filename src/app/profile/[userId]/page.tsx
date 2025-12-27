@@ -444,7 +444,7 @@ export default function UserProfilePage() {
         <AppLayout showTopBar={false}>
             <div>
                  <Sheet open={isMoreOptionsSheetOpen} onOpenChange={setIsMoreOptionsSheetOpen}>
-                    <div className="flex items-center justify-between mb-6 px-4">
+                    <div className="flex items-center justify-between h-14 px-4">
                          <Button variant="ghost" size="icon" onClick={() => router.back()}>
                             <ArrowLeft className="h-6 w-6" />
                         </Button>
@@ -519,37 +519,37 @@ export default function UserProfilePage() {
                                 <MessageSquare className="mr-2 h-4 w-4" /> Message
                             </Button>
                         </div>
-
                     </div>
-
-                    <Tabs defaultValue="posts" className="w-full">
-                        <TabsList variant="underline" className="grid w-full grid-cols-2">
-                            <TabsTrigger value="posts" variant="profile">Posts</TabsTrigger>
-                            <TabsTrigger value="replies" variant="profile">Replies</TabsTrigger>
-                        </TabsList>
-                        <TabsContent value="posts">
-                           <div className="divide-y border-b">
-                                {(postsLoading || bookmarksLoading) && (
-                                    <>
-                                        <PostSkeleton />
-                                        <PostSkeleton />
-                                    </>
-                                )}
-                                {!(postsLoading || bookmarksLoading) && posts?.length === 0 && (
-                                    <div className="text-center py-16">
-                                        <h3 className="text-xl font-headline text-primary">No Posts Yet</h3>
-                                        <p className="text-muted-foreground">This user hasn't posted anything.</p>
-                                    </div>
-                                )}
-                                {posts?.map((post) => (
-                                    <HomePostItem key={post.id} post={post} bookmarks={bookmarks} />
-                                ))}
-                            </div>
-                        </TabsContent>
-                        <TabsContent value="replies">
-                            {userId && <RepliesList userId={userId} />}
-                        </TabsContent>
-                    </Tabs>
+                    <div className="relative">
+                        <Tabs defaultValue="posts" className="w-full">
+                            <TabsList variant="underline" className="sticky top-14 bg-background z-10 grid w-full grid-cols-2">
+                                <TabsTrigger value="posts" variant="profile">Posts</TabsTrigger>
+                                <TabsTrigger value="replies" variant="profile">Replies</TabsTrigger>
+                            </TabsList>
+                            <TabsContent value="posts">
+                            <div className="divide-y border-b">
+                                    {(postsLoading || bookmarksLoading) && (
+                                        <>
+                                            <PostSkeleton />
+                                            <PostSkeleton />
+                                        </>
+                                    )}
+                                    {!(postsLoading || bookmarksLoading) && posts?.length === 0 && (
+                                        <div className="text-center py-16">
+                                            <h3 className="text-xl font-headline text-primary">No Posts Yet</h3>
+                                            <p className="text-muted-foreground">This user hasn't posted anything.</p>
+                                        </div>
+                                    )}
+                                    {posts?.map((post) => (
+                                        <HomePostItem key={post.id} post={post} bookmarks={bookmarks} />
+                                    ))}
+                                </div>
+                            </TabsContent>
+                            <TabsContent value="replies">
+                                {userId && <RepliesList userId={userId} />}
+                            </TabsContent>
+                        </Tabs>
+                    </div>
                     <SheetContent side="bottom" className="rounded-t-lg">
                         <SheetHeader className="text-left">
                             <SheetTitle>Options for {formatUserId(user?.id)}</SheetTitle>
@@ -617,10 +617,3 @@ export default function UserProfilePage() {
         </AppLayout>
     );
 }
-
-    
-
-
-
-
-
