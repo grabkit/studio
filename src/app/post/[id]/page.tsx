@@ -56,6 +56,7 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
+import { usePresence } from "@/hooks/usePresence";
 
 
 const formatUserId = (uid: string | undefined) => {
@@ -68,6 +69,7 @@ function PostDetailItem({ post }: { post: WithId<Post> }) {
   const { toast } = useToast();
   const router = useRouter();
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
+  const { isOnline } = usePresence(post.authorId);
 
   const hasLiked = user ? post.likes?.includes(user.uid) : false;
   const isOwner = user?.uid === post.authorId;
@@ -166,7 +168,7 @@ function PostDetailItem({ post }: { post: WithId<Post> }) {
     <Card className="w-full shadow-none rounded-none border-x-0 border-t-0 border-b">
       <CardContent className="p-4">
         <div className="flex space-x-3">
-          <Avatar className="h-10 w-10">
+          <Avatar className="h-10 w-10" showStatus={true} isOnline={isOnline}>
             <AvatarFallback>{getInitials(post.authorId)}</AvatarFallback>
           </Avatar>
           <div className="flex-1 space-y-2">
@@ -405,6 +407,7 @@ function CommentItem({ comment, postAuthorId }: { comment: WithId<Comment>, post
   const { user } = useUser();
   const { firestore } = useFirebase();
   const { toast } = useToast();
+  const { isOnline } = usePresence(comment.authorId);
 
   const isPostOwner = user && user.uid === postAuthorId;
   const isCommentOwner = user && user.uid === comment.authorId;
@@ -454,7 +457,7 @@ function CommentItem({ comment, postAuthorId }: { comment: WithId<Comment>, post
 
   return (
     <div className="flex space-x-3 p-4 border-b">
-      <Avatar className="h-8 w-8">
+      <Avatar className="h-8 w-8" showStatus={true} isOnline={isOnline}>
         <AvatarFallback>{getInitials(comment.authorId)}</AvatarFallback>
       </Avatar>
       <div className="flex-1">
@@ -618,3 +621,5 @@ export default function PostDetailPage() {
     </AppLayout>
   );
 }
+
+    

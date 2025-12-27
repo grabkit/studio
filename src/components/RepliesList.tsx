@@ -10,6 +10,7 @@ import { Skeleton } from './ui/skeleton';
 import { Avatar, AvatarFallback } from './ui/avatar';
 import { getInitials, formatTimestamp } from '@/lib/utils';
 import Link from 'next/link';
+import { usePresence } from '@/hooks/usePresence';
 
 function ReplySkeleton() {
     return (
@@ -30,6 +31,45 @@ const formatUserId = (uid: string | undefined) => {
     if (!uid) return "blur??????";
     return `blur${uid.substring(uid.length - 6)}`;
 };
+
+function Reply({ reply }: { reply: WithId<ReplyItem> }) {
+    const { isOnline } = usePresence(reply.authorId);
+
+    return (
+         <div className="p-4 space-y-3">
+            {/* Original Post Snippet */}
+             <div className="text-sm text-muted-foreground pl-10">
+                <Link href={`/profile/${reply.authorId}`} className="text-primary hover:underline">{formatUserId(reply.authorId)}</Link> replied to your post: 
+                <span className="italic"> "{reply.postContent.substring(0, 50)}..."</span>
+            </div>
+
+            {/* The Reply */}
+            <div className="flex space-x-3">
+                <Avatar className="h-8 w-8" showStatus={true} isOnline={isOnline}>
+                    <AvatarFallback>{getInitials(reply.authorId)}</AvatarFallback>
+                </Avatar>
+                <div className="flex-1">
+                    <div className="flex justify-between items-center">
+                        <div className="flex items-center space-x-2">
+                            <Link href={`/profile/${reply.authorId}`} className="font-semibold text-sm hover:underline">
+                                {formatUserId(reply.authorId)}
+                            </Link>
+                            <span className="text-xs text-muted-foreground">
+                            {reply.timestamp
+                                ? formatTimestamp(reply.timestamp.toDate())
+                                : ""}
+                            </span>
+                        </div>
+                    </div>
+                    <Link href={`/post/${reply.postId}`}>
+                        <p className="text-sm text-foreground whitespace-pre-wrap hover:bg-secondary/50 rounded p-1 -m-1">{reply.content}</p>
+                    </Link>
+                </div>
+            </div>
+        </div>
+    )
+}
+
 
 export function RepliesList({ userId }: { userId: string }) {
     const { firestore } = useFirebase();
@@ -140,39 +180,10 @@ export function RepliesList({ userId }: { userId: string }) {
     return (
         <div className="divide-y border-b">
             {replies.map(reply => (
-                <div key={reply.id} className="p-4 space-y-3">
-                    {/* Original Post Snippet */}
-                     <div className="text-sm text-muted-foreground pl-10">
-                        <Link href={`/profile/${reply.authorId}`} className="text-primary hover:underline">{formatUserId(reply.authorId)}</Link> replied to your post: 
-                        <span className="italic"> "{reply.postContent.substring(0, 50)}..."</span>
-                    </div>
-
-                    {/* The Reply */}
-                    <div className="flex space-x-3">
-                        <Avatar className="h-8 w-8">
-                            <AvatarFallback>{getInitials(reply.authorId)}</AvatarFallback>
-                        </Avatar>
-                        <div className="flex-1">
-                            <div className="flex justify-between items-center">
-                                <div className="flex items-center space-x-2">
-                                    <Link href={`/profile/${reply.authorId}`} className="font-semibold text-sm hover:underline">
-                                        {formatUserId(reply.authorId)}
-                                    </Link>
-                                    <span className="text-xs text-muted-foreground">
-                                    {reply.timestamp
-                                        ? formatTimestamp(reply.timestamp.toDate())
-                                        : ""}
-                                    </span>
-                                </div>
-                            </div>
-                            <Link href={`/post/${reply.postId}`}>
-                                <p className="text-sm text-foreground whitespace-pre-wrap hover:bg-secondary/50 rounded p-1 -m-1">{reply.content}</p>
-                            </Link>
-                        </div>
-                    </div>
-                </div>
+                <Reply key={reply.id} reply={reply} />
             ))}
         </div>
     );
 }
 
+    

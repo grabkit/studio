@@ -34,6 +34,7 @@ import {
 import React, { useState, useMemo } from "react";
 import { Button, buttonVariants } from "@/components/ui/button";
 import { useRouter } from "next/navigation";
+import { usePresence } from "@/hooks/usePresence";
 
 
 const formatUserId = (uid: string | undefined) => {
@@ -167,6 +168,7 @@ export function PostItem({ post, bookmarks }: { post: WithId<Post>, bookmarks: W
   const { toast } = useToast();
   const router = useRouter();
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
+  const { isOnline } = usePresence(post.authorId);
   
   const hasLiked = user ? post.likes?.includes(user.uid) : false;
   const isOwner = user?.uid === post.authorId;
@@ -310,7 +312,7 @@ export function PostItem({ post, bookmarks }: { post: WithId<Post>, bookmarks: W
     <Card className="w-full shadow-none border-x-0 border-t-0 rounded-none">
       <CardContent className="p-4">
         <div className="flex space-x-3">
-          <Avatar className="h-10 w-10">
+          <Avatar className="h-10 w-10" showStatus={true} isOnline={isOnline}>
             <AvatarFallback>{getInitials(post.authorId)}</AvatarFallback>
           </Avatar>
           <div className="flex-1 space-y-2">
