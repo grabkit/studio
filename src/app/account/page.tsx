@@ -8,7 +8,7 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
 import { collection, query, where, getDocs, getDoc, doc } from "firebase/firestore";
 import { useCollection, type WithId } from "@/firebase/firestore/use-collection";
-import { Settings, Share2 } from "lucide-react";
+import { Settings, Share2, Link as LinkIcon } from "lucide-react";
 import type { Post, Bookmark, User } from "@/lib/types";
 import { Skeleton } from "@/components/ui/skeleton";
 import React, { useMemo, useState, useEffect } from "react";
@@ -242,9 +242,18 @@ export default function AccountPage() {
 
 
         {/* User Name and Bio */}
-        <div className="mb-4">
-            <h1 className="font-bold text-base">{authUser?.displayName}</h1>
-            <p className="text-sm text-muted-foreground">{authUser?.email}</p>
+        <div className="mb-4 space-y-2">
+            <div>
+                <h1 className="font-bold text-base">{userProfile?.name}</h1>
+                <p className="text-sm text-muted-foreground">{authUser?.email}</p>
+            </div>
+            {userProfile?.bio && <p className="text-sm">{userProfile.bio}</p>}
+            {userProfile?.website && (
+                <a href={userProfile.website} target="_blank" rel="noopener noreferrer" className="flex items-center gap-2 text-sm text-blue-500 hover:underline">
+                    <LinkIcon className="h-4 w-4" />
+                    <span>{userProfile.website.replace(/^(https?:\/\/)?(www\.)?/, '')}</span>
+                </a>
+            )}
         </div>
 
         <div className="mb-4 flex items-center space-x-2">
@@ -293,3 +302,5 @@ export default function AccountPage() {
     </AppLayout>
   );
 }
+
+    

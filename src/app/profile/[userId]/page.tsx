@@ -496,8 +496,17 @@ export default function UserProfilePage() {
 
 
                         {/* User Name and Bio */}
-                        <div className="mb-4">
-                            <h1 className="font-bold text-base">{user?.name}</h1>
+                        <div className="mb-4 space-y-2">
+                            <div>
+                                <h1 className="font-bold text-base">{user?.name}</h1>
+                            </div>
+                            {user?.bio && <p className="text-sm">{user.bio}</p>}
+                            {user?.website && (
+                                <a href={user.website} target="_blank" rel="noopener noreferrer" className="flex items-center gap-2 text-sm text-blue-500 hover:underline">
+                                    <LinkIcon className="h-4 w-4" />
+                                    <span>{user.website.replace(/^(https?:\/\/)?(www\.)?/, '')}</span>
+                                </a>
+                            )}
                         </div>
                         
                         <div className="mb-4 flex items-center space-x-2">
@@ -606,3 +615,5 @@ export default function UserProfilePage() {
         </AppLayout>
     );
 }
+
+    
