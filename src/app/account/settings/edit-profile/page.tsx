@@ -75,7 +75,7 @@ export default function EditProfilePage() {
             router.back();
         } catch (error: any) {
             console.error("Error updating profile:", error);
-             if (error.code === 'auth/requires-recent-login') {
+             if (error.code === 'auth/requires-recent-login' || error.code === 'auth/operation-not-allowed') {
                  toast({ 
                     variant: "destructive", 
                     title: "Authentication Error", 
