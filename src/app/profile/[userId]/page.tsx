@@ -455,9 +455,9 @@ export default function UserProfilePage() {
                     </div>
 
                     <div className="px-4">
-                        <div className="flex items-center space-x-5 mb-6">
-                            <div className="flex-shrink-0">
-                                <Avatar className="h-20 w-20 md:h-24 md:w-24">
+                        <div className="flex items-start space-x-5 mb-6">
+                            <div className="flex-shrink-0 text-center">
+                                <Avatar className="h-20 w-20 md:h-24 md:w-24 mx-auto">
                                     <AvatarImage
                                     src={undefined}
                                     alt={user?.name || "User"}
@@ -466,8 +466,9 @@ export default function UserProfilePage() {
                                     {getInitials(user?.name)}
                                     </AvatarFallback>
                                 </Avatar>
+                                <p className="font-semibold font-headline mt-2">{formatUserId(user?.id)}</p>
                             </div>
-                            <div className="flex-1 flex justify-around text-center">
+                            <div className="flex-1 flex justify-around text-center pt-6">
                                 <div>
                                     {isLoading ? (
                                         <div className="font-bold text-lg"><Skeleton className="h-6 w-8 mx-auto" /></div>
@@ -497,7 +498,6 @@ export default function UserProfilePage() {
 
                         {/* User Name and Bio */}
                         <div className="mb-4 space-y-2">
-                             <p className="font-semibold font-headline">{formatUserId(user?.id)}</p>
                             {user?.bio && <p className="text-sm">{user.bio}</p>}
                             {user?.website && (
                                 <a href={user.website} target="_blank" rel="noopener noreferrer" className="flex items-center gap-2 text-sm text-blue-500 hover:underline">
@@ -520,8 +520,8 @@ export default function UserProfilePage() {
 
                     <Tabs defaultValue="posts" className="w-full">
                         <TabsList variant="underline" className="grid w-full grid-cols-2">
-                            <TabsTrigger value="posts" variant="profile">Posts</TabsTrigger>
-                            <TabsTrigger value="replies" variant="underline">Replies</TabsTrigger>
+                            <TabsTrigger value="posts" variant={cn("underline", "profile")}>Posts</TabsTrigger>
+                            <TabsTrigger value="replies" variant={cn("underline", "profile")}>Replies</TabsTrigger>
                         </TabsList>
                         <TabsContent value="posts">
                            <div className="divide-y border-b">
@@ -615,5 +615,6 @@ export default function UserProfilePage() {
 }
 
     
+
 
 
