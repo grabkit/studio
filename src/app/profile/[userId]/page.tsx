@@ -527,8 +527,8 @@ export default function UserProfilePage() {
                                 <TabsTrigger value="replies" variant="profile">Replies</TabsTrigger>
                             </TabsList>
                         </div>
-                        <div className="pt-12">
-                            <TabsContent value="posts">
+                        <div>
+                            <TabsContent value="posts" className="mt-0">
                             <div className="divide-y border-b">
                                     {(postsLoading || bookmarksLoading) && (
                                         <>
@@ -547,7 +547,7 @@ export default function UserProfilePage() {
                                     ))}
                                 </div>
                             </TabsContent>
-                            <TabsContent value="replies">
+                            <TabsContent value="replies" className="mt-0">
                                 {userId && <RepliesList userId={userId} />}
                             </TabsContent>
                         </div>
