@@ -466,7 +466,6 @@ export default function UserProfilePage() {
                                     {getInitials(user?.name)}
                                     </AvatarFallback>
                                 </Avatar>
-                                 <p className="font-semibold font-headline mt-2 text-center">{formatUserId(user?.id)}</p>
                             </div>
                             <div className="flex-1 flex justify-around text-center">
                                 <div>
@@ -498,6 +497,7 @@ export default function UserProfilePage() {
 
                         {/* User Name and Bio */}
                         <div className="mb-4 space-y-2">
+                             <p className="font-semibold font-headline">{formatUserId(user?.id)}</p>
                             {user?.bio && <p className="text-sm">{user.bio}</p>}
                             {user?.website && (
                                 <a href={user.website} target="_blank" rel="noopener noreferrer" className="flex items-center gap-2 text-sm text-blue-500 hover:underline">
@@ -519,9 +519,9 @@ export default function UserProfilePage() {
                     </div>
 
                     <Tabs defaultValue="posts" className="w-full">
-                        <TabsList className="grid w-full grid-cols-2">
+                        <TabsList variant="underline" className="grid w-full grid-cols-2">
                             <TabsTrigger value="posts" variant="profile">Posts</TabsTrigger>
-                            <TabsTrigger value="replies" variant="profile">Replies</TabsTrigger>
+                            <TabsTrigger value="replies" variant="underline">Replies</TabsTrigger>
                         </TabsList>
                         <TabsContent value="posts">
                            <div className="divide-y border-b">
@@ -615,4 +615,5 @@ export default function UserProfilePage() {
 }
 
     
+
 

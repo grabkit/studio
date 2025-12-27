@@ -266,10 +266,10 @@ export default function AccountPage() {
 
 
         <Tabs defaultValue="posts" className="w-full">
-            <TabsList className="grid w-full grid-cols-3">
-                <TabsTrigger value="posts">Posts</TabsTrigger>
-                <TabsTrigger value="replies">Replies</TabsTrigger>
-                <TabsTrigger value="bookmarks">Bookmarks</TabsTrigger>
+            <TabsList variant="underline" className="grid w-full grid-cols-3">
+                <TabsTrigger value="posts" variant="underline">Posts</TabsTrigger>
+                <TabsTrigger value="replies" variant="underline">Replies</TabsTrigger>
+                <TabsTrigger value="bookmarks" variant="underline">Bookmarks</TabsTrigger>
             </TabsList>
             <TabsContent value="posts">
                 <div className="divide-y border-b">
