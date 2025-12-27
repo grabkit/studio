@@ -37,7 +37,7 @@ const StatusInfo = {
 
 export default function AccountStatusPage() {
     const router = useRouter();
-    const { userProfile } = useFirebase();
+    const { userProfile, user: authUser } = useFirebase();
 
     const status = userProfile?.status || 'active';
     const { icon: Icon, title, description, badgeVariant, iconColor } = StatusInfo[status];
@@ -59,8 +59,12 @@ export default function AccountStatusPage() {
                             <Badge variant={badgeVariant as any}>{status}</Badge>
                         </CardTitle>
                     </CardHeader>
-                    <CardContent className="text-center">
-                        <p className="text-muted-foreground">{description}</p>
+                    <CardContent className="text-center space-y-4">
+                        <div className="text-left bg-secondary p-3 rounded-md">
+                            <p className="font-semibold text-secondary-foreground">{userProfile?.name}</p>
+                            <p className="text-sm text-muted-foreground">{authUser?.email}</p>
+                        </div>
+                        <p className="text-muted-foreground pt-2">{description}</p>
                     </CardContent>
                 </Card>
                  <div className="text-center mt-6">

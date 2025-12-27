@@ -243,10 +243,6 @@ export default function AccountPage() {
 
         {/* User Name and Bio */}
         <div className="mb-4 space-y-2">
-            <div>
-                <h1 className="font-bold text-base">{userProfile?.name}</h1>
-                <p className="text-sm text-muted-foreground">{authUser?.email}</p>
-            </div>
             {userProfile?.bio && <p className="text-sm">{userProfile.bio}</p>}
             {userProfile?.website && (
                 <a href={userProfile.website} target="_blank" rel="noopener noreferrer" className="flex items-center gap-2 text-sm text-blue-500 hover:underline">
