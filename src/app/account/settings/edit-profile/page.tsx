@@ -8,7 +8,6 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
 import { useFirebase } from "@/firebase";
 import { doc, updateDoc } from "firebase/firestore";
-import { updateEmail } from "firebase/auth";
 
 import AppLayout from "@/components/AppLayout";
 import { Button } from "@/components/ui/button";
@@ -25,7 +24,6 @@ import { FirestorePermissionError } from "@/firebase/errors";
 
 const profileSchema = z.object({
   name: z.string().min(2, "Name must be at least 2 characters.").max(50),
-  email: z.string().email("Please enter a valid email."),
   bio: z.string().max(160, "Bio cannot be longer than 160 characters.").optional(),
   website: z.string().url("Please enter a valid URL.").or(z.literal("")).optional(),
   gender: z.enum(["male", "female", "other", "prefer_not_to_say", ""]),
@@ -34,14 +32,13 @@ const profileSchema = z.object({
 
 export default function EditProfilePage() {
     const router = useRouter();
-    const { user: authUser, userProfile, firestore, auth } = useFirebase();
+    const { user: authUser, userProfile, firestore } = useFirebase();
     const { toast } = useToast();
 
     const form = useForm<z.infer<typeof profileSchema>>({
         resolver: zodResolver(profileSchema),
         defaultValues: {
             name: userProfile?.name || "",
-            email: authUser?.email || "",
             bio: userProfile?.bio || "",
             website: userProfile?.website || "",
             gender: userProfile?.gender || "",
@@ -54,20 +51,15 @@ export default function EditProfilePage() {
     };
 
     const onSubmit = async (values: z.infer<typeof profileSchema>) => {
-        if (!authUser || !firestore || !auth) {
+        if (!authUser || !firestore) {
             toast({ variant: "destructive", title: "You must be logged in to update your profile." });
             return;
         }
 
         const userDocRef = doc(firestore, "users", authUser.uid);
-        const { email, ...profileData } = values;
+        const profileData = values;
 
         try {
-            // Update email in Firebase Auth if it has changed
-            if (email && email !== authUser.email) {
-                await updateEmail(authUser, email);
-            }
-
             // Update profile data in Firestore
             await updateDoc(userDocRef, profileData);
 
@@ -75,21 +67,13 @@ export default function EditProfilePage() {
             router.back();
         } catch (error: any) {
             console.error("Error updating profile:", error);
-             if (error.code === 'auth/requires-recent-login' || error.code === 'auth/operation-not-allowed') {
-                 toast({ 
-                    variant: "destructive", 
-                    title: "Authentication Error", 
-                    description: "Changing your email is a sensitive action. Please log out and log back in before trying again." 
-                });
-            } else {
-                const permissionError = new FirestorePermissionError({
-                    path: userDocRef.path,
-                    operation: 'update',
-                    requestResourceData: values,
-                });
-                errorEmitter.emit('permission-error', permissionError);
-                toast({ variant: "destructive", title: "Error", description: "Could not update your profile." });
-            }
+            const permissionError = new FirestorePermissionError({
+                path: userDocRef.path,
+                operation: 'update',
+                requestResourceData: values,
+            });
+            errorEmitter.emit('permission-error', permissionError);
+            toast({ variant: "destructive", title: "Error", description: "Could not update your profile." });
         }
     };
 
@@ -140,20 +124,6 @@ export default function EditProfilePage() {
                                 <FormLabel>Username</FormLabel>
                                 <Input value={formatUserId(authUser?.uid)} disabled />
                             </FormItem>
-
-                             <FormField
-                                control={form.control}
-                                name="email"
-                                render={({ field }) => (
-                                    <FormItem>
-                                    <FormLabel>Email</FormLabel>
-                                    <FormControl>
-                                        <Input type="email" {...field} />
-                                    </FormControl>
-                                    <FormMessage />
-                                    </FormItem>
-                                )}
-                            />
                             
                              <FormField
                                 control={form.control}
