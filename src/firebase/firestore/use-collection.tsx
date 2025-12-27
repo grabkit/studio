@@ -1,6 +1,7 @@
+
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import {
   Query,
   onSnapshot,
@@ -8,6 +9,9 @@ import {
   FirestoreError,
   QuerySnapshot,
   CollectionReference,
+  doc,
+  updateDoc,
+  deleteDoc,
 } from 'firebase/firestore';
 import { errorEmitter } from '@/firebase/error-emitter';
 import { FirestorePermissionError } from '@/firebase/errors';
@@ -23,6 +27,8 @@ export interface UseCollectionResult<T> {
   data: WithId<T>[] | null; // Document data with ID, or null.
   isLoading: boolean;       // True if loading.
   error: FirestoreError | Error | null; // Error object, or null.
+  update: (id: string, data: Partial<T>) => void; // Function to optimistically update a document
+  remove: (id: string) => void; // Function to optimistically remove a document
 }
 
 /* Internal implementation of Query:
@@ -58,7 +64,7 @@ export function useCollection<T = any>(
   type StateDataType = ResultItemType[] | null;
 
   const [data, setData] = useState<StateDataType>(null);
-  const [isLoading, setIsLoading] = useState<boolean>(false);
+  const [isLoading, setIsLoading] = useState<boolean>(true);
   const [error, setError] = useState<FirestoreError | Error | null>(null);
 
   useEffect(() => {
@@ -106,9 +112,28 @@ export function useCollection<T = any>(
     );
 
     return () => unsubscribe();
-  }, [memoizedTargetRefOrQuery]); // Re-run if the target query/reference changes.
+  }, [memoizedTargetRefOrQuery]);
+
+  const updateItem = useCallback((id: string, updatedData: Partial<T>) => {
+    setData(prevData => {
+      if (!prevData) return null;
+      return prevData.map(item =>
+        item.id === id ? { ...item, ...updatedData } : item
+      );
+    });
+  }, []);
+
+  const removeItem = useCallback((id: string) => {
+    setData(prevData => {
+        if (!prevData) return null;
+        return prevData.filter(item => item.id !== id);
+    });
+  }, []);
+
+
   if(memoizedTargetRefOrQuery && !memoizedTargetRefOrQuery.__memo) {
     throw new Error(memoizedTargetRefOrQuery + ' was not properly memoized using useMemoFirebase');
   }
-  return { data, isLoading, error };
+  
+  return { data, isLoading, error, update: updateItem, remove: removeItem };
 }

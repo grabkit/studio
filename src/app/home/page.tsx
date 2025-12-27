@@ -200,7 +200,7 @@ function PollComponent({ post, user }: { post: WithId<Post>, user: any }) {
     );
 }
 
-export function PostItem({ post, bookmarks }: { post: WithId<Post>, bookmarks: WithId<Bookmark>[] | null }) {
+export function PostItem({ post, bookmarks, updatePost }: { post: WithId<Post>, bookmarks: WithId<Bookmark>[] | null, updatePost?: (id: string, data: Partial<Post>) => void }) {
   const { user, firestore } = useFirebase();
   const { toast } = useToast();
   const router = useRouter();
@@ -213,7 +213,7 @@ export function PostItem({ post, bookmarks }: { post: WithId<Post>, bookmarks: W
 
 
   const handleLike = async () => {
-    if (!user || !firestore) {
+    if (!user || !firestore || !updatePost) {
         toast({
             variant: "destructive",
             title: "Authentication Error",
@@ -222,6 +222,16 @@ export function PostItem({ post, bookmarks }: { post: WithId<Post>, bookmarks: W
         return;
     }
 
+    const newLikes = hasLiked
+        ? post.likes.filter(uid => uid !== user.uid)
+        : [...(post.likes || []), user.uid];
+    
+    const newLikeCount = newLikes.length;
+
+    // Optimistic update
+    updatePost(post.id, { likes: newLikes, likeCount: newLikeCount });
+
+    // Server update
     const postRef = doc(firestore, 'posts', post.id);
     const payload = {
         likes: hasLiked ? arrayRemove(user.uid) : arrayUnion(user.uid),
@@ -246,6 +256,8 @@ export function PostItem({ post, bookmarks }: { post: WithId<Post>, bookmarks: W
             });
         }
     } catch (serverError) {
+        // Revert optimistic update on error
+        updatePost(post.id, { likes: post.likes, likeCount: post.likeCount });
         const permissionError = new FirestorePermissionError({
             path: postRef.path,
             operation: 'update',
@@ -487,7 +499,6 @@ export function PostSkeleton() {
 export default function HomePage() {
   const { firestore, userProfile } = useFirebase();
   const { user } = useUser();
-  const [posts, setPosts] = useState<WithId<Post>[] | null>(null);
   const [postsLoading, setPostsLoading] = useState(true);
 
   // Pull to refresh state
@@ -496,6 +507,13 @@ export default function HomePage() {
   const touchStartRef = useRef(0);
   const containerRef = useRef<HTMLDivElement>(null);
 
+
+  const postsQuery = useMemoFirebase(() => {
+    if (!firestore) return null;
+    return query(collection(firestore, 'posts'), orderBy("timestamp", "desc"), limit(50));
+  }, [firestore]);
+
+  const { data: posts, isLoading: postsFromHookLoading, update: updatePost } = useCollection<Post>(postsQuery);
 
   const bookmarksQuery = useMemoFirebase(() => {
     if (!firestore || !user) return null;
@@ -511,10 +529,10 @@ export default function HomePage() {
         const querySnapshot = await getDocs(postsQuery);
         let fetchedPosts = querySnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as WithId<Post>));
         
+        // This is handled by the useCollection hook now, but keeping for manual refresh
         // Shuffle the posts for a dynamic feed feel on refresh
         fetchedPosts.sort(() => Math.random() - 0.5);
 
-        setPosts(fetchedPosts);
     } catch (error) {
         console.error("Error fetching posts:", error);
     } finally {
@@ -523,15 +541,17 @@ export default function HomePage() {
   };
 
   React.useEffect(() => {
-      setPostsLoading(true);
-      fetchPosts();
-  }, [firestore]);
+      // The useCollection hook handles initial loading
+      if (!postsFromHookLoading) {
+        setPostsLoading(false);
+      }
+  }, [postsFromHookLoading]);
 
 
   const handleRefresh = async () => {
     if (isRefreshing) return;
     setIsRefreshing(true);
-    await fetchPosts();
+    await fetchPosts(); // This might not be needed if useCollection refetches, but good for explicit action
     setTimeout(() => {
       setIsRefreshing(false);
       setPullPosition(0);
@@ -548,6 +568,7 @@ export default function HomePage() {
     
     // Only allow pulling when scrolled to the top
     if (containerRef.current && containerRef.current.scrollTop === 0 && pullDistance > 0 && !isRefreshing) {
+      e.preventDefault();
       setPullPosition(Math.min(pullDistance, 120)); // Max pull
     }
   };
@@ -604,16 +625,10 @@ export default function HomePage() {
             </div>
           )}
           {filteredPosts.map((post) => (
-            <PostItem key={post.id} post={post} bookmarks={bookmarks} />
+            <PostItem key={post.id} post={post} bookmarks={bookmarks} updatePost={updatePost} />
           ))}
         </div>
       </div>
     </AppLayout>
   );
 }
-
-    
-
-    
-
-    
