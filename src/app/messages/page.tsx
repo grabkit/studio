@@ -1,4 +1,5 @@
 
+
 "use client";
 
 import AppLayout from "@/components/AppLayout";
@@ -23,6 +24,10 @@ import { FirestorePermissionError } from "@/firebase/errors";
 import { errorEmitter } from "@/firebase/error-emitter";
 import { usePresence } from "@/hooks/usePresence";
 
+const formatUserId = (uid: string | undefined) => {
+    if (!uid) return "blur??????";
+    return `blur${uid.substring(uid.length - 6)}`;
+};
 
 function ConversationItem({ conversation, currentUser, onLongPress }: { conversation: WithId<Conversation>, currentUser: User, onLongPress: (conversation: WithId<Conversation>) => void }) {
     const otherParticipantId = conversation.participantIds.find(p => p !== currentUser.uid);
@@ -39,7 +44,7 @@ function ConversationItem({ conversation, currentUser, onLongPress }: { conversa
 
     const { data: otherUser } = useDoc<User>(otherUserRef);
 
-    const name = otherUser?.name || 'User';
+    const name = otherUser ? formatUserId(otherUser.id) : 'User';
     const unreadCount = conversation.unreadCounts?.[currentUser.uid] ?? 0;
     const hasUnread = unreadCount > 0;
     const isMuted = useMemo(() => conversation.mutedBy?.includes(currentUser.uid) || false, [conversation, currentUser]);
@@ -125,7 +130,7 @@ function RequestItem({ request, onAccept }: { request: WithId<Conversation>, onA
     }, [firestore, requesterId]);
 
     const { data: requesterUser } = useDoc<User>(requesterUserRef);
-    const name = requesterUser?.name || 'User';
+    const name = requesterUser ? formatUserId(requesterUser.id) : 'User';
 
 
     return (

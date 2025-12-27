@@ -141,12 +141,12 @@ function ChatHeader({ peerId }: { peerId: string }) {
             <div className="flex items-center gap-3 ml-2">
                 <Link href={`/profile/${peerId}`}>
                     <Avatar className="h-8 w-8">
-                        <AvatarFallback>{isLoading || !peerUser ? <Skeleton className="h-8 w-8 rounded-full" /> : getInitials(peerUser?.name)}</AvatarFallback>
+                        <AvatarFallback>{isLoading || !peerUser ? <Skeleton className="h-8 w-8 rounded-full" /> : getInitials(formatUserId(peerId))}</AvatarFallback>
                     </Avatar>
                 </Link>
                 <div>
                      <h2 className="text-base font-bold leading-tight">
-                        {isLoading || !peerUser ? <Skeleton className="h-5 w-24" /> : peerUser?.name || formatUserId(peerId)}
+                        {isLoading || !peerUser ? <Skeleton className="h-5 w-24" /> : formatUserId(peerId)}
                     </h2>
                     <p className="text-xs text-muted-foreground leading-tight">
                         {isOnline ? "Online" : formatLastSeen(lastSeen)}
