@@ -13,19 +13,18 @@ const Avatar = React.forwardRef<
     showStatus?: boolean
   }
 >(({ className, isOnline = false, showStatus = false, ...props }, ref) => (
-  <AvatarPrimitive.Root
-    ref={ref}
-    className={cn(
-      "relative flex h-10 w-10 shrink-0 overflow-hidden rounded-full",
-      className
+  <div className={cn("relative", className)}>
+    <AvatarPrimitive.Root
+      ref={ref}
+      className={cn(
+        "flex h-full w-full shrink-0 overflow-hidden rounded-full"
+      )}
+      {...props}
+    />
+     {showStatus && isOnline && (
+      <span className="absolute bottom-0 right-0 block h-3 w-3 rounded-full bg-foreground border-2 border-background" />
     )}
-    {...props}
-  >
-    {props.children}
-    {showStatus && isOnline && (
-      <span className="absolute bottom-0 right-0 block h-3 w-3 rounded-full bg-foreground ring-2 ring-background" />
-    )}
-  </AvatarPrimitive.Root>
+  </div>
 ))
 Avatar.displayName = AvatarPrimitive.Root.displayName
 
