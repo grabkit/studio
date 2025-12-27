@@ -520,7 +520,7 @@ export default function UserProfilePage() {
                     </div>
 
                     <Tabs defaultValue="posts" className="w-full">
-                        <TabsList className="grid w-full grid-cols-2">
+                        <TabsList className="w-full justify-start">
                             <TabsTrigger value="posts">Posts</TabsTrigger>
                             <TabsTrigger value="replies">Replies</TabsTrigger>
                         </TabsList>
