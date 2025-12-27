@@ -1,3 +1,4 @@
+
 "use client";
 
 import { useState, useEffect } from 'react';
@@ -20,6 +21,7 @@ export function usePresence(userId?: string) {
 
         const listener = onValue(userStatusRef, (snapshot) => {
             const status = snapshot.val();
+            console.log('[usePresence] Status for', userId, ':', status); // Debug log
             if (status) {
                 setIsOnline(status.isOnline);
                 setLastSeen(status.lastSeen);
