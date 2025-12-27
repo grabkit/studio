@@ -209,6 +209,7 @@ export function PostItem({ post, bookmarks }: { post: WithId<Post>, bookmarks: W
   const hasLiked = user ? post.likes?.includes(user.uid) : false;
   const isOwner = user?.uid === post.authorId;
   const isBookmarked = useMemo(() => bookmarks?.some(b => b.postId === post.id), [bookmarks, post.id]);
+  const repliesAllowed = post.commentsAllowed !== false;
 
 
   const handleLike = async () => {
@@ -342,6 +343,8 @@ export function PostItem({ post, bookmarks }: { post: WithId<Post>, bookmarks: W
         });
     }
   };
+  
+  const CommentButtonWrapper = repliesAllowed ? Link : 'div';
 
 
   return (
@@ -405,10 +408,16 @@ export function PostItem({ post, bookmarks }: { post: WithId<Post>, bookmarks: W
                     <Heart className={cn("h-4 w-4", hasLiked && "text-pink-500 fill-pink-500")} />
                     <span className="text-xs">{post.likeCount > 0 ? post.likeCount : ''}</span>
                   </button>
-                  <Link href={`/post/${post.id}`} className="flex items-center space-x-1 hover:text-primary">
+                  <CommentButtonWrapper
+                    href={`/post/${post.id}`}
+                    className={cn(
+                        "flex items-center space-x-1",
+                        repliesAllowed ? "hover:text-primary" : "opacity-50 pointer-events-none"
+                    )}
+                  >
                     <MessageCircle className="h-4 w-4" />
-                     <span className="text-xs">{post.commentCount > 0 ? post.commentCount : ''}</span>
-                  </Link>
+                    <span className="text-xs">{post.commentCount > 0 ? post.commentCount : ''}</span>
+                  </CommentButtonWrapper>
                   <button onClick={handleRepost} className="flex items-center space-x-1 hover:text-green-500">
                     <Repeat className={cn("h-4 w-4")} />
                   </button>
@@ -524,3 +533,5 @@ export default function HomePage() {
     </AppLayout>
   );
 }
+
+    

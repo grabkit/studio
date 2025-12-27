@@ -102,6 +102,7 @@ function PostDetailItem({ post }: { post: WithId<Post> }) {
 
   const hasLiked = user ? post.likes?.includes(user.uid) : false;
   const isOwner = user?.uid === post.authorId;
+  const repliesAllowed = post.commentsAllowed !== false;
 
   const handleLike = async () => {
     if (!user || !firestore) {
@@ -264,7 +265,10 @@ function PostDetailItem({ post }: { post: WithId<Post> }) {
                     className={cn("h-5 w-5", hasLiked && "text-pink-500 fill-pink-500")}
                     />
                 </button>
-                <button className="flex items-center space-x-1 hover:text-primary">
+                <button className={cn(
+                    "flex items-center space-x-1",
+                    repliesAllowed ? "hover:text-primary" : "opacity-50"
+                )}>
                     <MessageCircle className="h-5 w-5" />
                 </button>
                 <button className="flex items-center space-x-1 hover:text-green-500">
@@ -652,3 +656,5 @@ export default function PostDetailPage() {
     </AppLayout>
   );
 }
+
+    
