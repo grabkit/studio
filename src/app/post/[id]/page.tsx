@@ -642,7 +642,7 @@ export default function PostDetailPage() {
         <div className="pt-14 pb-40">
             <PostDetailItem post={post} />
             <div>
-                {(post.commentsAllowed !== false && areCommentsLoading) && <div className="p-4 text-center">Loading comments...</div>}
+                {(post.commentsAllowed !== false && areCommentsLoading) && <div className="p-4 text-center">Loading replies...</div>}
                 
                 {post.commentsAllowed !== false && filteredComments?.map((comment) => (
                     <CommentItem key={comment.id} comment={comment} postAuthorId={post.authorId} />
@@ -650,7 +650,7 @@ export default function PostDetailPage() {
 
                 {(post.commentsAllowed !== false && !areCommentsLoading && filteredComments?.length === 0) && (
                 <div className="text-center py-10">
-                    <p className="text-muted-foreground">No comments yet. Be the first to reply!</p>
+                    <p className="text-muted-foreground">No Replies yet. Be the first to reply!</p>
                 </div>
                 )}
             </div>
