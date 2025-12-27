@@ -57,23 +57,31 @@ export default function EditProfilePage() {
         }
 
         const userDocRef = doc(firestore, "users", authUser.uid);
-        const profileData = values;
-
+        
         try {
             // Update profile data in Firestore
-            await updateDoc(userDocRef, profileData);
+            await updateDoc(userDocRef, values);
 
             toast({ title: "Profile Updated", description: "Your changes have been saved." });
             router.back();
         } catch (error: any) {
-            console.error("Error updating profile:", error);
-            const permissionError = new FirestorePermissionError({
-                path: userDocRef.path,
-                operation: 'update',
-                requestResourceData: values,
-            });
-            errorEmitter.emit('permission-error', permissionError);
-            toast({ variant: "destructive", title: "Error", description: "Could not update your profile." });
+             console.error("Error updating profile:", error);
+            if (error.code === 'auth/requires-recent-login') {
+                toast({
+                    variant: "destructive",
+                    title: "Authentication Error",
+                    description: "Changing your email is a sensitive action. Please log out and log back in before trying again.",
+                    duration: 9000,
+                });
+            } else {
+                const permissionError = new FirestorePermissionError({
+                    path: userDocRef.path,
+                    operation: 'update',
+                    requestResourceData: values,
+                });
+                errorEmitter.emit('permission-error', permissionError);
+                toast({ variant: "destructive", title: "Error", description: "Could not update your profile." });
+            }
         }
     };
 
@@ -119,6 +127,11 @@ export default function EditProfilePage() {
                                     </FormItem>
                                 )}
                             />
+
+                             <FormItem>
+                                <FormLabel>Email</FormLabel>
+                                <Input value={authUser?.email || ''} disabled />
+                            </FormItem>
 
                              <FormItem>
                                 <FormLabel>Username</FormLabel>
