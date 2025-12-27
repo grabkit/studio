@@ -31,7 +31,7 @@ const tabsTriggerVariants = cva(
     variants: {
       variant: {
         default: "after:left-6 after:right-6",
-        profile: "after:left-12 after:right-12",
+        profile: "after:left-16 after:right-16",
       },
     },
     defaultVariants: {
