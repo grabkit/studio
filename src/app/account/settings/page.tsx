@@ -10,6 +10,7 @@ import Link from 'next/link';
 import { useFirebase } from "@/firebase";
 import { signOut } from "firebase/auth";
 import { useToast } from "@/hooks/use-toast";
+import { ref, serverTimestamp, set } from "firebase/database";
 
 const settingsItems = [
     { href: "/account/settings/account-status", label: "Account status", icon: User },
@@ -37,24 +38,34 @@ function SettingsItem({ href, label, icon: Icon }: { href: string, label: string
 
 export default function SettingsPage() {
     const router = useRouter();
-    const { auth } = useFirebase();
+    const { auth, database } = useFirebase();
     const { toast } = useToast();
     
     const handleLogout = async () => {
-        if (!auth) return;
+        if (!auth || !auth.currentUser || !database) return;
+
+        // Manually set user offline before signing out
+        const userStatusDatabaseRef = ref(database, '/status/' + auth.currentUser.uid);
+        const isOfflineForDatabase = {
+            isOnline: false,
+            lastSeen: serverTimestamp(),
+        };
+
         try {
-          await signOut(auth);
-          router.push("/auth");
-          toast({
-            title: "Logged Out",
-            description: "You have been successfully logged out.",
-          });
+            await set(userStatusDatabaseRef, isOfflineForDatabase);
+            await signOut(auth);
+            router.push("/auth");
+            toast({
+                title: "Logged Out",
+                description: "You have been successfully logged out.",
+            });
         } catch (error: any) {
-          toast({
-            variant: "destructive",
-            title: "Logout Failed",
-            description: error.message,
-          });
+            console.error("Logout failed:", error);
+            toast({
+                variant: "destructive",
+                title: "Logout Failed",
+                description: error.message,
+            });
         }
       };
 
