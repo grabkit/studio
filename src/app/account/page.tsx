@@ -250,7 +250,6 @@ export default function AccountPage() {
         <div className="mb-4 flex items-center space-x-2">
             <Button variant="secondary" size="sm" className="flex-1">Edit Profile</Button>
             <Button variant="secondary" size="sm" className="flex-1" onClick={handleShareProfile}>
-                <Share2 className="mr-2 h-4 w-4"/>
                 Share Profile
             </Button>
         </div>
@@ -292,5 +291,7 @@ export default function AccountPage() {
     </AppLayout>
   );
 }
+
+    
 
     
