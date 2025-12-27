@@ -21,6 +21,7 @@ import { Sheet, SheetContent, SheetHeader, SheetTitle } from "@/components/ui/sh
 import { useRouter } from "next/navigation";
 import { FirestorePermissionError } from "@/firebase/errors";
 import { errorEmitter } from "@/firebase/error-emitter";
+import { usePresence } from "@/hooks/usePresence";
 
 
 function ConversationItem({ conversation, currentUser, onLongPress }: { conversation: WithId<Conversation>, currentUser: User, onLongPress: (conversation: WithId<Conversation>) => void }) {
@@ -106,7 +107,7 @@ function ConversationItem({ conversation, currentUser, onLongPress }: { conversa
                     </p>
                 )}
                 {hasUnread && !isMuted && (
-                    <div className="w-2.5 h-2.5 bg-blue-500 rounded-full mt-2"></div>
+                    <div className="w-2.5 h-2.5 bg-destructive rounded-full mt-2"></div>
                 )}
             </div>
         </div>
@@ -423,13 +424,13 @@ export default function MessagesPage() {
                     <TabsList className="grid w-full grid-cols-2 rounded-full">
                         <TabsTrigger value="chats" className="relative flex items-center justify-center gap-2 rounded-full">
                              {hasUnreadChats && (
-                                <div className="w-2 h-2 rounded-full bg-blue-500"></div>
+                                <div className="w-2 h-2 rounded-full bg-destructive"></div>
                             )}
                             Chats
                         </TabsTrigger>
                         <TabsTrigger value="requests" className="relative flex items-center justify-center gap-2 rounded-full">
                             {hasNewRequests && (
-                                <div className="w-2 h-2 rounded-full bg-blue-500"></div>
+                                <div className="w-2 h-2 rounded-full bg-destructive"></div>
                             )}
                             Requests
                         </TabsTrigger>
