@@ -21,6 +21,7 @@ import { Sheet, SheetContent, SheetHeader, SheetTitle } from "@/components/ui/sh
 import { useRouter } from "next/navigation";
 import { FirestorePermissionError } from "@/firebase/errors";
 import { errorEmitter } from "@/firebase/error-emitter";
+import { usePresence } from "@/hooks/usePresence";
 
 
 function ConversationItem({ conversation, currentUser, onLongPress }: { conversation: WithId<Conversation>, currentUser: User, onLongPress: (conversation: WithId<Conversation>) => void }) {
@@ -28,6 +29,8 @@ function ConversationItem({ conversation, currentUser, onLongPress }: { conversa
     const { firestore } = useFirebase();
     const router = useRouter();
     const pressTimer = useRef<NodeJS.Timeout | null>(null);
+    const { isOnline } = usePresence(otherParticipantId);
+
 
     const otherUserRef = useMemoFirebase(() => {
         if (!firestore || !otherParticipantId) return null;
@@ -82,7 +85,7 @@ function ConversationItem({ conversation, currentUser, onLongPress }: { conversa
             className="p-4 border-b flex justify-between items-center hover:bg-accent cursor-pointer"
         >
             <div className="flex items-center space-x-3">
-                <Avatar className="h-12 w-12">
+                <Avatar className="h-12 w-12" showStatus={true} isOnline={isOnline}>
                     <AvatarFallback>{getInitials(name)}</AvatarFallback>
                 </Avatar>
                 <div>

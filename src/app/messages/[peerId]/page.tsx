@@ -25,6 +25,7 @@ import { FirestorePermissionError } from '@/firebase/errors';
 import { errorEmitter } from '@/firebase/error-emitter';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
 import { useToast } from '@/hooks/use-toast';
+import { usePresence } from '@/hooks/usePresence';
 
 const messageFormSchema = z.object({
   text: z.string().min(1, "Message cannot be empty").max(1000),
@@ -120,6 +121,8 @@ function MessageBubble({ message, isOwnMessage, conversationId, onSetReply }: { 
 function ChatHeader({ peerId }: { peerId: string }) {
     const router = useRouter();
     const { firestore } = useFirebase();
+    const { isOnline } = usePresence(peerId);
+
 
     const peerUserRef = useMemoFirebase(() => {
         if (!firestore || !peerId) return null;
@@ -134,7 +137,7 @@ function ChatHeader({ peerId }: { peerId: string }) {
                 <ArrowLeft />
             </Button>
             <div className="flex items-center gap-3 ml-2">
-                <Avatar className="h-8 w-8">
+                <Avatar className="h-8 w-8" showStatus={true} isOnline={isOnline}>
                     <AvatarFallback>{isLoading || !peerUser ? <Skeleton className="h-8 w-8 rounded-full" /> : getInitials(peerUser?.name)}</AvatarFallback>
                 </Avatar>
                 <div>

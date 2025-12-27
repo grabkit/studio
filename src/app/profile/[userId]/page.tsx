@@ -258,16 +258,16 @@ export default function UserProfilePage() {
 
     const handleStartConversation = async () => {
         if (!currentUser || !firestore || !userId || currentUser.uid === userId) return;
-    
+
         const currentUserId = currentUser.uid;
         const conversationId = [currentUserId, userId].sort().join('_');
         const conversationRef = doc(firestore, 'conversations', conversationId);
-        
+
         try {
             const docSnap = await getDoc(conversationRef);
 
             if (!docSnap.exists()) {
-                 const newConversationData = {
+                const newConversationData = {
                     id: conversationId,
                     participantIds: [currentUserId, userId].sort(),
                     lastMessage: '',
@@ -277,21 +277,19 @@ export default function UserProfilePage() {
                     unreadCounts: { [currentUserId]: 0, [userId]: 0 },
                     lastReadTimestamps: { [currentUserId]: serverTimestamp() }
                 };
-                await setDoc(conversationRef, newConversationData);
+                await setDoc(conversationRef, newConversationData, { merge: true });
             }
-            // Whether it exists or not, navigate to the chat page.
+            
             router.push(`/messages/${userId}`);
 
         } catch (error: any) {
             console.error("Error handling conversation:", error);
-            
             const permissionError = new FirestorePermissionError({
                 path: conversationRef.path,
                 operation: 'write', 
                 requestResourceData: { info: "Failed to start conversation." }
             });
             errorEmitter.emit('permission-error', permissionError);
-            
             toast({
                 variant: "destructive",
                 title: "Error",
@@ -459,7 +457,7 @@ export default function UserProfilePage() {
 
                     <div className="px-4">
                         <div className="flex items-center space-x-5 mb-6">
-                            <Avatar className="h-20 w-20 md:h-24 md:w-24">
+                            <Avatar className="h-20 w-20 md:h-24 md:w-24" showStatus={true} isOnline={user.isOnline}>
                                 <AvatarImage
                                 src={undefined}
                                 alt={user?.name || "User"}
@@ -611,12 +609,3 @@ export default function UserProfilePage() {
 
     
 }
-
-    
-
-    
-
-
-
-
-    

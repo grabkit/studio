@@ -2,8 +2,9 @@
 
 import React, { DependencyList, createContext, useContext, ReactNode, useMemo, useState, useEffect } from 'react';
 import { FirebaseApp } from 'firebase/app';
-import { Firestore, doc } from 'firebase/firestore';
+import { Firestore, doc, serverTimestamp, updateDoc } from 'firebase/firestore';
 import { Auth, User, onAuthStateChanged } from 'firebase/auth';
+import { Database, ref, onValue, off, onDisconnect, set, serverTimestamp as dbServerTimestamp } from 'firebase/database';
 import { FirebaseErrorListener } from '@/components/FirebaseErrorListener';
 import { useDoc, type WithId } from './firestore/use-doc';
 import type { User as UserProfile } from '@/lib/types';
@@ -13,6 +14,7 @@ interface FirebaseProviderProps {
   children: ReactNode;
   firebaseApp: FirebaseApp;
   firestore: Firestore;
+  database: Database;
   auth: Auth;
 }
 
@@ -28,6 +30,7 @@ export interface FirebaseContextState {
   areServicesAvailable: boolean; // True if core services (app, firestore, auth instance) are provided
   firebaseApp: FirebaseApp | null;
   firestore: Firestore | null;
+  database: Database | null;
   auth: Auth | null; // The Auth service instance
   // User authentication state
   user: User | null;
@@ -42,6 +45,7 @@ export interface FirebaseContextState {
 export interface FirebaseServicesAndUser {
   firebaseApp: FirebaseApp;
   firestore: Firestore;
+  database: Database;
   auth: Auth;
   user: User | null;
   isUserLoading: boolean;
@@ -67,6 +71,7 @@ export const FirebaseProvider: React.FC<FirebaseProviderProps> = ({
   children,
   firebaseApp,
   firestore,
+  database,
   auth,
 }) => {
   const [userAuthState, setUserAuthState] = useState<UserAuthState>({
@@ -75,19 +80,60 @@ export const FirebaseProvider: React.FC<FirebaseProviderProps> = ({
     userError: null,
   });
 
-  // Effect to subscribe to Firebase auth state changes
+  // Effect to subscribe to Firebase auth state changes and manage presence
   useEffect(() => {
-    if (!auth) { // If no Auth service instance, cannot determine user state
-      setUserAuthState({ user: null, isUserLoading: false, userError: new Error("Auth service not provided.") });
+    if (!auth || !database || !firestore) { 
+      setUserAuthState({ user: null, isUserLoading: false, userError: new Error("Auth, Database, or Firestore service not provided.") });
       return;
     }
 
-    setUserAuthState({ user: null, isUserLoading: true, userError: null }); // Reset on auth instance change
+    setUserAuthState({ user: null, isUserLoading: true, userError: null });
 
     const unsubscribe = onAuthStateChanged(
       auth,
-      (firebaseUser) => { // Auth state determined
+      (firebaseUser) => {
         setUserAuthState({ user: firebaseUser, isUserLoading: false, userError: null });
+        
+        if (firebaseUser) {
+            const userStatusDatabaseRef = ref(database, '/status/' + firebaseUser.uid);
+            const userStatusFirestoreRef = doc(firestore, '/users/' + firebaseUser.uid);
+
+            const isOfflineForDatabase = {
+                isOnline: false,
+                lastSeen: dbServerTimestamp(),
+            };
+
+            const isOnlineForDatabase = {
+                isOnline: true,
+                lastSeen: dbServerTimestamp(),
+            };
+            
+            const isOfflineForFirestore = {
+                isOnline: false,
+                lastSeen: serverTimestamp(),
+            };
+            
+            const isOnlineForFirestore = {
+                isOnline: true,
+            };
+
+            const conRef = ref(database, '.info/connected');
+
+            onValue(conRef, (snapshot) => {
+                if (snapshot.val() === false) {
+                    // Firestore update when offline
+                    updateDoc(userStatusFirestoreRef, isOfflineForFirestore);
+                    return;
+                }
+
+                onDisconnect(userStatusDatabaseRef).set(isOfflineForDatabase).then(() => {
+                    set(userStatusDatabaseRef, isOnlineForDatabase);
+                    // Firestore update when online
+                    updateDoc(userStatusFirestoreRef, isOnlineForFirestore);
+                });
+            });
+
+        }
       },
       (error) => { // Auth listener error
         console.error("FirebaseProvider: onAuthStateChanged error:", error);
@@ -95,7 +141,7 @@ export const FirebaseProvider: React.FC<FirebaseProviderProps> = ({
       }
     );
     return () => unsubscribe(); // Cleanup
-  }, [auth]); // Depends on the auth instance
+  }, [auth, database, firestore]);
   
   const userProfileRef = useMemoFirebase(() => {
     if (!firestore || !userAuthState.user) return null;
@@ -106,11 +152,12 @@ export const FirebaseProvider: React.FC<FirebaseProviderProps> = ({
 
   // Memoize the context value
   const contextValue = useMemo((): FirebaseContextState => {
-    const servicesAvailable = !!(firebaseApp && firestore && auth);
+    const servicesAvailable = !!(firebaseApp && firestore && auth && database);
     return {
       areServicesAvailable: servicesAvailable,
       firebaseApp: servicesAvailable ? firebaseApp : null,
       firestore: servicesAvailable ? firestore : null,
+      database: servicesAvailable ? database : null,
       auth: servicesAvailable ? auth : null,
       user: userAuthState.user,
       isUserLoading: userAuthState.isUserLoading,
@@ -118,7 +165,7 @@ export const FirebaseProvider: React.FC<FirebaseProviderProps> = ({
       userProfile,
       isUserProfileLoading,
     };
-  }, [firebaseApp, firestore, auth, userAuthState, userProfile, isUserProfileLoading]);
+  }, [firebaseApp, firestore, auth, database, userAuthState, userProfile, isUserProfileLoading]);
 
   return (
     <FirebaseContext.Provider value={contextValue}>
@@ -139,13 +186,14 @@ export const useFirebase = (): FirebaseServicesAndUser => {
     throw new Error('useFirebase must be used within a FirebaseProvider.');
   }
 
-  if (!context.areServicesAvailable || !context.firebaseApp || !context.firestore || !context.auth) {
+  if (!context.areServicesAvailable || !context.firebaseApp || !context.firestore || !context.auth || !context.database) {
     throw new Error('Firebase core services not available. Check FirebaseProvider props.');
   }
 
   return {
     firebaseApp: context.firebaseApp,
     firestore: context.firestore,
+    database: context.database,
     auth: context.auth,
     user: context.user,
     isUserLoading: context.isUserLoading,

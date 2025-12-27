@@ -66,6 +66,15 @@
             "items": {
                 "type": "string"
             }
+        },
+        "isOnline": {
+          "type": "boolean",
+          "description": "Indicates if the user is currently online."
+        },
+        "lastSeen": {
+            "type": "string",
+            "format": "date-time",
+            "description": "Timestamp indicating when the user was last online."
         }
       },
       "required": [
