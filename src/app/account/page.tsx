@@ -187,21 +187,19 @@ export default function AccountPage() {
 
   return (
     <AppLayout showTopBar={false}>
-      <div className="px-4">
-        {/* Profile Header */}
-        <div className="flex items-center justify-between mb-6">
-            <h2 className="text-2xl font-semibold font-headline">
-              Account
-            </h2>
-            <div className="flex items-center space-x-2">
-                <Button variant="ghost" size="icon" asChild>
-                    <Link href="/account/settings">
-                        <Menu className="h-6 w-6" />
-                    </Link>
-                </Button>
-            </div>
+      <div className="flex items-center justify-between h-14 px-4">
+        <h2 className="text-2xl font-semibold font-headline">
+          Account
+        </h2>
+        <div className="flex items-center space-x-2">
+            <Button variant="ghost" size="icon" asChild>
+                <Link href="/account/settings">
+                    <Menu className="h-6 w-6" />
+                </Link>
+            </Button>
         </div>
-
+      </div>
+      <div className="px-4">
         <div className="flex items-start space-x-5 mb-2">
             <div className="flex-shrink-0 text-center">
                 <Avatar className="h-20 w-20 md:h-24 md:w-24 mx-auto">
@@ -266,12 +264,14 @@ export default function AccountPage() {
 
 
         <Tabs defaultValue="posts" className="w-full">
-            <TabsList variant="underline" className="grid w-full grid-cols-3">
-                <TabsTrigger value="posts" variant="underline">Posts</TabsTrigger>
-                <TabsTrigger value="replies" variant="underline">Replies</TabsTrigger>
-                <TabsTrigger value="bookmarks" variant="underline">Bookmarks</TabsTrigger>
-            </TabsList>
-            <TabsContent value="posts">
+            <div className="sticky top-14 bg-background z-10">
+              <TabsList variant="underline" className="grid w-full grid-cols-3">
+                  <TabsTrigger value="posts" variant="underline">Posts</TabsTrigger>
+                  <TabsTrigger value="replies" variant="underline">Replies</TabsTrigger>
+                  <TabsTrigger value="bookmarks" variant="underline">Bookmarks</TabsTrigger>
+              </TabsList>
+            </div>
+            <TabsContent value="posts" className="mt-0">
                 <div className="divide-y border-b">
                     {(postsLoading || bookmarksLoading) && (
                         <>
@@ -290,10 +290,10 @@ export default function AccountPage() {
                     ))}
                 </div>
             </TabsContent>
-             <TabsContent value="replies">
+             <TabsContent value="replies" className="mt-0">
                  {authUser?.uid && <RepliesList userId={authUser.uid} />}
             </TabsContent>
-             <TabsContent value="bookmarks">
+             <TabsContent value="bookmarks" className="mt-0">
                  <BookmarksList bookmarks={bookmarks} bookmarksLoading={bookmarksLoading} />
             </TabsContent>
         </Tabs>
@@ -301,3 +301,5 @@ export default function AccountPage() {
     </AppLayout>
   );
 }
+
+    
