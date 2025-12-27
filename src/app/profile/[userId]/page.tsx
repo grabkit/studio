@@ -456,20 +456,19 @@ export default function UserProfilePage() {
                     </div>
 
                     <div className="px-4">
-                         <div className="flex flex-col items-center mb-6">
-                            <Avatar className="h-20 w-20 md:h-24 md:w-24">
-                                <AvatarImage
-                                src={undefined}
-                                alt={user?.name || "User"}
-                                />
-                                <AvatarFallback className="text-3xl font-headline">
-                                {getInitials(user?.name)}
-                                </AvatarFallback>
-                            </Avatar>
-                            <p className="mt-4 text-lg font-semibold font-headline">{formatUserId(user?.id)}</p>
-                        </div>
-                        
-                        <div className="flex justify-around text-center mb-6">
+                        <div className="flex items-center space-x-5 mb-6">
+                            <div className="flex-shrink-0">
+                                <Avatar className="h-20 w-20 md:h-24 md:w-24">
+                                    <AvatarImage
+                                    src={undefined}
+                                    alt={user?.name || "User"}
+                                    />
+                                    <AvatarFallback className="text-3xl font-headline">
+                                    {getInitials(user?.name)}
+                                    </AvatarFallback>
+                                </Avatar>
+                            </div>
+                            <div className="flex-1 flex justify-around text-center">
                                 <div>
                                     {isLoading ? (
                                         <div className="font-bold text-lg"><Skeleton className="h-6 w-8 mx-auto" /></div>
@@ -494,11 +493,12 @@ export default function UserProfilePage() {
                                     )}
                                     <p className="text-sm text-muted-foreground">Upvotes</p>
                                 </div>
+                            </div>
                         </div>
-
 
                         {/* User Name and Bio */}
                         <div className="mb-4 space-y-2">
+                             <p className="font-semibold font-headline">{formatUserId(user?.id)}</p>
                             {user?.bio && <p className="text-sm">{user.bio}</p>}
                             {user?.website && (
                                 <a href={user.website} target="_blank" rel="noopener noreferrer" className="flex items-center gap-2 text-sm text-blue-500 hover:underline">
@@ -614,3 +614,5 @@ export default function UserProfilePage() {
         </AppLayout>
     );
 }
+
+    

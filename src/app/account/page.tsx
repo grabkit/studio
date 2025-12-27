@@ -202,49 +202,49 @@ export default function AccountPage() {
             </div>
         </div>
 
-        <div className="flex flex-col items-center mb-6">
-            <Avatar className="h-20 w-20 md:h-24 md:w-24">
-                <AvatarImage
-                src={authUser?.photoURL || undefined}
-                alt={userProfile?.name || "User"}
-                />
-                <AvatarFallback className="text-3xl font-headline">
-                {getInitials(userProfile?.name)}
-                </AvatarFallback>
-            </Avatar>
-            <p className="mt-4 text-lg font-semibold font-headline">{formatUserId(authUser?.uid)}</p>
+        <div className="flex items-center space-x-5 mb-6">
+            <div className="flex-shrink-0">
+                <Avatar className="h-20 w-20 md:h-24 md:w-24">
+                    <AvatarImage
+                        src={authUser?.photoURL || undefined}
+                        alt={userProfile?.name || "User"}
+                    />
+                    <AvatarFallback className="text-3xl font-headline">
+                        {getInitials(userProfile?.name)}
+                    </AvatarFallback>
+                </Avatar>
+            </div>
+            <div className="flex-1 flex justify-around text-center">
+                <div>
+                    {isLoading ? (
+                        <div className="font-bold text-lg"><Skeleton className="h-6 w-8 mx-auto" /></div>
+                    ) : (
+                        <div className="font-bold text-lg">{posts?.length ?? 0}</div>
+                    )}
+                    <p className="text-sm text-muted-foreground">Posts</p>
+                </div>
+                <div>
+                    {isLoading ? (
+                        <div className="font-bold text-lg"><Skeleton className="h-6 w-8 mx-auto" /></div>
+                    ) : (
+                        <div className="font-bold text-lg">{karmaScore}</div>
+                    )}
+                    <p className="text-sm text-muted-foreground">Karma</p>
+                </div>
+                <div>
+                    {isLoading ? (
+                        <div className="font-bold text-lg"><Skeleton className="h-6 w-8 mx-auto" /></div>
+                    ) : (
+                        <div className="font-bold text-lg">{userProfile?.upvotes || 0}</div>
+                    )}
+                    <p className="text-sm text-muted-foreground">Upvotes</p>
+                </div>
+            </div>
         </div>
-
-        <div className="flex justify-around text-center mb-6">
-              <div>
-                {isLoading ? (
-                    <div className="font-bold text-lg"><Skeleton className="h-6 w-8 mx-auto" /></div>
-                ) : (
-                    <div className="font-bold text-lg">{posts?.length ?? 0}</div>
-                )}
-                <p className="text-sm text-muted-foreground">Posts</p>
-              </div>
-              <div>
-                 {isLoading ? (
-                    <div className="font-bold text-lg"><Skeleton className="h-6 w-8 mx-auto" /></div>
-                ) : (
-                    <div className="font-bold text-lg">{karmaScore}</div>
-                )}
-                <p className="text-sm text-muted-foreground">Karma</p>
-              </div>
-              <div>
-                {isLoading ? (
-                  <div className="font-bold text-lg"><Skeleton className="h-6 w-8 mx-auto" /></div>
-                ) : (
-                  <div className="font-bold text-lg">{userProfile?.upvotes || 0}</div>
-                )}
-                <p className="text-sm text-muted-foreground">Upvotes</p>
-              </div>
-        </div>
-
-
+        
         {/* User Name and Bio */}
         <div className="mb-4 space-y-2">
+            <p className="font-semibold font-headline">{formatUserId(authUser?.uid)}</p>
             {userProfile?.bio && <p className="text-sm">{userProfile.bio}</p>}
             {userProfile?.website && (
                 <a href={userProfile.website} target="_blank" rel="noopener noreferrer" className="flex items-center gap-2 text-sm text-blue-500 hover:underline">
@@ -253,6 +253,7 @@ export default function AccountPage() {
                 </a>
             )}
         </div>
+
 
         <div className="mb-4 flex items-center space-x-2">
             <Button variant="secondary" size="sm" className="flex-1" asChild>
@@ -300,3 +301,5 @@ export default function AccountPage() {
     </AppLayout>
   );
 }
+
+    
