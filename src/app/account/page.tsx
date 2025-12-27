@@ -208,7 +208,7 @@ export default function AccountPage() {
               src={authUser?.photoURL || undefined}
               alt={authUser?.displayName || "User"}
             />
-            <AvatarFallback className="text-3xl font-headline bg-primary text-primary-foreground">
+            <AvatarFallback className="text-3xl font-headline">
               {getInitials(authUser?.displayName)}
             </AvatarFallback>
           </Avatar>

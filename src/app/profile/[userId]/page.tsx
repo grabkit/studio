@@ -462,7 +462,7 @@ export default function UserProfilePage() {
                                 src={undefined}
                                 alt={user?.name || "User"}
                                 />
-                                <AvatarFallback className="text-3xl font-headline bg-primary text-primary-foreground">
+                                <AvatarFallback className="text-3xl font-headline">
                                 {getInitials(user?.name)}
                                 </AvatarFallback>
                             </Avatar>
