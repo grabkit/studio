@@ -576,7 +576,7 @@ export default function HomePage() {
         onTouchStart={handleTouchStart}
         onTouchMove={handleTouchMove}
         onTouchEnd={handleTouchEnd}
-        className="relative h-full overflow-y-auto"
+        className="relative h-full overflow-y-auto pt-12"
        >
         <div 
           className="absolute top-0 left-0 right-0 flex justify-center items-center overflow-hidden text-muted-foreground transition-all duration-300"
