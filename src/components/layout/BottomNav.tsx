@@ -70,7 +70,9 @@ export default function BottomNav() {
           const Icon = isActive ? item.activeIcon : item.icon;
           const isActivityTab = item.href === '/activity';
           const isMessagesTab = item.href === '/messages';
-          const isPostOrAccountTab = item.href === '/post' || item.href === '/account';
+          const isPostTab = item.href === '/post';
+          const isAccountTab = item.href === '/account';
+
 
           return (
             <Link
@@ -85,7 +87,7 @@ export default function BottomNav() {
               <div className={cn(
                 "p-3 rounded-full relative"
               )}>
-                <Icon className={cn("h-7 w-7")} fill={(isActive && !isPostOrAccountTab) ? "currentColor" : "none"} />
+                <Icon className={cn("h-7 w-7")} fill={(isActive && !isPostTab) ? "currentColor" : "none"} />
                 {(isActivityTab && hasUnreadActivity) && (
                     <div className="absolute top-3 right-2.5 w-2.5 h-2.5 bg-destructive rounded-full border-2 border-background"></div>
                 )}
