@@ -45,6 +45,9 @@ export interface User {
     mutedUsers?: string[];
     restrictedUsers?: string[];
     lastReadTimestamps?: Record<string, any>;
+    bio?: string;
+    website?: string;
+    gender?: 'male' | 'female' | 'other' | 'prefer_not_to_say' | '';
 }
 
 export interface Bookmark {
@@ -106,3 +109,4 @@ export interface Report {
     
 
     
+

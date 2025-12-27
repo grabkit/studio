@@ -248,7 +248,9 @@ export default function AccountPage() {
         </div>
 
         <div className="mb-4 flex items-center space-x-2">
-            <Button variant="secondary" size="sm" className="flex-1">Edit Profile</Button>
+            <Button variant="secondary" size="sm" className="flex-1" asChild>
+              <Link href="/account/settings/edit-profile">Edit Profile</Link>
+            </Button>
             <Button variant="secondary" size="sm" className="flex-1" onClick={handleShareProfile}>
                 Share Profile
             </Button>
@@ -291,7 +293,3 @@ export default function AccountPage() {
     </AppLayout>
   );
 }
-
-    
-
-    
