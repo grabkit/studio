@@ -8,7 +8,7 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
 import { collection, query, where, getDocs, getDoc, doc } from "firebase/firestore";
 import { useCollection, type WithId } from "@/firebase/firestore/use-collection";
-import { Settings } from "lucide-react";
+import { Settings, Share2 } from "lucide-react";
 import type { Post, Bookmark, User } from "@/lib/types";
 import { Skeleton } from "@/components/ui/skeleton";
 import React, { useMemo, useState, useEffect } from "react";
@@ -18,6 +18,7 @@ import { getInitials } from "@/lib/utils";
 import { PostItem as HomePostItem, PostSkeleton } from "@/app/home/page";
 import { RepliesList } from "@/components/RepliesList";
 import Link from "next/link";
+import { useToast } from "@/hooks/use-toast";
 
 
 function BookmarksList({ bookmarks, bookmarksLoading }: { bookmarks: WithId<Bookmark>[] | null, bookmarksLoading: boolean }) {
@@ -97,6 +98,7 @@ function BookmarksList({ bookmarks, bookmarksLoading }: { bookmarks: WithId<Book
 export default function AccountPage() {
   const { user: authUser, userProfile } = useFirebase();
   const { firestore } = useFirebase();
+  const { toast } = useToast();
 
   const [posts, setPosts] = useState<WithId<Post>[]>([]);
   const [postsLoading, setPostsLoading] = useState(true);
@@ -150,6 +152,35 @@ export default function AccountPage() {
     if (!uid) return "blur??????";
     return `blur${uid.substring(uid.length - 6)}`;
   };
+  
+  const handleShareProfile = async () => {
+    const shareData = {
+      title: `Check out ${authUser?.displayName || formatUserId(authUser?.uid)} on Blur`,
+      text: `View ${authUser?.displayName || formatUserId(authUser?.uid)}'s profile on Blur.`,
+      url: window.location.origin + `/profile/${authUser?.uid}`,
+    };
+
+    try {
+      if (navigator.share) {
+        await navigator.share(shareData);
+      } else {
+        await navigator.clipboard.writeText(shareData.url);
+        toast({
+          title: "Profile Link Copied",
+          description: "Link to your profile has been copied to your clipboard.",
+        });
+      }
+    } catch (error: any) {
+      if (error.name === 'NotAllowedError') return; // Ignore user cancelling share
+      console.error("Error sharing profile:", error);
+      toast({
+        variant: "destructive",
+        title: "Could not share",
+        description: "There was an error trying to share your profile.",
+      });
+    }
+  };
+
 
   const isLoading = postsLoading || bookmarksLoading;
 
@@ -216,8 +247,12 @@ export default function AccountPage() {
             <p className="text-sm text-muted-foreground">{authUser?.email}</p>
         </div>
 
-        <div className="mb-4">
-            <Button variant="secondary" size="sm" className="w-full">Edit Profile</Button>
+        <div className="mb-4 flex items-center space-x-2">
+            <Button variant="secondary" size="sm" className="flex-1">Edit Profile</Button>
+            <Button variant="secondary" size="sm" className="flex-1" onClick={handleShareProfile}>
+                <Share2 className="mr-2 h-4 w-4"/>
+                Share Profile
+            </Button>
         </div>
 
 
@@ -257,3 +292,5 @@ export default function AccountPage() {
     </AppLayout>
   );
 }
+
+    
