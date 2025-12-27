@@ -82,8 +82,8 @@ export const FirebaseProvider: React.FC<FirebaseProviderProps> = ({
 
   // Effect to subscribe to Firebase auth state changes and manage presence
   useEffect(() => {
-    if (!auth || !database) { 
-      setUserAuthState({ user: null, isUserLoading: false, userError: new Error("Auth or Database service not provided.") });
+    if (!auth || !database || !firestore) { 
+      setUserAuthState({ user: null, isUserLoading: false, userError: new Error("Auth, Database or Firestore service not provided.") });
       return;
     }
 
@@ -111,7 +111,6 @@ export const FirebaseProvider: React.FC<FirebaseProviderProps> = ({
 
             onValue(conRef, (snapshot) => {
                 if (snapshot.val() === false) {
-                    // This case is handled by onDisconnect. No need to write to Firestore here.
                     return;
                 }
 
