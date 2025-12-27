@@ -11,7 +11,6 @@ import React, { useMemo, useState, useEffect } from "react";
 import Link from "next/link";
 import { useToast } from "@/hooks/use-toast";
 import { format } from "date-fns";
-import { usePresence } from "@/hooks/usePresence";
 
 import AppLayout from "@/components/AppLayout";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
@@ -79,7 +78,6 @@ export default function UserProfilePage() {
     const { toast } = useToast();
     const userId = params.userId as string;
     const { firestore, user: currentUser, userProfile: currentUserProfile } = useFirebase();
-    const { isOnline, lastSeen } = usePresence(userId);
 
     const [posts, setPosts] = useState<WithId<Post>[]>([]);
     const [postsLoading, setPostsLoading] = useState(true);
@@ -500,9 +498,6 @@ export default function UserProfilePage() {
                         {/* User Name and Bio */}
                         <div className="mb-4">
                             <h1 className="font-bold text-base">{user?.name}</h1>
-                             <p className="text-sm text-muted-foreground">
-                                {isOnline ? <span className="text-green-500">Online</span> : formatLastSeen(lastSeen)}
-                            </p>
                         </div>
                         
                         <div className="mb-4 flex items-center space-x-2">
