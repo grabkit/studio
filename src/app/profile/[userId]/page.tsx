@@ -11,6 +11,7 @@ import React, { useMemo, useState, useEffect } from "react";
 import Link from "next/link";
 import { useToast } from "@/hooks/use-toast";
 import { format } from "date-fns";
+import { usePresence } from "@/hooks/usePresence";
 
 import AppLayout from "@/components/AppLayout";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
@@ -78,6 +79,7 @@ export default function UserProfilePage() {
     const { toast } = useToast();
     const userId = params.userId as string;
     const { firestore, user: currentUser, userProfile: currentUserProfile } = useFirebase();
+    const { isOnline } = usePresence(userId);
 
     const [posts, setPosts] = useState<WithId<Post>[]>([]);
     const [postsLoading, setPostsLoading] = useState(true);
@@ -277,7 +279,7 @@ export default function UserProfilePage() {
                     unreadCounts: { [currentUserId]: 0, [userId]: 0 },
                     lastReadTimestamps: { [currentUserId]: serverTimestamp() }
                 };
-                await setDoc(conversationRef, newConversationData, { merge: true });
+                await setDoc(conversationRef, newConversationData);
             }
             
             router.push(`/messages/${userId}`);
@@ -286,7 +288,7 @@ export default function UserProfilePage() {
             console.error("Error handling conversation:", error);
             const permissionError = new FirestorePermissionError({
                 path: conversationRef.path,
-                operation: 'write', 
+                operation: 'create', 
                 requestResourceData: { info: "Failed to start conversation." }
             });
             errorEmitter.emit('permission-error', permissionError);
@@ -457,7 +459,7 @@ export default function UserProfilePage() {
 
                     <div className="px-4">
                         <div className="flex items-center space-x-5 mb-6">
-                            <Avatar className="h-20 w-20 md:h-24 md:w-24" showStatus={true} isOnline={user.isOnline}>
+                            <Avatar className="h-20 w-20 md:h-24 md:w-24" showStatus={true} isOnline={isOnline}>
                                 <AvatarImage
                                 src={undefined}
                                 alt={user?.name || "User"}

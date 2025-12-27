@@ -150,14 +150,16 @@
 
   @keyframes pulse-glow {
     0%, 100% {
-      box-shadow: 0 0 5px 2px hsla(140, 70%, 50%, 0.4), 0 0 0px 0px hsla(140, 70%, 50%, 0);
+      box-shadow: 0 0 5px 2px hsla(140, 70%, 50%, 0), 0 0 0px 0px hsla(140, 70%, 50%, 0);
+      border-color: hsla(140, 70%, 50%, 0.4);
     }
     50% {
-      box-shadow: 0 0 10px 3px hsla(140, 70%, 50%, 0.7), 0 0 5px 2px hsla(140, 70%, 50%, 0.4);
+      box-shadow: 0 0 10px 3px hsla(140, 70%, 50%, 0.6), 0 0 5px 2px hsla(140, 70%, 50%, 0.4);
+      border-color: hsla(140, 70%, 50%, 1);
     }
   }
 
-  .online-glow {
+  .online-indicator {
     animation: pulse-glow 2.5s infinite ease-in-out;
   }
 }

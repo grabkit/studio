@@ -10,22 +10,26 @@ interface AvatarProps extends React.ComponentPropsWithoutRef<typeof AvatarPrimit
   isOnline?: boolean;
 }
 
-
 const Avatar = React.forwardRef<
   React.ElementRef<typeof AvatarPrimitive.Root>,
   AvatarProps
->(({ className, showStatus = false, isOnline = false, ...props }, ref) => (
+>(({ className, showStatus = false, isOnline = false, children, ...props }, ref) => (
   <AvatarPrimitive.Root
     ref={ref}
     className={cn(
-      "relative flex h-10 w-10 shrink-0 overflow-hidden rounded-full",
-      showStatus && isOnline && "online-glow",
+      "relative flex h-10 w-10 shrink-0 overflow-visible rounded-full",
       className
     )}
     {...props}
-  />
+  >
+    {children}
+    {showStatus && isOnline && (
+      <div className="online-indicator absolute inset-0 rounded-full border-2 border-green-500/80"></div>
+    )}
+  </AvatarPrimitive.Root>
 ))
 Avatar.displayName = AvatarPrimitive.Root.displayName
+
 
 const AvatarImage = React.forwardRef<
   React.ElementRef<typeof AvatarPrimitive.Image>,
@@ -33,7 +37,7 @@ const AvatarImage = React.forwardRef<
 >(({ className, ...props }, ref) => (
   <AvatarPrimitive.Image
     ref={ref}
-    className={cn("aspect-square h-full w-full", className)}
+    className={cn("aspect-square h-full w-full rounded-full", className)}
     {...props}
   />
 ))
