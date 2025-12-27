@@ -548,8 +548,6 @@ export default function HomePage() {
     
     // Only allow pulling when scrolled to the top
     if (containerRef.current && containerRef.current.scrollTop === 0 && pullDistance > 0 && !isRefreshing) {
-      // Prevent browser's native pull-to-refresh
-      e.preventDefault();
       setPullPosition(Math.min(pullDistance, 120)); // Max pull
     }
   };
@@ -613,6 +611,8 @@ export default function HomePage() {
     </AppLayout>
   );
 }
+
+    
 
     
 
