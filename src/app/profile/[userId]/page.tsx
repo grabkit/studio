@@ -446,7 +446,7 @@ export default function UserProfilePage() {
                             <ArrowLeft className="h-6 w-6" />
                         </Button>
                         <h2 className="text-2xl font-semibold font-headline text-center">
-                          {formatUserId(user?.id)}
+                          Profile
                         </h2>
                         <SheetTrigger asChild>
                             <Button variant="ghost" size="icon" className="justify-self-end">
@@ -456,7 +456,7 @@ export default function UserProfilePage() {
                     </div>
 
                     <div className="px-4">
-                        <div className="flex items-center space-x-5 mb-6">
+                         <div className="flex flex-col items-center mb-6">
                             <Avatar className="h-20 w-20 md:h-24 md:w-24">
                                 <AvatarImage
                                 src={undefined}
@@ -466,7 +466,10 @@ export default function UserProfilePage() {
                                 {getInitials(user?.name)}
                                 </AvatarFallback>
                             </Avatar>
-                            <div className="flex-1 flex justify-around text-center">
+                            <p className="mt-4 text-lg font-semibold font-headline">{formatUserId(user?.id)}</p>
+                        </div>
+                        
+                        <div className="flex justify-around text-center mb-6">
                                 <div>
                                     {isLoading ? (
                                         <div className="font-bold text-lg"><Skeleton className="h-6 w-8 mx-auto" /></div>
@@ -491,7 +494,6 @@ export default function UserProfilePage() {
                                     )}
                                     <p className="text-sm text-muted-foreground">Upvotes</p>
                                 </div>
-                            </div>
                         </div>
 
 

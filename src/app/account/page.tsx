@@ -191,7 +191,7 @@ export default function AccountPage() {
         {/* Profile Header */}
         <div className="flex items-center justify-between mb-6">
             <h2 className="text-2xl font-semibold font-headline">
-              {formatUserId(authUser?.uid)}
+              Account
             </h2>
             <div className="flex items-center space-x-2">
                 <Button variant="ghost" size="icon" asChild>
@@ -202,17 +202,20 @@ export default function AccountPage() {
             </div>
         </div>
 
-        <div className="flex items-center space-x-5 mb-6">
-          <Avatar className="h-20 w-20 md:h-24 md:w-24">
-            <AvatarImage
-              src={authUser?.photoURL || undefined}
-              alt={userProfile?.name || "User"}
-            />
-            <AvatarFallback className="text-3xl font-headline">
-              {getInitials(userProfile?.name)}
-            </AvatarFallback>
-          </Avatar>
-          <div className="flex-1 flex justify-around text-center">
+        <div className="flex flex-col items-center mb-6">
+            <Avatar className="h-20 w-20 md:h-24 md:w-24">
+                <AvatarImage
+                src={authUser?.photoURL || undefined}
+                alt={userProfile?.name || "User"}
+                />
+                <AvatarFallback className="text-3xl font-headline">
+                {getInitials(userProfile?.name)}
+                </AvatarFallback>
+            </Avatar>
+            <p className="mt-4 text-lg font-semibold font-headline">{formatUserId(authUser?.uid)}</p>
+        </div>
+
+        <div className="flex justify-around text-center mb-6">
               <div>
                 {isLoading ? (
                     <div className="font-bold text-lg"><Skeleton className="h-6 w-8 mx-auto" /></div>
@@ -237,7 +240,6 @@ export default function AccountPage() {
                 )}
                 <p className="text-sm text-muted-foreground">Upvotes</p>
               </div>
-          </div>
         </div>
 
 
