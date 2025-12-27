@@ -8,8 +8,11 @@ import { cn } from "@/lib/utils"
 
 const Avatar = React.forwardRef<
   React.ElementRef<typeof AvatarPrimitive.Root>,
-  React.ComponentPropsWithoutRef<typeof AvatarPrimitive.Root>
->(({ className, ...props }, ref) => (
+  React.ComponentPropsWithoutRef<typeof AvatarPrimitive.Root> & {
+    isOnline?: boolean
+    showStatus?: boolean
+  }
+>(({ className, isOnline = false, showStatus = false, ...props }, ref) => (
   <AvatarPrimitive.Root
     ref={ref}
     className={cn(
@@ -17,7 +20,12 @@ const Avatar = React.forwardRef<
       className
     )}
     {...props}
-  />
+  >
+    {props.children}
+    {showStatus && isOnline && (
+      <span className="absolute bottom-0 right-0 block h-3 w-3 rounded-full bg-foreground ring-2 ring-background" />
+    )}
+  </AvatarPrimitive.Root>
 ))
 Avatar.displayName = AvatarPrimitive.Root.displayName
 
