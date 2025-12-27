@@ -8,13 +8,14 @@ import { useCollection, type WithId } from "@/firebase/firestore/use-collection"
 import { Card, CardContent } from "@/components/ui/card";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Skeleton } from "@/components/ui/skeleton";
-import type { Post, Bookmark, PollOption, Notification, User, Conversation } from "@/lib/types";
+import type { Post, Bookmark, PollOption, Notification, User, Conversation, LinkMetadata } from "@/lib/types";
 import { Heart, MessageCircle, Repeat, ArrowUpRight, MoreHorizontal, Edit, Trash2, Bookmark as BookmarkIcon, CheckCircle2 } from "lucide-react";
 import { cn, formatTimestamp, getInitials } from "@/lib/utils";
 import { useToast } from "@/hooks/use-toast";
 import { FirestorePermissionError } from "@/firebase/errors";
 import { errorEmitter } from "@/firebase/error-emitter";
 import Link from "next/link";
+import Image from "next/image";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -42,6 +43,36 @@ const formatUserId = (uid: string | undefined) => {
   return `blur${uid.substring(uid.length - 6)}`;
 };
 
+
+function LinkPreview({ metadata }: { metadata: LinkMetadata }) {
+    const getDomainName = (url: string) => {
+        try {
+            return new URL(url).hostname.replace('www.', '');
+        } catch (e) {
+            return '';
+        }
+    };
+
+    return (
+        <a href={metadata.url} target="_blank" rel="noopener noreferrer" className="block mt-3 border rounded-lg overflow-hidden hover:bg-secondary/50 transition-colors">
+            {metadata.imageUrl && (
+                <div className="relative aspect-video">
+                    <Image
+                        src={metadata.imageUrl}
+                        alt={metadata.title || 'Link preview'}
+                        fill
+                        className="object-cover"
+                    />
+                </div>
+            )}
+            <div className="p-3">
+                <p className="text-xs text-muted-foreground uppercase tracking-wider">{getDomainName(metadata.url)}</p>
+                <p className="font-semibold text-sm truncate mt-0.5">{metadata.title || metadata.url}</p>
+                <p className="text-xs text-muted-foreground mt-1 line-clamp-2">{metadata.description}</p>
+            </div>
+        </a>
+    )
+}
 
 function PollComponent({ post, user }: { post: WithId<Post>, user: any }) {
     const { firestore } = useFirebase();
@@ -358,6 +389,9 @@ export function PostItem({ post, bookmarks }: { post: WithId<Post>, bookmarks: W
             <Link href={`/post/${post.id}`} className="block !mt-0">
                 <p className="text-foreground text-sm whitespace-pre-wrap">{post.content}</p>
             </Link>
+
+
+             {post.linkMetadata && <LinkPreview metadata={post.linkMetadata} />}
 
 
             {post.type === 'poll' && post.pollOptions && (

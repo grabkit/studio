@@ -1,4 +1,5 @@
 
+
 {
   "entities": {
     "User": {
@@ -90,6 +91,19 @@
       },
       "required": ["option", "votes"]
     },
+    "LinkMetadata": {
+        "title": "Link Metadata",
+        "type": "object",
+        "description": "Represents the preview metadata for a URL.",
+        "properties": {
+            "url": { "type": "string", "format": "uri" },
+            "title": { "type": "string" },
+            "description": { "type": "string" },
+            "imageUrl": { "type": "string", "format": "uri" },
+            "faviconUrl": { "type": "string", "format": "uri" }
+        },
+        "required": ["url"]
+    },
     "Post": {
       "$schema": "http://json-schema.org/draft-07/schema#",
       "title": "Post",
@@ -147,6 +161,9 @@
         "voters": {
           "type": "object",
           "description": "A map of user IDs to the index of the option they voted for, to prevent multiple votes."
+        },
+        "linkMetadata": {
+            "$ref": "#/backend/entities/LinkMetadata"
         }
       },
       "required": [

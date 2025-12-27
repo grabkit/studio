@@ -1,6 +1,14 @@
 
 import { type Timestamp } from "firebase/firestore";
 
+export interface LinkMetadata {
+    url: string;
+    title?: string;
+    description?: string;
+    imageUrl?: string;
+    faviconUrl?: string;
+}
+
 export interface PollOption {
     option: string;
     votes: number;
@@ -20,6 +28,9 @@ export interface Post {
     type?: 'text' | 'poll';
     pollOptions?: PollOption[];
     voters?: Record<string, number>; // maps userId to option index
+
+    // Link specific fields
+    linkMetadata?: LinkMetadata;
 }
 
 export interface Comment {
@@ -109,4 +120,3 @@ export interface Report {
     
 
     
-

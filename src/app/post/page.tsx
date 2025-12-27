@@ -22,21 +22,32 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Form, FormControl, FormField, FormItem, FormMessage } from "@/components/ui/form";
-import { Loader2, X, ListOrdered, Plus, Trash2 } from "lucide-react";
+import { Loader2, X, ListOrdered, Plus, Trash2, Link as LinkIcon, Image as ImageIcon } from "lucide-react";
 import { errorEmitter } from "@/firebase/error-emitter";
 import { FirestorePermissionError } from "@/firebase/errors";
 import { Switch } from "@/components/ui/switch";
 import { Label } from "@/components/ui/label";
 import { cn, getInitials } from "@/lib/utils";
+import type { LinkMetadata } from "@/lib/types";
+import Image from "next/image";
 
 const pollOptionSchema = z.object({
   option: z.string().min(1, "Option cannot be empty.").max(100, "Option is too long."),
 });
 
+const linkMetadataSchema = z.object({
+    url: z.string().url(),
+    title: z.string().optional(),
+    description: z.string().optional(),
+    imageUrl: z.string().url().optional(),
+    faviconUrl: z.string().url().optional(),
+}).optional();
+
 // Base schema for common fields
 const baseSchema = z.object({
-  content: z.string().min(1, "Post content cannot be empty.").max(560, "Post is too long."),
+  content: z.string().max(560, "Post is too long.").optional(),
   commentsAllowed: z.boolean().default(true),
+  linkMetadata: linkMetadataSchema,
 });
 
 // Schema for a standard text post
@@ -57,8 +68,43 @@ const pollPostSchema = baseSchema.extend({
 const postSchema = z.discriminatedUnion("isPoll", [
   textPostSchema,
   pollPostSchema,
-]);
+]).refine(data => !!data.content || !!data.linkMetadata, {
+    message: "Post content cannot be empty.",
+    path: ["content"],
+});
 
+
+function LinkPreview({ metadata, onRemove }: { metadata: LinkMetadata, onRemove: () => void }) {
+    const getDomainName = (url: string) => {
+        try {
+            return new URL(url).hostname.replace('www.', '');
+        } catch (e) {
+            return '';
+        }
+    };
+
+    return (
+        <div className="mt-3 border rounded-lg overflow-hidden relative">
+            <Button variant="ghost" size="icon" className="absolute top-1 right-1 h-7 w-7 bg-black/50 hover:bg-black/70 text-white hover:text-white rounded-full z-10" onClick={onRemove}>
+                <X className="h-4 w-4" />
+            </Button>
+            {metadata.imageUrl && (
+                 <div className="relative aspect-video bg-secondary">
+                    <Image
+                        src={metadata.imageUrl}
+                        alt={metadata.title || 'Link preview'}
+                        fill
+                        className="object-cover"
+                    />
+                </div>
+            )}
+            <div className="p-3 bg-secondary/50">
+                <p className="text-xs text-muted-foreground uppercase tracking-wider">{getDomainName(metadata.url)}</p>
+                <p className="font-semibold text-sm truncate mt-0.5">{metadata.title || metadata.url}</p>
+            </div>
+        </div>
+    )
+}
 
 const formatUserId = (uid: string | undefined) => {
     if (!uid) return "blur??????";
@@ -67,6 +113,8 @@ const formatUserId = (uid: string | undefined) => {
 
 function PostPageComponent() {
   const [isOpen, setIsOpen] = useState(true);
+  const [showLinkInput, setShowLinkInput] = useState(false);
+  const [isFetchingPreview, setIsFetchingPreview] = useState(false);
   const router = useRouter();
   const searchParams = useSearchParams();
   const { user } = useUser();
@@ -90,12 +138,47 @@ function PostPageComponent() {
   });
 
   const isPoll = form.watch("isPoll");
+  const linkMetadata = form.watch("linkMetadata");
+
 
   React.useEffect(() => {
     if (!isOpen) {
       setTimeout(() => router.back(), 300);
     }
   }, [isOpen, router]);
+
+  const handlePaste = async (event: React.ClipboardEvent) => {
+    if (linkMetadata) return; // Don't do anything if a link is already attached
+
+    const pastedText = event.clipboardData.getData('text');
+    try {
+        const url = new URL(pastedText); // This will throw if not a valid URL
+        setShowLinkInput(true);
+        form.setValue("linkMetadata.url", url.href); // Set the value for the hidden input
+        fetchPreview(url.href);
+    } catch (error) {
+        // Not a valid URL, do nothing
+    }
+  };
+
+  const fetchPreview = async (url: string) => {
+    setIsFetchingPreview(true);
+    // In a real app, you would call your AI flow here.
+    // For now, we'll simulate a delay and use mock data.
+    setTimeout(() => {
+        const mockData: LinkMetadata = {
+            url: url,
+            title: "This is a fetched link title",
+            description: "This is a longer description for the link that has been fetched from the website to show a rich preview.",
+            imageUrl: `https://picsum.photos/seed/${Math.random()}/1200/630`,
+            faviconUrl: `https://www.google.com/s2/favicons?sz=64&domain_url=${url}`
+        };
+        form.setValue("linkMetadata", mockData, { shouldValidate: true });
+        setIsFetchingPreview(false);
+        setShowLinkInput(false);
+    }, 1500);
+  };
+
 
   const onSubmit = (values: z.infer<typeof postSchema>) => {
     if (!user || !firestore) return;
@@ -115,6 +198,7 @@ function PostPageComponent() {
       commentCount: 0,
       commentsAllowed: values.commentsAllowed,
       type: values.isPoll ? 'poll' : 'text',
+      ...(values.linkMetadata && { linkMetadata: values.linkMetadata }),
     };
 
     if (values.isPoll) {
@@ -177,6 +261,7 @@ function PostPageComponent() {
                                                     placeholder={isPoll ? "Ask a question..." : "Start a new thread..."}
                                                     className="border-none focus-visible:ring-0 !outline-none text-base resize-none -ml-2"
                                                     rows={3}
+                                                    onPaste={handlePaste}
                                                     {...field}
                                                 />
                                             </FormControl>
@@ -184,6 +269,32 @@ function PostPageComponent() {
                                         </FormItem>
                                     )}
                                 />
+
+                                {linkMetadata ? (
+                                    <LinkPreview metadata={linkMetadata} onRemove={() => form.setValue("linkMetadata", undefined)} />
+                                ) : isFetchingPreview ? (
+                                    <div className="border rounded-lg p-4 flex items-center justify-center">
+                                        <Loader2 className="h-5 w-5 animate-spin text-muted-foreground" />
+                                        <span className="ml-2 text-muted-foreground text-sm">Fetching preview...</span>
+                                    </div>
+                                ) : showLinkInput ? (
+                                    <FormField
+                                        control={form.control}
+                                        name="linkMetadata.url"
+                                        render={({ field }) => (
+                                            <FormItem>
+                                                <FormControl>
+                                                     <div className="relative">
+                                                        <LinkIcon className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                                                        <Input placeholder="https://..." {...field} className="pl-9 bg-secondary" onBlur={(e) => fetchPreview(e.target.value)} />
+                                                     </div>
+                                                </FormControl>
+                                                <FormMessage />
+                                            </FormItem>
+                                        )}
+                                    />
+                                ) : null}
+
 
                                  {isPoll && (
                                     <div className="space-y-2 mt-4">
@@ -221,7 +332,13 @@ function PostPageComponent() {
                                  
                                 <div className="p-4 border-t bg-background w-full fixed bottom-0 left-0 right-0">
                                     <div className="flex items-center justify-between">
-                                        <div className="flex items-center space-x-4">
+                                        <div className="flex items-center space-x-1">
+                                            <Button type="button" variant="ghost" size="icon" disabled={!!linkMetadata}>
+                                                <ImageIcon className="h-5 w-5 text-muted-foreground" />
+                                            </Button>
+                                            <Button type="button" variant="ghost" size="icon" onClick={() => setShowLinkInput(!showLinkInput)} disabled={!!linkMetadata}>
+                                                <LinkIcon className="h-5 w-5 text-muted-foreground" />
+                                            </Button>
                                             <Button type="button" variant="ghost" size="icon" onClick={() => form.setValue('isPoll', !isPoll, { shouldValidate: true })}>
                                                 <ListOrdered className={cn("h-5 w-5 text-muted-foreground", isPoll && "text-primary")} />
                                             </Button>
@@ -229,7 +346,7 @@ function PostPageComponent() {
                                                 control={form.control}
                                                 name="commentsAllowed"
                                                 render={({ field }) => (
-                                                    <FormItem className="flex items-center space-x-2 space-y-0">
+                                                    <FormItem className="flex items-center space-x-2 space-y-0 pl-2">
                                                          <Switch
                                                             id="comments-allowed"
                                                             checked={field.value}

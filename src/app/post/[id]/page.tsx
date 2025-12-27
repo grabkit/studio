@@ -20,10 +20,11 @@ import {
 } from "firebase/firestore";
 import { useCollection, type WithId } from "@/firebase/firestore/use-collection";
 import { useDoc } from "@/firebase/firestore/use-doc";
-import type { Post, Comment, Notification, User as UserProfile } from "@/lib/types";
+import type { Post, Comment, Notification, User as UserProfile, LinkMetadata } from "@/lib/types";
 import { useParams, useRouter } from "next/navigation";
 import React, { useState } from "react";
 import Link from 'next/link';
+import Image from "next/image";
 
 import AppLayout from "@/components/AppLayout";
 import { Card, CardContent } from "@/components/ui/card";
@@ -62,6 +63,36 @@ const formatUserId = (uid: string | undefined) => {
   if (!uid) return "blur??????";
   return `blur${uid.substring(uid.length - 6)}`;
 };
+
+function LinkPreview({ metadata }: { metadata: LinkMetadata }) {
+    const getDomainName = (url: string) => {
+        try {
+            return new URL(url).hostname.replace('www.', '');
+        } catch (e) {
+            return '';
+        }
+    };
+
+    return (
+        <a href={metadata.url} target="_blank" rel="noopener noreferrer" className="block mt-4 border rounded-lg overflow-hidden hover:bg-secondary/50 transition-colors">
+            {metadata.imageUrl && (
+                <div className="relative aspect-video">
+                    <Image
+                        src={metadata.imageUrl}
+                        alt={metadata.title || 'Link preview'}
+                        fill
+                        className="object-cover"
+                    />
+                </div>
+            )}
+            <div className="p-3">
+                <p className="text-xs text-muted-foreground uppercase tracking-wider">{getDomainName(metadata.url)}</p>
+                <p className="font-semibold text-sm truncate mt-0.5">{metadata.title || metadata.url}</p>
+                <p className="text-xs text-muted-foreground mt-1 line-clamp-2">{metadata.description}</p>
+            </div>
+        </a>
+    )
+}
 
 function PostDetailItem({ post }: { post: WithId<Post> }) {
   const { user, firestore } = useFirebase();
@@ -205,6 +236,9 @@ function PostDetailItem({ post }: { post: WithId<Post> }) {
             </div>
 
             <p className="text-foreground text-base whitespace-pre-wrap">{post.content}</p>
+
+            {post.linkMetadata && <LinkPreview metadata={post.linkMetadata} />}
+
 
             <div className="border-t border-b -mx-4 my-2 px-4 py-2 text-sm text-muted-foreground flex items-center justify-around">
                 <div className="flex items-center space-x-2">

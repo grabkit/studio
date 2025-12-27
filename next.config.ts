@@ -1,3 +1,4 @@
+
 import type {NextConfig} from 'next';
 
 const nextConfig: NextConfig = {
@@ -39,7 +40,32 @@ const nextConfig: NextConfig = {
         hostname: 'api.qrserver.com',
         port: '',
         pathname: '/**',
-      }
+      },
+      // Allow image previews from various sources
+      {
+        protocol: 'https',
+        hostname: '**.google.com',
+      },
+       {
+        protocol: 'https',
+        hostname: '**.cdn.vox-cdn.com',
+      },
+      {
+        protocol: 'https',
+        hostname: '**.youtube.com',
+      },
+      {
+        protocol: 'https',
+        hostname: '**.ytimg.com',
+      },
+      {
+        protocol: 'https',
+        hostname: '**.github.com',
+      },
+       {
+        protocol: 'https',
+        hostname: '**.githubusercontent.com',
+      },
     ],
   },
 };
