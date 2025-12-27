@@ -81,13 +81,12 @@ export default function AppLayout({
 
 
   return (
-    <div className="relative min-h-screen bg-background">
+    <div className="relative h-screen flex flex-col bg-background">
       {showTopBar && <TopBar />}
       <main
         className={cn(
-          "mx-auto max-w-2xl px-0 sm:px-4",
-          showTopBar ? "pt-12" : "pt-0",
-          showBottomNav ? "pb-16" : "pb-8"
+          "mx-auto max-w-2xl w-full flex-1",
+          showBottomNav ? "pb-14" : ""
         )}
       >
         {children}
@@ -96,3 +95,5 @@ export default function AppLayout({
     </div>
   );
 }
+
+    

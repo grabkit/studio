@@ -548,6 +548,8 @@ export default function HomePage() {
     
     // Only allow pulling when scrolled to the top
     if (containerRef.current && containerRef.current.scrollTop === 0 && pullDistance > 0 && !isRefreshing) {
+      // Prevent browser's native pull-to-refresh
+      e.preventDefault();
       setPullPosition(Math.min(pullDistance, 120)); // Max pull
     }
   };
@@ -576,8 +578,7 @@ export default function HomePage() {
         onTouchStart={handleTouchStart}
         onTouchMove={handleTouchMove}
         onTouchEnd={handleTouchEnd}
-        className="relative h-full"
-        style={{ overflowY: 'auto' }}
+        className="relative h-full overflow-y-auto"
        >
         <div 
           className="absolute top-0 left-0 right-0 flex justify-center items-center overflow-hidden text-muted-foreground transition-all duration-300"
@@ -612,5 +613,7 @@ export default function HomePage() {
     </AppLayout>
   );
 }
+
+    
 
     
