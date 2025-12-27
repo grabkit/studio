@@ -137,7 +137,7 @@ function ChatHeader({ peerId }: { peerId: string }) {
                 <ArrowLeft />
             </Button>
             <div className="flex items-center gap-3 ml-2">
-                <Avatar className="h-8 w-8" showStatus={true} isOnline={isOnline}>
+                <Avatar className="h-8 w-8">
                     <AvatarFallback>{isLoading || !peerUser ? <Skeleton className="h-8 w-8 rounded-full" /> : getInitials(peerUser?.name)}</AvatarFallback>
                 </Avatar>
                 <div>

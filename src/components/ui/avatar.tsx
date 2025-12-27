@@ -6,31 +6,20 @@ import * as AvatarPrimitive from "@radix-ui/react-avatar"
 
 import { cn } from "@/lib/utils"
 
-type AvatarProps = React.ComponentPropsWithoutRef<typeof AvatarPrimitive.Root> & {
-  showStatus?: boolean;
-  isOnline?: boolean;
-}
-
 const Avatar = React.forwardRef<
   React.ElementRef<typeof AvatarPrimitive.Root>,
-  AvatarProps
->(({ className, showStatus = false, isOnline = false, children, ...props }, ref) => (
+  React.ComponentPropsWithoutRef<typeof AvatarPrimitive.Root>
+>(({ className, ...props }, ref) => (
   <AvatarPrimitive.Root
     ref={ref}
     className={cn(
-      "relative flex h-10 w-10 shrink-0 overflow-visible rounded-full",
+      "relative flex h-10 w-10 shrink-0 overflow-hidden rounded-full",
       className
     )}
     {...props}
-  >
-    {children}
-    {showStatus && isOnline && (
-      <div className="absolute inset-0 rounded-full online-glow pointer-events-none" />
-    )}
-  </AvatarPrimitive.Root>
+  />
 ))
 Avatar.displayName = AvatarPrimitive.Root.displayName
-
 
 const AvatarImage = React.forwardRef<
   React.ElementRef<typeof AvatarPrimitive.Image>,
@@ -38,7 +27,7 @@ const AvatarImage = React.forwardRef<
 >(({ className, ...props }, ref) => (
   <AvatarPrimitive.Image
     ref={ref}
-    className={cn("aspect-square h-full w-full rounded-full", className)}
+    className={cn("aspect-square h-full w-full", className)}
     {...props}
   />
 ))

@@ -21,7 +21,6 @@ import { Sheet, SheetContent, SheetHeader, SheetTitle } from "@/components/ui/sh
 import { useRouter } from "next/navigation";
 import { FirestorePermissionError } from "@/firebase/errors";
 import { errorEmitter } from "@/firebase/error-emitter";
-import { usePresence } from "@/hooks/usePresence";
 
 
 function ConversationItem({ conversation, currentUser, onLongPress }: { conversation: WithId<Conversation>, currentUser: User, onLongPress: (conversation: WithId<Conversation>) => void }) {
@@ -29,7 +28,6 @@ function ConversationItem({ conversation, currentUser, onLongPress }: { conversa
     const { firestore } = useFirebase();
     const router = useRouter();
     const pressTimer = useRef<NodeJS.Timeout | null>(null);
-    const { isOnline } = usePresence(otherParticipantId);
 
 
     const otherUserRef = useMemoFirebase(() => {
@@ -85,7 +83,7 @@ function ConversationItem({ conversation, currentUser, onLongPress }: { conversa
             className="p-4 border-b flex justify-between items-center hover:bg-accent cursor-pointer"
         >
             <div className="flex items-center space-x-3">
-                <Avatar className="h-12 w-12" showStatus={true} isOnline={isOnline}>
+                <Avatar className="h-12 w-12">
                     <AvatarFallback>{getInitials(name)}</AvatarFallback>
                 </Avatar>
                 <div>
@@ -118,7 +116,6 @@ function ConversationItem({ conversation, currentUser, onLongPress }: { conversa
 function RequestItem({ request, onAccept }: { request: WithId<Conversation>, onAccept: (id: string) => void }) {
      const requesterId = request.requesterId;
      const { firestore } = useFirebase();
-     const { isOnline } = usePresence(requesterId);
 
     const requesterUserRef = useMemoFirebase(() => {
         if (!firestore || !requesterId) return null;
@@ -132,7 +129,7 @@ function RequestItem({ request, onAccept }: { request: WithId<Conversation>, onA
     return (
         <div className="p-4 border-b flex justify-between items-center">
             <div className="flex items-center space-x-3">
-                <Avatar className="h-12 w-12" showStatus={true} isOnline={isOnline}>
+                <Avatar className="h-12 w-12">
                     <AvatarFallback>{getInitials(name)}</AvatarFallback>
                 </Avatar>
                 <div>

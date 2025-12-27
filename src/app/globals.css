@@ -148,18 +148,4 @@
   .animate-blur-unblur-slow {
     animation: blur-unblur-slow 5s ease-in-out infinite;
   }
-
-  @keyframes online-glow {
-    0%, 100% {
-      box-shadow: 0 0 5px 1px hsla(var(--online-glow-color), 0.6);
-    }
-    50% {
-      box-shadow: 0 0 10px 2px hsla(var(--online-glow-color), 0.8);
-    }
-  }
-
-  .online-glow {
-    animation: online-glow 2.5s ease-in-out infinite;
-    border-radius: 9999px; /* Ensure glow is circular */
-  }
 }
