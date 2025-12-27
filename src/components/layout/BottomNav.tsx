@@ -3,7 +3,7 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { Home, HomeIcon, Plus, Heart as HeartIcon, Send, CircleUserRound } from "lucide-react";
+import { Home, HomeIcon, Plus, Heart as HeartIcon, Send, User } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useFirebase, useMemoFirebase } from "@/firebase";
 import { collection, query, where, limit } from "firebase/firestore";
@@ -16,7 +16,7 @@ const navItems = [
   { href: "/activity", label: "Activity", icon: HeartIcon, activeIcon: HeartIcon },
   { href: "/post", label: "Post", icon: Plus, activeIcon: Plus },
   { href: "/messages", label: "Messages", icon: Send, activeIcon: Send },
-  { href: "/account", label: "Account", icon: CircleUserRound, activeIcon: CircleUserRound },
+  { href: "/account", label: "Account", icon: User, activeIcon: User },
 ];
 
 export default function BottomNav() {
