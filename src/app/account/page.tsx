@@ -262,9 +262,10 @@ export default function AccountPage() {
             </Button>
         </div>
 
+      </div>
 
         <Tabs defaultValue="posts" className="w-full">
-            <div className="sticky top-14 bg-background z-10">
+            <div className="sticky top-0 bg-background z-10">
               <TabsList variant="underline" className="grid w-full grid-cols-3">
                   <TabsTrigger value="posts" variant="underline">Posts</TabsTrigger>
                   <TabsTrigger value="replies" variant="underline">Replies</TabsTrigger>
@@ -297,9 +298,10 @@ export default function AccountPage() {
                  <BookmarksList bookmarks={bookmarks} bookmarksLoading={bookmarksLoading} />
             </TabsContent>
         </Tabs>
-      </div>
     </AppLayout>
   );
 }
+
+    
 
     
