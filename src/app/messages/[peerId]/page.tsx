@@ -27,6 +27,7 @@ import { errorEmitter } from '@/firebase/error-emitter';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
 import { useToast } from '@/hooks/use-toast';
 import { usePresence } from '@/hooks/usePresence';
+import Link from 'next/link';
 
 const messageFormSchema = z.object({
   text: z.string().min(1, "Message cannot be empty").max(1000),
@@ -138,9 +139,11 @@ function ChatHeader({ peerId }: { peerId: string }) {
                 <ArrowLeft />
             </Button>
             <div className="flex items-center gap-3 ml-2">
-                <Avatar className="h-8 w-8">
-                    <AvatarFallback>{isLoading || !peerUser ? <Skeleton className="h-8 w-8 rounded-full" /> : getInitials(peerUser?.name)}</AvatarFallback>
-                </Avatar>
+                <Link href={`/profile/${peerId}`}>
+                    <Avatar className="h-8 w-8">
+                        <AvatarFallback>{isLoading || !peerUser ? <Skeleton className="h-8 w-8 rounded-full" /> : getInitials(peerUser?.name)}</AvatarFallback>
+                    </Avatar>
+                </Link>
                 <div>
                      <h2 className="text-base font-bold leading-tight">
                         {isLoading || !peerUser ? <Skeleton className="h-5 w-24" /> : peerUser?.name || formatUserId(peerId)}
