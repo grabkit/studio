@@ -173,13 +173,13 @@ export default function UserProfilePage() {
                 await updateDoc(currentUserDocRef, {
                     blockedUsers: arrayRemove(userId)
                 });
-                toast({ title: "User Unblocked", description: `You will now see posts and comments from ${user?.name || formatUserId(userId)}.` });
+                toast({ title: "User Unblocked", description: `You will now see posts and comments from ${formatUserId(userId)}.` });
             } else {
                 // Block user
                 await updateDoc(currentUserDocRef, {
                     blockedUsers: arrayUnion(userId)
                 });
-                toast({ title: "User Blocked", description: `You will no longer see posts or comments from ${user?.name || formatUserId(userId)}.` });
+                toast({ title: "User Blocked", description: `You will no longer see posts or comments from ${formatUserId(userId)}.` });
             }
         } catch (error) {
             console.error("Error blocking/unblocking user:", error);
@@ -206,10 +206,10 @@ export default function UserProfilePage() {
         try {
             if (isMuted) {
                 await updateDoc(currentUserDocRef, { mutedUsers: arrayRemove(userId) });
-                toast({ title: "User Unmuted", description: `Posts from ${user?.name || formatUserId(userId)} will now appear in your feed.` });
+                toast({ title: "User Unmuted", description: `Posts from ${formatUserId(userId)} will now appear in your feed.` });
             } else {
                 await updateDoc(currentUserDocRef, { mutedUsers: arrayUnion(userId) });
-                toast({ title: "User Muted", description: `Posts from ${user?.name || formatUserId(userId)} will no longer appear in your feed.` });
+                toast({ title: "User Muted", description: `Posts from ${formatUserId(userId)} will no longer appear in your feed.` });
             }
         } catch (error) {
             console.error("Error muting/unmuting user:", error);
@@ -236,10 +236,10 @@ export default function UserProfilePage() {
         try {
             if (isRestricted) {
                 await updateDoc(currentUserDocRef, { restrictedUsers: arrayRemove(userId) });
-                toast({ title: "User Unrestricted", description: `Comments from ${user?.name || formatUserId(userId)} will now appear publicly.` });
+                toast({ title: "User Unrestricted", description: `Comments from ${formatUserId(userId)} will now appear publicly.` });
             } else {
                 await updateDoc(currentUserDocRef, { restrictedUsers: arrayUnion(userId) });
-                toast({ title: "User Restricted", description: `Comments from ${user?.name || formatUserId(userId)} will require your approval.` });
+                toast({ title: "User Restricted", description: `Comments from ${formatUserId(userId)} will require your approval.` });
             }
         } catch (error) {
             console.error("Error restricting user:", error);
@@ -301,8 +301,8 @@ export default function UserProfilePage() {
     const handleShare = async () => {
         if (!user) return;
         const shareData = {
-            title: `Check out ${user.name || formatUserId(user.id)} on Blur`,
-            text: `View ${user.name || formatUserId(user.id)}'s profile on Blur.`,
+            title: `Check out ${formatUserId(user.id)} on Blur`,
+            text: `View ${formatUserId(user.id)}'s profile on Blur.`,
             url: window.location.href,
         };
         try {
@@ -497,9 +497,6 @@ export default function UserProfilePage() {
 
                         {/* User Name and Bio */}
                         <div className="mb-4 space-y-2">
-                            <div>
-                                <h1 className="font-bold text-base">{user?.name}</h1>
-                            </div>
                             {user?.bio && <p className="text-sm">{user.bio}</p>}
                             {user?.website && (
                                 <a href={user.website} target="_blank" rel="noopener noreferrer" className="flex items-center gap-2 text-sm text-blue-500 hover:underline">
@@ -590,7 +587,7 @@ export default function UserProfilePage() {
                                 </Button>
                             </div>
                             <div className="border rounded-2xl">
-                                <ReportDialog reportedUserId={user.id} reportedUserName={user.name || formatUserId(user.id)}>
+                                <ReportDialog reportedUserId={user.id} reportedUserName={formatUserId(user.id)}>
                                     <Button variant="ghost" className="justify-between text-base py-6 rounded-2xl w-full text-destructive hover:text-destructive">
                                         <span>Report</span>
                                         <Flag className="h-5 w-5" />
@@ -615,5 +612,3 @@ export default function UserProfilePage() {
         </AppLayout>
     );
 }
-
-    

@@ -155,8 +155,8 @@ export default function AccountPage() {
   
   const handleShareProfile = async () => {
     const shareData = {
-      title: `Check out ${authUser?.displayName || formatUserId(authUser?.uid)} on Blur`,
-      text: `View ${authUser?.displayName || formatUserId(authUser?.uid)}'s profile on Blur.`,
+      title: `Check out ${formatUserId(authUser?.uid)} on Blur`,
+      text: `View ${formatUserId(authUser?.uid)}'s profile on Blur.`,
       url: window.location.origin + `/profile/${authUser?.uid}`,
     };
 
@@ -206,10 +206,10 @@ export default function AccountPage() {
           <Avatar className="h-20 w-20 md:h-24 md:w-24">
             <AvatarImage
               src={authUser?.photoURL || undefined}
-              alt={authUser?.displayName || "User"}
+              alt={userProfile?.name || "User"}
             />
             <AvatarFallback className="text-3xl font-headline">
-              {getInitials(authUser?.displayName)}
+              {getInitials(userProfile?.name)}
             </AvatarFallback>
           </Avatar>
           <div className="flex-1 flex justify-around text-center">
@@ -298,5 +298,3 @@ export default function AccountPage() {
     </AppLayout>
   );
 }
-
-    
