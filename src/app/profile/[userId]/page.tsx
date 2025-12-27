@@ -520,12 +520,14 @@ export default function UserProfilePage() {
                             </Button>
                         </div>
                     </div>
-                    <div className="relative">
-                        <Tabs defaultValue="posts" className="w-full">
-                            <TabsList variant="underline" className="sticky top-14 bg-background z-10 grid w-full grid-cols-2">
+                    <Tabs defaultValue="posts" className="w-full">
+                        <div className="sticky top-0 bg-background z-10">
+                            <TabsList variant="underline" className="grid w-full grid-cols-2">
                                 <TabsTrigger value="posts" variant="profile">Posts</TabsTrigger>
                                 <TabsTrigger value="replies" variant="profile">Replies</TabsTrigger>
                             </TabsList>
+                        </div>
+                        <div className="pt-12">
                             <TabsContent value="posts">
                             <div className="divide-y border-b">
                                     {(postsLoading || bookmarksLoading) && (
@@ -548,8 +550,8 @@ export default function UserProfilePage() {
                             <TabsContent value="replies">
                                 {userId && <RepliesList userId={userId} />}
                             </TabsContent>
-                        </Tabs>
-                    </div>
+                        </div>
+                    </Tabs>
                     <SheetContent side="bottom" className="rounded-t-lg">
                         <SheetHeader className="text-left">
                             <SheetTitle>Options for {formatUserId(user?.id)}</SheetTitle>
