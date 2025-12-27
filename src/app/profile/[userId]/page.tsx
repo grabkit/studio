@@ -524,8 +524,8 @@ export default function UserProfilePage() {
 
                     <Tabs defaultValue="posts" className="w-full">
                         <TabsList variant="underline" className="grid w-full grid-cols-2">
-                            <TabsTrigger value="posts" variant={cn("underline", "profile")}>Posts</TabsTrigger>
-                            <TabsTrigger value="replies" variant={cn("underline", "profile")}>Replies</TabsTrigger>
+                            <TabsTrigger value="posts" variant="profile">Posts</TabsTrigger>
+                            <TabsTrigger value="replies" variant="profile">Replies</TabsTrigger>
                         </TabsList>
                         <TabsContent value="posts">
                            <div className="divide-y border-b">
@@ -619,6 +619,7 @@ export default function UserProfilePage() {
 }
 
     
+
 
 
 
