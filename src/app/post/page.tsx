@@ -333,9 +333,6 @@ function PostPageComponent() {
                                 <div className="p-4 border-t bg-background w-full fixed bottom-0 left-0 right-0">
                                     <div className="flex items-center justify-between">
                                         <div className="flex items-center space-x-1">
-                                            <Button type="button" variant="ghost" size="icon" disabled={!!linkMetadata}>
-                                                <ImageIcon className="h-5 w-5 text-muted-foreground" />
-                                            </Button>
                                             <Button type="button" variant="ghost" size="icon" onClick={() => setShowLinkInput(!showLinkInput)} disabled={!!linkMetadata}>
                                                 <LinkIcon className="h-5 w-5 text-muted-foreground" />
                                             </Button>
@@ -382,3 +379,5 @@ export default function PostPage() {
     </Suspense>
   );
 }
+
+    
