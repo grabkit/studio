@@ -311,9 +311,11 @@ export function PostItem({ post, bookmarks }: { post: WithId<Post>, bookmarks: W
     <Card className="w-full shadow-none border-x-0 border-t-0 rounded-none">
       <CardContent className="p-4">
         <div className="flex space-x-3">
-          <Avatar className="h-10 w-10">
-            <AvatarFallback>{getInitials(post.authorId)}</AvatarFallback>
-          </Avatar>
+          <Link href={`/profile/${post.authorId}`}>
+            <Avatar className="h-10 w-10">
+              <AvatarFallback>{getInitials(post.authorId)}</AvatarFallback>
+            </Avatar>
+          </Link>
           <div className="flex-1 space-y-2">
             <div className="flex justify-between items-start">
                 <div className="flex items-center space-x-2">
