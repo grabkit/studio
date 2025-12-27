@@ -12,7 +12,7 @@ import { Menu, Share2, Link as LinkIcon } from "lucide-react";
 import type { Post, Bookmark, User } from "@/lib/types";
 import { Skeleton } from "@/components/ui/skeleton";
 import React, { useMemo, useState, useEffect } from "react";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { getInitials } from "@/lib/utils";
 
 import { PostItem as HomePostItem, PostSkeleton } from "@/app/home/page";
@@ -202,7 +202,7 @@ export default function AccountPage() {
             </div>
         </div>
 
-        <div className="flex items-start space-x-5 mb-6">
+        <div className="flex items-start space-x-5 mb-2">
             <div className="flex-shrink-0 text-center">
                 <Avatar className="h-20 w-20 md:h-24 md:w-24 mx-auto">
                     <AvatarImage
