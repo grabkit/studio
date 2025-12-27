@@ -76,6 +76,7 @@ function PollComponent({ post, user }: { post: WithId<Post>, user: any }) {
                 const currentPost = postDoc.data() as Post;
 
                 if (currentPost.voters && currentPost.voters[user.uid] !== undefined) {
+                    toast({ variant: "default", title: "You have already voted." });
                     return;
                 }
                 
@@ -96,9 +97,14 @@ function PollComponent({ post, user }: { post: WithId<Post>, user: any }) {
             const permissionError = new FirestorePermissionError({
                 path: postRef.path,
                 operation: 'update',
-                requestResourceData: { vote: optionIndex },
+                requestResourceData: { vote: `Transaction on pollOptions and voters` },
             });
             errorEmitter.emit('permission-error', permissionError);
+            toast({
+                variant: 'destructive',
+                title: 'Vote Failed',
+                description: 'Could not process your vote due to a permissions issue.'
+            })
         } finally {
             setIsProcessing(false);
         }
