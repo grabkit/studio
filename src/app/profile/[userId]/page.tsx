@@ -1,4 +1,5 @@
 
+
 "use client";
 
 import { useParams, useRouter } from "next/navigation";
@@ -386,9 +387,12 @@ export default function UserProfilePage() {
                     </h2>
                 </div>
                 <div className="px-4">
-                    <div className="flex items-center space-x-5 mb-6">
-                        <Skeleton className="h-20 w-20 md:h-24 md:w-24 rounded-full" />
-                        <div className="flex-1 flex justify-around text-center">
+                    <div className="flex items-start space-x-5 mb-6">
+                        <div className="flex-shrink-0 text-center">
+                            <Skeleton className="h-20 w-20 md:h-24 md:w-24 rounded-full" />
+                            <Skeleton className="h-5 w-24 mt-2 mx-auto" />
+                        </div>
+                        <div className="flex-1 flex justify-around text-center pt-6">
                             <div>
                                 <div className="font-bold text-lg"><Skeleton className="h-6 w-8 mx-auto" /></div>
                                 <p className="text-sm text-muted-foreground">Posts</p>
@@ -455,15 +459,15 @@ export default function UserProfilePage() {
                     </div>
 
                     <div className="px-4">
-                        <div className="flex items-start space-x-5 mb-6">
+                         <div className="flex items-start space-x-5 mb-6">
                             <div className="flex-shrink-0 text-center">
                                 <Avatar className="h-20 w-20 md:h-24 md:w-24 mx-auto">
                                     <AvatarImage
-                                    src={undefined}
-                                    alt={user?.name || "User"}
+                                        src={undefined}
+                                        alt={user?.name || "User"}
                                     />
                                     <AvatarFallback className="text-3xl font-headline">
-                                    {getInitials(user?.name)}
+                                        {getInitials(user?.name)}
                                     </AvatarFallback>
                                 </Avatar>
                                 <p className="font-semibold font-headline mt-2">{formatUserId(user?.id)}</p>
@@ -615,6 +619,7 @@ export default function UserProfilePage() {
 }
 
     
+
 
 
 
