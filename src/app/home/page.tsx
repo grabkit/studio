@@ -1,5 +1,4 @@
 
-
 "use client";
 
 import AppLayout from "@/components/AppLayout";
@@ -510,7 +509,11 @@ export default function HomePage() {
     try {
         const postsQuery = query(collection(firestore, 'posts'), orderBy("timestamp", "desc"), limit(50));
         const querySnapshot = await getDocs(postsQuery);
-        const fetchedPosts = querySnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as WithId<Post>));
+        let fetchedPosts = querySnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as WithId<Post>));
+        
+        // Shuffle the posts for a dynamic feed feel on refresh
+        fetchedPosts.sort(() => Math.random() - 0.5);
+
         setPosts(fetchedPosts);
     } catch (error) {
         console.error("Error fetching posts:", error);
@@ -531,6 +534,7 @@ export default function HomePage() {
     await fetchPosts();
     setTimeout(() => {
       setIsRefreshing(false);
+      setPullPosition(0);
     }, 500); // Animation delay
   };
 
@@ -543,8 +547,7 @@ export default function HomePage() {
     const pullDistance = touchY - touchStartRef.current;
     
     // Only allow pulling when scrolled to the top
-    if (containerRef.current && containerRef.current.scrollTop === 0 && pullDistance > 0) {
-      // e.preventDefault(); // Prevent scrolling the whole page
+    if (containerRef.current && containerRef.current.scrollTop === 0 && pullDistance > 0 && !isRefreshing) {
       setPullPosition(Math.min(pullDistance, 120)); // Max pull
     }
   };
@@ -552,8 +555,9 @@ export default function HomePage() {
   const handleTouchEnd = () => {
     if (pullPosition > 70) {
       handleRefresh();
+    } else {
+      setPullPosition(0);
     }
-    setPullPosition(0);
   };
 
 
@@ -572,19 +576,20 @@ export default function HomePage() {
         onTouchStart={handleTouchStart}
         onTouchMove={handleTouchMove}
         onTouchEnd={handleTouchEnd}
-        className="relative"
+        className="relative h-full"
+        style={{ overflowY: 'auto' }}
        >
         <div 
           className="absolute top-0 left-0 right-0 flex justify-center items-center overflow-hidden text-muted-foreground transition-all duration-300"
-          style={{ height: `${pullPosition}px`, opacity: Math.min(pullPosition/70, 1) }}
+          style={{ height: isRefreshing ? `50px` : `${pullPosition}px`, opacity: isRefreshing ? 1 : Math.min(pullPosition/70, 1) }}
         >
-           <div style={{ transform: `rotate(${Math.min(pullPosition, 70) * 3}deg)` }}>
+           <div style={{ transform: `rotate(${isRefreshing ? 0 : Math.min(pullPosition, 70) * 3}deg)` }}>
              <RefreshCw className={cn("h-5 w-5", isRefreshing && "animate-spin")} />
            </div>
         </div>
         <div 
           className="divide-y border-b transition-transform duration-300"
-          style={{ transform: `translateY(${isRefreshing ? '50px' : pullPosition}px)` }}
+          style={{ transform: `translateY(${isRefreshing ? '50px' : '0px'})` }}
         >
           {isLoading && !isRefreshing && (
             <>
@@ -609,4 +614,3 @@ export default function HomePage() {
 }
 
     
-
