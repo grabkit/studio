@@ -33,7 +33,6 @@ const formatUserId = (uid: string | undefined) => {
 };
 
 function Reply({ reply }: { reply: WithId<ReplyItem> }) {
-    const { isOnline } = usePresence(reply.authorId);
 
     return (
          <div className="p-4 space-y-3">
@@ -45,7 +44,7 @@ function Reply({ reply }: { reply: WithId<ReplyItem> }) {
 
             {/* The Reply */}
             <div className="flex space-x-3">
-                <Avatar className="h-8 w-8" showStatus={true} isOnline={isOnline}>
+                <Avatar className="h-8 w-8">
                     <AvatarFallback>{getInitials(reply.authorId)}</AvatarFallback>
                 </Avatar>
                 <div className="flex-1">
@@ -185,5 +184,3 @@ export function RepliesList({ userId }: { userId: string }) {
         </div>
     );
 }
-
-    

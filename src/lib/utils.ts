@@ -1,6 +1,6 @@
 import { clsx, type ClassValue } from "clsx"
 import { twMerge } from "tailwind-merge"
-import { formatDistanceToNowStrict, isToday, isYesterday, format, isThisWeek } from "date-fns";
+import { formatDistanceToNowStrict, isToday, isYesterday, format, isThisWeek, fromUnixTime } from "date-fns";
 
 export function cn(...inputs: ClassValue[]) {
   return twMerge(clsx(inputs))
@@ -54,6 +54,12 @@ export function formatMessageTimestamp(date: Date): string {
   return format(date, 'P'); // e.g., 09/15/2024
 }
 
+export function formatLastSeen(timestamp: number | null): string {
+    if (timestamp === null) return "Last seen recently";
+    const date = fromUnixTime(timestamp / 1000);
+    return `Last seen ${formatDistanceToNowStrict(date, { addSuffix: true })}`;
+}
+
 
 export const getInitials = (name: string | null | undefined) => {
     if (!name) return "U";
@@ -64,5 +70,3 @@ export const getInitials = (name: string | null | undefined) => {
       .substring(0, 2)
       .toUpperCase();
 };
-
-    

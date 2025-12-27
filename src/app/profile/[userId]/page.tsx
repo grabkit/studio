@@ -19,7 +19,7 @@ import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { ArrowLeft, MessageSquare, ArrowUpRight, ArrowUp, MoreHorizontal, ShieldAlert, Flag, VolumeX, Info, MinusCircle, Link as LinkIcon, QrCode, Calendar, Badge, User as UserIcon, Volume2 } from "lucide-react";
-import { getInitials, cn } from "@/lib/utils";
+import { getInitials, cn, formatLastSeen } from "@/lib/utils";
 import { FirestorePermissionError } from "@/firebase/errors";
 import { errorEmitter } from "@/firebase/error-emitter";
 import { PostItem as HomePostItem, PostSkeleton } from "@/app/home/page";
@@ -79,7 +79,7 @@ export default function UserProfilePage() {
     const { toast } = useToast();
     const userId = params.userId as string;
     const { firestore, user: currentUser, userProfile: currentUserProfile } = useFirebase();
-    const { isOnline } = usePresence(userId);
+    const { isOnline, lastSeen } = usePresence(userId);
 
     const [posts, setPosts] = useState<WithId<Post>[]>([]);
     const [postsLoading, setPostsLoading] = useState(true);
@@ -459,7 +459,7 @@ export default function UserProfilePage() {
 
                     <div className="px-4">
                         <div className="flex items-center space-x-5 mb-6">
-                            <Avatar className="h-20 w-20 md:h-24 md:w-24" showStatus={true} isOnline={isOnline}>
+                            <Avatar className="h-20 w-20 md:h-24 md:w-24">
                                 <AvatarImage
                                 src={undefined}
                                 alt={user?.name || "User"}
@@ -500,7 +500,9 @@ export default function UserProfilePage() {
                         {/* User Name and Bio */}
                         <div className="mb-4">
                             <h1 className="font-bold text-base">{user?.name}</h1>
-                            {/* Hiding email for privacy on public profiles */}
+                             <p className="text-sm text-muted-foreground">
+                                {isOnline ? <span className="text-green-500">Online</span> : formatLastSeen(lastSeen)}
+                            </p>
                         </div>
                         
                         <div className="mb-4 flex items-center space-x-2">
@@ -608,6 +610,4 @@ export default function UserProfilePage() {
             </div>
         </AppLayout>
     );
-
-    
 }

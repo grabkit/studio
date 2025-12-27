@@ -6,15 +6,10 @@ import * as AvatarPrimitive from "@radix-ui/react-avatar"
 
 import { cn } from "@/lib/utils"
 
-interface AvatarProps extends React.ComponentPropsWithoutRef<typeof AvatarPrimitive.Root> {
-  showStatus?: boolean;
-  isOnline?: boolean;
-}
-
 const Avatar = React.forwardRef<
   React.ElementRef<typeof AvatarPrimitive.Root>,
-  AvatarProps
->(({ className, showStatus = false, isOnline = false, children, ...props }, ref) => (
+  React.ComponentPropsWithoutRef<typeof AvatarPrimitive.Root>
+>(({ className, ...props }, ref) => (
   <AvatarPrimitive.Root
     ref={ref}
     className={cn(
@@ -22,12 +17,7 @@ const Avatar = React.forwardRef<
       className
     )}
     {...props}
-  >
-    {children}
-    {showStatus && isOnline && (
-      <span className="absolute bottom-0 right-0 block h-3 w-3 rounded-full bg-green-500 border-2 border-background" />
-    )}
-  </AvatarPrimitive.Root>
+  />
 ))
 Avatar.displayName = AvatarPrimitive.Root.displayName
 

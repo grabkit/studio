@@ -29,7 +29,6 @@ function ConversationItem({ conversation, currentUser, onLongPress }: { conversa
     const { firestore } = useFirebase();
     const router = useRouter();
     const pressTimer = useRef<NodeJS.Timeout | null>(null);
-    const { isOnline } = usePresence(otherParticipantId);
 
 
     const otherUserRef = useMemoFirebase(() => {
@@ -85,7 +84,7 @@ function ConversationItem({ conversation, currentUser, onLongPress }: { conversa
             className="p-4 border-b flex justify-between items-center hover:bg-accent cursor-pointer"
         >
             <div className="flex items-center space-x-3">
-                <Avatar className="h-12 w-12" showStatus={true} isOnline={isOnline}>
+                <Avatar className="h-12 w-12">
                     <AvatarFallback>{getInitials(name)}</AvatarFallback>
                 </Avatar>
                 <div>

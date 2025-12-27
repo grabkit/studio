@@ -18,7 +18,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { Form, FormControl, FormField, FormItem, FormMessage } from '@/components/ui/form';
 import { Skeleton } from '@/components/ui/skeleton';
 import { ArrowLeft, Send, Reply, Forward, Copy, Trash2, X } from 'lucide-react';
-import { cn, getInitials, formatMessageTimestamp } from '@/lib/utils';
+import { cn, getInitials, formatMessageTimestamp, formatLastSeen } from '@/lib/utils';
 import type { Conversation, Message, User } from '@/lib/types';
 import { WithId } from '@/firebase/firestore/use-collection';
 import { FirestorePermissionError } from '@/firebase/errors';
@@ -121,7 +121,7 @@ function MessageBubble({ message, isOwnMessage, conversationId, onSetReply }: { 
 function ChatHeader({ peerId }: { peerId: string }) {
     const router = useRouter();
     const { firestore } = useFirebase();
-    const { isOnline } = usePresence(peerId);
+    const { isOnline, lastSeen } = usePresence(peerId);
 
 
     const peerUserRef = useMemoFirebase(() => {
@@ -137,13 +137,16 @@ function ChatHeader({ peerId }: { peerId: string }) {
                 <ArrowLeft />
             </Button>
             <div className="flex items-center gap-3 ml-2">
-                <Avatar className="h-8 w-8" showStatus={true} isOnline={isOnline}>
+                <Avatar className="h-8 w-8">
                     <AvatarFallback>{isLoading || !peerUser ? <Skeleton className="h-8 w-8 rounded-full" /> : getInitials(peerUser?.name)}</AvatarFallback>
                 </Avatar>
                 <div>
-                    <h2 className="text-base font-bold">
+                     <h2 className="text-base font-bold leading-tight">
                         {isLoading || !peerUser ? <Skeleton className="h-5 w-24" /> : peerUser?.name || formatUserId(peerId)}
                     </h2>
+                    <p className="text-xs text-muted-foreground leading-tight">
+                        {isOnline ? <span className="text-green-500">Online</span> : formatLastSeen(lastSeen)}
+                    </p>
                 </div>
             </div>
         </div>
@@ -405,6 +408,3 @@ export default function ChatPage() {
         </AppLayout>
     )
 }
-    
-
-    
