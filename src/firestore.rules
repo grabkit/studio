@@ -63,7 +63,7 @@ service cloud.firestore {
 
     match /conversations/{conversationId} {
       allow read: if isSignedIn() && request.auth.uid in resource.data.participantIds;
-      allow create: if isSignedIn() && request.resource.data.requesterId == request.auth.uid;
+      allow create: if isSignedIn();
       allow update: if isSignedIn() && request.auth.uid in resource.data.participantIds &&
                        request.resource.data.diff(resource.data).affectedKeys().hasAny(['lastMessage', 'lastUpdated', 'status', 'unreadCounts', 'lastReadTimestamps', 'mutedBy']);
       allow delete: if isSignedIn() && request.auth.uid in resource.data.participantIds;
@@ -145,5 +145,3 @@ service cloud.firestore {
     }
   }
 }
-
-    
