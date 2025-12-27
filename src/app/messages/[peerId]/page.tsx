@@ -1,4 +1,5 @@
 
+
 "use client";
 
 import { useParams, useRouter } from 'next/navigation';
@@ -145,7 +146,7 @@ function ChatHeader({ peerId }: { peerId: string }) {
                         {isLoading || !peerUser ? <Skeleton className="h-5 w-24" /> : peerUser?.name || formatUserId(peerId)}
                     </h2>
                     <p className="text-xs text-muted-foreground leading-tight">
-                        {isOnline ? <span className="text-green-500">Online</span> : formatLastSeen(lastSeen)}
+                        {isOnline ? "Online" : formatLastSeen(lastSeen)}
                     </p>
                 </div>
             </div>
