@@ -7,7 +7,7 @@ import { useFirebase, useMemoFirebase, useCollection, type WithId } from "@/fire
 import { doc, collection, query, where, getDocs, serverTimestamp, setDoc, getDoc, updateDoc, increment, arrayUnion, arrayRemove, runTransaction } from "firebase/firestore";
 import { useDoc } from "@/firebase/firestore/use-doc";
 import type { Post, User } from "@/lib/types";
-import React, { useMemo, useState, useEffect } from "react";
+import React, { useMemo, useState, useEffect, useCallback } from "react";
 import Link from "next/link";
 import { useToast } from "@/hooks/use-toast";
 import { format } from "date-fns";
@@ -126,6 +126,40 @@ export default function UserProfilePage() {
   
       fetchPosts();
     }, [firestore, userId]);
+
+     const updatePostState = useCallback((postId: string, updatedData: Partial<Post>) => {
+        setPosts(currentPosts => {
+            if (!currentPosts) return [];
+            return currentPosts.map(p =>
+                p.id === postId ? { ...p, ...updatedData } : p
+            );
+        });
+        
+        // Also update firestore in the background
+        if (firestore && currentUser) {
+            const postRef = doc(firestore, 'posts', postId);
+            const currentPost = posts.find(p => p.id === postId);
+            if (!currentPost) return;
+
+            const hasLiked = updatedData.likes?.includes(currentUser.uid);
+
+            const payload = {
+                likes: hasLiked ? arrayUnion(currentUser.uid) : arrayRemove(currentUser.uid),
+                likeCount: increment(hasLiked ? 1 : -1)
+            };
+
+            updateDoc(postRef, payload).catch(serverError => {
+                 // Revert optimistic update on error
+                setPosts(posts);
+                const permissionError = new FirestorePermissionError({
+                    path: postRef.path,
+                    operation: 'update',
+                    requestResourceData: payload,
+                });
+                errorEmitter.emit('permission-error', permissionError);
+            });
+        }
+    }, [firestore, currentUser, posts]);
 
     const { data: user, isLoading: userLoading } = useDoc<User>(userRef);
 
@@ -543,7 +577,7 @@ export default function UserProfilePage() {
                                         </div>
                                     )}
                                     {posts?.map((post) => (
-                                        <HomePostItem key={post.id} post={post} bookmarks={bookmarks} />
+                                        <HomePostItem key={post.id} post={post} bookmarks={bookmarks} updatePost={updatePostState} />
                                     ))}
                                 </div>
                             </TabsContent>
@@ -619,3 +653,5 @@ export default function UserProfilePage() {
         </AppLayout>
     );
 }
+
+    

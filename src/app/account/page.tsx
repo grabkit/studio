@@ -6,12 +6,12 @@ import { useFirebase, useMemoFirebase } from "@/firebase";
 import { useRouter } from "next/navigation";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
-import { collection, query, where, getDocs, getDoc, doc } from "firebase/firestore";
+import { collection, query, where, getDocs, getDoc, doc, updateDoc, arrayUnion, arrayRemove, increment, setDoc, serverTimestamp } from "firebase/firestore";
 import { useCollection, type WithId } from "@/firebase/firestore/use-collection";
 import { Menu, Share2, Link as LinkIcon } from "lucide-react";
-import type { Post, Bookmark, User } from "@/lib/types";
+import type { Post, Bookmark, User, Notification } from "@/lib/types";
 import { Skeleton } from "@/components/ui/skeleton";
-import React, { useMemo, useState, useEffect } from "react";
+import React, { useMemo, useState, useEffect, useCallback } from "react";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { getInitials } from "@/lib/utils";
 
@@ -19,6 +19,8 @@ import { PostItem as HomePostItem, PostSkeleton } from "@/app/home/page";
 import { RepliesList } from "@/components/RepliesList";
 import Link from "next/link";
 import { useToast } from "@/hooks/use-toast";
+import { FirestorePermissionError } from "@/firebase/errors";
+import { errorEmitter } from "@/firebase/error-emitter";
 
 
 function BookmarksList({ bookmarks, bookmarksLoading }: { bookmarks: WithId<Bookmark>[] | null, bookmarksLoading: boolean }) {
@@ -85,10 +87,19 @@ function BookmarksList({ bookmarks, bookmarksLoading }: { bookmarks: WithId<Book
         )
     }
 
+    const updatePostState = (postId: string, updatedData: Partial<Post>) => {
+        setBookmarkedPosts(currentPosts => {
+            if (!currentPosts) return [];
+            return currentPosts.map(p =>
+                p.id === postId ? { ...p, ...updatedData } : p
+            );
+        });
+    };
+
     return (
         <div className="divide-y border-b">
             {bookmarkedPosts.map(post => (
-                <HomePostItem key={post.id} post={post} bookmarks={bookmarks} />
+                <HomePostItem key={post.id} post={post} bookmarks={bookmarks} updatePost={updatePostState} />
             ))}
         </div>
     )
@@ -132,6 +143,42 @@ export default function AccountPage() {
 
     fetchPosts();
 }, [firestore, authUser]);
+
+  const updatePostState = useCallback((postId: string, updatedData: Partial<Post>) => {
+        setPosts(currentPosts => {
+            if (!currentPosts) return [];
+            const newPosts = currentPosts.map(p =>
+                p.id === postId ? { ...p, ...updatedData } : p
+            );
+            return newPosts;
+        });
+
+        // Also update firestore in the background
+        if (firestore) {
+            const postRef = doc(firestore, 'posts', postId);
+            const currentPost = posts.find(p => p.id === postId);
+            if (!currentPost) return;
+
+            const hasLiked = updatedData.likes?.includes(authUser.uid);
+
+            const payload = {
+                likes: hasLiked ? arrayUnion(authUser.uid) : arrayRemove(authUser.uid),
+                likeCount: increment(hasLiked ? 1 : -1)
+            };
+
+            updateDoc(postRef, payload).catch(serverError => {
+                 // Revert optimistic update on error
+                setPosts(currentPosts);
+                const permissionError = new FirestorePermissionError({
+                    path: postRef.path,
+                    operation: 'update',
+                    requestResourceData: payload,
+                });
+                errorEmitter.emit('permission-error', permissionError);
+            });
+        }
+    }, [firestore, authUser, posts]);
+
 
 
   const bookmarksQuery = useMemoFirebase(() => {
@@ -287,7 +334,7 @@ export default function AccountPage() {
                         </div>
                     )}
                     {posts?.map((post) => (
-                        <HomePostItem key={post.id} post={post} bookmarks={bookmarks} />
+                        <HomePostItem key={post.id} post={post} bookmarks={bookmarks} updatePost={updatePostState} />
                     ))}
                 </div>
             </TabsContent>
@@ -301,7 +348,5 @@ export default function AccountPage() {
     </AppLayout>
   );
 }
-
-    
 
     
