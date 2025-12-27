@@ -33,7 +33,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { Button, buttonVariants } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { Form, FormControl, FormField, FormItem, FormMessage } from "@/components/ui/form";
-import { Heart, MessageCircle, ArrowUpRight, Trash2, MoreHorizontal, Edit, ArrowLeft, Repeat, Check, AlertTriangle } from "lucide-react";
+import { Heart, MessageCircle, ArrowUpRight, Trash2, MoreHorizontal, Edit, ArrowLeft, Repeat, Check, AlertTriangle, Slash } from "lucide-react";
 import { cn, formatTimestamp, getInitials } from "@/lib/utils";
 import { useToast } from "@/hooks/use-toast";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -266,10 +266,11 @@ function PostDetailItem({ post }: { post: WithId<Post> }) {
                     />
                 </button>
                 <button className={cn(
-                    "flex items-center space-x-1",
+                    "flex items-center space-x-1 relative",
                     repliesAllowed ? "hover:text-primary" : "opacity-50"
                 )}>
                     <MessageCircle className="h-5 w-5" />
+                    {!repliesAllowed && <Slash className="absolute h-[19px] w-[19px] text-destructive stroke-[2.5px]" />}
                 </button>
                 <button className="flex items-center space-x-1 hover:text-green-500">
                     <Repeat className={cn("h-5 w-5")} />

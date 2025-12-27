@@ -1,4 +1,5 @@
 
+
 "use client";
 
 import AppLayout from "@/components/AppLayout";
@@ -9,7 +10,7 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Skeleton } from "@/components/ui/skeleton";
 import type { Post, Bookmark, PollOption, Notification, User, Conversation, LinkMetadata } from "@/lib/types";
-import { Heart, MessageCircle, Repeat, ArrowUpRight, MoreHorizontal, Edit, Trash2, Bookmark as BookmarkIcon, CheckCircle2 } from "lucide-react";
+import { Heart, MessageCircle, Repeat, ArrowUpRight, MoreHorizontal, Edit, Trash2, Bookmark as BookmarkIcon, CheckCircle2, Slash } from "lucide-react";
 import { cn, formatTimestamp, getInitials } from "@/lib/utils";
 import { useToast } from "@/hooks/use-toast";
 import { FirestorePermissionError } from "@/firebase/errors";
@@ -411,11 +412,12 @@ export function PostItem({ post, bookmarks }: { post: WithId<Post>, bookmarks: W
                   <CommentButtonWrapper
                     href={`/post/${post.id}`}
                     className={cn(
-                        "flex items-center space-x-1",
+                        "flex items-center space-x-1 relative",
                         repliesAllowed ? "hover:text-primary" : "opacity-50 pointer-events-none"
                     )}
                   >
                     <MessageCircle className="h-4 w-4" />
+                    {!repliesAllowed && <Slash className="absolute h-[15px] w-[15px] text-destructive stroke-[3px]" />}
                     <span className="text-xs">{post.commentCount > 0 ? post.commentCount : ''}</span>
                   </CommentButtonWrapper>
                   <button onClick={handleRepost} className="flex items-center space-x-1 hover:text-green-500">
