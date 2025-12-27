@@ -269,8 +269,10 @@ function PostDetailItem({ post }: { post: WithId<Post> }) {
                     "flex items-center space-x-1 relative",
                     repliesAllowed ? "hover:text-primary" : "opacity-50"
                 )}>
-                    <MessageCircle className="h-5 w-5" />
-                    {!repliesAllowed && <Slash className="absolute h-[19px] w-[19px] text-destructive stroke-[2.5px]" />}
+                    <div className="relative">
+                        <MessageCircle className="h-5 w-5" />
+                        {!repliesAllowed && <Slash className="absolute top-0 left-0 h-5 w-5 stroke-[2.5px]" />}
+                    </div>
                 </button>
                 <button className="flex items-center space-x-1 hover:text-green-500">
                     <Repeat className={cn("h-5 w-5")} />

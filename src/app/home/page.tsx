@@ -412,12 +412,14 @@ export function PostItem({ post, bookmarks }: { post: WithId<Post>, bookmarks: W
                   <CommentButtonWrapper
                     href={`/post/${post.id}`}
                     className={cn(
-                        "flex items-center space-x-1 relative",
+                        "flex items-center space-x-1",
                         repliesAllowed ? "hover:text-primary" : "opacity-50 pointer-events-none"
                     )}
                   >
-                    <MessageCircle className="h-4 w-4" />
-                    {!repliesAllowed && <Slash className="absolute h-[15px] w-[15px] text-destructive stroke-[3px]" />}
+                    <div className="relative">
+                      <MessageCircle className="h-4 w-4" />
+                      {!repliesAllowed && <Slash className="absolute top-0 left-0 h-4 w-4 stroke-[2.5px]" />}
+                    </div>
                     <span className="text-xs">{post.commentCount > 0 ? post.commentCount : ''}</span>
                   </CommentButtonWrapper>
                   <button onClick={handleRepost} className="flex items-center space-x-1 hover:text-green-500">
