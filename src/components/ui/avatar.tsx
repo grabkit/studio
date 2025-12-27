@@ -1,3 +1,4 @@
+
 "use client"
 
 import * as React from "react"
@@ -24,7 +25,7 @@ const Avatar = React.forwardRef<
   >
     {children}
     {showStatus && isOnline && (
-      <div className="online-indicator absolute inset-0 rounded-full border-2 border-green-500/80"></div>
+      <span className="absolute bottom-0 right-0 block h-3 w-3 rounded-full bg-green-500 border-2 border-background" />
     )}
   </AvatarPrimitive.Root>
 ))
