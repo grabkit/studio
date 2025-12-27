@@ -107,7 +107,7 @@ function ConversationItem({ conversation, currentUser, onLongPress }: { conversa
                     </p>
                 )}
                 {hasUnread && !isMuted && (
-                    <div className="w-2.5 h-2.5 bg-destructive rounded-full mt-2"></div>
+                    <div className="w-2.5 h-2.5 bg-foreground rounded-full mt-2"></div>
                 )}
             </div>
         </div>
