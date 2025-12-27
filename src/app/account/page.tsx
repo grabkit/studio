@@ -266,7 +266,7 @@ export default function AccountPage() {
 
 
         <Tabs defaultValue="posts" className="w-full">
-            <TabsList className="w-full justify-start">
+            <TabsList className="grid w-full grid-cols-3">
                 <TabsTrigger value="posts">Posts</TabsTrigger>
                 <TabsTrigger value="replies">Replies</TabsTrigger>
                 <TabsTrigger value="bookmarks">Bookmarks</TabsTrigger>

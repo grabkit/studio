@@ -1,5 +1,4 @@
 
-
 "use client";
 
 import { useParams, useRouter } from "next/navigation";
@@ -441,12 +440,12 @@ export default function UserProfilePage() {
         <AppLayout showTopBar={false}>
             <div>
                  <Sheet open={isMoreOptionsSheetOpen} onOpenChange={setIsMoreOptionsSheetOpen}>
-                    <div className="grid grid-cols-3 items-center mb-6 px-4">
+                    <div className="flex items-center justify-between mb-6 px-4">
                          <Button variant="ghost" size="icon" onClick={() => router.back()}>
                             <ArrowLeft className="h-6 w-6" />
                         </Button>
-                        <h2 className="text-2xl font-semibold font-headline text-center">
-                          Profile
+                        <h2 className="text-lg font-semibold font-headline">
+                          {formatUserId(user.id)}
                         </h2>
                         <SheetTrigger asChild>
                             <Button variant="ghost" size="icon" className="justify-self-end">
@@ -520,7 +519,7 @@ export default function UserProfilePage() {
                     </div>
 
                     <Tabs defaultValue="posts" className="w-full">
-                        <TabsList className="w-full justify-start">
+                        <TabsList className="grid w-full grid-cols-2">
                             <TabsTrigger value="posts">Posts</TabsTrigger>
                             <TabsTrigger value="replies">Replies</TabsTrigger>
                         </TabsList>
