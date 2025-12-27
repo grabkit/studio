@@ -45,8 +45,6 @@ export interface User {
     mutedUsers?: string[];
     restrictedUsers?: string[];
     lastReadTimestamps?: Record<string, any>;
-    isOnline?: boolean;
-    lastSeen?: Timestamp;
 }
 
 export interface Bookmark {

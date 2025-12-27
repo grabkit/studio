@@ -2,7 +2,7 @@
 
 import React, { DependencyList, createContext, useContext, ReactNode, useMemo, useState, useEffect } from 'react';
 import { FirebaseApp } from 'firebase/app';
-import { Firestore, doc, serverTimestamp, updateDoc } from 'firebase/firestore';
+import { Firestore, doc, serverTimestamp as firestoreServerTimestamp, updateDoc } from 'firebase/firestore';
 import { Auth, User, onAuthStateChanged } from 'firebase/auth';
 import { Database, ref, onValue, off, onDisconnect, set, serverTimestamp as dbServerTimestamp } from 'firebase/database';
 import { FirebaseErrorListener } from '@/components/FirebaseErrorListener';
@@ -82,8 +82,8 @@ export const FirebaseProvider: React.FC<FirebaseProviderProps> = ({
 
   // Effect to subscribe to Firebase auth state changes and manage presence
   useEffect(() => {
-    if (!auth || !database || !firestore) { 
-      setUserAuthState({ user: null, isUserLoading: false, userError: new Error("Auth, Database, or Firestore service not provided.") });
+    if (!auth || !database) { 
+      setUserAuthState({ user: null, isUserLoading: false, userError: new Error("Auth or Database service not provided.") });
       return;
     }
 
@@ -96,7 +96,6 @@ export const FirebaseProvider: React.FC<FirebaseProviderProps> = ({
         
         if (firebaseUser) {
             const userStatusDatabaseRef = ref(database, '/status/' + firebaseUser.uid);
-            const userStatusFirestoreRef = doc(firestore, '/users/' + firebaseUser.uid);
 
             const isOfflineForDatabase = {
                 isOnline: false,
@@ -108,28 +107,16 @@ export const FirebaseProvider: React.FC<FirebaseProviderProps> = ({
                 lastSeen: dbServerTimestamp(),
             };
             
-            const isOfflineForFirestore = {
-                isOnline: false,
-                lastSeen: serverTimestamp(),
-            };
-            
-            const isOnlineForFirestore = {
-                isOnline: true,
-            };
-
             const conRef = ref(database, '.info/connected');
 
             onValue(conRef, (snapshot) => {
                 if (snapshot.val() === false) {
-                    // Firestore update when offline
-                    updateDoc(userStatusFirestoreRef, isOfflineForFirestore);
+                    // This case is handled by onDisconnect. No need to write to Firestore here.
                     return;
                 }
 
                 onDisconnect(userStatusDatabaseRef).set(isOfflineForDatabase).then(() => {
                     set(userStatusDatabaseRef, isOnlineForDatabase);
-                    // Firestore update when online
-                    updateDoc(userStatusFirestoreRef, isOnlineForFirestore);
                 });
             });
 

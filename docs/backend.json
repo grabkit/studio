@@ -277,6 +277,11 @@
         "lastReadTimestamps": {
             "type": "object",
             "description": "A map of user IDs to the timestamp of their last read message."
+        },
+        "mutedBy": {
+            "type": "array",
+            "description": "An array of user IDs who have muted this conversation.",
+            "items": { "type": "string" }
         }
       },
       "required": ["id", "participantIds", "lastUpdated", "status", "requesterId"]

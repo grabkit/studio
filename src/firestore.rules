@@ -17,7 +17,7 @@ service cloud.firestore {
       allow create: if request.auth.uid == userId;
       allow update: if isSignedIn() && (
         // Allow a user to update their own profile fields.
-        (isOwner(userId) && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['name', 'email', 'blockedUsers', 'mutedUsers', 'restrictedUsers', 'lastReadTimestamps', 'isOnline', 'lastSeen'])) ||
+        (isOwner(userId) && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['name', 'email', 'blockedUsers', 'mutedUsers', 'restrictedUsers', 'lastReadTimestamps'])) ||
         // Allow any signed-in user to update only 'upvotes' and 'upvotedBy' on another user's profile.
         (request.resource.data.diff(resource.data).affectedKeys().hasAll(['upvotes', 'upvotedBy']))
       );
@@ -50,7 +50,7 @@ service cloud.firestore {
            // Allow updating comment count (by functions, basically)
           (request.resource.data.diff(resource.data).affectedKeys().hasOnly(['commentCount'])) ||
           // Allow voting on a poll by any active user who hasn't voted yet
-          (request.resource.data.diff(resource.data).affectedKeys().hasAll(['pollOptions', 'voters']) && !resource.data.voters.keys().hasAny([request.auth.uid]))
+          (request.resource.data.diff(resource.data).hasAll(['pollOptions', 'voters']) && !resource.data.voters.keys().hasAny([request.auth.uid]))
       );
     }
 
@@ -64,7 +64,7 @@ service cloud.firestore {
     match /conversations/{conversationId} {
       // Allow a user to check for the existence of a conversation document even if it doesn't exist yet.
       allow get: if isSignedIn();
-      // Allow listing conversations only if the user is a participant. This prevents querying all conversations.
+      // Allow listing conversations only if the user is a participant.
       allow list: if isSignedIn() && request.auth.uid in resource.data.participantIds;
       allow create: if isSignedIn();
       allow update: if isSignedIn() && request.auth.uid in resource.data.participantIds &&

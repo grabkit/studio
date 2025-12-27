@@ -12,6 +12,7 @@ export function usePresence(userId?: string) {
     useEffect(() => {
         if (!database || !userId) {
             setIsOnline(false);
+            setLastSeen(null);
             return;
         }
 
