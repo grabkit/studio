@@ -263,27 +263,32 @@ export default function UserProfilePage() {
         const conversationId = [currentUserId, userId].sort().join('_');
         const conversationRef = doc(firestore, 'conversations', conversationId);
         
-        const newConversationData = {
-            id: conversationId,
-            participantIds: [currentUserId, userId].sort(),
-            lastMessage: '',
-            lastUpdated: serverTimestamp(),
-            status: 'pending',
-            requesterId: currentUserId,
-            unreadCounts: { [currentUserId]: 0, [userId]: 0 },
-            lastReadTimestamps: { [currentUserId]: serverTimestamp() }
-        };
-
         try {
-            await setDoc(conversationRef, newConversationData, { merge: true });
+            const docSnap = await getDoc(conversationRef);
+
+            if (!docSnap.exists()) {
+                 const newConversationData = {
+                    id: conversationId,
+                    participantIds: [currentUserId, userId].sort(),
+                    lastMessage: '',
+                    lastUpdated: serverTimestamp(),
+                    status: 'pending',
+                    requesterId: currentUserId,
+                    unreadCounts: { [currentUserId]: 0, [userId]: 0 },
+                    lastReadTimestamps: { [currentUserId]: serverTimestamp() }
+                };
+                await setDoc(conversationRef, newConversationData);
+            }
+            // Whether it exists or not, navigate to the chat page.
             router.push(`/messages/${userId}`);
+
         } catch (error: any) {
             console.error("Error handling conversation:", error);
             
             const permissionError = new FirestorePermissionError({
                 path: conversationRef.path,
                 operation: 'write', 
-                requestResourceData: newConversationData
+                requestResourceData: { info: "Failed to start conversation." }
             });
             errorEmitter.emit('permission-error', permissionError);
             
