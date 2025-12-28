@@ -95,7 +95,7 @@ function UpvotedUsers() {
                 <div className="flex space-x-4 pb-3">
                     {upvotedUsers.map(user => (
                          <Link key={user.id} href={`/profile/${user.id}`} className="flex-shrink-0">
-                            <div className="flex flex-col items-center w-20">
+                            <div className="flex flex-col items-center space-y-1 w-20">
                                  <Avatar className="h-14 w-14">
                                     <AvatarFallback>{getInitials(user.name)}</AvatarFallback>
                                 </Avatar>
