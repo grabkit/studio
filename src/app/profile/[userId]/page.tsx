@@ -421,7 +421,7 @@ export default function UserProfilePage() {
                     </h2>
                 </div>
                 <div className="px-4">
-                    <div className="flex items-start space-x-5 mb-6">
+                    <div className="flex items-start space-x-5 mb-2">
                         <div className="flex-shrink-0 text-center">
                             <Skeleton className="h-20 w-20 md:h-24 md:w-24 rounded-full" />
                             <Skeleton className="h-5 w-24 mt-2 mx-auto" />
@@ -493,7 +493,7 @@ export default function UserProfilePage() {
                     </div>
 
                     <div className="px-4">
-                         <div className="flex items-start space-x-5 mb-6">
+                         <div className="flex items-start space-x-5 mb-2">
                             <div className="flex-shrink-0 text-center">
                                 <Avatar className="h-20 w-20 md:h-24 md:w-24 mx-auto">
                                     <AvatarImage
