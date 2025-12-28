@@ -93,7 +93,7 @@ service cloud.firestore {
 
     function isValidNewMessage() {
       let data = request.resource.data;
-      let allowedKeys = ['id', 'senderId', 'text', 'timestamp', 'replyToMessageId', 'replyToMessageText', 'postId'];
+      let allowedKeys = ['id', 'senderId', 'text', 'timestamp', 'replyToMessageId', 'replyToMessageText', 'postId', 'isForwarded'];
       // Common validations
       return data.senderId == request.auth.uid
         && (

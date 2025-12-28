@@ -131,6 +131,13 @@ function MessageBubble({ message, isOwnMessage, conversationId, onSetReply, onFo
                             isOwnMessage ? "bg-primary text-primary-foreground rounded-br-none" : "bg-secondary rounded-bl-none",
                              isPostShare && "p-2 bg-transparent"
                         )}>
+                             {message.isForwarded && (
+                                <div className="flex items-center gap-1 text-xs opacity-70 mb-1">
+                                    <Forward className="h-3 w-3" />
+                                    <span>Forwarded</span>
+                                </div>
+                            )}
+
                             {isPostShare && message.postId ? (
                                 <div>
                                     <PostPreviewCard postId={message.postId} />

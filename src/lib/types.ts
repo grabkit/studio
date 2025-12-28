@@ -102,6 +102,7 @@ export interface Message {
     replyToMessageId?: string;
     replyToMessageText?: string;
     postId?: string;
+    isForwarded?: boolean;
 }
 
 
@@ -122,4 +123,3 @@ export interface Report {
     
 
     
-
