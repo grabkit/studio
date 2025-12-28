@@ -47,8 +47,8 @@ const tabsTriggerVariants = cva(
     variants: {
       variant: {
         default: "",
-        underline: "rounded-none bg-transparent p-4 data-[state=active]:bg-transparent data-[state=active]:shadow-none data-[state=active]:text-foreground relative after:absolute after:bottom-[-1px] after:left-6 after:right-6 after:h-[2px] after:bg-primary after:scale-x-0 after:transition-transform after:duration-300 data-[state=active]:after:scale-x-100",
-        profile: "rounded-none bg-transparent p-4 data-[state=active]:bg-transparent data-[state=active]:shadow-none data-[state=active]:text-foreground relative after:absolute after:bottom-[-1px] after:left-16 after:right-16 after:h-[2px] after:bg-primary after:scale-x-0 after:transition-transform after:duration-300 data-[state=active]:after:scale-x-100",
+        underline: "rounded-none bg-transparent px-4 py-3 data-[state=active]:bg-transparent data-[state=active]:shadow-none data-[state=active]:text-foreground relative after:absolute after:bottom-[-1px] after:left-6 after:right-6 after:h-[2px] after:bg-primary after:scale-x-0 after:transition-transform after:duration-300 data-[state=active]:after:scale-x-100",
+        profile: "rounded-none bg-transparent px-4 py-3 data-[state=active]:bg-transparent data-[state=active]:shadow-none data-[state=active]:text-foreground relative after:absolute after:bottom-[-1px] after:left-16 after:right-16 after:h-[2px] after:bg-primary after:scale-x-0 after:transition-transform after:duration-300 data-[state=active]:after:scale-x-100",
       },
     },
     defaultVariants: {
