@@ -24,7 +24,7 @@
     --input: 214.3 31.8% 91.4%;
     --ring: 222.2 84% 4.9%;
     --radius: 0.5rem;
-    --online-glow-color: 142.1 76.2% 36.3%; /* HSL for a nice green */
+    --online-glow-color: 142.1 76.2% 36.3%;
   }
 }
 
@@ -147,5 +147,18 @@
 
   .animate-blur-unblur-slow {
     animation: blur-unblur-slow 5s ease-in-out infinite;
+  }
+
+  @keyframes online-indicator-glow {
+    0%, 100% {
+      box-shadow: 0 0 5px 1px hsla(var(--online-glow-color), 0.7);
+    }
+    50% {
+      box-shadow: 0 0 8px 2px hsla(var(--online-glow-color), 0.9);
+    }
+  }
+  
+  .animate-online-indicator-glow {
+    animation: online-indicator-glow 2.5s ease-in-out infinite;
   }
 }
