@@ -38,7 +38,7 @@ const formatUserId = (uid: string | undefined) => {
     return `blur${uid.substring(uid.length - 6)}`;
 };
 
-function PostPreviewCard({ postId }: { postId: string }) {
+function PostPreviewCard({ postId, isOwnMessage }: { postId: string, isOwnMessage?: boolean }) {
     const { firestore } = useFirebase();
     const postRef = useMemoFirebase(() => doc(firestore, 'posts', postId), [firestore, postId]);
     const { data: post, isLoading } = useDoc<Post>(postRef);
@@ -56,16 +56,19 @@ function PostPreviewCard({ postId }: { postId: string }) {
     }
     
     return (
-        <Link href={`/post/${post.id}`} className="block border rounded-lg overflow-hidden hover:bg-secondary/50 transition-colors">
+        <Link href={`/post/${post.id}`} className={cn(
+            "block border rounded-lg overflow-hidden transition-colors",
+             isOwnMessage ? "border-primary-foreground/20 hover:bg-white/10" : "hover:bg-secondary/50"
+        )}>
             <div className="p-3">
                 <div className="flex items-center gap-2 mb-2">
                     <Avatar className="h-6 w-6">
                         <AvatarFallback className="text-xs">{getInitials(post.authorId)}</AvatarFallback>
                     </Avatar>
-                    <span className="text-xs font-semibold">{formatUserId(post.authorId)}</span>
+                    <span className={cn("text-xs font-semibold", isOwnMessage && "text-primary-foreground/80")}>{formatUserId(post.authorId)}</span>
                 </div>
-                <p className="text-sm text-foreground line-clamp-3">{post.content}</p>
-                 <div className="flex items-center gap-4 text-xs text-muted-foreground mt-2">
+                <p className={cn("text-sm line-clamp-3", isOwnMessage ? "text-primary-foreground" : "text-foreground")}>{post.content}</p>
+                 <div className={cn("flex items-center gap-4 text-xs mt-2", isOwnMessage ? "text-primary-foreground/80" : "text-muted-foreground")}>
                     <div className="flex items-center gap-1">
                         <Heart className="h-3 w-3" />
                         {post.likeCount}
@@ -133,7 +136,7 @@ function MessageBubble({ message, isOwnMessage, conversationId, onSetReply }: { 
                             )}
 
                              {isPostShare && message.postId ? (
-                                <PostPreviewCard postId={message.postId} />
+                                <PostPreviewCard postId={message.postId} isOwnMessage={isOwnMessage} />
                             ) : (
                                 <p className="text-sm whitespace-pre-wrap">{message.text}</p>
                             )}
