@@ -157,7 +157,7 @@ export default function AccountPage() {
         if (firestore) {
             const postRef = doc(firestore, 'posts', postId);
             const currentPost = posts.find(p => p.id === postId);
-            if (!currentPost) return;
+            if (!currentPost || !authUser) return;
 
             const hasLiked = updatedData.likes?.includes(authUser.uid);
 
@@ -314,9 +314,9 @@ export default function AccountPage() {
         <Tabs defaultValue="posts" className="w-full">
             <div className="sticky top-0 bg-background z-10">
               <TabsList variant="underline" className="grid w-full grid-cols-3">
-                  <TabsTrigger value="posts" variant="underline">Posts</TabsTrigger>
-                  <TabsTrigger value="replies" variant="underline">Replies</TabsTrigger>
-                  <TabsTrigger value="bookmarks" variant="underline">Bookmarks</TabsTrigger>
+                  <TabsTrigger value="posts" variant="underline" className="font-semibold">Posts</TabsTrigger>
+                  <TabsTrigger value="replies" variant="underline" className="font-semibold">Replies</TabsTrigger>
+                  <TabsTrigger value="bookmarks" variant="underline" className="font-semibold">Bookmarks</TabsTrigger>
               </TabsList>
             </div>
             <TabsContent value="posts" className="mt-0">
@@ -348,5 +348,7 @@ export default function AccountPage() {
     </AppLayout>
   );
 }
+
+    
 
     
