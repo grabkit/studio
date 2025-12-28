@@ -24,7 +24,7 @@ import type { Conversation, Message, User, Post } from '@/lib/types';
 import { WithId } from '@/firebase/firestore/use-collection';
 import { FirestorePermissionError } from '@/firebase/errors';
 import { errorEmitter } from '@/firebase/error-emitter';
-import { DropdownMenu, DropdownMenuContent, DropdownMenuItem } from '@/components/ui/dropdown-menu';
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
 import { useToast } from '@/hooks/use-toast';
 import { usePresence } from '@/hooks/usePresence';
 import Link from 'next/link';
@@ -84,8 +84,6 @@ function PostPreviewCard({ postId, isOwnMessage }: { postId: string, isOwnMessag
 function MessageBubble({ message, isOwnMessage, conversationId, onSetReply }: { message: WithId<Message>, isOwnMessage: boolean, conversationId: string, onSetReply: (message: WithId<Message>) => void }) {
     const { toast } = useToast();
     const { firestore } = useFirebase();
-    const [isMenuOpen, setIsMenuOpen] = useState(false);
-    const pressTimer = useRef<NodeJS.Timeout | null>(null);
 
     const handleCopy = () => {
         navigator.clipboard.writeText(message.text);
@@ -109,24 +107,6 @@ function MessageBubble({ message, isOwnMessage, conversationId, onSetReply }: { 
             });
         });
     }
-
-    const handlePointerDown = () => {
-      pressTimer.current = setTimeout(() => {
-        setIsMenuOpen(true);
-      }, 500); // 500ms for long press
-    };
-
-    const handlePointerUp = () => {
-      if (pressTimer.current) {
-        clearTimeout(pressTimer.current);
-        pressTimer.current = null;
-      }
-    };
-    
-    const handlePointerMove = () => {
-        // Cancel long press if pointer moves
-        handlePointerUp();
-    }
     
     const isPostShare = !!message.postId;
 
@@ -139,35 +119,33 @@ function MessageBubble({ message, isOwnMessage, conversationId, onSetReply }: { 
                  {isPostShare && message.postId ? (
                      <PostPreviewCard postId={message.postId} isOwnMessage={isOwnMessage} />
                  ) : (
-                    <DropdownMenu open={isMenuOpen} onOpenChange={setIsMenuOpen}>
-                         <div 
-                            onPointerDown={handlePointerDown}
-                            onPointerUp={handlePointerUp}
-                            onPointerMove={handlePointerMove}
-                            onContextMenu={(e) => e.preventDefault()} // Prevent context menu
-                            className={cn(
-                                "max-w-fit rounded-2xl px-3 py-2 cursor-pointer",
-                                isOwnMessage ? "bg-primary text-primary-foreground rounded-br-none" : "bg-secondary rounded-bl-none"
-                            )}
-                        >
-                            {message.replyToMessageText && (
-                                <div className={cn(
-                                    "p-2 rounded-md mb-2",
-                                    isOwnMessage ? "bg-black/10" : "bg-black/5"
-                                )}>
-                                    <p className="text-xs font-semibold truncate">{formatUserId(message.replyToMessageId === message.senderId ? message.senderId : undefined)}</p>
-                                    <p className="text-xs opacity-80 whitespace-pre-wrap break-words">{message.replyToMessageText}</p>
-                                </div>
-                            )}
+                    <DropdownMenu>
+                         <DropdownMenuTrigger asChild>
+                            <div 
+                                className={cn(
+                                    "max-w-fit rounded-2xl px-3 py-2 cursor-pointer",
+                                    isOwnMessage ? "bg-primary text-primary-foreground rounded-br-none" : "bg-secondary rounded-bl-none"
+                                )}
+                            >
+                                {message.replyToMessageText && (
+                                    <div className={cn(
+                                        "p-2 rounded-md mb-2",
+                                        isOwnMessage ? "bg-black/10" : "bg-black/5"
+                                    )}>
+                                        <p className="text-xs font-semibold truncate">{formatUserId(message.replyToMessageId === message.senderId ? message.senderId : undefined)}</p>
+                                        <p className="text-xs opacity-80 whitespace-pre-wrap break-words">{message.replyToMessageText}</p>
+                                    </div>
+                                )}
 
-                            <p className="text-sm whitespace-pre-wrap">{message.text}</p>
-                            
-                            {message.timestamp?.toDate && (
-                                <p className={cn("text-xs mt-1 text-right", isOwnMessage ? "text-primary-foreground/70" : "text-muted-foreground")}>
-                                    {formatMessageTimestamp(message.timestamp.toDate())}
-                                </p>
-                            )}
-                        </div>
+                                <p className="text-sm whitespace-pre-wrap">{message.text}</p>
+                                
+                                {message.timestamp?.toDate && (
+                                    <p className={cn("text-xs mt-1 text-right", isOwnMessage ? "text-primary-foreground/70" : "text-muted-foreground")}>
+                                        {formatMessageTimestamp(message.timestamp.toDate())}
+                                    </p>
+                                )}
+                            </div>
+                        </DropdownMenuTrigger>
                         <DropdownMenuContent align={isOwnMessage ? "end" : "start"} className="w-56">
                             <DropdownMenuItem onClick={() => onSetReply(message)}>
                                 <Reply className="mr-2 h-4 w-4" />
