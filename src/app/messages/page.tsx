@@ -32,9 +32,9 @@ const formatUserId = (uid: string | undefined) => {
 
 function UpvotedUserSkeleton() {
     return (
-        <div className="flex flex-col items-center w-20 space-y-1">
+        <div className="flex flex-col items-center w-20">
             <Skeleton className="h-16 w-16 rounded-full" />
-            <Skeleton className="h-4 w-16" />
+            <Skeleton className="h-4 w-16 mt-2" />
         </div>
     )
 }
@@ -91,15 +91,15 @@ function UpvotedUsers() {
     return (
         <div className="p-4 border-b">
             <h2 className="text-lg font-semibold font-headline mb-3">Upvoted</h2>
-            <div className="overflow-x-auto pb-2 -mb-2 no-scrollbar">
+             <div className="overflow-x-auto pb-2 -mb-2 no-scrollbar">
                 <div className="flex space-x-4">
                     {upvotedUsers.map(user => (
                          <Link key={user.id} href={`/profile/${user.id}`} className="flex-shrink-0">
-                            <div className="flex flex-col items-center w-20 space-y-1">
+                            <div className="flex flex-col items-center w-20">
                                  <Avatar className="h-16 w-16">
                                     <AvatarFallback>{getInitials(user.name)}</AvatarFallback>
                                 </Avatar>
-                                <p className="text-xs font-semibold truncate w-full text-center">{formatUserId(user.id)}</p>
+                                <p className="text-xs font-semibold truncate w-full text-center mt-2">{formatUserId(user.id)}</p>
                             </div>
                         </Link>
                     ))}
@@ -516,13 +516,13 @@ export default function MessagesPage() {
             <div className="p-2">
                 <Tabs defaultValue="chats" className="w-full" onValueChange={handleTabChange}>
                     <TabsList className="grid w-full grid-cols-2 rounded-full">
-                        <TabsTrigger value="chats" className="relative flex items-center justify-center gap-2 rounded-full">
+                        <TabsTrigger value="chats" className="relative flex items-center justify-center gap-2 rounded-full font-bold">
                              {hasUnreadChats && (
                                 <div className="w-2 h-2 rounded-full bg-destructive"></div>
                             )}
                             Chats
                         </TabsTrigger>
-                        <TabsTrigger value="requests" className="relative flex items-center justify-center gap-2 rounded-full">
+                        <TabsTrigger value="requests" className="relative flex items-center justify-center gap-2 rounded-full font-bold">
                             {hasNewRequests && (
                                 <div className="w-2 h-2 rounded-full bg-destructive"></div>
                             )}
