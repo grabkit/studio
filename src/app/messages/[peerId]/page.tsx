@@ -24,7 +24,7 @@ import type { Conversation, Message, User, Post } from '@/lib/types';
 import { WithId } from '@/firebase/firestore/use-collection';
 import { FirestorePermissionError } from '@/firebase/errors';
 import { errorEmitter } from '@/firebase/error-emitter';
-import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem } from '@/components/ui/dropdown-menu';
 import { useToast } from '@/hooks/use-toast';
 import { usePresence } from '@/hooks/usePresence';
 import Link from 'next/link';
@@ -38,7 +38,7 @@ const formatUserId = (uid: string | undefined) => {
     return `blur${uid.substring(uid.length - 6)}`;
 };
 
-function PostPreviewCard({ postId }: { postId: string }) {
+function PostPreviewCard({ postId, isOwnMessage }: { postId: string, isOwnMessage: boolean }) {
     const { firestore } = useFirebase();
     const postRef = useMemoFirebase(() => doc(firestore, 'posts', postId), [firestore, postId]);
     const { data: post, isLoading } = useDoc<Post>(postRef);
@@ -79,6 +79,7 @@ function PostPreviewCard({ postId }: { postId: string }) {
         </Link>
     )
 }
+
 
 function MessageBubble({ message, isOwnMessage, conversationId, onSetReply }: { message: WithId<Message>, isOwnMessage: boolean, conversationId: string, onSetReply: (message: WithId<Message>) => void }) {
     const { toast } = useToast();
@@ -122,6 +123,11 @@ function MessageBubble({ message, isOwnMessage, conversationId, onSetReply }: { 
       }
     };
     
+    const handlePointerMove = () => {
+        // Cancel long press if pointer moves
+        handlePointerUp();
+    }
+    
     const isPostShare = !!message.postId;
 
     return (
@@ -131,13 +137,13 @@ function MessageBubble({ message, isOwnMessage, conversationId, onSetReply }: { 
                 isOwnMessage ? "flex-row-reverse" : "flex-row"
             )}>
                  {isPostShare && message.postId ? (
-                     <PostPreviewCard postId={message.postId} />
+                     <PostPreviewCard postId={message.postId} isOwnMessage={isOwnMessage} />
                  ) : (
                     <DropdownMenu open={isMenuOpen} onOpenChange={setIsMenuOpen}>
                          <div 
                             onPointerDown={handlePointerDown}
                             onPointerUp={handlePointerUp}
-                            onPointerMove={handlePointerUp} // Cancel on drag
+                            onPointerMove={handlePointerMove}
                             onContextMenu={(e) => e.preventDefault()} // Prevent context menu
                             className={cn(
                                 "max-w-fit rounded-2xl px-3 py-2 cursor-pointer",
