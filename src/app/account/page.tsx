@@ -301,10 +301,10 @@ export default function AccountPage() {
 
 
         <div className="mb-4 flex items-center space-x-2">
-            <Button variant="secondary" size="sm" className="flex-1" asChild>
+            <Button variant="secondary" size="sm" className="flex-1 font-bold" asChild>
               <Link href="/account/settings/edit-profile">Edit Profile</Link>
             </Button>
-            <Button variant="secondary" size="sm" className="flex-1" onClick={handleShareProfile}>
+            <Button variant="secondary" size="sm" className="flex-1 font-bold" onClick={handleShareProfile}>
                 Share Profile
             </Button>
         </div>
@@ -348,6 +348,8 @@ export default function AccountPage() {
     </AppLayout>
   );
 }
+
+    
 
     
 
