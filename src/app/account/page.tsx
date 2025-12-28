@@ -8,7 +8,7 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
 import { collection, query, where, getDocs, getDoc, doc, updateDoc, arrayUnion, arrayRemove, increment, setDoc, serverTimestamp } from "firebase/firestore";
 import { useCollection, type WithId } from "@/firebase/firestore/use-collection";
-import { Menu, Share2, Link as LinkIcon } from "lucide-react";
+import { Menu, Share2, Link as LinkIcon, Plus } from "lucide-react";
 import type { Post, Bookmark, User, Notification } from "@/lib/types";
 import { Skeleton } from "@/components/ui/skeleton";
 import React, { useMemo, useState, useEffect, useCallback } from "react";
@@ -235,9 +235,11 @@ export default function AccountPage() {
   return (
     <AppLayout showTopBar={false}>
       <div className="flex items-center justify-between h-14 px-4">
-        <h2 className="text-2xl font-semibold font-headline">
-          Account
-        </h2>
+        <Button variant="ghost" size="icon" asChild>
+            <Link href="/post">
+                <Plus className="h-6 w-6" />
+            </Link>
+        </Button>
         <div className="flex items-center space-x-2">
             <Button variant="ghost" size="icon" asChild>
                 <Link href="/account/settings">
@@ -348,9 +350,3 @@ export default function AccountPage() {
     </AppLayout>
   );
 }
-
-    
-
-    
-
-    
