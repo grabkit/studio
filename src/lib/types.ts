@@ -101,10 +101,6 @@ export interface Message {
     replyToMessageId?: string;
     replyToMessageText?: string;
     postId?: string;
-    postPreview?: {
-        content: string;
-        authorId: string;
-    }
 }
 
 

@@ -1,4 +1,5 @@
 
+
 "use client";
 
 import React, { useMemo, useState } from 'react';
@@ -81,12 +82,8 @@ export function ShareSheet({ post, isOpen, onOpenChange }: { post: WithId<Post>,
 
         const newMessage: Omit<Message, 'timestamp' | 'id'> = {
             senderId: user.uid,
-            text: `Check out this post: ${postUrl}`,
+            text: `Check out this post`,
             postId: post.id,
-            postPreview: {
-                content: post.content.substring(0, 150),
-                authorId: post.authorId,
-            }
         };
 
         const batch = writeBatch(firestore);

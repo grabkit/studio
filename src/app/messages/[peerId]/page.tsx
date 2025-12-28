@@ -18,7 +18,7 @@ import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
 import { Form, FormControl, FormField, FormItem, FormMessage } from '@/components/ui/form';
 import { Skeleton } from '@/components/ui/skeleton';
-import { ArrowLeft, Send, Reply, Forward, Copy, Trash2, X, Heart, MessageCircle } from 'lucide-react';
+import { ArrowLeft, Send, Reply, Forward, Copy, Trash2, X, Heart, MessageCircle, ExternalLink } from 'lucide-react';
 import { cn, getInitials, formatMessageTimestamp, formatLastSeen, formatTimestamp } from '@/lib/utils';
 import type { Conversation, Message, User, Post } from '@/lib/types';
 import { WithId } from '@/firebase/firestore/use-collection';
@@ -38,7 +38,7 @@ const formatUserId = (uid: string | undefined) => {
     return `blur${uid.substring(uid.length - 6)}`;
 };
 
-function PostPreviewCard({ postId, isOwnMessage }: { postId: string, isOwnMessage: boolean }) {
+function PostPreviewCard({ postId }: { postId: string }) {
     const { firestore } = useFirebase();
     const postRef = useMemoFirebase(() => doc(firestore, 'posts', postId), [firestore, postId]);
     const { data: post, isLoading } = useDoc<Post>(postRef);
@@ -56,7 +56,7 @@ function PostPreviewCard({ postId, isOwnMessage }: { postId: string, isOwnMessag
     }
     
     return (
-        <Link href={`/post/${postId}`} className="block border rounded-lg overflow-hidden transition-colors bg-secondary/20 hover:bg-secondary/50">
+        <div className="block border rounded-lg overflow-hidden transition-colors bg-secondary/20 hover:bg-secondary/50">
             <div className="p-3">
                 <div className="flex items-center gap-2 mb-2">
                     <Avatar className="h-6 w-6">
@@ -76,7 +76,7 @@ function PostPreviewCard({ postId, isOwnMessage }: { postId: string, isOwnMessag
                     </div>
                 </div>
             </div>
-        </Link>
+        </div>
     )
 }
 
@@ -84,6 +84,7 @@ function PostPreviewCard({ postId, isOwnMessage }: { postId: string, isOwnMessag
 function MessageBubble({ message, isOwnMessage, conversationId, onSetReply }: { message: WithId<Message>, isOwnMessage: boolean, conversationId: string, onSetReply: (message: WithId<Message>) => void }) {
     const { toast } = useToast();
     const { firestore } = useFirebase();
+    const router = useRouter();
 
     const handleCopy = () => {
         navigator.clipboard.writeText(message.text);
@@ -107,6 +108,12 @@ function MessageBubble({ message, isOwnMessage, conversationId, onSetReply }: { 
             });
         });
     }
+
+    const handleOpenPost = () => {
+        if (message.postId) {
+            router.push(`/post/${message.postId}`);
+        }
+    }
     
     const isPostShare = !!message.postId;
 
@@ -116,58 +123,69 @@ function MessageBubble({ message, isOwnMessage, conversationId, onSetReply }: { 
                 "flex items-center max-w-[70%]",
                 isOwnMessage ? "flex-row-reverse" : "flex-row"
             )}>
-                 {isPostShare && message.postId ? (
-                     <PostPreviewCard postId={message.postId} isOwnMessage={isOwnMessage} />
-                 ) : (
-                    <DropdownMenu>
-                         <DropdownMenuTrigger asChild>
-                            <div 
-                                className={cn(
-                                    "max-w-fit rounded-2xl px-3 py-2 cursor-pointer",
-                                    isOwnMessage ? "bg-primary text-primary-foreground rounded-br-none" : "bg-secondary rounded-bl-none"
-                                )}
-                            >
-                                {message.replyToMessageText && (
-                                    <div className={cn(
-                                        "p-2 rounded-md mb-2",
-                                        isOwnMessage ? "bg-black/10" : "bg-black/5"
-                                    )}>
-                                        <p className="text-xs font-semibold truncate">{formatUserId(message.replyToMessageId === message.senderId ? message.senderId : undefined)}</p>
-                                        <p className="text-xs opacity-80 whitespace-pre-wrap break-words">{message.replyToMessageText}</p>
-                                    </div>
-                                )}
-
-                                <p className="text-sm whitespace-pre-wrap">{message.text}</p>
-                                
-                                {message.timestamp?.toDate && (
-                                    <p className={cn("text-xs mt-1 text-right", isOwnMessage ? "text-primary-foreground/70" : "text-muted-foreground")}>
-                                        {formatMessageTimestamp(message.timestamp.toDate())}
-                                    </p>
-                                )}
-                            </div>
-                        </DropdownMenuTrigger>
-                        <DropdownMenuContent align={isOwnMessage ? "end" : "start"} className="w-56">
-                            <DropdownMenuItem onClick={() => onSetReply(message)}>
-                                <Reply className="mr-2 h-4 w-4" />
-                                <span>Reply</span>
-                            </DropdownMenuItem>
-                            <DropdownMenuItem>
-                                <Forward className="mr-2 h-4 w-4" />
-                                <span>Forward</span>
-                            </DropdownMenuItem>
-                            <DropdownMenuItem onClick={handleCopy}>
-                                <Copy className="mr-2 h-4 w-4" />
-                                <span>Copy</span>
-                            </DropdownMenuItem>
-                            {isOwnMessage && (
-                                    <DropdownMenuItem className="text-destructive" onClick={handleUnsend}>
-                                    <Trash2 className="mr-2 h-4 w-4" />
-                                    <span>Unsend</span>
-                                </DropdownMenuItem>
+                 <DropdownMenu>
+                    <DropdownMenuTrigger asChild>
+                        <div className="cursor-pointer">
+                        {isPostShare && message.postId ? (
+                            <PostPreviewCard postId={message.postId} />
+                        ) : (
+                        <div 
+                            className={cn(
+                                "max-w-fit rounded-2xl px-3 py-2",
+                                isOwnMessage ? "bg-primary text-primary-foreground rounded-br-none" : "bg-secondary rounded-bl-none"
                             )}
-                        </DropdownMenuContent>
-                    </DropdownMenu>
-                 )}
+                        >
+                            {message.replyToMessageText && (
+                                <div className={cn(
+                                    "p-2 rounded-md mb-2",
+                                    isOwnMessage ? "bg-black/10" : "bg-black/5"
+                                )}>
+                                    <p className="text-xs font-semibold truncate">{formatUserId(message.replyToMessageId === message.senderId ? message.senderId : undefined)}</p>
+                                    <p className="text-xs opacity-80 whitespace-pre-wrap break-words">{message.replyToMessageText}</p>
+                                </div>
+                            )}
+
+                            <p className="text-sm whitespace-pre-wrap">{message.text}</p>
+                            
+                            {message.timestamp?.toDate && (
+                                <p className={cn("text-xs mt-1 text-right", isOwnMessage ? "text-primary-foreground/70" : "text-muted-foreground")}>
+                                    {formatMessageTimestamp(message.timestamp.toDate())}
+                                </p>
+                            )}
+                        </div>
+                        )}
+                        </div>
+                    </DropdownMenuTrigger>
+                    <DropdownMenuContent align={isOwnMessage ? "end" : "start"} className="w-56">
+                        {isPostShare ? (
+                            <DropdownMenuItem onClick={handleOpenPost}>
+                                <ExternalLink className="mr-2 h-4 w-4" />
+                                <span>Open Post</span>
+                            </DropdownMenuItem>
+                        ) : (
+                            <>
+                                <DropdownMenuItem onClick={() => onSetReply(message)}>
+                                    <Reply className="mr-2 h-4 w-4" />
+                                    <span>Reply</span>
+                                </DropdownMenuItem>
+                                <DropdownMenuItem>
+                                    <Forward className="mr-2 h-4 w-4" />
+                                    <span>Forward</span>
+                                </DropdownMenuItem>
+                                <DropdownMenuItem onClick={handleCopy}>
+                                    <Copy className="mr-2 h-4 w-4" />
+                                    <span>Copy</span>
+                                </DropdownMenuItem>
+                            </>
+                        )}
+                        {isOwnMessage && (
+                                <DropdownMenuItem className="text-destructive" onClick={handleUnsend}>
+                                <Trash2 className="mr-2 h-4 w-4" />
+                                <span>Unsend</span>
+                            </DropdownMenuItem>
+                        )}
+                    </DropdownMenuContent>
+                </DropdownMenu>
             </div>
         </div>
     )
