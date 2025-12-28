@@ -490,7 +490,7 @@ export default function HomePage() {
 
   const { data: initialPosts, isLoading: postsFromHookLoading } = useCollection<Post>(postsQuery);
 
-  const [displayedPosts, setDisplayedPosts] = useState<WithId<Post>[]>([]);
+  const [displayedPosts, setDisplayedPosts] = useState<WithId<Post>[] | null>(null);
 
   useEffect(() => {
     if(initialPosts) {
@@ -500,7 +500,7 @@ export default function HomePage() {
 
   const updatePost = useCallback((postId: string, updatedData: Partial<Post>) => {
     setDisplayedPosts(currentPosts => {
-        if (!currentPosts) return [];
+        if (!currentPosts) return null;
         const newPosts = currentPosts.map(p =>
             p.id === postId ? { ...p, ...updatedData } : p
         );
@@ -594,7 +594,7 @@ export default function HomePage() {
            </div>
         </div>
         <div className="divide-y border-b pt-12">
-          {isLoading && !isRefreshing && (
+          {(isLoading || !displayedPosts) && !isRefreshing && (
             <>
               <PostSkeleton />
               <PostSkeleton />
@@ -619,3 +619,4 @@ export default function HomePage() {
     
 
     
+
