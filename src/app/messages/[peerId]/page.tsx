@@ -62,7 +62,7 @@ function PostPreviewCard({ postId }: { postId: string }) {
                     <Avatar className="h-6 w-6">
                         <AvatarFallback className="text-xs">{getInitials(post.authorId)}</AvatarFallback>
                     </Avatar>
-                    <span className="text-xs font-semibold">{formatUserId(post.authorId)}</span>
+                    <span className="text-xs font-semibold text-foreground">{formatUserId(post.authorId)}</span>
                 </div>
                 <p className="text-sm line-clamp-3 text-foreground">{post.content}</p>
                  <div className="flex items-center gap-4 text-xs mt-2 text-muted-foreground">
@@ -118,6 +118,7 @@ function MessageBubble({ message, isOwnMessage, conversationId, onSetReply }: { 
     const handlePointerUp = () => {
       if (pressTimer.current) {
         clearTimeout(pressTimer.current);
+        pressTimer.current = null;
       }
     };
     
@@ -138,6 +139,8 @@ function MessageBubble({ message, isOwnMessage, conversationId, onSetReply }: { 
                                 onPointerDown={handlePointerDown}
                                 onPointerUp={handlePointerUp}
                                 onPointerMove={handlePointerUp} // Cancel on drag
+                                onClick={(e) => e.preventDefault()} // Prevent default click behavior
+                                onContextMenu={(e) => e.preventDefault()} // Prevent context menu
                                 className={cn(
                                     "max-w-fit rounded-2xl px-3 py-2 cursor-pointer",
                                     isOwnMessage ? "bg-primary text-primary-foreground rounded-br-none" : "bg-secondary rounded-bl-none"
