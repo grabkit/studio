@@ -594,22 +594,25 @@ export default function HomePage() {
            </div>
         </div>
         <div className="divide-y border-b pt-12">
-          {isLoading && !isRefreshing ? (
+          {(isLoading || !displayedPosts) && (
             <>
               <PostSkeleton />
               <PostSkeleton />
               <PostSkeleton />
             </>
-          ) : filteredPosts.length === 0 ? (
+          )}
+
+          {!isLoading && displayedPosts && filteredPosts.length === 0 && (
             <div className="text-center py-10 h-screen">
               <h2 className="text-2xl font-headline text-primary">No posts yet!</h2>
               <p className="text-muted-foreground mt-2">Be the first to post something.</p>
             </div>
-          ) : (
-            filteredPosts.map((post) => (
+          )}
+          
+          {!isLoading && displayedPosts && filteredPosts.map((post) => (
               <PostItem key={post.id} post={post} bookmarks={bookmarks} updatePost={updatePost} />
             ))
-          )}
+          }
         </div>
       </div>
     </AppLayout>
