@@ -32,7 +32,7 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
-import React, { useState, useMemo, useRef, TouchEvent } from "react";
+import React, { useState, useMemo, useRef, TouchEvent, useEffect, useCallback } from "react";
 import { Button, buttonVariants } from "@/components/ui/button";
 import { useRouter } from "next/navigation";
 import { usePresence } from "@/hooks/usePresence";
@@ -499,8 +499,7 @@ export function PostSkeleton() {
 export default function HomePage() {
   const { firestore, userProfile } = useFirebase();
   const { user } = useUser();
-  const [postsLoading, setPostsLoading] = useState(true);
-
+  
   // Pull to refresh state
   const [isRefreshing, setIsRefreshing] = useState(false);
   const [pullPosition, setPullPosition] = useState(0);
@@ -513,7 +512,25 @@ export default function HomePage() {
     return query(collection(firestore, 'posts'), orderBy("timestamp", "desc"), limit(50));
   }, [firestore]);
 
-  const { data: posts, isLoading: postsFromHookLoading, update: updatePost } = useCollection<Post>(postsQuery);
+  const { data: initialPosts, isLoading: postsFromHookLoading } = useCollection<Post>(postsQuery);
+
+  const [displayedPosts, setDisplayedPosts] = useState<WithId<Post>[]>([]);
+
+  useEffect(() => {
+    if(initialPosts) {
+      setDisplayedPosts(initialPosts);
+    }
+  }, [initialPosts]);
+
+  const updatePost = useCallback((postId: string, updatedData: Partial<Post>) => {
+    setDisplayedPosts(currentPosts => {
+        if (!currentPosts) return [];
+        const newPosts = currentPosts.map(p =>
+            p.id === postId ? { ...p, ...updatedData } : p
+        );
+        return newPosts;
+    });
+  }, []);
 
   const bookmarksQuery = useMemoFirebase(() => {
     if (!firestore || !user) return null;
@@ -522,36 +539,26 @@ export default function HomePage() {
 
   const { data: bookmarks, isLoading: bookmarksLoading } = useCollection<Bookmark>(bookmarksQuery);
 
-  const fetchPosts = async () => {
+  const fetchPostsAndShuffle = async () => {
     if (!firestore) return;
     try {
-        const postsQuery = query(collection(firestore, 'posts'), orderBy("timestamp", "desc"), limit(50));
-        const querySnapshot = await getDocs(postsQuery);
+        const postsCollectionQuery = query(collection(firestore, 'posts'), orderBy("timestamp", "desc"), limit(50));
+        const querySnapshot = await getDocs(postsCollectionQuery);
         let fetchedPosts = querySnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as WithId<Post>));
         
-        // This is handled by the useCollection hook now, but keeping for manual refresh
         // Shuffle the posts for a dynamic feed feel on refresh
         fetchedPosts.sort(() => Math.random() - 0.5);
+        setDisplayedPosts(fetchedPosts);
 
     } catch (error) {
         console.error("Error fetching posts:", error);
-    } finally {
-        setPostsLoading(false);
     }
   };
-
-  React.useEffect(() => {
-      // The useCollection hook handles initial loading
-      if (!postsFromHookLoading) {
-        setPostsLoading(false);
-      }
-  }, [postsFromHookLoading]);
-
 
   const handleRefresh = async () => {
     if (isRefreshing) return;
     setIsRefreshing(true);
-    await fetchPosts(); // This might not be needed if useCollection refetches, but good for explicit action
+    await fetchPostsAndShuffle();
     setTimeout(() => {
       setIsRefreshing(false);
       setPullPosition(0);
@@ -568,7 +575,6 @@ export default function HomePage() {
     
     // Only allow pulling when scrolled to the top
     if (containerRef.current && containerRef.current.scrollTop === 0 && pullDistance > 0 && !isRefreshing) {
-      e.preventDefault();
       setPullPosition(Math.min(pullDistance, 120)); // Max pull
     }
   };
@@ -582,13 +588,13 @@ export default function HomePage() {
   };
 
 
-  const isLoading = postsLoading || bookmarksLoading;
+  const isLoading = postsFromHookLoading || bookmarksLoading;
 
   const filteredPosts = useMemo(() => {
-    if (!posts) return [];
+    if (!displayedPosts) return [];
     const mutedUsers = userProfile?.mutedUsers || [];
-    return posts.filter(post => !mutedUsers.includes(post.authorId));
-  }, [posts, userProfile]);
+    return displayedPosts.filter(post => !mutedUsers.includes(post.authorId));
+  }, [displayedPosts, userProfile]);
 
   return (
     <AppLayout>
@@ -632,3 +638,5 @@ export default function HomePage() {
     </AppLayout>
   );
 }
+
+    
