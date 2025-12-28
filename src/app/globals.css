@@ -24,7 +24,7 @@
     --input: 214.3 31.8% 91.4%;
     --ring: 222.2 84% 4.9%;
     --radius: 0.5rem;
-    --online-glow-color: 142.1 76.2% 36.3%;
+    --online-glow-color: 135 58% 49%;
   }
 }
 
@@ -61,7 +61,7 @@
       radial-gradient(circle, hsl(var(--foreground)) 1px, transparent 1px),
       linear-gradient(to right, hsl(var(--border)) 1px, transparent 1px),
       linear-gradient(to bottom, hsl(var(--border)) 1px, transparent 1px);
-    background-size: 40px 40px, 40px 40px, 40px 40px;
+    background-size: 40px 40px;
     opacity: 0.2;
     mask-image: linear-gradient(to bottom, white, transparent);
     -webkit-mask-image: linear-gradient(to bottom, white, transparent);
