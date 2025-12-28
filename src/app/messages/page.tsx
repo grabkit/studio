@@ -503,10 +503,6 @@ export default function MessagesPage() {
 
     return (
         <AppLayout showTopBar={false}>
-            <div className="p-4 border-b">
-                <h1 className="text-2xl font-bold font-headline">Messages</h1>
-            </div>
-
             <UpvotedUsers />
             
             <div className="p-2">
