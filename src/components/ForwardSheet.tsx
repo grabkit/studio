@@ -85,12 +85,12 @@ export function ForwardSheet({ message, isOpen, onOpenChange }: { message: WithI
         const messageRef = doc(collection(firestore, 'conversations', conversation.id, 'messages'));
         const conversationRef = doc(firestore, 'conversations', conversation.id);
         
+        const isPostShare = !!message.postId;
+
         const newMessage: Omit<Message, 'id' | 'timestamp'> = {
             senderId: user.uid,
             text: message.text,
-            ...(message.postId && { postId: message.postId }),
-            ...(message.replyToMessageId && { replyToMessageId: message.replyToMessageId }),
-            ...(message.replyToMessageText && { replyToMessageText: message.replyToMessageText }),
+            ...(isPostShare && { postId: message.postId }),
         };
 
         const batch = writeBatch(firestore);
@@ -98,7 +98,7 @@ export function ForwardSheet({ message, isOpen, onOpenChange }: { message: WithI
         batch.set(messageRef, { ...newMessage, timestamp: serverTimestamp() });
         
         const updatePayload: any = {
-            lastMessage: message.postId ? "Shared a post" : message.text,
+            lastMessage: isPostShare ? "Shared a post" : message.text,
             lastUpdated: serverTimestamp(),
             [`unreadCounts.${peerId}`]: increment(1),
         };
