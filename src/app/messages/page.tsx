@@ -85,14 +85,14 @@ function UpvotedUsers() {
     }
     
     if (upvotedUsers.length === 0) {
-        return null; // Don't render anything if there are no upvoted users
+        return null;
     }
 
     return (
         <div className="p-4 border-b">
             <h2 className="text-lg font-semibold font-headline mb-3">Upvoted Profiles</h2>
-            <ScrollArea className="w-full whitespace-nowrap [&>div>div]:!pb-0">
-                <div className="flex space-x-4 pb-3">
+            <div className="overflow-x-auto pb-2 -mb-2 no-scrollbar">
+                <div className="flex space-x-4">
                     {upvotedUsers.map(user => (
                          <Link key={user.id} href={`/profile/${user.id}`} className="flex-shrink-0">
                             <div className="flex flex-col items-center w-20 space-y-2">
@@ -104,7 +104,16 @@ function UpvotedUsers() {
                         </Link>
                     ))}
                 </div>
-            </ScrollArea>
+            </div>
+            <style jsx>{`
+                .no-scrollbar::-webkit-scrollbar {
+                    display: none;
+                }
+                .no-scrollbar {
+                    -ms-overflow-style: none;
+                    scrollbar-width: none;
+                }
+            `}</style>
         </div>
     );
 }
