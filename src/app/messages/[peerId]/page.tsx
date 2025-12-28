@@ -83,6 +83,8 @@ function PostPreviewCard({ postId }: { postId: string }) {
 function MessageBubble({ message, isOwnMessage, conversationId, onSetReply }: { message: WithId<Message>, isOwnMessage: boolean, conversationId: string, onSetReply: (message: WithId<Message>) => void }) {
     const { toast } = useToast();
     const { firestore } = useFirebase();
+    const [isMenuOpen, setIsMenuOpen] = useState(false);
+    const pressTimer = useRef<NodeJS.Timeout | null>(null);
 
     const handleCopy = () => {
         navigator.clipboard.writeText(message.text);
@@ -106,6 +108,18 @@ function MessageBubble({ message, isOwnMessage, conversationId, onSetReply }: { 
             });
         });
     }
+
+    const handlePointerDown = () => {
+      pressTimer.current = setTimeout(() => {
+        setIsMenuOpen(true);
+      }, 500); // 500ms for long press
+    };
+
+    const handlePointerUp = () => {
+      if (pressTimer.current) {
+        clearTimeout(pressTimer.current);
+      }
+    };
     
     const isPostShare = !!message.postId;
 
@@ -118,12 +132,17 @@ function MessageBubble({ message, isOwnMessage, conversationId, onSetReply }: { 
                  {isPostShare && message.postId ? (
                      <PostPreviewCard postId={message.postId} />
                  ) : (
-                    <DropdownMenu>
+                    <DropdownMenu open={isMenuOpen} onOpenChange={setIsMenuOpen}>
                         <DropdownMenuTrigger asChild>
-                            <div className={cn(
-                                "max-w-fit rounded-2xl px-3 py-2 cursor-pointer",
-                                isOwnMessage ? "bg-primary text-primary-foreground rounded-br-none" : "bg-secondary rounded-bl-none"
-                            )}>
+                            <div 
+                                onPointerDown={handlePointerDown}
+                                onPointerUp={handlePointerUp}
+                                onPointerMove={handlePointerUp} // Cancel on drag
+                                className={cn(
+                                    "max-w-fit rounded-2xl px-3 py-2 cursor-pointer",
+                                    isOwnMessage ? "bg-primary text-primary-foreground rounded-br-none" : "bg-secondary rounded-bl-none"
+                                )}
+                            >
                                 {message.replyToMessageText && (
                                     <div className={cn(
                                         "p-2 rounded-md mb-2",
