@@ -181,7 +181,7 @@ function ConversationItem({ conversation, currentUser, onLongPress }: { conversa
         >
             <div className="flex items-center space-x-3">
                 <Avatar className="h-12 w-12" showStatus={true} isOnline={isOnline}>
-                    <AvatarFallback>{otherUser ? getInitials(formatUserId(otherUser.id)) : '?'}</AvatarFallback>
+                    <AvatarFallback>{otherUser ? getInitials(otherUser.name) : '?'}</AvatarFallback>
                 </Avatar>
                 <div>
                     <div className="flex items-center gap-2">
