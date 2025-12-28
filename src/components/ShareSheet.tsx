@@ -42,7 +42,7 @@ function ConversationItem({ conversation, onSend, sentStatus }: { conversation: 
                     <AvatarFallback>{otherUser ? getInitials(formatUserId(otherUser.id)) : '?'}</AvatarFallback>
                 </Avatar>
                 <div>
-                    <p className="font-semibold text-sm">{name}</p>
+                    <div className="font-semibold text-sm">{name}</div>
                     <p className="text-xs text-muted-foreground">{conversation.lastMessage ? `Last: ${conversation.lastMessage.substring(0, 20)}...` : 'No messages yet'}</p>
                 </div>
             </div>
