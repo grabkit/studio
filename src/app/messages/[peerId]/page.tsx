@@ -56,7 +56,7 @@ function PostPreviewCard({ postId, isOwnMessage }: { postId: string, isOwnMessag
     }
     
     return (
-        <Link href={`/post/${post.id}`} className={cn(
+        <Link href={`/post/${postId}`} className={cn(
             "block border rounded-lg overflow-hidden transition-colors",
              isOwnMessage ? "border-primary-foreground/20 hover:bg-white/10" : "hover:bg-secondary/50"
         )}>
