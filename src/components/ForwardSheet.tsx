@@ -87,11 +87,14 @@ export function ForwardSheet({ message, isOpen, onOpenChange }: { message: WithI
         
         const isPostShare = !!message.postId;
 
-        const newMessage: Omit<Message, 'id' | 'timestamp'> = {
+        const newMessage: Omit<Message, 'id' | 'timestamp'> & { postId?: string } = {
             senderId: user.uid,
             text: message.text,
-            ...(isPostShare && { postId: message.postId }),
         };
+
+        if (isPostShare) {
+            newMessage.postId = message.postId;
+        }
 
         const batch = writeBatch(firestore);
         
