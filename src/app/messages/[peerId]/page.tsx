@@ -139,33 +139,28 @@ function MessageBubble({ message, isOwnMessage, conversationId, onSetReply }: { 
                             onPointerUp={handlePointerUp}
                             onPointerMove={handlePointerUp} // Cancel on drag
                             onContextMenu={(e) => e.preventDefault()} // Prevent context menu
+                            className={cn(
+                                "max-w-fit rounded-2xl px-3 py-2 cursor-pointer",
+                                isOwnMessage ? "bg-primary text-primary-foreground rounded-br-none" : "bg-secondary rounded-bl-none"
+                            )}
                         >
-                            <DropdownMenuTrigger asChild>
-                                <div 
-                                    className={cn(
-                                        "max-w-fit rounded-2xl px-3 py-2 cursor-pointer",
-                                        isOwnMessage ? "bg-primary text-primary-foreground rounded-br-none" : "bg-secondary rounded-bl-none"
-                                    )}
-                                >
-                                    {message.replyToMessageText && (
-                                        <div className={cn(
-                                            "p-2 rounded-md mb-2",
-                                            isOwnMessage ? "bg-black/10" : "bg-black/5"
-                                        )}>
-                                            <p className="text-xs font-semibold truncate">{formatUserId(message.replyToMessageId === message.senderId ? message.senderId : undefined)}</p>
-                                            <p className="text-xs opacity-80 whitespace-pre-wrap break-words">{message.replyToMessageText}</p>
-                                        </div>
-                                    )}
-
-                                    <p className="text-sm whitespace-pre-wrap">{message.text}</p>
-                                    
-                                    {message.timestamp?.toDate && (
-                                        <p className={cn("text-xs mt-1 text-right", isOwnMessage ? "text-primary-foreground/70" : "text-muted-foreground")}>
-                                            {formatMessageTimestamp(message.timestamp.toDate())}
-                                        </p>
-                                    )}
+                            {message.replyToMessageText && (
+                                <div className={cn(
+                                    "p-2 rounded-md mb-2",
+                                    isOwnMessage ? "bg-black/10" : "bg-black/5"
+                                )}>
+                                    <p className="text-xs font-semibold truncate">{formatUserId(message.replyToMessageId === message.senderId ? message.senderId : undefined)}</p>
+                                    <p className="text-xs opacity-80 whitespace-pre-wrap break-words">{message.replyToMessageText}</p>
                                 </div>
-                            </DropdownMenuTrigger>
+                            )}
+
+                            <p className="text-sm whitespace-pre-wrap">{message.text}</p>
+                            
+                            {message.timestamp?.toDate && (
+                                <p className={cn("text-xs mt-1 text-right", isOwnMessage ? "text-primary-foreground/70" : "text-muted-foreground")}>
+                                    {formatMessageTimestamp(message.timestamp.toDate())}
+                                </p>
+                            )}
                         </div>
                         <DropdownMenuContent align={isOwnMessage ? "end" : "start"} className="w-56">
                             <DropdownMenuItem onClick={() => onSetReply(message)}>
