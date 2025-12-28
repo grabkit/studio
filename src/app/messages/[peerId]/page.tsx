@@ -127,7 +127,9 @@ function MessageBubble({ message, isOwnMessage, conversationId, onSetReply }: { 
                     <DropdownMenuTrigger asChild>
                         <div className="cursor-pointer">
                         {isPostShare && message.postId ? (
-                            <PostPreviewCard postId={message.postId} />
+                            <div onClick={(e) => e.preventDefault()}>
+                                <PostPreviewCard postId={message.postId} />
+                            </div>
                         ) : (
                         <div 
                             className={cn(
@@ -163,18 +165,14 @@ function MessageBubble({ message, isOwnMessage, conversationId, onSetReply }: { 
                                     <ExternalLink className="mr-2 h-4 w-4" />
                                     <span>Open Post</span>
                                 </DropdownMenuItem>
-                                {!isOwnMessage && (
-                                    <>
-                                        <DropdownMenuItem onClick={() => onSetReply(message)}>
-                                            <Reply className="mr-2 h-4 w-4" />
-                                            <span>Reply</span>
-                                        </DropdownMenuItem>
-                                        <DropdownMenuItem>
-                                            <Forward className="mr-2 h-4 w-4" />
-                                            <span>Forward</span>
-                                        </DropdownMenuItem>
-                                    </>
-                                )}
+                                <DropdownMenuItem onClick={() => onSetReply(message)}>
+                                    <Reply className="mr-2 h-4 w-4" />
+                                    <span>Reply</span>
+                                </DropdownMenuItem>
+                                <DropdownMenuItem>
+                                    <Forward className="mr-2 h-4 w-4" />
+                                    <span>Forward</span>
+                                </DropdownMenuItem>
                             </>
                         ) : (
                             <>
