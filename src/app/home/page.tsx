@@ -413,8 +413,8 @@ export function PostItem({ post, bookmarks, updatePost }: { post: WithId<Post>, 
                   <button onClick={() => setIsShareSheetOpen(true)} className="flex items-center space-x-1 hover:text-primary">
                     <ArrowUpRight className="h-4 w-4" />
                   </button>
-                   <button onClick={handleBookmark} className="flex items-center space-x-1 hover:text-blue-500">
-                    <BookmarkIcon className={cn("h-4 w-4", isBookmarked && "text-blue-500 fill-blue-500")} />
+                   <button onClick={handleBookmark} className="flex items-center space-x-1 hover:text-foreground">
+                    <BookmarkIcon className={cn("h-4 w-4", isBookmarked && "text-foreground fill-foreground")} />
                   </button>
                 </div>
             </div>
