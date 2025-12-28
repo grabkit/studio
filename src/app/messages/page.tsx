@@ -9,7 +9,7 @@ import { getInitials, formatMessageTimestamp } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import { MessageSquare, Mail, Trash2, BellOff, CheckCircle, User as UserIcon, Bell } from "lucide-react";
 import { useFirebase, useMemoFirebase } from "@/firebase";
-import { collection, query, where, doc, updateDoc, deleteDoc, arrayUnion, arrayRemove } from "firebase/firestore";
+import { collection, query, where, doc, updateDoc, deleteDoc, arrayUnion, arrayRemove, getDocs } from "firebase/firestore";
 import { useCollection, type WithId } from "@/firebase/firestore/use-collection";
 import { useDoc } from "@/firebase/firestore/use-doc";
 import type { Conversation, User } from "@/lib/types";
@@ -23,11 +23,93 @@ import { useRouter } from "next/navigation";
 import { FirestorePermissionError } from "@/firebase/errors";
 import { errorEmitter } from "@/firebase/error-emitter";
 import { usePresence } from "@/hooks/usePresence";
+import { ScrollArea, ScrollBar } from "@/components/ui/scroll-area";
 
 const formatUserId = (uid: string | undefined) => {
     if (!uid) return "blur??????";
     return `blur${uid.substring(uid.length - 6)}`;
 };
+
+function UpvotedUserSkeleton() {
+    return (
+        <div className="flex flex-col items-center space-y-1 w-20">
+            <Skeleton className="h-14 w-14 rounded-full" />
+            <Skeleton className="h-4 w-16" />
+        </div>
+    )
+}
+
+function UpvotedUsers() {
+    const { firestore, user: currentUser } = useFirebase();
+    const [upvotedUsers, setUpvotedUsers] = useState<WithId<User>[]>([]);
+    const [isLoading, setIsLoading] = useState(true);
+
+    useEffect(() => {
+        if (!firestore || !currentUser) {
+            setIsLoading(false);
+            return;
+        };
+
+        const fetchUpvotedUsers = async () => {
+            setIsLoading(true);
+            try {
+                const usersQuery = query(
+                    collection(firestore, 'users'),
+                    where('upvotedBy', 'array-contains', currentUser.uid)
+                );
+                const querySnapshot = await getDocs(usersQuery);
+                const users = querySnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as WithId<User>));
+                setUpvotedUsers(users);
+            } catch (error) {
+                console.error("Error fetching upvoted users:", error);
+            } finally {
+                setIsLoading(false);
+            }
+        };
+
+        fetchUpvotedUsers();
+    }, [firestore, currentUser]);
+
+    if (isLoading) {
+        return (
+            <div className="p-4">
+                <h2 className="text-lg font-semibold font-headline mb-3">Upvoted Profiles</h2>
+                <div className="flex space-x-4">
+                    <UpvotedUserSkeleton />
+                    <UpvotedUserSkeleton />
+                    <UpvotedUserSkeleton />
+                    <UpvotedUserSkeleton />
+                </div>
+            </div>
+        );
+    }
+    
+    if (upvotedUsers.length === 0) {
+        return null; // Don't render anything if there are no upvoted users
+    }
+
+    return (
+        <div className="p-4 border-b">
+            <h2 className="text-lg font-semibold font-headline mb-3">Upvoted Profiles</h2>
+            <ScrollArea className="w-full whitespace-nowrap">
+                <div className="flex space-x-4 pb-3">
+                    {upvotedUsers.map(user => (
+                         <Link key={user.id} href={`/profile/${user.id}`} className="flex-shrink-0">
+                            <div className="flex flex-col items-center space-y-1 w-20">
+                                 <Avatar className="h-14 w-14">
+                                    <AvatarFallback>{getInitials(user.name)}</AvatarFallback>
+                                </Avatar>
+                                <p className="text-xs font-semibold truncate w-full text-center">{formatUserId(user.id)}</p>
+                            </div>
+                        </Link>
+                    ))}
+                </div>
+                 <ScrollBar orientation="horizontal" />
+            </ScrollArea>
+        </div>
+    );
+}
+
 
 function ConversationItem({ conversation, currentUser, onLongPress }: { conversation: WithId<Conversation>, currentUser: User, onLongPress: (conversation: WithId<Conversation>) => void }) {
     const otherParticipantId = conversation.participantIds.find(p => p !== currentUser.uid);
@@ -424,6 +506,8 @@ export default function MessagesPage() {
             <div className="p-4 border-b">
                 <h1 className="text-2xl font-bold font-headline">Messages</h1>
             </div>
+
+            <UpvotedUsers />
             
             <div className="p-2">
                 <Tabs defaultValue="chats" className="w-full" onValueChange={handleTabChange}>
