@@ -599,6 +599,8 @@ export default function HomePage() {
               <PostSkeleton />
               <PostSkeleton />
               <PostSkeleton />
+              <PostSkeleton />
+              <PostSkeleton />
             </>
           )}
 
