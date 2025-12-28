@@ -38,7 +38,7 @@ const formatUserId = (uid: string | undefined) => {
     return `blur${uid.substring(uid.length - 6)}`;
 };
 
-function PostPreviewCard({ postId, isOwnMessage }: { postId: string, isOwnMessage?: boolean }) {
+function PostPreviewCard({ postId }: { postId: string }) {
     const { firestore } = useFirebase();
     const postRef = useMemoFirebase(() => doc(firestore, 'posts', postId), [firestore, postId]);
     const { data: post, isLoading } = useDoc<Post>(postRef);
@@ -56,19 +56,16 @@ function PostPreviewCard({ postId, isOwnMessage }: { postId: string, isOwnMessag
     }
     
     return (
-        <Link href={`/post/${postId}`} className={cn(
-            "block border rounded-lg overflow-hidden transition-colors",
-             isOwnMessage ? "border-primary-foreground/20 bg-white/5 hover:bg-white/10" : "bg-secondary/20 hover:bg-secondary/50"
-        )}>
+        <Link href={`/post/${postId}`} className="block border rounded-lg overflow-hidden transition-colors bg-secondary/20 hover:bg-secondary/50">
             <div className="p-3">
                 <div className="flex items-center gap-2 mb-2">
                     <Avatar className="h-6 w-6">
                         <AvatarFallback className="text-xs">{getInitials(post.authorId)}</AvatarFallback>
                     </Avatar>
-                    <span className={cn("text-xs font-semibold", isOwnMessage && "text-primary-foreground/80")}>{formatUserId(post.authorId)}</span>
+                    <span className="text-xs font-semibold">{formatUserId(post.authorId)}</span>
                 </div>
-                <p className={cn("text-sm line-clamp-3", isOwnMessage ? "text-primary-foreground" : "text-foreground")}>{post.content}</p>
-                 <div className={cn("flex items-center gap-4 text-xs mt-2", isOwnMessage ? "text-primary-foreground/80" : "text-muted-foreground")}>
+                <p className="text-sm line-clamp-3 text-foreground">{post.content}</p>
+                 <div className="flex items-center gap-4 text-xs mt-2 text-muted-foreground">
                     <div className="flex items-center gap-1">
                         <Heart className="h-3 w-3" />
                         {post.likeCount}
@@ -119,7 +116,7 @@ function MessageBubble({ message, isOwnMessage, conversationId, onSetReply }: { 
                 isOwnMessage ? "flex-row-reverse" : "flex-row"
             )}>
                  {isPostShare && message.postId ? (
-                     <PostPreviewCard postId={message.postId} isOwnMessage={isOwnMessage} />
+                     <PostPreviewCard postId={message.postId} />
                  ) : (
                     <DropdownMenu>
                         <DropdownMenuTrigger asChild>
