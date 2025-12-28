@@ -156,12 +156,26 @@ function MessageBubble({ message, isOwnMessage, conversationId, onSetReply }: { 
                         )}
                         </div>
                     </DropdownMenuTrigger>
-                    <DropdownMenuContent align={isOwnMessage ? "end" : "start"} className="w-56">
+                     <DropdownMenuContent align={isOwnMessage ? "end" : "start"} className="w-56">
                         {isPostShare ? (
-                            <DropdownMenuItem onClick={handleOpenPost}>
-                                <ExternalLink className="mr-2 h-4 w-4" />
-                                <span>Open Post</span>
-                            </DropdownMenuItem>
+                            <>
+                                <DropdownMenuItem onClick={handleOpenPost}>
+                                    <ExternalLink className="mr-2 h-4 w-4" />
+                                    <span>Open Post</span>
+                                </DropdownMenuItem>
+                                {!isOwnMessage && (
+                                    <>
+                                        <DropdownMenuItem onClick={() => onSetReply(message)}>
+                                            <Reply className="mr-2 h-4 w-4" />
+                                            <span>Reply</span>
+                                        </DropdownMenuItem>
+                                        <DropdownMenuItem>
+                                            <Forward className="mr-2 h-4 w-4" />
+                                            <span>Forward</span>
+                                        </DropdownMenuItem>
+                                    </>
+                                )}
+                            </>
                         ) : (
                             <>
                                 <DropdownMenuItem onClick={() => onSetReply(message)}>
@@ -179,7 +193,7 @@ function MessageBubble({ message, isOwnMessage, conversationId, onSetReply }: { 
                             </>
                         )}
                         {isOwnMessage && (
-                                <DropdownMenuItem className="text-destructive" onClick={handleUnsend}>
+                            <DropdownMenuItem className="text-destructive" onClick={handleUnsend}>
                                 <Trash2 className="mr-2 h-4 w-4" />
                                 <span>Unsend</span>
                             </DropdownMenuItem>
