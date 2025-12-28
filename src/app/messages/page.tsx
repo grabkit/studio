@@ -40,7 +40,7 @@ function UpvotedUserSkeleton() {
 }
 
 function UpvotedUsers() {
-    const { firestore, user: currentUser } = useFirebase();
+    const { firestore, user: currentUser, userProfile } = useFirebase();
     const [upvotedUsers, setUpvotedUsers] = useState<WithId<User>[]>([]);
     const [isLoading, setIsLoading] = useState(true);
 
@@ -59,16 +59,38 @@ function UpvotedUsers() {
                 );
                 const querySnapshot = await getDocs(usersQuery);
                 const users = querySnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as WithId<User>));
-                setUpvotedUsers(users);
+                
+                // Filter out the current user from the fetched list to avoid duplication
+                const otherUsers = users.filter(user => user.id !== currentUser.uid);
+
+                // Create a profile object for the current user
+                const currentUserAsUser = {
+                    id: currentUser.uid,
+                    name: userProfile?.name || currentUser.displayName || 'You',
+                    ...userProfile
+                } as WithId<User>;
+                
+                // Prepend the current user to the list
+                setUpvotedUsers([currentUserAsUser, ...otherUsers]);
+                
             } catch (error) {
                 console.error("Error fetching upvoted users:", error);
+                 // If fetching fails, at least show the current user
+                if (userProfile) {
+                     const currentUserAsUser = {
+                        id: currentUser.uid,
+                        name: userProfile?.name || currentUser.displayName || 'You',
+                        ...userProfile
+                    } as WithId<User>;
+                    setUpvotedUsers([currentUserAsUser]);
+                }
             } finally {
                 setIsLoading(false);
             }
         };
 
         fetchUpvotedUsers();
-    }, [firestore, currentUser]);
+    }, [firestore, currentUser, userProfile]);
 
     if (isLoading) {
         return (
@@ -93,16 +115,22 @@ function UpvotedUsers() {
             <h2 className="text-lg font-semibold font-headline mb-3">Upvoted</h2>
              <div className="overflow-x-auto pb-2 -mb-2 no-scrollbar">
                 <div className="flex space-x-4">
-                    {upvotedUsers.map(user => (
-                         <Link key={user.id} href={`/profile/${user.id}`} className="flex-shrink-0">
+                    {upvotedUsers.map(user => {
+                        const isCurrentUser = user.id === currentUser?.uid;
+                        const href = isCurrentUser ? '/account' : `/profile/${user.id}`;
+                        const name = isCurrentUser ? 'Your Profile' : formatUserId(user.id);
+                        
+                        return (
+                         <Link key={user.id} href={href} className="flex-shrink-0">
                             <div className="flex flex-col items-center w-20">
                                  <Avatar className="h-16 w-16">
                                     <AvatarFallback>{getInitials(user.name)}</AvatarFallback>
                                 </Avatar>
-                                <p className="text-xs font-semibold truncate w-full text-center mt-2">{formatUserId(user.id)}</p>
+                                <p className="text-xs font-semibold truncate w-full text-center mt-2">{name}</p>
                             </div>
                         </Link>
-                    ))}
+                        )
+                    })}
                 </div>
             </div>
             <style jsx>{`
