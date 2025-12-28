@@ -69,7 +69,7 @@ service cloud.firestore {
       allow list: if isSignedIn() && request.auth.uid in resource.data.participantIds;
       allow create: if isSignedIn();
       allow update: if isSignedIn() && request.auth.uid in resource.data.participantIds &&
-                       request.resource.data.diff(resource.data).affectedKeys().hasAny(['lastMessage', 'lastUpdated', 'status', 'unreadCounts', 'lastReadTimestamps', 'mutedBy', 'postId']);
+                       request.resource.data.diff(resource.data).affectedKeys().hasOnly(['lastMessage', 'lastUpdated', 'status', 'unreadCounts', 'lastReadTimestamps', 'mutedBy', 'postId']);
       allow delete: if isSignedIn() && request.auth.uid in resource.data.participantIds;
     }
 
@@ -117,7 +117,7 @@ service cloud.firestore {
       let data = request.resource.data;
       return data.type == 'text'
         && data.authorId == request.auth.uid
-        && data.content is string && data.content.size() > 0 && data.content.size() <= 560
+        && (data.content is string && data.content.size() > 0 && data.content.size() <= 560 || data.keys().has('linkMetadata'))
         && data.likeCount == 0
         && data.commentCount == 0
         && data.commentsAllowed is bool
