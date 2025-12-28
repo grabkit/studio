@@ -575,6 +575,8 @@ export default function HomePage() {
     
     // Only allow pulling when scrolled to the top
     if (containerRef.current && containerRef.current.scrollTop === 0 && pullDistance > 0 && !isRefreshing) {
+      // Prevent browser's default pull-to-refresh action
+      e.preventDefault();
       setPullPosition(Math.min(pullDistance, 120)); // Max pull
     }
   };
@@ -606,17 +608,17 @@ export default function HomePage() {
         className="relative h-full overflow-y-auto pt-12"
        >
         <div 
-          className="absolute top-0 left-0 right-0 flex justify-center items-center overflow-hidden text-muted-foreground transition-all duration-300"
-          style={{ height: isRefreshing ? `50px` : `${pullPosition}px`, opacity: isRefreshing ? 1 : Math.min(pullPosition/70, 1) }}
+          className="absolute top-0 left-0 right-0 flex justify-center items-center h-12 text-muted-foreground transition-opacity duration-300"
+          style={{
+             transform: isRefreshing ? `translateY(0)` : `translateY(${-50 + (pullPosition / 120 * 50)}px)`,
+             opacity: isRefreshing ? 1 : (pullPosition / 70),
+          }}
         >
-           <div style={{ transform: `rotate(${isRefreshing ? 0 : Math.min(pullPosition, 70) * 3}deg)` }}>
+           <div style={{ transform: `rotate(${isRefreshing ? 0 : pullPosition * 3}deg)` }}>
              <RefreshCw className={cn("h-5 w-5", isRefreshing && "animate-spin")} />
            </div>
         </div>
-        <div 
-          className="divide-y border-b transition-transform duration-300"
-          style={{ transform: `translateY(${isRefreshing ? '50px' : '0px'})` }}
-        >
+        <div className="divide-y border-b">
           {isLoading && !isRefreshing && (
             <>
               <PostSkeleton />
