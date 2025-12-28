@@ -96,6 +96,7 @@ service cloud.firestore {
 
     function isValidNewMessage() {
       let data = request.resource.data;
+      let allowedKeys = ['id', 'senderId', 'text', 'timestamp', 'replyToMessageId', 'replyToMessageText', 'postId', 'postPreview'];
       // Common validations
       return data.senderId == request.auth.uid
         && data.text is string && data.text.size() > 0 && data.text.size() <= 1000
@@ -104,8 +105,13 @@ service cloud.firestore {
              (!data.keys().hasAny(['replyToMessageId', 'replyToMessageText'])) ||
              (data.replyToMessageId is string && data.replyToMessageText is string)
            )
+        // Post share specific validations
+        && (
+             (!data.keys().hasAny(['postId', 'postPreview'])) ||
+             (data.postId is string && data.postPreview is map)
+           )
         // Ensure no other fields are present
-        && data.keys().hasOnly(['id', 'senderId', 'text', 'timestamp', 'replyToMessageId', 'replyToMessageText']);
+        && data.keys().hasOnly(allowedKeys);
     }
 
     function isNewTextPost() {

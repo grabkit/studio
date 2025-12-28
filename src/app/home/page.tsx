@@ -36,6 +36,7 @@ import React, { useState, useMemo, useRef, TouchEvent, useEffect, useCallback } 
 import { Button, buttonVariants } from "@/components/ui/button";
 import { useRouter } from "next/navigation";
 import { usePresence } from "@/hooks/usePresence";
+import { ShareSheet } from "@/components/ShareSheet";
 
 
 const formatUserId = (uid: string | undefined) => {
@@ -205,6 +206,7 @@ export function PostItem({ post, bookmarks, updatePost }: { post: WithId<Post>, 
   const { toast } = useToast();
   const router = useRouter();
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
+  const [isShareSheetOpen, setIsShareSheetOpen] = useState(false);
   
   const hasLiked = user ? post.likes?.includes(user.uid) : false;
   const isOwner = user?.uid === post.authorId;
@@ -292,35 +294,6 @@ export function PostItem({ post, bookmarks, updatePost }: { post: WithId<Post>, 
     router.push(`/post?content=${encodedContent}`);
   };
 
-  const handleShare = async () => {
-    const shareData = {
-      title: `Post by ${formatUserId(post.authorId)}`,
-      text: post.content,
-      url: `${window.location.origin}/post/${post.id}`,
-    };
-    try {
-      if (navigator.share) {
-        await navigator.share(shareData);
-      } else {
-        await navigator.clipboard.writeText(shareData.url);
-        toast({
-            title: "Link Copied",
-            description: "Post link has been copied to your clipboard.",
-        });
-      }
-    } catch (error: any) {
-      // Ignore user cancellation of share sheet
-      if (error.name === 'NotAllowedError') return;
-
-      console.error("Error sharing:", error);
-      toast({
-        variant: "destructive",
-        title: "Could not share",
-        description: "There was an error trying to share this post.",
-      });
-    }
-  };
-
   const handleBookmark = () => {
     if (!user || !firestore) {
         toast({
@@ -360,6 +333,7 @@ export function PostItem({ post, bookmarks, updatePost }: { post: WithId<Post>, 
 
 
   return (
+    <>
     <Card className="w-full shadow-none border-x-0 border-t-0 rounded-none">
       <CardContent className="p-4">
         <div className="flex space-x-3">
@@ -436,7 +410,7 @@ export function PostItem({ post, bookmarks, updatePost }: { post: WithId<Post>, 
                   <button onClick={handleRepost} className="flex items-center space-x-1 hover:text-green-500">
                     <Repeat className={cn("h-4 w-4")} />
                   </button>
-                  <button onClick={handleShare} className="flex items-center space-x-1 hover:text-primary">
+                  <button onClick={() => setIsShareSheetOpen(true)} className="flex items-center space-x-1 hover:text-primary">
                     <ArrowUpRight className="h-4 w-4" />
                   </button>
                 </div>
@@ -465,6 +439,8 @@ export function PostItem({ post, bookmarks, updatePost }: { post: WithId<Post>, 
         </AlertDialogContent>
       </AlertDialog>
     </Card>
+    <ShareSheet post={post} isOpen={isShareSheetOpen} onOpenChange={setIsShareSheetOpen} />
+    </>
   );
 }
 
@@ -605,12 +581,11 @@ export default function HomePage() {
         onTouchStart={handleTouchStart}
         onTouchMove={handleTouchMove}
         onTouchEnd={handleTouchEnd}
-        className="relative h-full overflow-y-auto pt-12"
+        className="relative h-full overflow-y-auto"
        >
         <div 
           className="absolute top-0 left-0 right-0 flex justify-center items-center h-12 text-muted-foreground transition-opacity duration-300"
           style={{
-             transform: isRefreshing ? `translateY(0)` : `translateY(${-50 + (pullPosition / 120 * 50)}px)`,
              opacity: isRefreshing ? 1 : (pullPosition / 70),
           }}
         >
@@ -618,7 +593,7 @@ export default function HomePage() {
              <RefreshCw className={cn("h-5 w-5", isRefreshing && "animate-spin")} />
            </div>
         </div>
-        <div className="divide-y border-b">
+        <div className="divide-y border-b pt-12">
           {isLoading && !isRefreshing && (
             <>
               <PostSkeleton />

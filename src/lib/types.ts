@@ -100,6 +100,11 @@ export interface Message {
     timestamp: any; // Can be Timestamp or FieldValue
     replyToMessageId?: string;
     replyToMessageText?: string;
+    postId?: string;
+    postPreview?: {
+        content: string;
+        authorId: string;
+    }
 }
 
 

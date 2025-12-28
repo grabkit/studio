@@ -4,7 +4,7 @@
 
 import { useParams, useRouter } from 'next/navigation';
 import { useFirebase, useMemoFirebase } from '@/firebase';
-import { collection, query, orderBy, doc, setDoc, serverTimestamp, updateDoc, writeBatch, increment, deleteDoc } from 'firebase/firestore';
+import { collection, query, orderBy, doc, setDoc, serverTimestamp, updateDoc, writeBatch, increment, deleteDoc, getDoc } from 'firebase/firestore';
 import { useCollection } from '@/firebase/firestore/use-collection';
 import { useDoc } from '@/firebase/firestore/use-doc';
 import { useForm } from 'react-hook-form';
@@ -18,9 +18,9 @@ import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
 import { Form, FormControl, FormField, FormItem, FormMessage } from '@/components/ui/form';
 import { Skeleton } from '@/components/ui/skeleton';
-import { ArrowLeft, Send, Reply, Forward, Copy, Trash2, X } from 'lucide-react';
-import { cn, getInitials, formatMessageTimestamp, formatLastSeen } from '@/lib/utils';
-import type { Conversation, Message, User } from '@/lib/types';
+import { ArrowLeft, Send, Reply, Forward, Copy, Trash2, X, Heart, MessageCircle } from 'lucide-react';
+import { cn, getInitials, formatMessageTimestamp, formatLastSeen, formatTimestamp } from '@/lib/utils';
+import type { Conversation, Message, User, Post } from '@/lib/types';
 import { WithId } from '@/firebase/firestore/use-collection';
 import { FirestorePermissionError } from '@/firebase/errors';
 import { errorEmitter } from '@/firebase/error-emitter';
@@ -37,6 +37,48 @@ const formatUserId = (uid: string | undefined) => {
     if (!uid) return "blur??????";
     return `blur${uid.substring(uid.length - 6)}`;
 };
+
+function PostPreviewCard({ postId }: { postId: string }) {
+    const { firestore } = useFirebase();
+    const postRef = useMemoFirebase(() => doc(firestore, 'posts', postId), [firestore, postId]);
+    const { data: post, isLoading } = useDoc<Post>(postRef);
+
+    if (isLoading) {
+        return <Skeleton className="h-24 w-full rounded-lg" />;
+    }
+
+    if (!post) {
+        return (
+            <div className="p-3 border rounded-lg text-center text-sm text-muted-foreground">
+                This post is no longer available.
+            </div>
+        );
+    }
+    
+    return (
+        <Link href={`/post/${post.id}`} className="block border rounded-lg overflow-hidden hover:bg-secondary/50 transition-colors">
+            <div className="p-3">
+                <div className="flex items-center gap-2 mb-2">
+                    <Avatar className="h-6 w-6">
+                        <AvatarFallback className="text-xs">{getInitials(post.authorId)}</AvatarFallback>
+                    </Avatar>
+                    <span className="text-xs font-semibold">{formatUserId(post.authorId)}</span>
+                </div>
+                <p className="text-sm text-foreground line-clamp-3">{post.content}</p>
+                 <div className="flex items-center gap-4 text-xs text-muted-foreground mt-2">
+                    <div className="flex items-center gap-1">
+                        <Heart className="h-3 w-3" />
+                        {post.likeCount}
+                    </div>
+                     <div className="flex items-center gap-1">
+                        <MessageCircle className="h-3 w-3" />
+                        {post.commentCount}
+                    </div>
+                </div>
+            </div>
+        </Link>
+    )
+}
 
 function MessageBubble({ message, isOwnMessage, conversationId, onSetReply }: { message: WithId<Message>, isOwnMessage: boolean, conversationId: string, onSetReply: (message: WithId<Message>) => void }) {
     const { toast } = useToast();
@@ -64,6 +106,8 @@ function MessageBubble({ message, isOwnMessage, conversationId, onSetReply }: { 
             });
         });
     }
+    
+    const isPostShare = !!message.postId;
 
     return (
         <div className={cn("flex items-end gap-2 group", isOwnMessage ? "justify-end" : "justify-start")}>
@@ -75,7 +119,8 @@ function MessageBubble({ message, isOwnMessage, conversationId, onSetReply }: { 
                     <DropdownMenuTrigger asChild>
                          <div className={cn(
                             "max-w-fit rounded-2xl px-3 py-2 cursor-pointer",
-                            isOwnMessage ? "bg-primary text-primary-foreground rounded-br-none" : "bg-secondary rounded-bl-none"
+                            isOwnMessage ? "bg-primary text-primary-foreground rounded-br-none" : "bg-secondary rounded-bl-none",
+                            isPostShare && "p-2"
                         )}>
                             {message.replyToMessageText && (
                                 <div className={cn(
@@ -86,8 +131,14 @@ function MessageBubble({ message, isOwnMessage, conversationId, onSetReply }: { 
                                     <p className="text-xs opacity-80 whitespace-pre-wrap break-words">{message.replyToMessageText}</p>
                                 </div>
                             )}
-                            <p className="text-sm whitespace-pre-wrap">{message.text}</p>
-                            {message.timestamp?.toDate && (
+
+                             {isPostShare && message.postId ? (
+                                <PostPreviewCard postId={message.postId} />
+                            ) : (
+                                <p className="text-sm whitespace-pre-wrap">{message.text}</p>
+                            )}
+                            
+                            {message.timestamp?.toDate && !isPostShare && (
                                 <p className={cn("text-xs mt-1 text-right", isOwnMessage ? "text-primary-foreground/70" : "text-muted-foreground")}>
                                     {formatMessageTimestamp(message.timestamp.toDate())}
                                 </p>
@@ -95,18 +146,22 @@ function MessageBubble({ message, isOwnMessage, conversationId, onSetReply }: { 
                         </div>
                     </DropdownMenuTrigger>
                     <DropdownMenuContent align={isOwnMessage ? "end" : "start"} className="w-56">
-                        <DropdownMenuItem onClick={() => onSetReply(message)}>
-                            <Reply className="mr-2 h-4 w-4" />
-                            <span>Reply</span>
-                        </DropdownMenuItem>
-                            <DropdownMenuItem>
+                        {!isPostShare && (
+                             <DropdownMenuItem onClick={() => onSetReply(message)}>
+                                <Reply className="mr-2 h-4 w-4" />
+                                <span>Reply</span>
+                            </DropdownMenuItem>
+                        )}
+                        <DropdownMenuItem>
                             <Forward className="mr-2 h-4 w-4" />
                             <span>Forward</span>
                         </DropdownMenuItem>
-                        <DropdownMenuItem onClick={handleCopy}>
-                            <Copy className="mr-2 h-4 w-4" />
-                            <span>Copy</span>
-                        </DropdownMenuItem>
+                         {!isPostShare && (
+                            <DropdownMenuItem onClick={handleCopy}>
+                                <Copy className="mr-2 h-4 w-4" />
+                                <span>Copy</span>
+                            </DropdownMenuItem>
+                        )}
                         {isOwnMessage && (
                                 <DropdownMenuItem className="text-destructive" onClick={handleUnsend}>
                                 <Trash2 className="mr-2 h-4 w-4" />
