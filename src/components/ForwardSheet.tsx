@@ -1,0 +1,165 @@
+
+"use client";
+
+import React, { useMemo, useState } from 'react';
+import { Sheet, SheetContent, SheetHeader, SheetTitle } from "@/components/ui/sheet";
+import { Button } from "@/components/ui/button";
+import { useFirebase, useMemoFirebase, useDoc } from '@/firebase';
+import { collection, query, where, doc, writeBatch, increment, serverTimestamp } from 'firebase/firestore';
+import { useCollection } from '@/firebase/firestore/use-collection';
+import type { Conversation, Post, User, Message } from '@/lib/types';
+import { WithId } from '@/firebase/firestore/use-collection';
+import { Avatar, AvatarFallback } from './ui/avatar';
+import { getInitials, cn } from '@/lib/utils';
+import { Skeleton } from './ui/skeleton';
+import { useToast } from '@/hooks/use-toast';
+import { Send, Check } from 'lucide-react';
+import { ScrollArea } from './ui/scroll-area';
+import { FirestorePermissionError } from '@/firebase/errors';
+import { errorEmitter } from '@/firebase/error-emitter';
+
+const formatUserId = (uid: string | undefined) => {
+    if (!uid) return "blur??????";
+    return `blur${uid.substring(uid.length - 6)}`;
+};
+
+function ConversationItem({ conversation, onSend, sentStatus }: { conversation: WithId<Conversation>, onSend: (conversation: WithId<Conversation>) => void, sentStatus: boolean }) {
+    const { user: currentUser, firestore } = useFirebase();
+    const otherParticipantId = conversation.participantIds.find(p => p !== currentUser?.uid);
+
+    const otherUserRef = useMemoFirebase(() => {
+        if (!firestore || !otherParticipantId) return null;
+        return doc(firestore, 'users', otherParticipantId);
+    }, [firestore, otherParticipantId]);
+    const { data: otherUser } = useDoc<User>(otherUserRef);
+
+    const name = otherUser ? formatUserId(otherUser.id) : <div className="font-semibold text-sm"><Skeleton className="h-4 w-24" /></div>;
+
+    return (
+        <div className="flex items-center justify-between p-2 rounded-lg hover:bg-secondary">
+            <div className="flex items-center space-x-3">
+                <Avatar className="h-10 w-10">
+                    <AvatarFallback>{otherUser ? getInitials(formatUserId(otherUser.id)) : '?'}</AvatarFallback>
+                </Avatar>
+                <div>
+                    <div className="font-semibold text-sm">{name}</div>
+                    <p className="text-xs text-muted-foreground">{conversation.lastMessage ? `Last: ${conversation.lastMessage.substring(0, 20)}...` : 'No messages yet'}</p>
+                </div>
+            </div>
+            <Button size="sm" variant={sentStatus ? "secondary" : "default"} onClick={() => onSend(conversation)} disabled={sentStatus}>
+                {sentStatus ? <Check className="h-4 w-4" /> : <Send className="h-4 w-4" />}
+            </Button>
+        </div>
+    )
+}
+
+export function ForwardSheet({ message, isOpen, onOpenChange }: { message: WithId<Message> | null, isOpen: boolean, onOpenChange: (open: boolean) => void }) {
+    const { firestore, user } = useFirebase();
+    const { toast } = useToast();
+    const [sentConversations, setSentConversations] = useState<string[]>([]);
+    
+    const conversationsQuery = useMemoFirebase(() => {
+        if (!user || !firestore) return null;
+        return query(
+            collection(firestore, 'conversations'),
+            where('participantIds', 'array-contains', user.uid),
+            where('status', '==', 'accepted')
+        );
+    }, [user, firestore]);
+    const { data: conversations, isLoading } = useCollection<Conversation>(conversationsQuery);
+
+    // Reset sent status when the sheet is opened with a new message
+    React.useEffect(() => {
+        if (isOpen) {
+            setSentConversations([]);
+        }
+    }, [isOpen, message]);
+    
+    const handleSend = (conversation: WithId<Conversation>) => {
+        if (!firestore || !user || !message) return;
+        
+        const peerId = conversation.participantIds.find(id => id !== user.uid);
+        if (!peerId) return;
+
+        const messageRef = doc(collection(firestore, 'conversations', conversation.id, 'messages'));
+        const conversationRef = doc(firestore, 'conversations', conversation.id);
+        
+        // Create a new message object by copying the original one.
+        const newMessage: Omit<Message, 'id' | 'timestamp'> = {
+            senderId: user.uid,
+            text: message.text,
+            ...(message.postId && { postId: message.postId }),
+            ...(message.replyToMessageId && { replyToMessageId: message.replyToMessageId }),
+            ...(message.replyToMessageText && { replyToMessageText: message.replyToMessageText }),
+        };
+
+        const batch = writeBatch(firestore);
+        
+        batch.set(messageRef, { ...newMessage, timestamp: serverTimestamp() });
+        
+        const updatePayload: any = {
+            lastMessage: message.postId ? "Shared a post" : message.text,
+            lastUpdated: serverTimestamp(),
+            [`unreadCounts.${peerId}`]: increment(1),
+        };
+        
+        batch.update(conversationRef, updatePayload);
+
+        batch.commit()
+            .then(() => {
+                setSentConversations(prev => [...prev, conversation.id]);
+                toast({ title: "Forwarded!" });
+            })
+            .catch(error => {
+                const permissionError = new FirestorePermissionError({
+                    path: conversationRef.path,
+                    operation: 'update',
+                    requestResourceData: updatePayload,
+                });
+                errorEmitter.emit('permission-error', permissionError);
+                toast({ variant: 'destructive', title: "Error", description: "Could not forward the message."});
+            });
+    }
+
+    return (
+        <Sheet open={isOpen} onOpenChange={onOpenChange}>
+            <SheetContent side="bottom" className="rounded-t-2xl p-4 flex flex-col h-[75dvh]">
+                <SheetHeader className="text-center pb-2">
+                    <SheetTitle>Forward to...</SheetTitle>
+                </SheetHeader>
+                
+                <p className="text-sm font-medium text-muted-foreground pt-4 pb-2">Recent Chats</p>
+
+                <ScrollArea className="flex-grow">
+                    <div className="space-y-2 pr-2">
+                        {isLoading && Array.from({ length: 3 }).map((_, i) => (
+                             <div key={i} className="flex items-center justify-between p-2">
+                                <div className="flex items-center space-x-3">
+                                    <Skeleton className="h-10 w-10 rounded-full" />
+                                    <div className="space-y-1">
+                                        <Skeleton className="h-4 w-24" />
+                                        <Skeleton className="h-3 w-32" />
+                                    </div>
+                                </div>
+                                 <Skeleton className="h-9 w-16 rounded-md" />
+                            </div>
+                        ))}
+                        {conversations && conversations.length === 0 && !isLoading && (
+                            <div className="text-center text-muted-foreground py-10">
+                                <p>No chats to forward to.</p>
+                            </div>
+                        )}
+                        {conversations?.map(convo => (
+                            <ConversationItem 
+                                key={convo.id} 
+                                conversation={convo} 
+                                onSend={handleSend}
+                                sentStatus={sentConversations.includes(convo.id)}
+                            />
+                        ))}
+                    </div>
+                </ScrollArea>
+            </SheetContent>
+        </Sheet>
+    )
+}

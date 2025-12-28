@@ -28,6 +28,7 @@ import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigge
 import { useToast } from '@/hooks/use-toast';
 import { usePresence } from '@/hooks/usePresence';
 import Link from 'next/link';
+import { ForwardSheet } from '@/components/ForwardSheet';
 
 const messageFormSchema = z.object({
   text: z.string().min(1, "Message cannot be empty").max(1000),
@@ -49,7 +50,7 @@ function PostPreviewCard({ postId }: { postId: string }) {
 
     if (!post) {
         return (
-            <div className="p-3 border rounded-lg text-center text-sm text-muted-foreground">
+            <div className="p-3 border rounded-lg text-center text-sm text-muted-foreground bg-secondary/20">
                 This post is no longer available.
             </div>
         );
@@ -81,7 +82,7 @@ function PostPreviewCard({ postId }: { postId: string }) {
 }
 
 
-function MessageBubble({ message, isOwnMessage, conversationId, onSetReply }: { message: WithId<Message>, isOwnMessage: boolean, conversationId: string, onSetReply: (message: WithId<Message>) => void }) {
+function MessageBubble({ message, isOwnMessage, conversationId, onSetReply, onForward }: { message: WithId<Message>, isOwnMessage: boolean, conversationId: string, onSetReply: (message: WithId<Message>) => void, onForward: (message: WithId<Message>) => void }) {
     const { toast } = useToast();
     const { firestore } = useFirebase();
     const router = useRouter();
@@ -126,36 +127,36 @@ function MessageBubble({ message, isOwnMessage, conversationId, onSetReply }: { 
                  <DropdownMenu>
                     <DropdownMenuTrigger asChild>
                         <div className="cursor-pointer">
-                        {isPostShare && message.postId ? (
-                            <div onClick={(e) => e.preventDefault()}>
-                                <PostPreviewCard postId={message.postId} />
-                            </div>
-                        ) : (
-                        <div 
-                            className={cn(
-                                "max-w-fit rounded-2xl px-3 py-2",
-                                isOwnMessage ? "bg-primary text-primary-foreground rounded-br-none" : "bg-secondary rounded-bl-none"
-                            )}
-                        >
-                            {message.replyToMessageText && (
-                                <div className={cn(
-                                    "p-2 rounded-md mb-2",
-                                    isOwnMessage ? "bg-black/10" : "bg-black/5"
-                                )}>
-                                    <p className="text-xs font-semibold truncate">{formatUserId(message.replyToMessageId === message.senderId ? message.senderId : undefined)}</p>
-                                    <p className="text-xs opacity-80 whitespace-pre-wrap break-words">{message.replyToMessageText}</p>
+                            {isPostShare && message.postId ? (
+                                <div onClick={(e) => e.preventDefault()}>
+                                    <PostPreviewCard postId={message.postId} />
                                 </div>
-                            )}
+                            ) : (
+                            <div 
+                                className={cn(
+                                    "max-w-fit rounded-2xl px-3 py-2",
+                                    isOwnMessage ? "bg-primary text-primary-foreground rounded-br-none" : "bg-secondary rounded-bl-none"
+                                )}
+                            >
+                                {message.replyToMessageText && (
+                                    <div className={cn(
+                                        "p-2 rounded-md mb-2",
+                                        isOwnMessage ? "bg-black/10" : "bg-black/5"
+                                    )}>
+                                        <p className="text-xs font-semibold truncate">{formatUserId(message.replyToMessageId === message.senderId ? message.senderId : undefined)}</p>
+                                        <p className="text-xs opacity-80 whitespace-pre-wrap break-words">{message.replyToMessageText}</p>
+                                    </div>
+                                )}
 
-                            <p className="text-sm whitespace-pre-wrap">{message.text}</p>
-                            
-                            {message.timestamp?.toDate && (
-                                <p className={cn("text-xs mt-1 text-right", isOwnMessage ? "text-primary-foreground/70" : "text-muted-foreground")}>
-                                    {formatMessageTimestamp(message.timestamp.toDate())}
-                                </p>
+                                <p className="text-sm whitespace-pre-wrap">{message.text}</p>
+                                
+                                {message.timestamp?.toDate && (
+                                    <p className={cn("text-xs mt-1 text-right", isOwnMessage ? "text-primary-foreground/70" : "text-muted-foreground")}>
+                                        {formatMessageTimestamp(message.timestamp.toDate())}
+                                    </p>
+                                )}
+                            </div>
                             )}
-                        </div>
-                        )}
                         </div>
                     </DropdownMenuTrigger>
                      <DropdownMenuContent align={isOwnMessage ? "end" : "start"} className="w-56">
@@ -169,7 +170,7 @@ function MessageBubble({ message, isOwnMessage, conversationId, onSetReply }: { 
                                     <Reply className="mr-2 h-4 w-4" />
                                     <span>Reply</span>
                                 </DropdownMenuItem>
-                                <DropdownMenuItem>
+                                <DropdownMenuItem onClick={() => onForward(message)}>
                                     <Forward className="mr-2 h-4 w-4" />
                                     <span>Forward</span>
                                 </DropdownMenuItem>
@@ -180,7 +181,7 @@ function MessageBubble({ message, isOwnMessage, conversationId, onSetReply }: { 
                                     <Reply className="mr-2 h-4 w-4" />
                                     <span>Reply</span>
                                 </DropdownMenuItem>
-                                <DropdownMenuItem>
+                                <DropdownMenuItem onClick={() => onForward(message)}>
                                     <Forward className="mr-2 h-4 w-4" />
                                     <span>Forward</span>
                                 </DropdownMenuItem>
@@ -240,7 +241,7 @@ function ChatHeader({ peerId }: { peerId: string }) {
     )
 }
 
-function ChatMessages({ conversationId, conversation, onSetReply, replyingTo }: { conversationId: string, conversation: WithId<Conversation> | null, onSetReply: (message: WithId<Message>) => void, replyingTo: WithId<Message> | null }) {
+function ChatMessages({ conversationId, conversation, onSetReply, onForward, replyingTo }: { conversationId: string, conversation: WithId<Conversation> | null, onSetReply: (message: WithId<Message>) => void, onForward: (message: WithId<Message>) => void, replyingTo: WithId<Message> | null }) {
     const { firestore, user } = useFirebase();
     const messagesEndRef = React.useRef<HTMLDivElement | null>(null);
 
@@ -293,7 +294,7 @@ function ChatMessages({ conversationId, conversation, onSetReply, replyingTo }: 
         <div className="p-4">
             <div className="space-y-4">
                 {messages?.map(message => (
-                    <MessageBubble key={message.id} message={message} isOwnMessage={message.senderId === user?.uid} conversationId={conversationId} onSetReply={onSetReply} />
+                    <MessageBubble key={message.id} message={message} isOwnMessage={message.senderId === user?.uid} conversationId={conversationId} onSetReply={onSetReply} onForward={onForward} />
                 ))}
             </div>
              <div ref={messagesEndRef} />
@@ -428,6 +429,8 @@ export default function ChatPage() {
     const router = useRouter();
     const peerId = params.peerId as string;
     const [replyingTo, setReplyingTo] = useState<WithId<Message> | null>(null);
+    const [forwardingMessage, setForwardingMessage] = useState<WithId<Message> | null>(null);
+    const [isForwardSheetOpen, setIsForwardSheetOpen] = useState(false);
 
     const handleSetReply = (message: WithId<Message>) => {
         setReplyingTo(message);
@@ -436,6 +439,11 @@ export default function ChatPage() {
     const handleCancelReply = () => {
         setReplyingTo(null);
     }
+
+    const handleForward = (message: WithId<Message>) => {
+        setForwardingMessage(message);
+        setIsForwardSheetOpen(true);
+    };
 
     const conversationId = useMemo(() => {
         if (!user || !peerId) return null;
@@ -488,10 +496,16 @@ export default function ChatPage() {
             <ChatHeader peerId={peerId} />
 
             <div className="pt-14">
-                {conversationId && <ChatMessages conversationId={conversationId} conversation={conversation} onSetReply={handleSetReply} replyingTo={replyingTo} />}
+                {conversationId && <ChatMessages conversationId={conversationId} conversation={conversation} onSetReply={handleSetReply} onForward={handleForward} replyingTo={replyingTo} />}
             </div>
 
             {conversationId && <MessageInput conversationId={conversationId} conversation={conversation} replyingTo={replyingTo} onCancelReply={handleCancelReply} />}
+            
+            <ForwardSheet 
+                isOpen={isForwardSheetOpen}
+                onOpenChange={setIsForwardSheetOpen}
+                message={forwardingMessage}
+            />
         </AppLayout>
     )
 }
