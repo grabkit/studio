@@ -23,7 +23,7 @@ import { useRouter } from "next/navigation";
 import { FirestorePermissionError } from "@/firebase/errors";
 import { errorEmitter } from "@/firebase/error-emitter";
 import { usePresence } from "@/hooks/usePresence";
-import { ScrollArea, ScrollBar } from "@/components/ui/scroll-area";
+import { ScrollArea } from "@/components/ui/scroll-area";
 
 const formatUserId = (uid: string | undefined) => {
     if (!uid) return "blur??????";
@@ -33,8 +33,8 @@ const formatUserId = (uid: string | undefined) => {
 function UpvotedUserSkeleton() {
     return (
         <div className="flex flex-col items-center w-20">
-            <Skeleton className="h-14 w-14 rounded-full" />
-            <Skeleton className="h-4 w-16 mt-1" />
+            <Skeleton className="h-16 w-16 rounded-full" />
+            <Skeleton className="h-4 w-16 mt-2" />
         </div>
     )
 }
@@ -91,20 +91,19 @@ function UpvotedUsers() {
     return (
         <div className="p-4 border-b">
             <h2 className="text-lg font-semibold font-headline mb-3">Upvoted Profiles</h2>
-            <ScrollArea className="w-full whitespace-nowrap">
-                <div className="flex space-x-2 pb-3">
+            <ScrollArea className="w-full whitespace-nowrap [&>div]:pb-3 [&>div>div]:!flex">
+                <div className="flex space-x-2">
                     {upvotedUsers.map(user => (
                          <Link key={user.id} href={`/profile/${user.id}`} className="flex-shrink-0">
                             <div className="flex flex-col items-center w-20">
-                                 <Avatar className="h-14 w-14">
+                                 <Avatar className="h-16 w-16">
                                     <AvatarFallback>{getInitials(user.name)}</AvatarFallback>
                                 </Avatar>
-                                <p className="text-xs font-semibold truncate w-full text-center mt-1">{formatUserId(user.id)}</p>
+                                <p className="text-xs font-semibold truncate w-full text-center mt-2">{formatUserId(user.id)}</p>
                             </div>
                         </Link>
                     ))}
                 </div>
-                 <ScrollBar orientation="horizontal" />
             </ScrollArea>
         </div>
     );
