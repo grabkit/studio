@@ -91,6 +91,7 @@ export interface Conversation {
     unreadCounts?: Record<string, number>;
     lastReadTimestamps?: Record<string, any>;
     mutedBy?: string[];
+    postId?: string;
 }
 
 export interface Message {
@@ -121,3 +122,4 @@ export interface Report {
     
 
     
+

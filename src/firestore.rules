@@ -69,7 +69,7 @@ service cloud.firestore {
       allow list: if isSignedIn() && request.auth.uid in resource.data.participantIds;
       allow create: if isSignedIn();
       allow update: if isSignedIn() && request.auth.uid in resource.data.participantIds &&
-                       request.resource.data.diff(resource.data).affectedKeys().hasAny(['lastMessage', 'lastUpdated', 'status', 'unreadCounts', 'lastReadTimestamps', 'mutedBy']);
+                       request.resource.data.diff(resource.data).affectedKeys().hasAny(['lastMessage', 'lastUpdated', 'status', 'unreadCounts', 'lastReadTimestamps', 'mutedBy', 'postId']);
       allow delete: if isSignedIn() && request.auth.uid in resource.data.participantIds;
     }
 
@@ -96,7 +96,7 @@ service cloud.firestore {
 
     function isValidNewMessage() {
       let data = request.resource.data;
-      let allowedKeys = ['id', 'senderId', 'text', 'timestamp', 'replyToMessageId', 'replyToMessageText', 'postId', 'postPreview'];
+      let allowedKeys = ['id', 'senderId', 'text', 'timestamp', 'replyToMessageId', 'replyToMessageText', 'postId'];
       // Common validations
       return data.senderId == request.auth.uid
         && data.text is string && data.text.size() > 0 && data.text.size() <= 1000
@@ -107,8 +107,7 @@ service cloud.firestore {
            )
         // Post share specific validations
         && (
-             (!data.keys().hasAny(['postId', 'postPreview'])) ||
-             (data.postId is string && data.postPreview is map)
+             !data.keys().has('postId') || (data.postId is string)
            )
         // Ensure no other fields are present
         && data.keys().hasOnly(allowedKeys);

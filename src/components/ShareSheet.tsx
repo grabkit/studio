@@ -93,7 +93,7 @@ export function ShareSheet({ post, isOpen, onOpenChange }: { post: WithId<Post>,
         const updatePayload: any = {
             lastMessage: "Shared a post",
             lastUpdated: serverTimestamp(),
-            [`unreadCounts.${peerId}`]: increment(1)
+            [`unreadCounts.${peerId}`]: increment(1),
         };
         
         batch.update(conversationRef, updatePayload);
@@ -107,7 +107,7 @@ export function ShareSheet({ post, isOpen, onOpenChange }: { post: WithId<Post>,
                 const permissionError = new FirestorePermissionError({
                     path: conversationRef.path,
                     operation: 'update',
-                    requestResourceData: { message: newMessage, conversationUpdate: updatePayload },
+                    requestResourceData: updatePayload,
                 });
                 errorEmitter.emit('permission-error', permissionError);
                 toast({ variant: 'destructive', title: "Error", description: "Could not send the post."});
