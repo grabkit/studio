@@ -557,8 +557,8 @@ export default function UserProfilePage() {
                     <Tabs defaultValue="posts" className="w-full">
                         <div className="sticky top-0 bg-background z-10">
                             <TabsList variant="underline" className="grid w-full grid-cols-2">
-                                <TabsTrigger value="posts" variant="profile">Posts</TabsTrigger>
-                                <TabsTrigger value="replies" variant="profile">Replies</TabsTrigger>
+                                <TabsTrigger value="posts" variant="profile" className="font-semibold">Posts</TabsTrigger>
+                                <TabsTrigger value="replies" variant="profile" className="font-semibold">Replies</TabsTrigger>
                             </TabsList>
                         </div>
                         <div>
