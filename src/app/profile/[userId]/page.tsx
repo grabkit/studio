@@ -546,11 +546,11 @@ export default function UserProfilePage() {
                         </div>
                         
                         <div className="mb-4 flex items-center space-x-2">
-                             <Button onClick={handleUpvoteUser} variant={hasUpvotedUser ? "default" : "secondary"} className="flex-1">
-                                <ArrowUp className={cn("mr-2 h-4 w-4", hasUpvotedUser && "fill-current")} /> {hasUpvotedUser ? "Upvoted" : "Upvote"}
+                             <Button onClick={handleUpvoteUser} variant={hasUpvotedUser ? "default" : "secondary"} className="flex-1 font-bold">
+                                {hasUpvotedUser ? "Upvoted" : "Upvote"}
                             </Button>
-                            <Button onClick={handleStartConversation} variant="secondary" className="flex-1">
-                                <MessageSquare className="mr-2 h-4 w-4" /> Message
+                            <Button onClick={handleStartConversation} variant="secondary" className="flex-1 font-bold">
+                                Message
                             </Button>
                         </div>
                     </div>
@@ -653,5 +653,3 @@ export default function UserProfilePage() {
         </AppLayout>
     );
 }
-
-    
