@@ -58,7 +58,7 @@ function PostPreviewCard({ postId, isOwnMessage }: { postId: string, isOwnMessag
     return (
         <Link href={`/post/${postId}`} className={cn(
             "block border rounded-lg overflow-hidden transition-colors",
-             isOwnMessage ? "border-primary-foreground/20 hover:bg-white/10" : "hover:bg-secondary/50"
+             isOwnMessage ? "border-primary-foreground/20 bg-white/5 hover:bg-white/10" : "bg-secondary/20 hover:bg-secondary/50"
         )}>
             <div className="p-3">
                 <div className="flex items-center gap-2 mb-2">
@@ -118,61 +118,56 @@ function MessageBubble({ message, isOwnMessage, conversationId, onSetReply }: { 
                 "flex items-center max-w-[70%]",
                 isOwnMessage ? "flex-row-reverse" : "flex-row"
             )}>
-                <DropdownMenu>
-                    <DropdownMenuTrigger asChild>
-                         <div className={cn(
-                            "max-w-fit rounded-2xl px-3 py-2 cursor-pointer",
-                            isOwnMessage ? "bg-primary text-primary-foreground rounded-br-none" : "bg-secondary rounded-bl-none",
-                            isPostShare && "p-2"
-                        )}>
-                            {message.replyToMessageText && (
-                                <div className={cn(
-                                    "p-2 rounded-md mb-2",
-                                    isOwnMessage ? "bg-black/10" : "bg-black/5"
-                                )}>
-                                    <p className="text-xs font-semibold truncate">{formatUserId(message.replyToMessageId === message.senderId ? message.senderId : undefined)}</p>
-                                    <p className="text-xs opacity-80 whitespace-pre-wrap break-words">{message.replyToMessageText}</p>
-                                </div>
-                            )}
+                 {isPostShare && message.postId ? (
+                     <PostPreviewCard postId={message.postId} isOwnMessage={isOwnMessage} />
+                 ) : (
+                    <DropdownMenu>
+                        <DropdownMenuTrigger asChild>
+                            <div className={cn(
+                                "max-w-fit rounded-2xl px-3 py-2 cursor-pointer",
+                                isOwnMessage ? "bg-primary text-primary-foreground rounded-br-none" : "bg-secondary rounded-bl-none"
+                            )}>
+                                {message.replyToMessageText && (
+                                    <div className={cn(
+                                        "p-2 rounded-md mb-2",
+                                        isOwnMessage ? "bg-black/10" : "bg-black/5"
+                                    )}>
+                                        <p className="text-xs font-semibold truncate">{formatUserId(message.replyToMessageId === message.senderId ? message.senderId : undefined)}</p>
+                                        <p className="text-xs opacity-80 whitespace-pre-wrap break-words">{message.replyToMessageText}</p>
+                                    </div>
+                                )}
 
-                             {isPostShare && message.postId ? (
-                                <PostPreviewCard postId={message.postId} isOwnMessage={isOwnMessage} />
-                            ) : (
                                 <p className="text-sm whitespace-pre-wrap">{message.text}</p>
-                            )}
-                            
-                            {message.timestamp?.toDate && !isPostShare && (
-                                <p className={cn("text-xs mt-1 text-right", isOwnMessage ? "text-primary-foreground/70" : "text-muted-foreground")}>
-                                    {formatMessageTimestamp(message.timestamp.toDate())}
-                                </p>
-                            )}
-                        </div>
-                    </DropdownMenuTrigger>
-                    <DropdownMenuContent align={isOwnMessage ? "end" : "start"} className="w-56">
-                        {!isPostShare && (
-                             <DropdownMenuItem onClick={() => onSetReply(message)}>
+                                
+                                {message.timestamp?.toDate && (
+                                    <p className={cn("text-xs mt-1 text-right", isOwnMessage ? "text-primary-foreground/70" : "text-muted-foreground")}>
+                                        {formatMessageTimestamp(message.timestamp.toDate())}
+                                    </p>
+                                )}
+                            </div>
+                        </DropdownMenuTrigger>
+                        <DropdownMenuContent align={isOwnMessage ? "end" : "start"} className="w-56">
+                            <DropdownMenuItem onClick={() => onSetReply(message)}>
                                 <Reply className="mr-2 h-4 w-4" />
                                 <span>Reply</span>
                             </DropdownMenuItem>
-                        )}
-                        <DropdownMenuItem>
-                            <Forward className="mr-2 h-4 w-4" />
-                            <span>Forward</span>
-                        </DropdownMenuItem>
-                         {!isPostShare && (
+                            <DropdownMenuItem>
+                                <Forward className="mr-2 h-4 w-4" />
+                                <span>Forward</span>
+                            </DropdownMenuItem>
                             <DropdownMenuItem onClick={handleCopy}>
                                 <Copy className="mr-2 h-4 w-4" />
                                 <span>Copy</span>
                             </DropdownMenuItem>
-                        )}
-                        {isOwnMessage && (
-                                <DropdownMenuItem className="text-destructive" onClick={handleUnsend}>
-                                <Trash2 className="mr-2 h-4 w-4" />
-                                <span>Unsend</span>
-                            </DropdownMenuItem>
-                        )}
-                    </DropdownMenuContent>
-                </DropdownMenu>
+                            {isOwnMessage && (
+                                    <DropdownMenuItem className="text-destructive" onClick={handleUnsend}>
+                                    <Trash2 className="mr-2 h-4 w-4" />
+                                    <span>Unsend</span>
+                                </DropdownMenuItem>
+                            )}
+                        </DropdownMenuContent>
+                    </DropdownMenu>
+                 )}
             </div>
         </div>
     )
