@@ -33,7 +33,7 @@ function ConversationItem({ conversation, onSend, sentStatus }: { conversation: 
     }, [firestore, otherParticipantId]);
     const { data: otherUser } = useDoc<User>(otherUserRef);
 
-    const name = otherUser ? formatUserId(otherUser.id) : <Skeleton className="h-4 w-24" />;
+    const name = otherUser ? formatUserId(otherUser.id) : <div className="font-semibold text-sm"><Skeleton className="h-4 w-24" /></div>;
 
     return (
         <div className="flex items-center justify-between p-2 rounded-lg hover:bg-secondary">
@@ -132,7 +132,9 @@ export function ShareSheet({ post, isOpen, onOpenChange }: { post: WithId<Post>,
         try {
             await navigator.share(shareData);
         } catch (error: any) {
-            if (error.name === 'NotAllowedError') return;
+            if (error.name === 'AbortError') {
+                return; // User cancelled the share sheet
+            }
             console.error("Error sharing:", error);
             toast({
                 variant: "destructive",

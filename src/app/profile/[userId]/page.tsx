@@ -346,8 +346,7 @@ export default function UserProfilePage() {
                  handleCopyLink();
             }
         } catch (error: any) {
-             // Ignore user cancellation of share sheet
-            if (error.name === 'NotAllowedError') return;
+             if (error.name === 'AbortError') return;
             
             console.error("Error sharing profile:", error);
             toast({
@@ -412,13 +411,14 @@ export default function UserProfilePage() {
     if (userLoading || (currentUser && userId === currentUser.uid)) {
         return (
             <AppLayout showTopBar={false}>
-                 <div className="grid grid-cols-3 items-center mb-6 px-4">
+                 <div className="flex items-center justify-between h-14 px-4">
                     <Button variant="ghost" size="icon" onClick={() => router.back()}>
                         <ArrowLeft className="h-6 w-6" />
                     </Button>
-                    <h2 className="text-2xl font-semibold font-headline text-center">
-                        <Skeleton className="h-8 w-32 mx-auto" />
+                    <h2 className="text-lg font-semibold font-headline">
+                        <Skeleton className="h-7 w-32" />
                     </h2>
+                     <Skeleton className="h-10 w-10" />
                 </div>
                 <div className="px-4">
                     <div className="flex items-start space-x-5 mb-2">
@@ -441,11 +441,10 @@ export default function UserProfilePage() {
                             </div>
                         </div>
                     </div>
-                    <div className="mb-4">
-                        <Skeleton className="h-5 w-32 mb-2" />
-                        <Skeleton className="h-4 w-48" />
+                    <div className="mb-4 space-y-2">
+                        <Skeleton className="h-4 w-full" />
+                        <Skeleton className="h-4 w-2/3" />
                     </div>
-                    <Skeleton className="h-px w-full" />
                     <div className="divide-y border-b">
                         <PostSkeleton />
                     </div>
@@ -457,10 +456,11 @@ export default function UserProfilePage() {
     if (!user) {
         return (
              <AppLayout showTopBar={false}>
-                <div className="grid grid-cols-3 items-center mb-6 px-4">
+                <div className="flex items-center justify-between h-14 px-4">
                     <Button variant="ghost" size="icon" onClick={() => router.back()}>
                         <ArrowLeft className="h-6 w-6" />
                     </Button>
+                     <div className="w-10"></div>
                 </div>
                 <div className="text-center py-20">
                     <h2 className="text-2xl font-headline text-primary">User not found</h2>

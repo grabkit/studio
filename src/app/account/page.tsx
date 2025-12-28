@@ -218,7 +218,7 @@ export default function AccountPage() {
         });
       }
     } catch (error: any) {
-      if (error.name === 'NotAllowedError') return; // Ignore user cancelling share
+      if (error.name === 'AbortError') return; // User cancelled the share action
       console.error("Error sharing profile:", error);
       toast({
         variant: "destructive",
