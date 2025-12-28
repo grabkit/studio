@@ -128,7 +128,7 @@ function MessageBubble({ message, isOwnMessage, conversationId, onSetReply, onFo
                     <DropdownMenuTrigger asChild>
                         <div className="cursor-pointer">
                             {isPostShare && message.postId ? (
-                                <div onClick={(e) => e.preventDefault()}>
+                                <div>
                                     <PostPreviewCard postId={message.postId} />
                                 </div>
                             ) : (
@@ -160,36 +160,25 @@ function MessageBubble({ message, isOwnMessage, conversationId, onSetReply, onFo
                         </div>
                     </DropdownMenuTrigger>
                      <DropdownMenuContent align={isOwnMessage ? "end" : "start"} className="w-56">
-                        {isPostShare ? (
-                            <>
-                                <DropdownMenuItem onClick={handleOpenPost}>
-                                    <ExternalLink className="mr-2 h-4 w-4" />
-                                    <span>Open Post</span>
-                                </DropdownMenuItem>
-                                <DropdownMenuItem onClick={() => onSetReply(message)}>
-                                    <Reply className="mr-2 h-4 w-4" />
-                                    <span>Reply</span>
-                                </DropdownMenuItem>
-                                <DropdownMenuItem onClick={() => onForward(message)}>
-                                    <Forward className="mr-2 h-4 w-4" />
-                                    <span>Forward</span>
-                                </DropdownMenuItem>
-                            </>
-                        ) : (
-                            <>
-                                <DropdownMenuItem onClick={() => onSetReply(message)}>
-                                    <Reply className="mr-2 h-4 w-4" />
-                                    <span>Reply</span>
-                                </DropdownMenuItem>
-                                <DropdownMenuItem onClick={() => onForward(message)}>
-                                    <Forward className="mr-2 h-4 w-4" />
-                                    <span>Forward</span>
-                                </DropdownMenuItem>
-                                <DropdownMenuItem onClick={handleCopy}>
-                                    <Copy className="mr-2 h-4 w-4" />
-                                    <span>Copy</span>
-                                </DropdownMenuItem>
-                            </>
+                        {isPostShare && (
+                            <DropdownMenuItem onClick={handleOpenPost}>
+                                <ExternalLink className="mr-2 h-4 w-4" />
+                                <span>Open Post</span>
+                            </DropdownMenuItem>
+                        )}
+                        <DropdownMenuItem onClick={() => onSetReply(message)}>
+                            <Reply className="mr-2 h-4 w-4" />
+                            <span>Reply</span>
+                        </DropdownMenuItem>
+                        <DropdownMenuItem onClick={() => onForward(message)}>
+                            <Forward className="mr-2 h-4 w-4" />
+                            <span>Forward</span>
+                        </DropdownMenuItem>
+                        {!isPostShare && (
+                            <DropdownMenuItem onClick={handleCopy}>
+                                <Copy className="mr-2 h-4 w-4" />
+                                <span>Copy</span>
+                            </DropdownMenuItem>
                         )}
                         {isOwnMessage && (
                             <DropdownMenuItem className="text-destructive" onClick={handleUnsend}>

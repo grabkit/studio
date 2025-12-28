@@ -85,7 +85,6 @@ export function ForwardSheet({ message, isOpen, onOpenChange }: { message: WithI
         const messageRef = doc(collection(firestore, 'conversations', conversation.id, 'messages'));
         const conversationRef = doc(firestore, 'conversations', conversation.id);
         
-        // Create a new message object by copying the original one.
         const newMessage: Omit<Message, 'id' | 'timestamp'> = {
             senderId: user.uid,
             text: message.text,
@@ -164,4 +163,3 @@ export function ForwardSheet({ message, isOpen, onOpenChange }: { message: WithI
         </Sheet>
     )
 }
-
