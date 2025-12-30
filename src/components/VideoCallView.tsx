@@ -112,7 +112,7 @@ export function VideoCallView({
                 {!isAnswered && (
                     <>
                         <Avatar className="h-32 w-32 mx-auto mb-6">
-                            <AvatarFallback className="text-5xl">{getInitials(formatUserId(otherPartyId))}</AvatarFallback>
+                            <AvatarFallback className="text-5xl bg-muted">{getInitials(formatUserId(otherPartyId))}</AvatarFallback>
                         </Avatar>
                         <h1 className="text-3xl font-bold">{formatUserId(otherPartyId)}</h1>
                         <p className="text-muted-foreground mt-2">{getStatusText()}</p>
