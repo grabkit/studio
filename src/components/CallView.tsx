@@ -43,7 +43,8 @@ export function CallView({
         return null;
     }
 
-    const isRinging = status === 'offering' || status === 'ringing';
+    const isRinging = status === 'ringing';
+    const isOffering = status === 'offering';
     const isAnswered = status === 'answered';
     const otherPartyId = calleeId || callerId;
 
@@ -87,7 +88,7 @@ export function CallView({
                 )}
 
                 <div className="flex justify-around w-full max-w-xs">
-                    {isRinging && status === 'ringing' && (
+                    {isRinging && (
                          <div className="flex flex-col items-center">
                              <Button
                                 size="icon"
@@ -105,11 +106,11 @@ export function CallView({
                             variant="destructive"
                             size="icon"
                             className="rounded-full w-16 h-16"
-                            onClick={isRinging ? onDecline : onHangUp}
+                            onClick={(isRinging || isOffering) ? onDecline : onHangUp}
                         >
                             <PhoneOff />
                         </Button>
-                        <span className="mt-2 text-sm">{isRinging ? 'Decline' : 'Hang Up'}</span>
+                        <span className="mt-2 text-sm">{(isRinging || isOffering) ? 'Decline' : 'Hang Up'}</span>
                     </div>
                 </div>
             </div>
