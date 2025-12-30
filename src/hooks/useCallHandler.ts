@@ -192,8 +192,10 @@ export function useCallHandler(firestore: Firestore | null, user: User | null) {
     const unsubscribeCandidates = onSnapshot(candidatesCol, (snapshot) => {
         snapshot.docChanges().forEach((change) => {
             if (change.type === 'added') {
-                const candidate = change.doc.data();
-                peer.signal(candidate);
+                if (!peer.destroyed) {
+                    const candidate = change.doc.data();
+                    peer.signal(candidate);
+                }
             }
         });
     });
@@ -278,8 +280,7 @@ export function useCallHandler(firestore: Firestore | null, user: User | null) {
         const { id } = toast({
             id: toastId,
             duration: 60000, // 60 seconds to answer
-            description: (
-                 showIncomingCallToast({
+            description: showIncomingCallToast({
                     callerId: incomingCall.callerId,
                     onAccept: () => {
                         answerCall();
@@ -291,8 +292,7 @@ export function useCallHandler(firestore: Firestore | null, user: User | null) {
                         dismiss(toastId);
                         incomingCallToastId.current = null;
                     },
-                })
-            ),
+                }),
              onClose: () => {
                 // This will run if the toast times out
                 if (incomingCall) {
