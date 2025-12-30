@@ -22,15 +22,15 @@ const formatUserId = (uid: string | undefined) => {
 export const showIncomingCallToast = ({ callerId, onAccept, onDecline }: IncomingCallToastProps) => {
     toast({
         duration: Infinity, // Keep the toast open until user action
-        component: (
-            <div className="w-full flex items-center justify-between">
+        title: "Incoming Call",
+        description: (
+            <div className="w-full flex items-center justify-between mt-2">
                 <div className="flex items-center gap-3">
                     <Avatar>
                         <AvatarFallback>{getInitials(formatUserId(callerId))}</AvatarFallback>
                     </Avatar>
                     <div>
                         <p className="font-semibold">{formatUserId(callerId)}</p>
-                        <p className="text-sm text-muted-foreground">Incoming Call...</p>
                     </div>
                 </div>
                 <div className="flex items-center gap-2">
