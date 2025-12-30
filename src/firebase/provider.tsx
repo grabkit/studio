@@ -4,7 +4,7 @@
 import React, { DependencyList, createContext, useContext, ReactNode, useMemo, useState, useEffect, useRef } from 'react';
 import { FirebaseApp } from 'firebase/app';
 import { Firestore, doc } from 'firebase/firestore';
-import { Auth, User } from 'firebase/auth';
+import { Auth, User, onAuthStateChanged } from 'firebase/auth';
 import { Database, ref, onValue, onDisconnect, set, serverTimestamp as dbServerTimestamp } from 'firebase/database';
 import { FirebaseErrorListener } from '@/components/FirebaseErrorListener';
 import { useDoc, type WithId } from './firestore/use-doc';
@@ -19,7 +19,7 @@ interface VideoCallHandlerResult extends ReturnType<typeof useVideoCallHandler> 
 
 
 interface FirebaseProviderProps {
-  children: React.Node;
+  children: React.ReactNode;
   firebaseApp: FirebaseApp;
   firestore: Firestore;
   database: Database;
