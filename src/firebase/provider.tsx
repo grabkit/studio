@@ -1,6 +1,7 @@
+
 'use client';
 
-import React, { DependencyList, createContext, useContext, ReactNode, useMemo, useState, useEffect } from 'react';
+import React, { DependencyList, createContext, useContext, ReactNode, useMemo, useState, useEffect, useRef } from 'react';
 import { FirebaseApp } from 'firebase/app';
 import { Firestore, doc, serverTimestamp as firestoreServerTimestamp, updateDoc } from 'firebase/firestore';
 import { Auth, User, onAuthStateChanged } from 'firebase/auth';
@@ -8,10 +9,12 @@ import { Database, ref, onValue, off, onDisconnect, set, serverTimestamp as dbSe
 import { FirebaseErrorListener } from '@/components/FirebaseErrorListener';
 import { useDoc, type WithId } from './firestore/use-doc';
 import type { User as UserProfile } from '@/lib/types';
+import { useCallHandler } from '@/hooks/useCallHandler';
+import { CallView } from '@/components/CallView';
 
 
 interface FirebaseProviderProps {
-  children: ReactNode;
+  children: React.Node;
   firebaseApp: FirebaseApp;
   firestore: Firestore;
   database: Database;
@@ -26,7 +29,7 @@ interface UserAuthState {
 }
 
 // Combined state for the Firebase context
-export interface FirebaseContextState {
+export interface FirebaseContextState extends ReturnType<typeof useCallHandler> {
   areServicesAvailable: boolean; // True if core services (app, firestore, auth instance) are provided
   firebaseApp: FirebaseApp | null;
   firestore: Firestore | null;
@@ -42,7 +45,7 @@ export interface FirebaseContextState {
 }
 
 // Return type for useFirebase()
-export interface FirebaseServicesAndUser {
+export interface FirebaseServicesAndUser extends ReturnType<typeof useCallHandler> {
   firebaseApp: FirebaseApp;
   firestore: Firestore;
   database: Database;
@@ -79,6 +82,23 @@ export const FirebaseProvider: React.FC<FirebaseProviderProps> = ({
     isUserLoading: true, // Start loading until first auth event
     userError: null,
   });
+
+  const callHandler = useCallHandler();
+  const remoteAudioRef = useRef<HTMLAudioElement>(null);
+  const localAudioRef = useRef<HTMLAudioElement>(null);
+
+  useEffect(() => {
+      if (remoteAudioRef.current && callHandler.remoteStream) {
+          remoteAudioRef.current.srcObject = callHandler.remoteStream;
+      }
+  }, [callHandler.remoteStream]);
+  
+  useEffect(() => {
+    if (localAudioRef.current && callHandler.localStream) {
+        localAudioRef.current.srcObject = callHandler.localStream;
+    }
+  }, [callHandler.localStream]);
+
 
   // Effect to subscribe to Firebase auth state changes and manage presence
   useEffect(() => {
@@ -150,12 +170,25 @@ export const FirebaseProvider: React.FC<FirebaseProviderProps> = ({
       userError: userAuthState.userError,
       userProfile,
       isUserProfileLoading,
+      ...callHandler,
     };
-  }, [firebaseApp, firestore, auth, database, userAuthState, userProfile, isUserProfileLoading]);
+  }, [firebaseApp, firestore, auth, database, userAuthState, userProfile, isUserProfileLoading, callHandler]);
 
   return (
     <FirebaseContext.Provider value={contextValue}>
       <FirebaseErrorListener />
+       <CallView
+            status={callHandler.callStatus}
+            calleeId={callHandler.activeCall?.calleeId}
+            callerId={callHandler.activeCall?.callerId}
+            isMuted={callHandler.isMuted}
+            onToggleMute={callHandler.toggleMute}
+            onAccept={callHandler.answerCall}
+            onDecline={callHandler.declineCall}
+            onHangUp={callHandler.hangUp}
+            remoteAudioRef={remoteAudioRef}
+            localAudioRef={localAudioRef}
+        />
       {children}
     </FirebaseContext.Provider>
   );
@@ -186,6 +219,16 @@ export const useFirebase = (): FirebaseServicesAndUser => {
     userError: context.userError,
     userProfile: context.userProfile,
     isUserProfileLoading: context.isUserProfileLoading,
+    startCall: context.startCall,
+    answerCall: context.answerCall,
+    declineCall: context.declineCall,
+    hangUp: context.hangUp,
+    toggleMute: context.toggleMute,
+    activeCall: context.activeCall,
+    callStatus: context.callStatus,
+    localStream: context.localStream,
+    remoteStream: context.remoteStream,
+    isMuted: context.isMuted,
   };
 };
 

@@ -18,7 +18,7 @@ import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
 import { Form, FormControl, FormField, FormItem, FormMessage } from '@/components/ui/form';
 import { Skeleton } from '@/components/ui/skeleton';
-import { ArrowLeft, Send, Reply, Forward, Copy, Trash2, X, Heart, MessageCircle, ExternalLink } from 'lucide-react';
+import { ArrowLeft, Send, Reply, Forward, Copy, Trash2, X, Heart, MessageCircle, ExternalLink, Phone } from 'lucide-react';
 import { cn, getInitials, formatMessageTimestamp, formatLastSeen, formatTimestamp } from '@/lib/utils';
 import type { Conversation, Message, User, Post } from '@/lib/types';
 import { WithId } from '@/firebase/firestore/use-collection';
@@ -199,7 +199,7 @@ function MessageBubble({ message, isOwnMessage, conversationId, onSetReply, onFo
     )
 }
 
-function ChatHeader({ peerId }: { peerId: string }) {
+function ChatHeader({ peerId, onStartCall }: { peerId: string, onStartCall: () => void }) {
     const router = useRouter();
     const { firestore } = useFirebase();
     const { isOnline, lastSeen } = usePresence(peerId);
@@ -217,7 +217,7 @@ function ChatHeader({ peerId }: { peerId: string }) {
             <Button variant="ghost" size="icon" onClick={() => router.back()}>
                 <ArrowLeft />
             </Button>
-            <div className="flex items-center gap-3 ml-2">
+            <div className="flex-1 flex items-center gap-3 ml-2">
                 <Link href={`/profile/${peerId}`}>
                     <Avatar className="h-8 w-8">
                         <AvatarFallback>{isLoading || !peerUser ? <Skeleton className="h-8 w-8 rounded-full" /> : getInitials(formatUserId(peerId))}</AvatarFallback>
@@ -232,6 +232,9 @@ function ChatHeader({ peerId }: { peerId: string }) {
                     </p>
                 </div>
             </div>
+            <Button variant="ghost" size="icon" onClick={onStartCall}>
+                <Phone />
+            </Button>
         </div>
     )
 }
@@ -419,7 +422,7 @@ function MessageInput({ conversationId, conversation, replyingTo, onCancelReply 
 
 
 export default function ChatPage() {
-    const { firestore, user } = useFirebase();
+    const { firestore, user, startCall } = useFirebase();
     const params = useParams();
     const router = useRouter();
     const peerId = params.peerId as string;
@@ -439,6 +442,11 @@ export default function ChatPage() {
         setForwardingMessage(message);
         setIsForwardSheetOpen(true);
     };
+
+    const handleStartCall = () => {
+        if (!peerId) return;
+        startCall(peerId);
+    }
 
     const conversationId = useMemo(() => {
         if (!user || !peerId) return null;
@@ -473,7 +481,7 @@ export default function ChatPage() {
     if (!user || isConversationLoading) {
       return (
         <AppLayout showTopBar={false} showBottomNav={false}>
-          <ChatHeader peerId={peerId} />
+          <ChatHeader peerId={peerId} onStartCall={handleStartCall} />
           <div className="pt-14">
             <div className="space-y-4 p-4">
                 <Skeleton className="h-10 w-3/5" />
@@ -488,7 +496,7 @@ export default function ChatPage() {
 
     return (
         <AppLayout showTopBar={false} showBottomNav={false}>
-            <ChatHeader peerId={peerId} />
+            <ChatHeader peerId={peerId} onStartCall={handleStartCall} />
 
             <div className="pt-14">
                 {conversationId && <ChatMessages conversationId={conversationId} conversation={conversation} onSetReply={handleSetReply} onForward={handleForward} replyingTo={replyingTo} />}
