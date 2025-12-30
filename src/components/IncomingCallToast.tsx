@@ -20,28 +20,29 @@ const formatUserId = (uid: string | undefined) => {
 
 
 export const showIncomingCallToast = ({ callerId, onAccept, onDecline }: IncomingCallToastProps) => {
-    toast({
-        duration: Infinity, // Keep the toast open until user action
-        title: "Incoming Call",
-        description: (
-            <div className="w-full flex items-center justify-between mt-2">
+    return (
+        <div className="w-full flex flex-col">
+             <div className="w-full flex items-center justify-between">
                 <div className="flex items-center gap-3">
                     <Avatar>
                         <AvatarFallback>{getInitials(formatUserId(callerId))}</AvatarFallback>
                     </Avatar>
                     <div>
                         <p className="font-semibold">{formatUserId(callerId)}</p>
+                        <p className="text-sm opacity-80">Incoming Call...</p>
                     </div>
                 </div>
-                <div className="flex items-center gap-2">
-                    <Button variant="ghost" size="icon" className="text-destructive" onClick={onDecline}>
-                        <PhoneOff className="h-5 w-5" />
-                    </Button>
-                     <Button variant="ghost" size="icon" className="text-green-500" onClick={onAccept}>
-                        <Phone className="h-5 w-5" />
-                    </Button>
-                </div>
             </div>
-        ),
-    });
+            <div className="flex items-center justify-end gap-2 mt-4">
+                <Button variant="destructive" size="sm" onClick={onDecline}>
+                    <PhoneOff className="h-4 w-4 mr-2" />
+                    Decline
+                </Button>
+                 <Button variant="default" size="sm" className="bg-green-500 hover:bg-green-600" onClick={onAccept}>
+                    <Phone className="h-4 w-4 mr-2" />
+                    Accept
+                </Button>
+            </div>
+        </div>
+    );
 };
