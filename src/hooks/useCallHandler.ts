@@ -161,8 +161,8 @@ export function useCallHandler(firestore: Firestore | null, user: User | null) {
             return;
         }
         
-        // This is for the CALLER to receive the answer
-        if (updatedCall.answer && peerRef.current && !peerRef.current.destroyed && peerRef.current.initiator) {
+        // This is for the CALLER to receive the answer, and should only happen ONCE.
+        if (updatedCall.status === 'answered' && updatedCall.answer && peerRef.current && !peerRef.current.destroyed && peerRef.current.initiator) {
             peerRef.current.signal(updatedCall.answer);
         }
     });
