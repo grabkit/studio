@@ -1,4 +1,5 @@
 
+
 import { type Timestamp } from "firebase/firestore";
 
 export interface LinkMetadata {
@@ -120,6 +121,26 @@ export interface Report {
     status: 'pending' | 'reviewed' | 'action-taken';
 }
 
+export type CallStatus = 'offering' | 'ringing' | 'answered' | 'ended' | 'declined' | 'missed';
+
+export interface Call {
+  id: string;
+  callerId: string;
+  calleeId: string;
+  status: CallStatus;
+  offer?: { sdp: string; type: string };
+  answer?: { sdp: string; type: string };
+  createdAt: Timestamp;
+  endedAt?: Timestamp;
+}
+
+export interface IceCandidate {
+    candidate: string;
+    sdpMid: string | null;
+    sdpMLineIndex: number | null;
+    usernameFragment: string | null;
+}
     
 
     
+

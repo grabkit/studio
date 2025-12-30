@@ -11,6 +11,11 @@ service cloud.firestore {
     function isOwner(userId) {
       return request.auth.uid == userId;
     }
+    
+    function isCallParticipant(callId) {
+      let callDoc = get(/databases/$(database)/documents/calls/$(callId));
+      return request.auth.uid == callDoc.data.callerId || request.auth.uid == callDoc.data.calleeId;
+    }
 
     match /users/{userId} {
       allow get: if true; // Allow public read for profiles
@@ -79,6 +84,18 @@ service cloud.firestore {
      match /reports/{reportId} {
       allow read, list, update, delete: if false; // Only admins should be able to access reports
       allow create: if isSignedIn() && isValidNewReport(reportId);
+    }
+
+    match /calls/{callId} {
+      allow get, list: if isCallParticipant(callId);
+      allow create: if isSignedIn() && request.resource.data.callerId == request.auth.uid;
+      allow update: if isCallParticipant(callId);
+      allow delete: if isCallParticipant(callId);
+    }
+
+    match /calls/{callId}/iceCandidates/{candidateId} {
+        allow read, list, create: if isCallParticipant(callId);
+        allow update, delete: if false;
     }
 
     function isValidNewReport(reportId) {
