@@ -93,42 +93,57 @@ export function CallView({
 
             <div className="flex flex-col items-center space-y-6 w-full">
                 {isAnswered && (
-                    <Button
-                        variant="secondary"
-                        size="icon"
-                        className="rounded-full w-16 h-16"
-                        onClick={onToggleMute}
-                    >
-                        {isMuted ? <MicOff /> : <Mic />}
-                    </Button>
-                )}
-
-                <div className="flex justify-around w-full max-w-xs">
-                    {isRinging && (
-                         <div className="flex flex-col items-center">
-                             <Button
-                                size="icon"
-                                className="rounded-full w-16 h-16 bg-green-500 hover:bg-green-600"
-                                onClick={onAccept}
-                            >
-                                <Phone />
-                            </Button>
-                            <span className="mt-2 text-sm">Accept</span>
-                        </div>
-                    )}
-
-                    <div className="flex flex-col items-center">
-                         <Button
-                            variant="destructive"
+                    <div className="flex items-center space-x-6">
+                        <Button
+                            variant="secondary"
                             size="icon"
                             className="rounded-full w-16 h-16"
-                            onClick={isAnswered ? onHangUp : onDecline}
+                            onClick={onToggleMute}
                         >
-                            <PhoneOff />
+                            {isMuted ? <MicOff /> : <Mic />}
                         </Button>
-                        <span className="mt-2 text-sm">{isAnswered ? 'Hang Up' : 'Decline'}</span>
+                         <div className="flex flex-col items-center">
+                            <Button
+                                variant="destructive"
+                                size="icon"
+                                className="rounded-full w-16 h-16"
+                                onClick={onHangUp}
+                            >
+                                <PhoneOff />
+                            </Button>
+                            <span className="mt-2 text-sm">Hang Up</span>
+                        </div>
                     </div>
-                </div>
+                )}
+
+                {!isAnswered && (
+                    <div className="flex justify-around w-full max-w-xs">
+                        {isRinging && (
+                            <div className="flex flex-col items-center">
+                                <Button
+                                    size="icon"
+                                    className="rounded-full w-16 h-16 bg-green-500 hover:bg-green-600"
+                                    onClick={onAccept}
+                                >
+                                    <Phone />
+                                </Button>
+                                <span className="mt-2 text-sm">Accept</span>
+                            </div>
+                        )}
+
+                        <div className="flex flex-col items-center">
+                            <Button
+                                variant="destructive"
+                                size="icon"
+                                className="rounded-full w-16 h-16"
+                                onClick={onDecline}
+                            >
+                                <PhoneOff />
+                            </Button>
+                            <span className="mt-2 text-sm">Decline</span>
+                        </div>
+                    </div>
+                )}
             </div>
         </div>
     );
