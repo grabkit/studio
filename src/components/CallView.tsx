@@ -1,7 +1,7 @@
 
 'use client';
 
-import React, { useEffect, useRef } from 'react';
+import React from 'react';
 import { Button } from './ui/button';
 import { Phone, PhoneOff, Mic, MicOff } from 'lucide-react';
 import { Avatar, AvatarFallback } from './ui/avatar';
@@ -24,8 +24,6 @@ interface CallViewProps {
     onAccept: () => void;
     onDecline: () => void;
     onHangUp: () => void;
-    remoteStream: MediaStream | null;
-    localStream: MediaStream | null;
 }
 
 export function CallView({
@@ -37,33 +35,14 @@ export function CallView({
     onAccept,
     onDecline,
     onHangUp,
-    remoteStream,
-    localStream
 }: CallViewProps) {
     const { user } = useFirebase();
-    const remoteAudioRef = useRef<HTMLAudioElement>(null);
-    const localAudioRef = useRef<HTMLAudioElement>(null);
-
-    useEffect(() => {
-        if (remoteAudioRef.current && remoteStream) {
-            remoteAudioRef.current.srcObject = remoteStream;
-        }
-    }, [remoteStream]);
-    
-    useEffect(() => {
-        if (localAudioRef.current && localStream) {
-            localAudioRef.current.srcObject = localStream;
-        }
-    }, [localStream]);
-
-    if (!status || status === 'ended' || status === 'declined' || status === 'missed') {
-        return null;
-    }
     
     const isAnswered = status === 'answered';
     const isRinging = status === 'ringing' && user?.uid === calleeId;
-    
+    const isOffering = status === 'offering' && user?.uid === callerId;
     const otherPartyId = user?.uid === callerId ? calleeId : callerId;
+
 
     const getStatusText = () => {
         switch (status) {
@@ -77,7 +56,7 @@ export function CallView({
                 return '...';
         }
     };
-
+    
     return (
         <div className="fixed inset-0 z-50 bg-background flex flex-col items-center justify-between p-8">
             <div className="text-center pt-20">
@@ -88,9 +67,6 @@ export function CallView({
                 <p className="text-muted-foreground mt-2">{getStatusText()}</p>
             </div>
 
-            {/* Hidden audio elements to play the streams */}
-            <audio ref={remoteAudioRef} autoPlay playsInline />
-            <audio ref={localAudioRef} autoPlay playsInline muted />
 
              <div className="flex flex-col items-center space-y-6 w-full">
                 {isAnswered ? (
@@ -103,17 +79,14 @@ export function CallView({
                         >
                             {isMuted ? <MicOff /> : <Mic />}
                         </Button>
-                         <div className="flex flex-col items-center">
-                             <Button
-                                variant="destructive"
-                                size="icon"
-                                className="rounded-full w-16 h-16"
-                                onClick={onHangUp}
-                            >
-                                <PhoneOff />
-                            </Button>
-                            <span className="mt-2 text-sm">Hang Up</span>
-                        </div>
+                         <Button
+                            variant="destructive"
+                            size="icon"
+                            className="rounded-full w-16 h-16"
+                            onClick={onHangUp}
+                        >
+                            <PhoneOff />
+                        </Button>
                     </div>
                 ) : (
                     <div className="flex justify-around w-full max-w-xs">

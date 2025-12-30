@@ -161,10 +161,14 @@ export const FirebaseProvider: React.FC<FirebaseProviderProps> = ({
     };
   }, [firebaseApp, firestore, auth, database, userAuthState, userProfile, isUserProfileLoading, callHandler]);
 
+  // Determine if the call UI should be shown
+  const showCallUI = !!callHandler.callStatus && callHandler.callStatus !== 'ended' && callHandler.callStatus !== 'declined' && callHandler.callStatus !== 'missed';
+
   return (
     <FirebaseContext.Provider value={contextValue}>
       <FirebaseErrorListener />
-       <CallView
+       {showCallUI ? (
+         <CallView
             status={callHandler.callStatus}
             calleeId={callHandler.activeCall?.calleeId}
             callerId={callHandler.activeCall?.callerId}
@@ -173,10 +177,10 @@ export const FirebaseProvider: React.FC<FirebaseProviderProps> = ({
             onAccept={callHandler.answerCall}
             onDecline={callHandler.declineCall}
             onHangUp={callHandler.hangUp}
-            localStream={callHandler.localStream}
-            remoteStream={callHandler.remoteStream}
         />
-      {children}
+       ) : (
+        children
+       )}
     </FirebaseContext.Provider>
   );
 };
