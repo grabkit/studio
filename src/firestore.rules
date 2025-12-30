@@ -17,6 +17,11 @@ service cloud.firestore {
       return request.auth.uid == callDoc.data.callerId || request.auth.uid == callDoc.data.calleeId;
     }
 
+    function isVideoCallParticipant(videoCallId) {
+      let callDoc = get(/databases/$(database)/documents/videoCalls/$(videoCallId));
+      return request.auth.uid == callDoc.data.callerId || request.auth.uid == callDoc.data.calleeId;
+    }
+
     match /users/{userId} {
       allow get: if true; // Allow public read for profiles
       allow list: if isSignedIn();
@@ -92,6 +97,24 @@ service cloud.firestore {
       allow create: if isSignedIn() && request.resource.data.callerId == request.auth.uid;
       allow update: if isCallParticipant(callId);
       allow delete: if isCallParticipant(callId);
+      
+      match /callerCandidates/{candidateId} {
+        allow read, list, create: if isSignedIn();
+        allow update, delete: if false;
+      }
+
+      match /answerCandidates/{candidateId} {
+          allow read, list, create: if isSignedIn();
+          allow update, delete: if false;
+      }
+    }
+
+    match /videoCalls/{videoCallId} {
+      allow get: if isSignedIn();
+      allow list: if isSignedIn();
+      allow create: if isSignedIn() && request.resource.data.callerId == request.auth.uid;
+      allow update: if isVideoCallParticipant(videoCallId);
+      allow delete: if isVideoCallParticipant(videoCallId);
       
       match /callerCandidates/{candidateId} {
         allow read, list, create: if isSignedIn();

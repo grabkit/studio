@@ -140,7 +140,24 @@ export interface IceCandidate {
     sdpMLineIndex: number | null;
     usernameFragment: string | null;
 }
+
+export interface VideoCall {
+  id: string;
+  callerId: string;
+  calleeId: string;
+  status: CallStatus;
+  offer?: { sdp: string; type: string };
+  answer?: { sdp: string; type: string };
+  createdAt: Timestamp;
+  endedAt?: Timestamp;
+}
+
+export interface VideoIceCandidate {
+    candidate: string;
+    sdpMid: string | null;
+    sdpMLineIndex: number | null;
+    usernameFragment: string | null;
+}
     
 
     
-
