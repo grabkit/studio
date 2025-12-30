@@ -92,11 +92,16 @@ service cloud.firestore {
       allow create: if isSignedIn() && request.resource.data.callerId == request.auth.uid;
       allow update: if isCallParticipant(callId);
       allow delete: if isCallParticipant(callId);
-    }
-
-    match /calls/{callId}/iceCandidates/{candidateId} {
+      
+      match /callerCandidates/{candidateId} {
         allow read, list, create: if isSignedIn();
         allow update, delete: if false;
+      }
+
+      match /answerCandidates/{candidateId} {
+          allow read, list, create: if isSignedIn();
+          allow update, delete: if false;
+      }
     }
 
     function isValidNewReport(reportId) {
