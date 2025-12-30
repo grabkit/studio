@@ -66,10 +66,9 @@ export function useCallHandler(firestore: Firestore | null, user: User | null) {
   const answerCall = useCallback(async () => {
     if (!firestore || !user || !incomingCall || !incomingCall.offer) return;
     
-    // Immediately set the active call and status for the callee
     setActiveCall(incomingCall);
-    setCallStatus('ringing'); // UI shows 'ringing' or 'connecting'
-    setIncomingCall(null); // Clear the incoming call state
+    setCallStatus('ringing'); 
+    setIncomingCall(null);
 
     try {
         const stream = await navigator.mediaDevices.getUserMedia({ video: false, audio: true });
@@ -122,9 +121,8 @@ export function useCallHandler(firestore: Firestore | null, user: User | null) {
             initiator: true,
             trickle: true,
         });
-
-        peer.addStream(stream); // Add stream immediately after peer creation
         
+        peer.addStream(stream);
         peerRef.current = peer;
 
         peer.on('signal', async (data) => {
@@ -210,7 +208,6 @@ export function useCallHandler(firestore: Firestore | null, user: User | null) {
             return;
         }
         
-        // This is for the CALLER to receive the answer, and should only happen ONCE.
         if (updatedCall.status === 'answered' && updatedCall.answer && peerRef.current && !peerRef.current.destroyed && peerRef.current.initiator && !answerProcessed.current) {
             answerProcessed.current = true;
             peerRef.current.signal(updatedCall.answer);
