@@ -78,10 +78,7 @@ export function useCallHandler(firestore: Firestore | null, user: User | null) {
   const answerCall = useCallback(async () => {
     if (!firestore || !user || !incomingCall || !incomingCall.offer) return;
     
-    setActiveCall(incomingCall);
-    setCallStatus('ringing'); 
-    setIncomingCall(null);
-     if (incomingCallToastId.current) {
+    if (incomingCallToastId.current) {
       dismiss(incomingCallToastId.current);
       incomingCallToastId.current = null;
     }
@@ -103,20 +100,21 @@ export function useCallHandler(firestore: Firestore | null, user: User | null) {
 
         peer.on('signal', async (data) => {
             if (data.type === 'answer') {
-                await updateDoc(callRef, {
-                    status: 'answered',
-                    answer: data
-                });
-            } else {
+                await updateDoc(callRef, { answer: data });
+            } else if (data.type === 'candidate') {
                  await addDoc(answerCandidatesCol, data);
             }
         });
         
+        peer.on('connect', () => {
+            updateDoc(callRef, { status: 'answered' });
+            setCallStatus('answered');
+        });
+
         peer.on('stream', (remoteStream) => {
             setRemoteStream(remoteStream);
         });
 
-        // Listen for caller's ICE candidates
         const unsubscribeCandidates = onSnapshot(callerCandidatesCol, (snapshot) => {
             snapshot.docChanges().forEach((change) => {
                 if (change.type === 'added') {
@@ -139,6 +137,8 @@ export function useCallHandler(firestore: Firestore | null, user: User | null) {
             cleanupCall();
         });
 
+        setActiveCall(incomingCall);
+        setIncomingCall(null);
 
     } catch (err) {
         console.error("Error answering call:", err);
@@ -184,9 +184,13 @@ export function useCallHandler(firestore: Firestore | null, user: User | null) {
                 await setDoc(callDocRef, newCallData);
                 setActiveCall({ id: callDocRef.id, ...newCallData } as Call);
                 setCallStatus('offering');
-            } else {
+            } else if (data.type === 'candidate') {
                 await addDoc(callerCandidatesCol, data);
             }
+        });
+
+        peer.on('connect', () => {
+             setCallStatus('answered');
         });
         
         peer.on('stream', (remoteStream) => {
@@ -262,8 +266,11 @@ export function useCallHandler(firestore: Firestore | null, user: User | null) {
         const incomingCallData = { id: callDoc.id, ...callDoc.data() } as Call;
 
         if (activeCall || incomingCall || incomingCallToastId.current) return;
+        
+        const callRef = doc(firestore, 'calls', incomingCallData.id);
+        updateDoc(callRef, { status: 'ringing' });
 
-        setIncomingCall(incomingCallData);
+        setIncomingCall({...incomingCallData, status: 'ringing'});
     });
 
     return () => unsubscribe();
@@ -297,7 +304,7 @@ export function useCallHandler(firestore: Firestore | null, user: User | null) {
                         try {
                             const callRef = doc(firestore, 'calls', incomingCall.id);
                             const currentDocSnap = await getDoc(callRef);
-                            if (currentDocSnap.exists() && currentDocSnap.data().status === 'offering') {
+                            if (currentDocSnap.exists() && currentDocSnap.data().status === 'ringing') {
                                await updateDoc(callRef, { status: 'missed' });
                             }
                         } catch (e) {

@@ -61,7 +61,6 @@ export function CallView({
     }
     
     const isAnswered = status === 'answered';
-    // isRinging is true only for the person receiving the call.
     const isRinging = status === 'ringing' && user?.uid === calleeId;
     
     const otherPartyId = user?.uid === callerId ? calleeId : callerId;
@@ -71,7 +70,7 @@ export function CallView({
             case 'offering':
                 return `Calling ${formatUserId(calleeId)}...`;
             case 'ringing':
-                return `${formatUserId(callerId)} is calling...`;
+                 return `${formatUserId(callerId)} is calling...`;
             case 'answered':
                 return 'Connected';
             default:
@@ -95,9 +94,8 @@ export function CallView({
 
              <div className="flex flex-col items-center space-y-6 w-full">
                 {isAnswered ? (
-                    // Controls shown WHEN THE CALL IS ANSWERED
-                    <div className="flex items-center space-x-6">
-                        <Button
+                     <div className="flex items-center space-x-6">
+                         <Button
                             variant="secondary"
                             size="icon"
                             className="rounded-full w-16 h-16"
@@ -106,7 +104,7 @@ export function CallView({
                             {isMuted ? <MicOff /> : <Mic />}
                         </Button>
                          <div className="flex flex-col items-center">
-                            <Button
+                             <Button
                                 variant="destructive"
                                 size="icon"
                                 className="rounded-full w-16 h-16"
@@ -118,7 +116,6 @@ export function CallView({
                         </div>
                     </div>
                 ) : (
-                    // Controls shown BEFORE the call is answered
                     <div className="flex justify-around w-full max-w-xs">
                         {isRinging ? (
                             <>
