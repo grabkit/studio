@@ -103,19 +103,21 @@ export function VideoCallView({
     return (
         <div className="fixed inset-0 z-50 bg-background flex flex-col items-center justify-between p-8">
             {/* Remote Video */}
-            <video ref={remoteVideoRef} className="absolute top-0 left-0 w-full h-full object-cover z-0 bg-black" />
+            <video ref={remoteVideoRef} className="absolute top-0 left-0 w-full h-full object-cover z-0 bg-secondary" />
             
             {/* Local Video */}
-            <video ref={localVideoRef} className="absolute top-4 right-4 w-1/4 max-w-[120px] rounded-lg z-20" muted />
+            <video ref={localVideoRef} className="absolute top-4 right-4 w-1/4 max-w-[120px] rounded-lg z-20 bg-black" muted />
             
             <div className="text-center pt-20 z-20">
-                {!remoteStream && (
+                {!isAnswered && (
+                    <>
                         <Avatar className="h-32 w-32 mx-auto mb-6">
-                        <AvatarFallback className="text-5xl">{getInitials(formatUserId(otherPartyId))}</AvatarFallback>
-                    </Avatar>
+                            <AvatarFallback className="text-5xl">{getInitials(formatUserId(otherPartyId))}</AvatarFallback>
+                        </Avatar>
+                        <h1 className="text-3xl font-bold">{formatUserId(otherPartyId)}</h1>
+                        <p className="text-muted-foreground mt-2">{getStatusText()}</p>
+                    </>
                 )}
-                <h1 className="text-3xl font-bold">{formatUserId(otherPartyId)}</h1>
-                <p className="text-muted-foreground mt-2">{getStatusText()}</p>
             </div>
 
 
