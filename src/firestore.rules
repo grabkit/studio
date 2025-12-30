@@ -87,7 +87,8 @@ service cloud.firestore {
     }
 
     match /calls/{callId} {
-      allow get, list: if isCallParticipant(callId);
+      allow get: if isCallParticipant(callId);
+      allow list: if isSignedIn();
       allow create: if isSignedIn() && request.resource.data.callerId == request.auth.uid;
       allow update: if isCallParticipant(callId);
       allow delete: if isCallParticipant(callId);
