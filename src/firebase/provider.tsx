@@ -12,6 +12,7 @@ import type { User as UserProfile } from '@/lib/types';
 import { useCallHandler } from '@/hooks/useCallHandler';
 import { CallView } from '@/components/CallView';
 
+interface CallHandlerResult extends ReturnType<typeof useCallHandler> {}
 
 interface FirebaseProviderProps {
   children: React.Node;
@@ -29,7 +30,7 @@ interface UserAuthState {
 }
 
 // Combined state for the Firebase context
-export interface FirebaseContextState extends ReturnType<typeof useCallHandler> {
+export interface FirebaseContextState extends CallHandlerResult {
   areServicesAvailable: boolean; // True if core services (app, firestore, auth instance) are provided
   firebaseApp: FirebaseApp | null;
   firestore: Firestore | null;
@@ -45,7 +46,7 @@ export interface FirebaseContextState extends ReturnType<typeof useCallHandler> 
 }
 
 // Return type for useFirebase()
-export interface FirebaseServicesAndUser extends ReturnType<typeof useCallHandler> {
+export interface FirebaseServicesAndUser extends CallHandlerResult {
   firebaseApp: FirebaseApp;
   firestore: Firestore;
   database: Database;
@@ -83,9 +84,12 @@ export const FirebaseProvider: React.FC<FirebaseProviderProps> = ({
     userError: null,
   });
 
-  const callHandler = useCallHandler();
+  
   const remoteAudioRef = useRef<HTMLAudioElement>(null);
   const localAudioRef = useRef<HTMLAudioElement>(null);
+  
+  const callHandler = useCallHandler(firestore, userAuthState.user);
+
 
   useEffect(() => {
       if (remoteAudioRef.current && callHandler.remoteStream) {

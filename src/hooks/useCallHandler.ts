@@ -2,7 +2,8 @@
 'use client';
 
 import { useState, useEffect, useCallback, useRef } from 'react';
-import { useFirebase } from '@/firebase';
+import type { Auth, User } from 'firebase/auth';
+import type { Firestore } from 'firebase/firestore';
 import {
   collection,
   doc,
@@ -25,8 +26,7 @@ import { showIncomingCallToast } from '@/components/IncomingCallToast';
 import { errorEmitter } from '@/firebase/error-emitter';
 import { FirestorePermissionError } from '@/firebase/errors';
 
-export function useCallHandler() {
-  const { firestore, user } = useFirebase();
+export function useCallHandler(firestore: Firestore | null, user: User | null) {
   const { toast, dismiss } = useToast();
   
   const [activeCall, setActiveCall] = useState<Call | null>(null);
@@ -317,4 +317,3 @@ export function useCallHandler() {
     isMuted
   };
 }
-
