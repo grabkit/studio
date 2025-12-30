@@ -104,7 +104,6 @@ export function VideoCallView({
         <div className="fixed inset-0 z-50 bg-background flex flex-col items-center justify-between p-8">
             {/* Remote Video */}
             <video ref={remoteVideoRef} className="absolute top-0 left-0 w-full h-full object-cover z-0" />
-            <div className="absolute top-0 left-0 w-full h-full bg-black/50 z-10"></div>
             
             {/* Local Video */}
             <video ref={localVideoRef} className="absolute top-4 right-4 w-1/4 max-w-[120px] rounded-lg z-20" muted />
@@ -115,8 +114,8 @@ export function VideoCallView({
                         <AvatarFallback className="text-5xl">{getInitials(formatUserId(otherPartyId))}</AvatarFallback>
                     </Avatar>
                 )}
-                <h1 className="text-3xl font-bold text-white">{formatUserId(otherPartyId)}</h1>
-                <p className="text-white/80 mt-2">{getStatusText()}</p>
+                <h1 className="text-3xl font-bold">{formatUserId(otherPartyId)}</h1>
+                <p className="text-muted-foreground mt-2">{getStatusText()}</p>
             </div>
 
              <div className="flex flex-col items-center space-y-6 w-full z-20">
@@ -151,7 +150,7 @@ export function VideoCallView({
                     <div className="flex justify-around w-full max-w-xs">
                         {isRinging ? (
                             <>
-                                <div className="flex flex-col items-center text-white">
+                                <div className="flex flex-col items-center">
                                     <Button
                                         size="icon"
                                         className="rounded-full w-16 h-16 bg-green-500 hover:bg-green-600"
@@ -161,7 +160,7 @@ export function VideoCallView({
                                     </Button>
                                     <span className="mt-2 text-sm">Accept</span>
                                 </div>
-                                <div className="flex flex-col items-center text-white">
+                                <div className="flex flex-col items-center">
                                     <Button
                                         variant="destructive"
                                         size="icon"
@@ -174,7 +173,7 @@ export function VideoCallView({
                                 </div>
                             </>
                         ) : (
-                             <div className="flex flex-col items-center text-white">
+                             <div className="flex flex-col items-center">
                                 <Button
                                     variant="destructive"
                                     size="icon"
