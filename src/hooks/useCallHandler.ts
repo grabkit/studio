@@ -2,7 +2,7 @@
 'use client';
 
 import { useState, useEffect, useCallback, useRef } from 'react';
-import type { Auth, User } from 'firebase/auth';
+import type { User } from 'firebase/auth';
 import type { Firestore } from 'firebase/firestore';
 import {
   collection,
@@ -13,13 +13,9 @@ import {
   onSnapshot,
   query,
   where,
-  getDocs,
-  writeBatch,
   addDoc,
-  deleteDoc,
-  getDoc,
 } from 'firebase/firestore';
-import type { Call, CallStatus, IceCandidate as IceCandidateType } from '@/lib/types';
+import type { Call, CallStatus } from '@/lib/types';
 import Peer from 'simple-peer';
 import { useToast } from './use-toast';
 import { showIncomingCallToast } from '@/components/IncomingCallToast';
@@ -38,7 +34,6 @@ export function useCallHandler(firestore: Firestore | null, user: User | null) {
   const peerRef = useRef<Peer.Instance | null>(null);
   const incomingCallToastId = useRef<string | null>(null);
   const answerProcessed = useRef(false);
-
 
   const cleanupCall = useCallback(() => {
     if (peerRef.current) {
@@ -71,9 +66,10 @@ export function useCallHandler(firestore: Firestore | null, user: User | null) {
   const answerCall = useCallback(async () => {
     if (!firestore || !user || !incomingCall || !incomingCall.offer) return;
     
+    // Immediately set the active call and status for the callee
     setActiveCall(incomingCall);
-    setCallStatus('ringing');
-    setIncomingCall(null);
+    setCallStatus('ringing'); // UI shows 'ringing' or 'connecting'
+    setIncomingCall(null); // Clear the incoming call state
 
     try {
         const stream = await navigator.mediaDevices.getUserMedia({ video: false, audio: true });
@@ -106,7 +102,7 @@ export function useCallHandler(firestore: Firestore | null, user: User | null) {
             title: "Could not answer call",
             description: "Please ensure you have microphone permissions enabled."
         });
-        // Since declineCall is defined before, we can safely call it.
+        
         if (incomingCall) {
             const callRef = doc(firestore, 'calls', incomingCall.id);
             await updateDoc(callRef, { status: 'declined' });
@@ -121,12 +117,13 @@ export function useCallHandler(firestore: Firestore | null, user: User | null) {
     try {
         const stream = await navigator.mediaDevices.getUserMedia({ video: false, audio: true });
         setLocalStream(stream);
-
+        
         const peer = new Peer({
             initiator: true,
             trickle: true,
-            stream: stream,
         });
+
+        peer.addStream(stream); // Add stream immediately after peer creation
         
         peerRef.current = peer;
 
@@ -213,7 +210,8 @@ export function useCallHandler(firestore: Firestore | null, user: User | null) {
             return;
         }
         
-        if (updatedCall.answer && peerRef.current && !peerRef.current.destroyed && peerRef.current.initiator && !answerProcessed.current) {
+        // This is for the CALLER to receive the answer, and should only happen ONCE.
+        if (updatedCall.status === 'answered' && updatedCall.answer && peerRef.current && !peerRef.current.destroyed && peerRef.current.initiator && !answerProcessed.current) {
             answerProcessed.current = true;
             peerRef.current.signal(updatedCall.answer);
         }
@@ -225,8 +223,8 @@ export function useCallHandler(firestore: Firestore | null, user: User | null) {
 
   // Handle peer events (streams, ICE candidates)
   useEffect(() => {
-    if (!peerRef.current || !activeCall || !firestore) return;
     const peer = peerRef.current;
+    if (!peer || !activeCall || !firestore) return;
     
     peer.on('stream', (remoteStream) => {
         setRemoteStream(remoteStream);
@@ -294,8 +292,6 @@ export function useCallHandler(firestore: Firestore | null, user: User | null) {
                 }),
              onClose: () => {
                 if (incomingCall) {
-                    // Use a separate function to decline if the toast times out,
-                    // to avoid dependency issues with declineCall
                     const timeoutDecline = async () => {
                         if (!firestore) return;
                         const callRef = doc(firestore, 'calls', incomingCall.id);
