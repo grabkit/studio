@@ -47,21 +47,30 @@ export function CallView({
     const isAnswered = status === 'answered';
     const isRinging = status === 'ringing' && user?.uid === calleeId;
     
-    // Determine the other party's ID for display purposes
     const otherPartyId = user?.uid === callerId ? calleeId : callerId;
 
 
     useEffect(() => {
         if (remoteAudioRef.current && remoteStream) {
             remoteAudioRef.current.srcObject = remoteStream;
-            remoteAudioRef.current.play().catch(e => console.error("Error playing remote audio:", e));
+            remoteAudioRef.current.play().catch(e => {
+                // Ignore AbortError which is common when playback is interrupted
+                if (e.name !== 'AbortError') {
+                    console.error("Error playing remote audio:", e);
+                }
+            });
         }
     }, [remoteStream]);
     
     useEffect(() => {
         if (localAudioRef.current && localStream) {
             localAudioRef.current.srcObject = localStream;
-            localAudioRef.current.play().catch(e => console.error("Error playing local audio:", e));
+            localAudioRef.current.play().catch(e => {
+                 // Ignore AbortError which is common when playback is interrupted
+                if (e.name !== 'AbortError') {
+                    console.error("Error playing local audio:", e);
+                }
+            });
         }
     }, [localStream]);
 
@@ -69,9 +78,9 @@ export function CallView({
     const getStatusText = () => {
         switch (status) {
             case 'offering':
-                return `Calling ${formatUserId(calleeId)}...`;
+                 return `Calling ${formatUserId(otherPartyId)}...`;
             case 'ringing':
-                 return `${formatUserId(callerId)} is calling...`;
+                 return `${formatUserId(otherPartyId)} is calling...`;
             case 'answered':
                 return 'Connected';
             default:
@@ -91,7 +100,6 @@ export function CallView({
                 <h1 className="text-3xl font-bold">{formatUserId(otherPartyId)}</h1>
                 <p className="text-muted-foreground mt-2">{getStatusText()}</p>
             </div>
-
 
              <div className="flex flex-col items-center space-y-6 w-full">
                 {isAnswered ? (
