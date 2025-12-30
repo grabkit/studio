@@ -104,23 +104,29 @@ export function VideoCallView({
     return (
         <div className="fixed inset-0 z-50 bg-background flex flex-col items-center justify-between p-8">
             {/* Remote Video */}
-            <video ref={remoteVideoRef} className="absolute top-0 left-0 w-full h-full object-cover z-0 bg-secondary" />
+             {isAnswered ? (
+                <video ref={remoteVideoRef} className="absolute top-0 left-0 w-full h-full object-cover z-0 bg-secondary" />
+             ) : (
+                <div className="absolute top-0 left-0 w-full h-full object-cover z-0 bg-background" />
+             )}
             
             {/* Local Video */}
             <video ref={localVideoRef} className="absolute top-4 right-4 w-1/4 max-w-[120px] rounded-lg z-20 bg-black" muted />
             
-             {isAnswered && (
-                <div className="absolute top-8 left-8 z-20 text-white">
-                    <h1 className="text-2xl font-bold" style={{ textShadow: '1px 1px 3px rgba(0,0,0,0.5)' }}>{formatUserId(otherPartyId)}</h1>
-                    <p className="mt-1" style={{ textShadow: '1px 1px 3px rgba(0,0,0,0.5)' }}>{getStatusText()}</p>
-                </div>
-            )}
+            <div className="absolute top-8 left-8 z-20">
+                {isAnswered && (
+                     <div>
+                        <h1 className="text-2xl font-bold text-white" style={{ textShadow: '1px 1px 3px rgba(0,0,0,0.5)' }}>{formatUserId(otherPartyId)}</h1>
+                        <p className="mt-1 text-white" style={{ textShadow: '1px 1px 3px rgba(0,0,0,0.5)' }}>{getStatusText()}</p>
+                    </div>
+                )}
+            </div>
 
             <div className="text-center pt-20 z-20">
                 {!isAnswered && (
                     <>
                         <Avatar className="h-32 w-32 mx-auto mb-6">
-                            <AvatarFallback className="text-5xl bg-primary text-primary-foreground">{getInitials(formatUserId(otherPartyId))}</AvatarFallback>
+                            <AvatarFallback className="text-5xl bg-secondary">{getInitials(formatUserId(otherPartyId))}</AvatarFallback>
                         </Avatar>
                         <h1 className="text-3xl font-bold">{formatUserId(otherPartyId)}</h1>
                         <p className="text-muted-foreground mt-2">{getStatusText()}</p>
