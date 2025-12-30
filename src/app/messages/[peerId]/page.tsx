@@ -199,7 +199,7 @@ function MessageBubble({ message, isOwnMessage, conversationId, onSetReply, onFo
     )
 }
 
-function ChatHeader({ peerId, onStartCall }: { peerId: string, onStartCall: () => void }) {
+function ChatHeader({ peerId, onStartCall, onStartVideoCall }: { peerId: string, onStartCall: () => void, onStartVideoCall: () => void }) {
     const router = useRouter();
     const { firestore } = useFirebase();
     const { isOnline, lastSeen } = usePresence(peerId);
@@ -232,7 +232,7 @@ function ChatHeader({ peerId, onStartCall }: { peerId: string, onStartCall: () =
                     </p>
                 </div>
             </div>
-            <Button variant="ghost" size="icon">
+            <Button variant="ghost" size="icon" onClick={onStartVideoCall}>
                 <Video />
             </Button>
             <Button variant="ghost" size="icon" onClick={onStartCall}>
@@ -425,7 +425,7 @@ function MessageInput({ conversationId, conversation, replyingTo, onCancelReply 
 
 
 export default function ChatPage() {
-    const { firestore, user, startCall } = useFirebase();
+    const { firestore, user, startCall, startVideoCall } = useFirebase();
     const params = useParams();
     const router = useRouter();
     const peerId = params.peerId as string;
@@ -449,6 +449,11 @@ export default function ChatPage() {
     const handleStartCall = () => {
         if (!peerId) return;
         startCall(peerId);
+    }
+    
+    const handleStartVideoCall = () => {
+        if (!peerId) return;
+        startVideoCall(peerId);
     }
 
     const conversationId = useMemo(() => {
@@ -484,7 +489,7 @@ export default function ChatPage() {
     if (!user || isConversationLoading) {
       return (
         <AppLayout showTopBar={false} showBottomNav={false}>
-          <ChatHeader peerId={peerId} onStartCall={handleStartCall} />
+          <ChatHeader peerId={peerId} onStartCall={handleStartCall} onStartVideoCall={handleStartVideoCall} />
           <div className="pt-14">
             <div className="space-y-4 p-4">
                 <Skeleton className="h-10 w-3/5" />
@@ -499,7 +504,7 @@ export default function ChatPage() {
 
     return (
         <AppLayout showTopBar={false} showBottomNav={false}>
-            <ChatHeader peerId={peerId} onStartCall={handleStartCall} />
+            <ChatHeader peerId={peerId} onStartCall={handleStartCall} onStartVideoCall={handleStartVideoCall} />
 
             <div className="pt-14">
                 {conversationId && <ChatMessages conversationId={conversationId} conversation={conversation} onSetReply={handleSetReply} onForward={handleForward} replyingTo={replyingTo} />}

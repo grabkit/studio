@@ -323,6 +323,64 @@
             "status": { "type": "string", "enum": ["pending", "reviewed", "action-taken"] }
         },
         "required": ["id", "reporterUserId", "reportedUserId", "reason", "timestamp", "status"]
+    },
+    "Call": {
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "title": "Call",
+      "type": "object",
+      "description": "Represents a WebRTC voice call between two users.",
+      "properties": {
+        "id": { "type": "string" },
+        "callerId": { "type": "string" },
+        "calleeId": { "type": "string" },
+        "status": { "type": "string", "enum": ["offering", "ringing", "answered", "ended", "declined", "missed"] },
+        "offer": { "type": "object" },
+        "answer": { "type": "object" },
+        "createdAt": { "type": "string", "format": "date-time" },
+        "endedAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["id", "callerId", "calleeId", "status", "createdAt"]
+    },
+    "IceCandidate": {
+        "$schema": "http://json-schema.org/draft-07/schema#",
+        "title": "ICE Candidate",
+        "type": "object",
+        "description": "Represents a WebRTC ICE candidate for establishing a connection.",
+        "properties": {
+            "candidate": { "type": "string" },
+            "sdpMid": { "type": "string" },
+            "sdpMLineIndex": { "type": "number" },
+            "usernameFragment": { "type": "string" }
+        }
+    },
+    "VideoCall": {
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "title": "Video Call",
+      "type": "object",
+      "description": "Represents a WebRTC video call between two users.",
+      "properties": {
+        "id": { "type": "string" },
+        "callerId": { "type": "string" },
+        "calleeId": { "type": "string" },
+        "status": { "type": "string", "enum": ["offering", "ringing", "answered", "ended", "declined", "missed"] },
+        "offer": { "type": "object" },
+        "answer": { "type": "object" },
+        "createdAt": { "type": "string", "format": "date-time" },
+        "endedAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["id", "callerId", "calleeId", "status", "createdAt"]
+    },
+    "VideoIceCandidate": {
+        "$schema": "http://json-schema.org/draft-07/schema#",
+        "title": "Video ICE Candidate",
+        "type": "object",
+        "description": "Represents a WebRTC ICE candidate for establishing a video call connection.",
+        "properties": {
+            "candidate": { "type": "string" },
+            "sdpMid": { "type": "string" },
+            "sdpMLineIndex": { "type": "number" },
+            "usernameFragment": { "type": "string" }
+        }
     }
   },
   "auth": {
@@ -476,8 +534,75 @@
                 }
             ]
         }
+      },
+      {
+        "path": "/calls/{callId}",
+        "definition": {
+            "entityName": "Call",
+            "schema": { "$ref": "#/backend/entities/Call" },
+            "description": "Stores WebRTC voice call signaling data.",
+            "params": [ { "name": "callId", "description": "Unique ID for the call." } ]
+        }
+      },
+      {
+          "path": "/calls/{callId}/callerCandidates/{candidateId}",
+          "definition": {
+              "entityName": "IceCandidate",
+              "schema": { "$ref": "#/backend/entities/IceCandidate" },
+              "description": "Stores caller's ICE candidates for a specific voice call.",
+              "params": [
+                  { "name": "callId", "description": "The ID of the parent call." },
+                  { "name": "candidateId", "description": "Unique ID for the ICE candidate." }
+              ]
+          }
+      },
+      {
+          "path": "/calls/{callId}/answerCandidates/{candidateId}",
+          "definition": {
+              "entityName": "IceCandidate",
+              "schema": { "$ref": "#/backend/entities/IceCandidate" },
+              "description": "Stores answerer's ICE candidates for a specific voice call.",
+              "params": [
+                  { "name": "callId", "description": "The ID of the parent call." },
+                  { "name": "candidateId", "description": "Unique ID for the ICE candidate." }
+              ]
+          }
+      },
+      {
+        "path": "/videoCalls/{videoCallId}",
+        "definition": {
+            "entityName": "VideoCall",
+            "schema": { "$ref": "#/backend/entities/VideoCall" },
+            "description": "Stores WebRTC video call signaling data.",
+            "params": [ { "name": "videoCallId", "description": "Unique ID for the video call." } ]
+        }
+      },
+      {
+          "path": "/videoCalls/{videoCallId}/callerCandidates/{candidateId}",
+          "definition": {
+              "entityName": "VideoIceCandidate",
+              "schema": { "$ref": "#/backend/entities/VideoIceCandidate" },
+              "description": "Stores caller's ICE candidates for a specific video call.",
+              "params": [
+                  { "name": "videoCallId", "description": "The ID of the parent video call." },
+                  { "name": "candidateId", "description": "Unique ID for the ICE candidate." }
+              ]
+          }
+      },
+      {
+          "path": "/videoCalls/{videoCallId}/answerCandidates/{candidateId}",
+          "definition": {
+              "entityName": "VideoIceCandidate",
+              "schema": { "$ref": "#/backend/entities/VideoIceCandidate" },
+              "description": "Stores answerer's ICE candidates for a specific video call.",
+              "params": [
+                  { "name": "videoCallId", "description": "The ID of the parent video call." },
+                  { "name": "candidateId", "description": "Unique ID for the ICE candidate." }
+              ]
+          }
       }
     ],
-    "reasoning": "The Firestore structure is designed for a public, social-media-style application. User profiles are stored in a `/users` collection, while all posts are stored in a single top-level `/posts` collection. This global `posts` collection allows any user to easily query and view all public posts. Security rules are configured to enforce that while all authenticated user can read posts, only the original author (`authorId` must match `request.auth.uid`) can write, update, or delete their own posts. Comments are stored in a subcollection under each post for clear organization. User-specific data like bookmarks and notifications are stored in subcollections under the respective user's document for security and scalability. Messaging is handled through a top-level `conversations` collection, with messages stored in a subcollection. This allows for efficient querying of conversations a user is part of, while keeping the actual message data separate. A `reports` collection is added for moderation purposes, allowing users to report content or other users."
+    "reasoning": "The Firestore structure is designed for a public, social-media-style application. User profiles are stored in a `/users` collection, while all posts are stored in a single top-level `/posts` collection. This global `posts` collection allows any user to easily query and view all public posts. Security rules are configured to enforce that while all authenticated user can read posts, only the original author (`authorId` must match `request.auth.uid`) can write, update, or delete their own posts. Comments are stored in a subcollection under each post for clear organization. User-specific data like bookmarks and notifications are stored in subcollections under the respective user's document for security and scalability. Messaging is handled through a top-level `conversations` collection, with messages stored in a subcollection. This allows for efficient querying of conversations a user is part of, while keeping the actual message data separate. A `reports` collection is added for moderation purposes, allowing users to report content or other users. A `calls` collection with `callerCandidates` and `answerCandidates` subcollections is added to facilitate WebRTC voice call signaling. A separate `videoCalls` collection with its own candidate subcollections is added for the new video call functionality to keep it isolated from the existing voice call feature."
   }
 }
+

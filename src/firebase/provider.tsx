@@ -3,16 +3,20 @@
 
 import React, { DependencyList, createContext, useContext, ReactNode, useMemo, useState, useEffect, useRef } from 'react';
 import { FirebaseApp } from 'firebase/app';
-import { Firestore, doc, serverTimestamp as firestoreServerTimestamp, updateDoc } from 'firebase/firestore';
-import { Auth, User, onAuthStateChanged } from 'firebase/auth';
-import { Database, ref, onValue, off, onDisconnect, set, serverTimestamp as dbServerTimestamp } from 'firebase/database';
+import { Firestore, doc } from 'firebase/firestore';
+import { Auth, User } from 'firebase/auth';
+import { Database, ref, onValue, onDisconnect, set, serverTimestamp as dbServerTimestamp } from 'firebase/database';
 import { FirebaseErrorListener } from '@/components/FirebaseErrorListener';
 import { useDoc, type WithId } from './firestore/use-doc';
 import type { User as UserProfile } from '@/lib/types';
 import { useCallHandler } from '@/hooks/useCallHandler';
 import { CallView } from '@/components/CallView';
+import { useVideoCallHandler } from '@/hooks/useVideoCallHandler';
+import { VideoCallView } from '@/components/VideoCallView';
 
 interface CallHandlerResult extends ReturnType<typeof useCallHandler> {}
+interface VideoCallHandlerResult extends ReturnType<typeof useVideoCallHandler> {}
+
 
 interface FirebaseProviderProps {
   children: React.Node;
@@ -30,7 +34,7 @@ interface UserAuthState {
 }
 
 // Combined state for the Firebase context
-export interface FirebaseContextState extends CallHandlerResult {
+export interface FirebaseContextState extends CallHandlerResult, VideoCallHandlerResult {
   areServicesAvailable: boolean; // True if core services (app, firestore, auth instance) are provided
   firebaseApp: FirebaseApp | null;
   firestore: Firestore | null;
@@ -46,7 +50,7 @@ export interface FirebaseContextState extends CallHandlerResult {
 }
 
 // Return type for useFirebase()
-export interface FirebaseServicesAndUser extends CallHandlerResult {
+export interface FirebaseServicesAndUser extends CallHandlerResult, VideoCallHandlerResult {
   firebaseApp: FirebaseApp;
   firestore: Firestore;
   database: Database;
@@ -85,6 +89,7 @@ export const FirebaseProvider: React.FC<FirebaseProviderProps> = ({
   });
   
   const callHandler = useCallHandler(firestore, userAuthState.user);
+  const videoCallHandler = useVideoCallHandler(firestore, userAuthState.user);
 
 
   // Effect to subscribe to Firebase auth state changes and manage presence
@@ -158,16 +163,37 @@ export const FirebaseProvider: React.FC<FirebaseProviderProps> = ({
       userProfile,
       isUserProfileLoading,
       ...callHandler,
+      ...videoCallHandler,
     };
-  }, [firebaseApp, firestore, auth, database, userAuthState, userProfile, isUserProfileLoading, callHandler]);
+  }, [firebaseApp, firestore, auth, database, userAuthState, userProfile, isUserProfileLoading, callHandler, videoCallHandler]);
 
   // Determine if the call UI should be shown
   const showCallUI = !!callHandler.callStatus && callHandler.callStatus !== 'ended' && callHandler.callStatus !== 'declined' && callHandler.callStatus !== 'missed';
+  const showVideoCallUI = !!videoCallHandler.videoCallStatus && videoCallHandler.videoCallStatus !== 'ended' && videoCallHandler.videoCallStatus !== 'declined' && videoCallHandler.videoCallStatus !== 'missed';
 
-  return (
-    <FirebaseContext.Provider value={contextValue}>
-      <FirebaseErrorListener />
-       {showCallUI ? (
+
+  const renderContent = () => {
+    if (showVideoCallUI) {
+      return (
+        <VideoCallView
+            status={videoCallHandler.videoCallStatus}
+            calleeId={videoCallHandler.activeVideoCall?.calleeId}
+            callerId={videoCallHandler.activeVideoCall?.callerId}
+            isMuted={videoCallHandler.isVideoMuted}
+            isVideoEnabled={videoCallHandler.isVideoEnabled}
+            localStream={videoCallHandler.localVideoStream}
+            remoteStream={videoCallHandler.remoteVideoStream}
+            onToggleMute={videoCallHandler.toggleVideoMute}
+            onToggleVideo={videoCallHandler.toggleVideo}
+            onAccept={videoCallHandler.answerVideoCall}
+            onDecline={videoCallHandler.declineVideoCall}
+            onHangUp={videoCallHandler.hangUpVideoCall}
+            callDuration={videoCallHandler.videoCallDuration}
+        />
+      )
+    }
+    if (showCallUI) {
+       return (
          <CallView
             status={callHandler.callStatus}
             calleeId={callHandler.activeCall?.calleeId}
@@ -181,9 +207,15 @@ export const FirebaseProvider: React.FC<FirebaseProviderProps> = ({
             onHangUp={callHandler.hangUp}
             callDuration={callHandler.callDuration}
         />
-       ) : (
-        children
-       )}
+       )
+    }
+    return children;
+  }
+
+  return (
+    <FirebaseContext.Provider value={contextValue}>
+      <FirebaseErrorListener />
+       {renderContent()}
     </FirebaseContext.Provider>
   );
 };
@@ -224,6 +256,19 @@ export const useFirebase = (): FirebaseServicesAndUser => {
     remoteStream: context.remoteStream,
     isMuted: context.isMuted,
     callDuration: context.callDuration,
+    startVideoCall: context.startVideoCall,
+    answerVideoCall: context.answerVideoCall,
+    declineVideoCall: context.declineVideoCall,
+    hangUpVideoCall: context.hangUpVideoCall,
+    toggleVideoMute: context.toggleVideoMute,
+    toggleVideo: context.toggleVideo,
+    activeVideoCall: context.activeVideoCall,
+    videoCallStatus: context.videoCallStatus,
+    localVideoStream: context.localVideoStream,
+    remoteVideoStream: context.remoteVideoStream,
+    isVideoMuted: context.isVideoMuted,
+    isVideoEnabled: context.isVideoEnabled,
+    videoCallDuration: context.videoCallDuration,
   };
 };
 
