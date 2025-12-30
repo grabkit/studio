@@ -59,7 +59,6 @@ export function CallView({
     }
 
     const isRinging = status === 'ringing';
-    const isOffering = status === 'offering';
     const isAnswered = status === 'answered';
     const otherPartyId = isRinging ? callerId : calleeId;
 
@@ -122,11 +121,11 @@ export function CallView({
                             variant="destructive"
                             size="icon"
                             className="rounded-full w-16 h-16"
-                            onClick={(isRinging || isOffering) ? onDecline : onHangUp}
+                            onClick={isAnswered ? onHangUp : onDecline}
                         >
                             <PhoneOff />
                         </Button>
-                        <span className="mt-2 text-sm">{(isRinging || isOffering) ? 'Decline' : 'Hang Up'}</span>
+                        <span className="mt-2 text-sm">{isAnswered ? 'Hang Up' : 'Decline'}</span>
                     </div>
                 </div>
             </div>
