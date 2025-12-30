@@ -59,9 +59,11 @@ export function CallView({
     if (!status || status === 'ended' || status === 'declined' || status === 'missed') {
         return null;
     }
-
-    const isRinging = status === 'ringing';
+    
     const isAnswered = status === 'answered';
+    // isRinging is true only for the person receiving the call.
+    const isRinging = status === 'ringing' && user?.uid === calleeId;
+    
     const otherPartyId = user?.uid === callerId ? calleeId : callerId;
 
     const getStatusText = () => {
@@ -91,7 +93,7 @@ export function CallView({
             <audio ref={remoteAudioRef} autoPlay playsInline />
             <audio ref={localAudioRef} autoPlay playsInline muted />
 
-            <div className="flex flex-col items-center space-y-6 w-full">
+             <div className="flex flex-col items-center space-y-6 w-full">
                 {isAnswered ? (
                     // Controls shown WHEN THE CALL IS ANSWERED
                     <div className="flex items-center space-x-6">
