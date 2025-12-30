@@ -85,8 +85,8 @@ export function useCallHandler(firestore: Firestore | null, user: User | null) {
 
         peer.on('signal', async (data) => {
             if (data.type === 'answer') {
-                await updateDoc(callRef, { answer: data, status: 'answered' });
-            } else if (data.type === 'candidate') {
+                await updateDoc(callRef, { answer: data });
+            } else if (data.candidate) {
                  await addDoc(answerCandidatesCol, data);
             }
         });
@@ -160,7 +160,7 @@ export function useCallHandler(firestore: Firestore | null, user: User | null) {
                 await setDoc(callDocRef, newCallData);
                 setActiveCall({ id: callDocRef.id, ...newCallData } as Call);
                 setCallStatus('offering');
-            } else if (data.type === 'candidate') {
+            } else if (data.candidate) {
                 await addDoc(callerCandidatesCol, data);
             }
         });
@@ -176,10 +176,10 @@ export function useCallHandler(firestore: Firestore | null, user: User | null) {
         onSnapshot(callDocRef, (docSnap) => {
              const updatedCall = docSnap.data() as Call;
              if (updatedCall?.answer && peerRef.current && !peerRef.current.destroyed) {
-                 peerRef.current.signal(updatedCall.answer);
+                 if(!peerRef.current.destroyed) peerRef.current.signal(updatedCall.answer);
              }
-             if (updatedCall?.status !== activeCall?.status) {
-                setCallStatus(updatedCall?.status);
+             if (updatedCall?.status && updatedCall.status !== callStatus) {
+                setCallStatus(updatedCall.status);
              }
              if (updatedCall?.status === 'ended' || updatedCall?.status === 'declined' || updatedCall?.status === 'missed') {
                  toast({ title: `Call ${updatedCall.status}` });
@@ -212,7 +212,7 @@ export function useCallHandler(firestore: Firestore | null, user: User | null) {
             description: "Please ensure you have microphone permissions enabled."
         });
     }
-  }, [firestore, user, toast, cleanupCall, activeCall?.status]);
+  }, [firestore, user, toast, cleanupCall, callStatus]);
 
   const hangUp = useCallback(async () => {
     if (!firestore || !activeCall) return;
@@ -246,13 +246,11 @@ export function useCallHandler(firestore: Firestore | null, user: User | null) {
         const callDoc = snapshot.docs[0];
         const incomingCallData = { id: callDoc.id, ...callDoc.data() } as Call;
 
-        // If we are already in a call, or this is the call we are already handling, ignore.
         if (activeCall && activeCall.id === incomingCallData.id) return;
         
-        // If there's another active call, maybe decline this new one automatically?
         if (activeCall && activeCall.id !== incomingCallData.id) {
             const newCallRef = doc(firestore, 'calls', incomingCallData.id);
-            await updateDoc(newCallRef, { status: 'declined' }); // Or 'busy' if you add that status
+            await updateDoc(newCallRef, { status: 'declined' }); 
             return;
         }
         
