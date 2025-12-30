@@ -14,8 +14,10 @@ import {
   query,
   where,
   addDoc,
+  getDocs,
+  writeBatch,
 } from 'firebase/firestore';
-import type { Call, CallStatus } from '@/lib/types';
+import type { Call, CallStatus, IceCandidate } from '@/lib/types';
 import Peer from 'simple-peer';
 import { useToast } from './use-toast';
 import { showIncomingCallToast } from '@/components/IncomingCallToast';
@@ -36,6 +38,7 @@ export function useCallHandler(firestore: Firestore | null, user: User | null) {
   const answerProcessed = useRef(false);
 
   const cleanupCall = useCallback(() => {
+    console.log("Cleaning up call...");
     if (peerRef.current) {
         peerRef.current.destroy();
         peerRef.current = null;
@@ -56,19 +59,29 @@ export function useCallHandler(firestore: Firestore | null, user: User | null) {
     answerProcessed.current = false;
   }, [localStream, dismiss]);
 
+
   const declineCall = useCallback(async () => {
     if (!firestore || !incomingCall) return;
     const callRef = doc(firestore, 'calls', incomingCall.id);
-    await updateDoc(callRef, { status: 'declined' });
+    try {
+        await updateDoc(callRef, { status: 'declined' });
+    } catch (e) {
+        console.error("Failed to decline call:", e);
+    }
     cleanupCall();
   }, [firestore, incomingCall, cleanupCall]);
 
   const answerCall = useCallback(async () => {
     if (!firestore || !user || !incomingCall || !incomingCall.offer) return;
     
+    // Set the active call immediately to transition the UI
     setActiveCall(incomingCall);
     setCallStatus('ringing'); 
     setIncomingCall(null);
+     if (incomingCallToastId.current) {
+      dismiss(incomingCallToastId.current);
+      incomingCallToastId.current = null;
+    }
 
     try {
         const stream = await navigator.mediaDevices.getUserMedia({ video: false, audio: true });
@@ -79,20 +92,52 @@ export function useCallHandler(firestore: Firestore | null, user: User | null) {
             trickle: true,
             stream: stream,
         });
+        peerRef.current = peer;
+        
+        const callRef = doc(firestore, 'calls', incomingCall.id);
+        const answerCandidatesCol = collection(callRef, 'answerCandidates');
 
         peer.on('signal', async (data) => {
             if (data.type === 'answer') {
-                const callRef = doc(firestore, 'calls', incomingCall.id);
                 await updateDoc(callRef, {
                     status: 'answered',
                     answer: data
                 });
                 setCallStatus('answered');
+            } else if (data.type === 'candidate') {
+                 await addDoc(answerCandidatesCol, data);
             }
         });
         
+        peer.on('stream', (remoteStream) => {
+            setRemoteStream(remoteStream);
+        });
+
+        // Signal the offer to start the process
         peer.signal(incomingCall.offer);
-        peerRef.current = peer;
+
+        // Listen for caller's ICE candidates
+        const callerCandidatesCol = collection(callRef, 'callerCandidates');
+        const unsubscribe = onSnapshot(callerCandidatesCol, (snapshot) => {
+            snapshot.docChanges().forEach((change) => {
+                if (change.type === 'added') {
+                    if (peerRef.current && !peerRef.current.destroyed) {
+                        peerRef.current.signal(change.doc.data() as any);
+                    }
+                }
+            });
+        });
+
+        peer.on('close', () => {
+            unsubscribe();
+            cleanupCall();
+        });
+        peer.on('error', (err) => {
+            console.error("Peer error:", err);
+            unsubscribe();
+            cleanupCall();
+        });
+
 
     } catch (err) {
         console.error("Error answering call:", err);
@@ -108,7 +153,7 @@ export function useCallHandler(firestore: Firestore | null, user: User | null) {
         }
         cleanupCall();
     }
-  }, [firestore, user, incomingCall, toast, cleanupCall]);
+  }, [firestore, user, incomingCall, toast, cleanupCall, dismiss]);
 
   const startCall = useCallback(async (calleeId: string) => {
     if (!firestore || !user) return;
@@ -120,14 +165,18 @@ export function useCallHandler(firestore: Firestore | null, user: User | null) {
         const peer = new Peer({
             initiator: true,
             trickle: true,
+            stream: stream,
         });
-        
-        peer.addStream(stream);
         peerRef.current = peer;
 
+        const callDocRef = doc(collection(firestore, 'calls'));
+        const callerCandidatesCol = collection(callDocRef, 'callerCandidates');
+
+        setActiveCall({ id: callDocRef.id, callerId: user.uid, calleeId, status: 'offering' } as Call);
+        setCallStatus('offering');
+        
         peer.on('signal', async (data) => {
             if (data.type === 'offer') {
-                const callDocRef = doc(collection(firestore, 'calls'));
                 const newCall: Omit<Call, 'id'> = {
                     callerId: user.uid,
                     calleeId: calleeId,
@@ -136,10 +185,52 @@ export function useCallHandler(firestore: Firestore | null, user: User | null) {
                     offer: data
                 };
                 await setDoc(callDocRef, newCall);
-                setActiveCall({ ...newCall, id: callDocRef.id } as Call);
-                setCallStatus('offering');
+            } else if (data.type === 'candidate') {
+                await addDoc(callerCandidatesCol, data);
             }
         });
+        
+        peer.on('stream', (remoteStream) => {
+            setRemoteStream(remoteStream);
+        });
+
+        const unsubscribe = onSnapshot(callDocRef, (docSnap) => {
+             const updatedCall = docSnap.data() as Call;
+             if (updatedCall?.status === 'answered' && updatedCall.answer && !answerProcessed.current) {
+                answerProcessed.current = true;
+                 if (peerRef.current && !peerRef.current.destroyed) {
+                    peerRef.current.signal(updatedCall.answer);
+                 }
+             } else if (updatedCall?.status === 'ended' || updatedCall?.status === 'declined' || updatedCall?.status === 'missed') {
+                 toast({ title: `Call ${updatedCall.status}` });
+                 unsubscribe();
+                 cleanupCall();
+             }
+        });
+        
+        const answerCandidatesCol = collection(callDocRef, 'answerCandidates');
+        const unsubscribeCandidates = onSnapshot(answerCandidatesCol, (snapshot) => {
+            snapshot.docChanges().forEach((change) => {
+                if (change.type === 'added') {
+                    if (peerRef.current && !peerRef.current.destroyed) {
+                        peerRef.current.signal(change.doc.data() as any);
+                    }
+                }
+            });
+        });
+
+         peer.on('close', () => {
+             unsubscribe();
+             unsubscribeCandidates();
+             cleanupCall();
+         });
+         peer.on('error', (err) => {
+             console.error("Peer error:", err);
+             unsubscribe();
+             unsubscribeCandidates();
+             cleanupCall();
+         });
+
 
     } catch (err) {
         console.error("Error starting call:", err);
@@ -149,7 +240,7 @@ export function useCallHandler(firestore: Firestore | null, user: User | null) {
             description: "Please ensure you have microphone permissions enabled."
         });
     }
-  }, [firestore, user, toast]);
+  }, [firestore, user, toast, cleanupCall]);
 
   const hangUp = useCallback(async () => {
     if (!firestore || !activeCall) return;
@@ -160,9 +251,8 @@ export function useCallHandler(firestore: Firestore | null, user: User | null) {
     } catch (e) {
       console.error("Failed to update call status to ended:", e);
     }
-
-    cleanupCall();
-  }, [firestore, activeCall, cleanupCall]);
+    // The onSnapshot listener will handle the cleanup.
+  }, [firestore, activeCall]);
 
 
   // Listen for incoming calls
@@ -179,7 +269,8 @@ export function useCallHandler(firestore: Firestore | null, user: User | null) {
         const callDoc = snapshot.docs[0];
         const incomingCallData = { id: callDoc.id, ...callDoc.data() } as Call;
 
-        if (activeCall || incomingCall) return;
+        // Prevent showing new call toast if already in a call or processing one
+        if (activeCall || incomingCall || incomingCallToastId.current) return;
 
         setIncomingCall(incomingCallData);
     });
@@ -187,76 +278,6 @@ export function useCallHandler(firestore: Firestore | null, user: User | null) {
     return () => unsubscribe();
   }, [firestore, user, activeCall, incomingCall]);
 
-
-  // Listen for call status changes on the active call
-  useEffect(() => {
-    if (!firestore || !activeCall) return;
-    
-    const callRef = doc(firestore, 'calls', activeCall.id);
-    const unsubscribe = onSnapshot(callRef, (docSnap) => {
-        const updatedCall = docSnap.data() as Call;
-        if (!updatedCall) {
-            cleanupCall();
-            return;
-        }
-
-        setCallStatus(updatedCall.status);
-
-        if (updatedCall.status === 'ended' || updatedCall.status === 'declined' || updatedCall.status === 'missed') {
-            toast({ title: `Call ${updatedCall.status}` });
-            cleanupCall();
-            return;
-        }
-        
-        if (updatedCall.status === 'answered' && updatedCall.answer && peerRef.current && !peerRef.current.destroyed && peerRef.current.initiator && !answerProcessed.current) {
-            answerProcessed.current = true;
-            peerRef.current.signal(updatedCall.answer);
-        }
-    });
-
-    return () => unsubscribe();
-  }, [firestore, activeCall, cleanupCall, toast]);
-
-
-  // Handle peer events (streams, ICE candidates)
-  useEffect(() => {
-    const peer = peerRef.current;
-    if (!peer || !activeCall || !firestore) return;
-    
-    peer.on('stream', (remoteStream) => {
-        setRemoteStream(remoteStream);
-    });
-
-    peer.on('signal', (data) => {
-        if (data.type === 'candidate') {
-            const candidatesCol = collection(firestore, 'calls', activeCall.id, 'iceCandidates');
-            addDoc(candidatesCol, data);
-        }
-    });
-    
-    const candidatesCol = collection(firestore, 'calls', activeCall.id, 'iceCandidates');
-    const unsubscribeCandidates = onSnapshot(candidatesCol, (snapshot) => {
-        snapshot.docChanges().forEach((change) => {
-            if (change.type === 'added') {
-                if (!peer.destroyed) {
-                    const candidate = change.doc.data();
-                    peer.signal(candidate);
-                }
-            }
-        });
-    });
-
-    peer.on('close', () => hangUp());
-    peer.on('error', (err) => {
-        console.error("Peer error:", err);
-        hangUp();
-    });
-
-    return () => {
-        unsubscribeCandidates();
-        peer.removeAllListeners();
-    }
-  }, [peerRef.current, activeCall, firestore, hangUp]);
 
   const toggleMute = () => {
     if (localStream) {
@@ -273,37 +294,26 @@ export function useCallHandler(firestore: Firestore | null, user: User | null) {
         const toastId = `incoming-call-${incomingCall.id}`;
         const { id } = toast({
             id: toastId,
-            duration: 60000,
+            duration: 60000, // 60 seconds to answer
             description: showIncomingCallToast({
                     callerId: incomingCall.callerId,
-                    onAccept: () => {
-                        answerCall();
-                        dismiss(toastId);
-                        incomingCallToastId.current = null;
-                    },
-                    onDecline: () => {
-                        declineCall();
-                        dismiss(toastId);
-                        incomingCallToastId.current = null;
-                    },
+                    onAccept: () => answerCall(),
+                    onDecline: () => declineCall(),
                 }),
-             onClose: () => {
-                if (incomingCall) {
-                    const timeoutDecline = async () => {
-                        if (!firestore) return;
+             onClose: async () => {
+                // This is called when the toast times out
+                if (incomingCallToastId.current === toastId) { // check if it's the same call
+                     if (firestore && incomingCall) {
                         const callRef = doc(firestore, 'calls', incomingCall.id);
                         await updateDoc(callRef, { status: 'missed' });
-                        cleanupCall();
-                    }
-                    timeoutDecline();
+                     }
+                    cleanupCall();
                 }
-                incomingCallToastId.current = null;
             }
         });
         incomingCallToastId.current = id;
     } 
-
-  }, [incomingCall, answerCall, declineCall, dismiss, toast, firestore, cleanupCall]);
+  }, [incomingCall, answerCall, declineCall, toast, firestore, cleanupCall]);
   
    useEffect(() => {
     const handleBeforeUnload = (e: BeforeUnloadEvent) => {
@@ -333,3 +343,5 @@ export function useCallHandler(firestore: Firestore | null, user: User | null) {
     isMuted
   };
 }
+
+    
