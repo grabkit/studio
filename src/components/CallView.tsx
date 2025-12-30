@@ -1,7 +1,7 @@
 
 'use client';
 
-import React from 'react';
+import React, { useEffect, useRef } from 'react';
 import { Button } from './ui/button';
 import { Phone, PhoneOff, Mic, MicOff } from 'lucide-react';
 import { Avatar, AvatarFallback } from './ui/avatar';
@@ -20,6 +20,8 @@ interface CallViewProps {
     calleeId?: string | null;
     callerId?: string | null;
     isMuted: boolean;
+    localStream: MediaStream | null;
+    remoteStream: MediaStream | null;
     onToggleMute: () => void;
     onAccept: () => void;
     onDecline: () => void;
@@ -31,17 +33,37 @@ export function CallView({
     calleeId,
     callerId,
     isMuted,
+    localStream,
+    remoteStream,
     onToggleMute,
     onAccept,
     onDecline,
     onHangUp,
 }: CallViewProps) {
     const { user } = useFirebase();
-    
+    const remoteAudioRef = useRef<HTMLAudioElement>(null);
+    const localAudioRef = useRef<HTMLAudioElement>(null);
+
     const isAnswered = status === 'answered';
     const isRinging = status === 'ringing' && user?.uid === calleeId;
-    const isOffering = status === 'offering' && user?.uid === callerId;
+    
+    // Determine the other party's ID for display purposes
     const otherPartyId = user?.uid === callerId ? calleeId : callerId;
+
+
+    useEffect(() => {
+        if (remoteAudioRef.current && remoteStream) {
+            remoteAudioRef.current.srcObject = remoteStream;
+            remoteAudioRef.current.play().catch(e => console.error("Error playing remote audio:", e));
+        }
+    }, [remoteStream]);
+    
+    useEffect(() => {
+        if (localAudioRef.current && localStream) {
+            localAudioRef.current.srcObject = localStream;
+            localAudioRef.current.play().catch(e => console.error("Error playing local audio:", e));
+        }
+    }, [localStream]);
 
 
     const getStatusText = () => {
@@ -59,6 +81,9 @@ export function CallView({
     
     return (
         <div className="fixed inset-0 z-50 bg-background flex flex-col items-center justify-between p-8">
+            <audio ref={remoteAudioRef} autoPlay />
+            <audio ref={localAudioRef} autoPlay muted />
+
             <div className="text-center pt-20">
                 <Avatar className="h-32 w-32 mx-auto mb-6">
                     <AvatarFallback className="text-5xl">{getInitials(formatUserId(otherPartyId))}</AvatarFallback>
