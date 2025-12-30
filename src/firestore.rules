@@ -95,7 +95,7 @@ service cloud.firestore {
     }
 
     match /calls/{callId}/iceCandidates/{candidateId} {
-        allow read, list, create: if isCallParticipant(callId);
+        allow read, list, create: if isSignedIn();
         allow update, delete: if false;
     }
 
