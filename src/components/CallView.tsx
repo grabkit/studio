@@ -7,6 +7,7 @@ import { Phone, PhoneOff, Mic, MicOff } from 'lucide-react';
 import { Avatar, AvatarFallback } from './ui/avatar';
 import { cn, getInitials } from '@/lib/utils';
 import type { CallStatus } from '@/lib/types';
+import { useFirebase } from '@/firebase';
 
 const formatUserId = (uid: string | undefined) => {
     if (!uid) return "blur??????";
@@ -39,6 +40,7 @@ export function CallView({
     remoteStream,
     localStream
 }: CallViewProps) {
+    const { user } = useFirebase();
     const remoteAudioRef = useRef<HTMLAudioElement>(null);
     const localAudioRef = useRef<HTMLAudioElement>(null);
 
@@ -60,8 +62,7 @@ export function CallView({
 
     const isRinging = status === 'ringing';
     const isAnswered = status === 'answered';
-    const otherPartyId = isRinging ? callerId : calleeId;
-
+    const otherPartyId = user?.uid === callerId ? calleeId : callerId;
 
     const getStatusText = () => {
         switch (status) {
@@ -72,7 +73,7 @@ export function CallView({
             case 'answered':
                 return 'Connected';
             default:
-                return '';
+                return '...';
         }
     };
 
@@ -117,30 +118,43 @@ export function CallView({
                 ) : (
                     // Controls shown BEFORE the call is answered
                     <div className="flex justify-around w-full max-w-xs">
-                        {isRinging && (
-                            <div className="flex flex-col items-center">
+                        {isRinging ? (
+                            <>
+                                <div className="flex flex-col items-center">
+                                    <Button
+                                        size="icon"
+                                        className="rounded-full w-16 h-16 bg-green-500 hover:bg-green-600"
+                                        onClick={onAccept}
+                                    >
+                                        <Phone />
+                                    </Button>
+                                    <span className="mt-2 text-sm">Accept</span>
+                                </div>
+                                <div className="flex flex-col items-center">
+                                    <Button
+                                        variant="destructive"
+                                        size="icon"
+                                        className="rounded-full w-16 h-16"
+                                        onClick={onDecline}
+                                    >
+                                        <PhoneOff />
+                                    </Button>
+                                    <span className="mt-2 text-sm">Decline</span>
+                                </div>
+                            </>
+                        ) : (
+                             <div className="flex flex-col items-center">
                                 <Button
+                                    variant="destructive"
                                     size="icon"
-                                    className="rounded-full w-16 h-16 bg-green-500 hover:bg-green-600"
-                                    onClick={onAccept}
+                                    className="rounded-full w-16 h-16"
+                                    onClick={onDecline}
                                 >
-                                    <Phone />
+                                    <PhoneOff />
                                 </Button>
-                                <span className="mt-2 text-sm">Accept</span>
+                                <span className="mt-2 text-sm">Decline</span>
                             </div>
                         )}
-
-                        <div className="flex flex-col items-center">
-                            <Button
-                                variant="destructive"
-                                size="icon"
-                                className="rounded-full w-16 h-16"
-                                onClick={onDecline}
-                            >
-                                <PhoneOff />
-                            </Button>
-                            <span className="mt-2 text-sm">Decline</span>
-                        </div>
                     </div>
                 )}
             </div>
