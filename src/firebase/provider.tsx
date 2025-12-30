@@ -83,25 +83,8 @@ export const FirebaseProvider: React.FC<FirebaseProviderProps> = ({
     isUserLoading: true, // Start loading until first auth event
     userError: null,
   });
-
-  
-  const remoteAudioRef = useRef<HTMLAudioElement>(null);
-  const localAudioRef = useRef<HTMLAudioElement>(null);
   
   const callHandler = useCallHandler(firestore, userAuthState.user);
-
-
-  useEffect(() => {
-      if (remoteAudioRef.current && callHandler.remoteStream) {
-          remoteAudioRef.current.srcObject = callHandler.remoteStream;
-      }
-  }, [callHandler.remoteStream]);
-  
-  useEffect(() => {
-    if (localAudioRef.current && callHandler.localStream) {
-        localAudioRef.current.srcObject = callHandler.localStream;
-    }
-  }, [callHandler.localStream]);
 
 
   // Effect to subscribe to Firebase auth state changes and manage presence
@@ -190,8 +173,8 @@ export const FirebaseProvider: React.FC<FirebaseProviderProps> = ({
             onAccept={callHandler.answerCall}
             onDecline={callHandler.declineCall}
             onHangUp={callHandler.hangUp}
-            remoteAudioRef={remoteAudioRef}
-            localAudioRef={localAudioRef}
+            localStream={callHandler.localStream}
+            remoteStream={callHandler.remoteStream}
         />
       {children}
     </FirebaseContext.Provider>

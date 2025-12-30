@@ -1,7 +1,7 @@
 
 'use client';
 
-import React from 'react';
+import React, { useEffect, useRef } from 'react';
 import { Button } from './ui/button';
 import { Phone, PhoneOff, Mic, MicOff } from 'lucide-react';
 import { Avatar, AvatarFallback } from './ui/avatar';
@@ -23,8 +23,8 @@ interface CallViewProps {
     onAccept: () => void;
     onDecline: () => void;
     onHangUp: () => void;
-    remoteAudioRef: React.RefObject<HTMLAudioElement>;
-    localAudioRef: React.RefObject<HTMLAudioElement>;
+    remoteStream: MediaStream | null;
+    localStream: MediaStream | null;
 }
 
 export function CallView({
@@ -36,9 +36,24 @@ export function CallView({
     onAccept,
     onDecline,
     onHangUp,
-    remoteAudioRef,
-    localAudioRef
+    remoteStream,
+    localStream
 }: CallViewProps) {
+    const remoteAudioRef = useRef<HTMLAudioElement>(null);
+    const localAudioRef = useRef<HTMLAudioElement>(null);
+
+    useEffect(() => {
+        if (remoteAudioRef.current && remoteStream) {
+            remoteAudioRef.current.srcObject = remoteStream;
+        }
+    }, [remoteStream]);
+    
+    useEffect(() => {
+        if (localAudioRef.current && localStream) {
+            localAudioRef.current.srcObject = localStream;
+        }
+    }, [localStream]);
+
     if (!status || status === 'ended' || status === 'declined' || status === 'missed') {
         return null;
     }
@@ -46,7 +61,8 @@ export function CallView({
     const isRinging = status === 'ringing';
     const isOffering = status === 'offering';
     const isAnswered = status === 'answered';
-    const otherPartyId = calleeId || callerId;
+    const otherPartyId = isRinging ? callerId : calleeId;
+
 
     const getStatusText = () => {
         switch (status) {
