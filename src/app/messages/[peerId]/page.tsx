@@ -18,7 +18,7 @@ import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
 import { Form, FormControl, FormField, FormItem, FormMessage } from '@/components/ui/form';
 import { Skeleton } from '@/components/ui/skeleton';
-import { ArrowLeft, Send, Reply, Forward, Copy, Trash2, X, Heart, MessageCircle, ExternalLink, Phone } from 'lucide-react';
+import { ArrowLeft, Send, Reply, Forward, Copy, Trash2, X, Heart, MessageCircle, ExternalLink, Phone, Video } from 'lucide-react';
 import { cn, getInitials, formatMessageTimestamp, formatLastSeen, formatTimestamp } from '@/lib/utils';
 import type { Conversation, Message, User, Post } from '@/lib/types';
 import { WithId } from '@/firebase/firestore/use-collection';
@@ -232,6 +232,9 @@ function ChatHeader({ peerId, onStartCall }: { peerId: string, onStartCall: () =
                     </p>
                 </div>
             </div>
+            <Button variant="ghost" size="icon">
+                <Video />
+            </Button>
             <Button variant="ghost" size="icon" onClick={onStartCall}>
                 <Phone />
             </Button>
