@@ -113,6 +113,10 @@ export function useCallHandler(firestore: Firestore | null, user: User | null) {
 
         peer.on('close', cleanupCall);
         peer.on('error', (err) => {
+             // This error is expected when one user hangs up, so we can ignore it.
+            if (err.message.includes('reason=Close called')) {
+                return;
+            }
             console.error("Peer error:", err);
             cleanupCall();
         });
@@ -179,6 +183,9 @@ export function useCallHandler(firestore: Firestore | null, user: User | null) {
                  if(!peerRef.current.destroyed) peerRef.current.signal(updatedCall.answer);
              }
              if (updatedCall?.status && updatedCall.status !== callStatus) {
+                if (updatedCall.status === 'answered') {
+                    setActiveCall(prev => prev ? { ...prev, status: 'answered' } : null);
+                }
                 setCallStatus(updatedCall.status);
              }
              if (updatedCall?.status === 'ended' || updatedCall?.status === 'declined' || updatedCall?.status === 'missed') {
@@ -200,8 +207,12 @@ export function useCallHandler(firestore: Firestore | null, user: User | null) {
 
          peer.on('close', cleanupCall);
          peer.on('error', (err) => {
-             console.error("Peer error:", err);
-             cleanupCall();
+             // This error is expected when one user hangs up, so we can ignore it.
+            if (err.message.includes('reason=Close called')) {
+                return;
+            }
+            console.error("Peer error:", err);
+            cleanupCall();
          });
 
     } catch (err) {
