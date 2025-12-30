@@ -31,8 +31,11 @@ export function useCallHandler(firestore: Firestore | null, user: User | null) {
   const [localStream, setLocalStream] = useState<MediaStream | null>(null);
   const [remoteStream, setRemoteStream] = useState<MediaStream | null>(null);
   const [isMuted, setIsMuted] = useState(false);
+  const [callDuration, setCallDuration] = useState(0);
   
   const peerRef = useRef<Peer.Instance | null>(null);
+  const timerRef = useRef<NodeJS.Timeout | null>(null);
+
 
   const cleanupCall = useCallback(() => {
     console.log("Cleaning up call...");
@@ -43,11 +46,16 @@ export function useCallHandler(firestore: Firestore | null, user: User | null) {
     if (localStream) {
         localStream.getTracks().forEach(track => track.stop());
     }
+    if (timerRef.current) {
+        clearInterval(timerRef.current);
+        timerRef.current = null;
+    }
     setLocalStream(null);
     setRemoteStream(null);
     setActiveCall(null);
     setCallStatus(null);
     setIsMuted(false);
+    setCallDuration(0);
   }, [localStream]);
 
 
@@ -289,6 +297,28 @@ export function useCallHandler(firestore: Firestore | null, user: User | null) {
     }
   };
 
+  useEffect(() => {
+    if (callStatus === 'answered') {
+      if (!timerRef.current) {
+        timerRef.current = setInterval(() => {
+          setCallDuration(prev => prev + 1);
+        }, 1000);
+      }
+    } else {
+      if (timerRef.current) {
+        clearInterval(timerRef.current);
+        timerRef.current = null;
+        setCallDuration(0);
+      }
+    }
+
+    return () => {
+      if (timerRef.current) {
+        clearInterval(timerRef.current);
+      }
+    };
+  }, [callStatus]);
+
 
    useEffect(() => {
     const handleBeforeUnload = () => {
@@ -313,6 +343,7 @@ export function useCallHandler(firestore: Firestore | null, user: User | null) {
     callStatus,
     localStream,
     remoteStream,
-    isMuted
+    isMuted,
+    callDuration
   };
 }

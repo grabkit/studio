@@ -14,6 +14,12 @@ const formatUserId = (uid: string | undefined) => {
     return `blur${uid.substring(uid.length - 6)}`;
 };
 
+const formatDuration = (seconds: number) => {
+    const minutes = Math.floor(seconds / 60);
+    const remainingSeconds = seconds % 60;
+    return `${minutes.toString().padStart(2, '0')}:${remainingSeconds.toString().padStart(2, '0')}`;
+};
+
 
 interface CallViewProps {
     status: CallStatus | null;
@@ -26,6 +32,7 @@ interface CallViewProps {
     onAccept: () => void;
     onDecline: () => void;
     onHangUp: () => void;
+    callDuration: number;
 }
 
 export function CallView({
@@ -39,6 +46,7 @@ export function CallView({
     onAccept,
     onDecline,
     onHangUp,
+    callDuration
 }: CallViewProps) {
     const { user } = useFirebase();
     const remoteAudioRef = useRef<HTMLAudioElement>(null);
@@ -76,6 +84,9 @@ export function CallView({
 
 
     const getStatusText = () => {
+        if (isAnswered) {
+            return formatDuration(callDuration);
+        }
         switch (status) {
             case 'offering':
                  return `Calling ${formatUserId(otherPartyId)}...`;

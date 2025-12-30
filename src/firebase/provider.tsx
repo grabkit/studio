@@ -179,6 +179,7 @@ export const FirebaseProvider: React.FC<FirebaseProviderProps> = ({
             onAccept={callHandler.answerCall}
             onDecline={callHandler.declineCall}
             onHangUp={callHandler.hangUp}
+            callDuration={callHandler.callDuration}
         />
        ) : (
         children
@@ -222,6 +223,7 @@ export const useFirebase = (): FirebaseServicesAndUser => {
     localStream: context.localStream,
     remoteStream: context.remoteStream,
     isMuted: context.isMuted,
+    callDuration: context.callDuration,
   };
 };
 
