@@ -1,3 +1,4 @@
+
 'use client';
 
 import React, { useEffect, useRef } from 'react';
@@ -92,7 +93,7 @@ export function VideoCallView({
             case 'offering':
                  return `Calling ${formatUserId(otherPartyId)}...`;
             case 'ringing':
-                 return `${formatUserId(otherPartyId)} is calling...`;
+                 return `${formatUserId(otherPartyId)} is video calling...`;
             case 'answered':
                 return 'Connected';
             default:
@@ -108,11 +109,18 @@ export function VideoCallView({
             {/* Local Video */}
             <video ref={localVideoRef} className="absolute top-4 right-4 w-1/4 max-w-[120px] rounded-lg z-20 bg-black" muted />
             
+             {isAnswered && (
+                <div className="absolute top-8 left-8 z-20 text-white">
+                    <h1 className="text-2xl font-bold" style={{ textShadow: '1px 1px 3px rgba(0,0,0,0.5)' }}>{formatUserId(otherPartyId)}</h1>
+                    <p className="mt-1" style={{ textShadow: '1px 1px 3px rgba(0,0,0,0.5)' }}>{getStatusText()}</p>
+                </div>
+            )}
+
             <div className="text-center pt-20 z-20">
                 {!isAnswered && (
                     <>
                         <Avatar className="h-32 w-32 mx-auto mb-6">
-                            <AvatarFallback className="text-5xl bg-muted">{getInitials(formatUserId(otherPartyId))}</AvatarFallback>
+                            <AvatarFallback className="text-5xl bg-secondary">{getInitials(formatUserId(otherPartyId))}</AvatarFallback>
                         </Avatar>
                         <h1 className="text-3xl font-bold">{formatUserId(otherPartyId)}</h1>
                         <p className="text-muted-foreground mt-2">{getStatusText()}</p>
@@ -127,7 +135,7 @@ export function VideoCallView({
                          <Button
                             variant="secondary"
                             size="icon"
-                            className="rounded-full w-16 h-16"
+                            className="rounded-full w-16 h-16 bg-black/30 hover:bg-black/50 border-0 text-white"
                             onClick={onToggleMute}
                         >
                             {isMuted ? <MicOff /> : <Mic />}
@@ -135,7 +143,7 @@ export function VideoCallView({
                          <Button
                             variant="secondary"
                             size="icon"
-                            className="rounded-full w-16 h-16"
+                            className="rounded-full w-16 h-16 bg-black/30 hover:bg-black/50 border-0 text-white"
                             onClick={onToggleVideo}
                         >
                             {isVideoEnabled ? <Video /> : <VideoOff />}
@@ -161,7 +169,7 @@ export function VideoCallView({
                                     >
                                         <Video />
                                     </Button>
-                                    <span className="mt-2 text-sm">Accept</span>
+                                    <span className="mt-2 text-sm font-medium">Accept</span>
                                 </div>
                                 <div className="flex flex-col items-center">
                                     <Button
@@ -172,7 +180,7 @@ export function VideoCallView({
                                     >
                                         <PhoneOff />
                                     </Button>
-                                    <span className="mt-2 text-sm">Decline</span>
+                                    <span className="mt-2 text-sm font-medium">Decline</span>
                                 </div>
                             </>
                         ) : (
@@ -185,7 +193,7 @@ export function VideoCallView({
                                 >
                                     <PhoneOff />
                                 </Button>
-                                <span className="mt-2 text-sm">Cancel</span>
+                                <span className="mt-2 text-sm font-medium">Cancel</span>
                             </div>
                         )}
                     </div>
