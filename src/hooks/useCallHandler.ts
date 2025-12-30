@@ -37,6 +37,7 @@ export function useCallHandler(firestore: Firestore | null, user: User | null) {
 
   const peerRef = useRef<Peer.Instance | null>(null);
   const incomingCallToastId = useRef<string | null>(null);
+  const answerProcessed = useRef(false); // Flag to ensure answer is processed only once
 
 
   const startCall = useCallback(async (calleeId: string) => {
@@ -100,6 +101,7 @@ export function useCallHandler(firestore: Firestore | null, user: User | null) {
     setCallStatus(null);
     setIncomingCall(null);
     setIsMuted(false);
+    answerProcessed.current = false; // Reset the flag for the next call
   }, [localStream, dismiss]);
 
 
@@ -162,7 +164,8 @@ export function useCallHandler(firestore: Firestore | null, user: User | null) {
         }
         
         // This is for the CALLER to receive the answer, and should only happen ONCE.
-        if (updatedCall.status === 'answered' && updatedCall.answer && peerRef.current && !peerRef.current.destroyed && peerRef.current.initiator) {
+        if (updatedCall.answer && peerRef.current && !peerRef.current.destroyed && peerRef.current.initiator && !answerProcessed.current) {
+            answerProcessed.current = true; // Set the flag immediately
             peerRef.current.signal(updatedCall.answer);
         }
     });
