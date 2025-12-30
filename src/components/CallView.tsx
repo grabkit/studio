@@ -59,7 +59,6 @@ export function CallView({
     }
 
     const isRinging = status === 'ringing';
-    const isOffering = status === 'offering';
     const isAnswered = status === 'answered';
     const otherPartyId = isRinging ? callerId : calleeId;
 
@@ -92,7 +91,8 @@ export function CallView({
             <audio ref={localAudioRef} autoPlay playsInline muted />
 
             <div className="flex flex-col items-center space-y-6 w-full">
-                {isAnswered && (
+                {isAnswered ? (
+                    // Controls shown WHEN THE CALL IS ANSWERED
                     <div className="flex items-center space-x-6">
                         <Button
                             variant="secondary"
@@ -114,9 +114,8 @@ export function CallView({
                             <span className="mt-2 text-sm">Hang Up</span>
                         </div>
                     </div>
-                )}
-
-                {!isAnswered && (
+                ) : (
+                    // Controls shown BEFORE the call is answered
                     <div className="flex justify-around w-full max-w-xs">
                         {isRinging && (
                             <div className="flex flex-col items-center">
