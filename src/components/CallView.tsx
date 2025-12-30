@@ -59,6 +59,7 @@ export function CallView({
     }
 
     const isRinging = status === 'ringing';
+    const isOffering = status === 'offering';
     const isAnswered = status === 'answered';
     const otherPartyId = isRinging ? callerId : calleeId;
 
