@@ -3,7 +3,7 @@
 
 import { useState, useEffect, useCallback, useRef } from 'react';
 import type { User } from 'firebase/auth';
-import type { Firestore } from 'firestore';
+import type { Firestore } from 'firebase/firestore';
 import {
   collection,
   doc,
@@ -17,6 +17,7 @@ import {
   writeBatch,
   getDocs,
   deleteDoc,
+  getDoc,
 } from 'firebase/firestore';
 import type { Call, CallStatus, IceCandidate } from '@/lib/types';
 import Peer from 'simple-peer';
@@ -65,7 +66,6 @@ export function useCallHandler(firestore: Firestore | null, user: User | null) {
     
     const callRef = doc(firestore, 'calls', callToDecline.id);
     try {
-        // Use status 'declined' if ringing, 'ended' if offering (i.e., cancelling)
         const newStatus = callToDecline.status === 'ringing' ? 'declined' : 'ended';
         await updateDoc(callRef, { status: newStatus });
     } catch (e) {
@@ -107,7 +107,6 @@ export function useCallHandler(firestore: Firestore | null, user: User | null) {
                     status: 'answered',
                     answer: data
                 });
-                setCallStatus('answered');
             } else {
                  await addDoc(answerCandidatesCol, data);
             }
@@ -163,31 +162,28 @@ export function useCallHandler(firestore: Firestore | null, user: User | null) {
         setLocalStream(stream);
         
         const callDocRef = doc(collection(firestore, 'calls'));
-        const newCallData: Omit<Call, 'id' | 'offer'> = {
-            callerId: user.uid,
-            calleeId: calleeId,
-            status: 'offering',
-            createdAt: serverTimestamp() as any,
-        };
-        await setDoc(callDocRef, newCallData);
-
-        setActiveCall({ id: callDocRef.id, ...newCallData } as Call);
-        setCallStatus('offering');
 
         const peer = new Peer({
             initiator: true,
             trickle: true,
+            stream: stream
         });
         peerRef.current = peer;
-
-        peer.addStream(stream);
         
         const callerCandidatesCol = collection(callDocRef, 'callerCandidates');
-        const answerCandidatesCol = collection(callDocRef, 'answerCandidates');
-        
+
         peer.on('signal', async (data) => {
             if (data.type === 'offer') {
-                await updateDoc(callDocRef, { offer: data });
+                const newCallData: Omit<Call, 'id'> = {
+                    callerId: user.uid,
+                    calleeId: calleeId,
+                    status: 'offering',
+                    offer: data,
+                    createdAt: serverTimestamp() as any,
+                };
+                await setDoc(callDocRef, newCallData);
+                setActiveCall({ id: callDocRef.id, ...newCallData } as Call);
+                setCallStatus('offering');
             } else {
                 await addDoc(callerCandidatesCol, data);
             }
@@ -211,6 +207,7 @@ export function useCallHandler(firestore: Firestore | null, user: User | null) {
              }
         });
         
+        const answerCandidatesCol = collection(callDocRef, 'answerCandidates');
         onSnapshot(answerCandidatesCol, (snapshot) => {
             snapshot.docChanges().forEach((change) => {
                 if (change.type === 'added') {
@@ -297,10 +294,14 @@ export function useCallHandler(firestore: Firestore | null, user: User | null) {
              onClose: async () => {
                 if (incomingCallToastId.current === toastId) { 
                      if (firestore && incomingCall) {
-                        const callRef = doc(firestore, 'calls', incomingCall.id);
-                        const currentDoc = await getDocs(query(collection(firestore, 'calls'), where('id', '==', incomingCall.id)));
-                        if (currentDoc.docs[0]?.data().status === 'offering') {
-                           await updateDoc(callRef, { status: 'missed' });
+                        try {
+                            const callRef = doc(firestore, 'calls', incomingCall.id);
+                            const currentDocSnap = await getDoc(callRef);
+                            if (currentDocSnap.exists() && currentDocSnap.data().status === 'offering') {
+                               await updateDoc(callRef, { status: 'missed' });
+                            }
+                        } catch (e) {
+                            console.error("Error updating call to missed:", e);
                         }
                      }
                     cleanupCall();
