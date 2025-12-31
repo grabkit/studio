@@ -130,7 +130,7 @@ export function VideoCallView({
             )}
 
 
-             <div className="flex flex-col items-center space-y-6 w-full z-20">
+             <div className="absolute bottom-8 flex flex-col items-center space-y-6 w-full z-20">
                 {isAnswered ? (
                      <div className="flex items-center space-x-6">
                          <Button
