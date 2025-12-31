@@ -103,12 +103,11 @@ export function VideoCallView({
     
     return (
         <div className={cn("fixed inset-0 z-50 flex flex-col items-center justify-between p-8", !isAnswered && "bg-background")}>
-            {/* Remote Video */}
-             {isAnswered && (
-                <video ref={remoteVideoRef} className="absolute top-0 left-0 w-full h-full object-cover z-0 bg-secondary" />
-             )}
             
-            {/* Local Video */}
+            {/* Remote Video Stream */}
+            <video ref={remoteVideoRef} className={cn("absolute top-0 left-0 w-full h-full object-cover z-0 bg-secondary", !isAnswered && "hidden")} />
+            
+            {/* Local Video Stream */}
             <video ref={localVideoRef} className="absolute top-4 right-4 w-1/4 max-w-[120px] rounded-lg z-20 bg-black" muted />
             
             {isAnswered && (
@@ -121,7 +120,7 @@ export function VideoCallView({
             )}
 
             {!isAnswered && (
-                <div className="text-center pt-20 z-20">
+                <div className="text-center pt-20 z-10">
                     <Avatar className="h-32 w-32 mx-auto mb-6">
                         <AvatarFallback className="text-5xl bg-secondary">{getInitials(formatUserId(otherPartyId))}</AvatarFallback>
                     </Avatar>

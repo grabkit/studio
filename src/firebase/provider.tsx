@@ -171,10 +171,10 @@ export const FirebaseProvider: React.FC<FirebaseProviderProps> = ({
   const showCallUI = !!callHandler.callStatus && callHandler.callStatus !== 'ended' && callHandler.callStatus !== 'declined' && callHandler.callStatus !== 'missed';
   const showVideoCallUI = !!videoCallHandler.videoCallStatus && videoCallHandler.videoCallStatus !== 'ended' && videoCallHandler.videoCallStatus !== 'declined' && videoCallHandler.videoCallStatus !== 'missed';
 
-
-  const renderContent = () => {
-    if (showVideoCallUI) {
-      return (
+  return (
+    <FirebaseContext.Provider value={contextValue}>
+      <FirebaseErrorListener />
+      {showVideoCallUI ? (
         <VideoCallView
             status={videoCallHandler.videoCallStatus}
             calleeId={videoCallHandler.activeVideoCall?.calleeId}
@@ -190,10 +190,7 @@ export const FirebaseProvider: React.FC<FirebaseProviderProps> = ({
             onHangUp={videoCallHandler.hangUpVideoCall}
             callDuration={videoCallHandler.videoCallDuration}
         />
-      )
-    }
-    if (showCallUI) {
-       return (
+      ) : showCallUI ? (
          <CallView
             status={callHandler.callStatus}
             calleeId={callHandler.activeCall?.calleeId}
@@ -207,15 +204,9 @@ export const FirebaseProvider: React.FC<FirebaseProviderProps> = ({
             onHangUp={callHandler.hangUp}
             callDuration={callHandler.callDuration}
         />
-       )
-    }
-    return children;
-  }
-
-  return (
-    <FirebaseContext.Provider value={contextValue}>
-      <FirebaseErrorListener />
-       {renderContent()}
+      ) : (
+        children
+      )}
     </FirebaseContext.Provider>
   );
 };
