@@ -1,3 +1,4 @@
+
 'use client';
 
 import React, { useEffect, useRef } from 'react';
@@ -119,17 +120,15 @@ export function VideoCallView({
                 </div>
             )}
 
-            <div className="text-center pt-20 z-20">
-                {!isAnswered && (
-                    <>
-                        <Avatar className="h-32 w-32 mx-auto mb-6">
-                            <AvatarFallback className="text-5xl bg-secondary">{getInitials(formatUserId(otherPartyId))}</AvatarFallback>
-                        </Avatar>
-                        <h1 className="text-3xl font-bold">{formatUserId(otherPartyId)}</h1>
-                        <p className="text-muted-foreground mt-2">{getStatusText()}</p>
-                    </>
-                )}
-            </div>
+            {!isAnswered && (
+                <div className="text-center pt-20 z-20">
+                    <Avatar className="h-32 w-32 mx-auto mb-6">
+                        <AvatarFallback className="text-5xl bg-secondary">{getInitials(formatUserId(otherPartyId))}</AvatarFallback>
+                    </Avatar>
+                    <h1 className="text-3xl font-bold">{formatUserId(otherPartyId)}</h1>
+                    <p className="text-muted-foreground mt-2">{getStatusText()}</p>
+                </div>
+            )}
 
 
              <div className="flex flex-col items-center space-y-6 w-full z-20">
