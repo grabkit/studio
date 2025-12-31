@@ -102,7 +102,7 @@ export function VideoCallView({
     };
     
     return (
-        <div className="fixed inset-0 z-50 bg-background flex flex-col items-center justify-between p-8">
+        <div className="fixed inset-0 z-50 flex flex-col items-center justify-between p-8">
             {/* Remote Video */}
              {isAnswered ? (
                 <video ref={remoteVideoRef} className="absolute top-0 left-0 w-full h-full object-cover z-0 bg-secondary" />
