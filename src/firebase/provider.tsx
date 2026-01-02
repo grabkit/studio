@@ -253,7 +253,7 @@ export const FirebaseProvider: React.FC<FirebaseProviderProps> = ({
       ...callHandler,
       ...videoCallHandler,
     };
-  }, [firebaseApp, firestore, auth, database, userAuthState, userProfile, isUserProfileLoading, callHandler, videoCallHandler, isVoicePlayerPlaying, showVoiceStatusPlayer]);
+  }, [firebaseApp, firestore, auth, database, userAuthState, userProfile, isUserProfileLoading, callHandler, videoCallHandler, isVoicePlayerPlaying]);
 
   // Determine if the call UI should be shown
   const showCallUI = !!callHandler.callStatus && callHandler.callStatus !== 'ended' && callHandler.callStatus !== 'declined' && callHandler.callStatus !== 'missed';
@@ -268,6 +268,7 @@ export const FirebaseProvider: React.FC<FirebaseProviderProps> = ({
           isOpen={!!voiceStatusUser}
           onOpenChange={(open) => { if (!open) onVoicePlayerClose(); }}
           onDelete={handleDeleteVoiceStatus}
+          isVoicePlayerPlaying={isVoicePlayerPlaying}
         />
       )}
       {showVideoCallUI ? (

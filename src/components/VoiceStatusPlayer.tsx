@@ -28,8 +28,8 @@ const formatUserId = (uid: string | undefined) => {
     return `blur${uid.substring(uid.length - 6)}`;
 };
 
-export function VoiceStatusPlayer({ user: voiceUser, isOpen, onOpenChange, onDelete }: { user: WithId<User>, isOpen: boolean, onOpenChange: (open: boolean) => void, onDelete: () => void }) {
-    const { isVoicePlayerPlaying, user: currentUser } = useFirebase();
+export function VoiceStatusPlayer({ user: voiceUser, isOpen, onOpenChange, onDelete, isVoicePlayerPlaying }: { user: WithId<User>, isOpen: boolean, onOpenChange: (open: boolean) => void, onDelete: () => void, isVoicePlayerPlaying: boolean }) {
+    const { user: currentUser } = useFirebase();
     const [isDeleteAlertOpen, setIsDeleteAlertOpen] = React.useState(false);
 
     const isOwnStatus = currentUser?.uid === voiceUser.id;
