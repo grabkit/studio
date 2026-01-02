@@ -262,14 +262,14 @@ export default function VoiceNotePage() {
                     <>
                         <div className="relative flex items-center justify-center">
                             {recordingStatus === "recording" && (
-                               <div className="absolute inset-0 rounded-full animate-recording-pulse"></div>
+                                <div className="absolute h-26 w-26 bg-muted rounded-full animate-pulse"></div>
                             )}
                             <Button
                                 variant={recordingStatus === "recording" ? "destructive" : "default"}
                                 size="icon"
                                 onClick={handleMicButtonClick}
                                 disabled={recordingStatus === 'permission-pending' || recordingStatus === 'sharing'}
-                                className="h-24 w-24 rounded-full shadow-lg"
+                                className="h-24 w-24 rounded-full shadow-lg relative"
                             >
                                {getButtonIcon()}
                             </Button>
