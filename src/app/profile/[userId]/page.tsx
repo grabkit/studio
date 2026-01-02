@@ -508,7 +508,7 @@ export default function UserProfilePage() {
                     <div className="px-4">
                          <div className="flex items-start space-x-5 mb-2">
                             <div className="flex-shrink-0 text-center">
-                                <div className="relative inline-block" onClick={handleAvatarClick} role={hasVoiceStatus ? "button" : "none"}>
+                                <div className="relative inline-block">
                                     <Avatar className="h-20 w-20 md:h-24 md:w-24 mx-auto">
                                         <AvatarImage
                                             src={undefined}
@@ -519,7 +519,7 @@ export default function UserProfilePage() {
                                         </AvatarFallback>
                                     </Avatar>
                                     {hasVoiceStatus && (
-                                        <div className="absolute bottom-0 right-0 bg-background p-1 rounded-full border-2">
+                                        <div className="absolute bottom-0 right-0 bg-background p-1 rounded-full border-2 cursor-pointer" onClick={handleAvatarClick} role="button">
                                             <div className="flex items-center justify-center h-5 w-5 gap-0.5">
                                                 <div className="audio-wave-bar-avatar" />
                                                 <div className="audio-wave-bar-avatar" />
