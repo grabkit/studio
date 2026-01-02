@@ -82,7 +82,7 @@ export default function VoiceNotePage() {
             canvasCtx.clearRect(0, 0, canvas.width, canvas.height);
             
             const lineWidth = 2; // Width of each line
-            const gap = 1; // Gap between lines
+            const gap = 2; // Gap between lines
             const totalWidth = bufferLength * (lineWidth + gap);
             let x = (canvas.width - totalWidth) / 2; // Start x to center the waveform
 
