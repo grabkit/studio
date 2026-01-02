@@ -51,6 +51,7 @@ export interface FirebaseContextState extends CallHandlerResult, VideoCallHandle
   // User profile state
   userProfile: WithId<UserProfile> | null;
   isUserProfileLoading: boolean;
+  setUserProfile: React.Dispatch<React.SetStateAction<WithId<UserProfile> | null>>;
   showVoiceStatusPlayer: (user: WithId<UserProfile>) => void;
   isVoicePlayerPlaying: boolean;
   handleDeleteVoiceStatus: () => Promise<void>;
@@ -67,6 +68,7 @@ export interface FirebaseServicesAndUser extends CallHandlerResult, VideoCallHan
   userError: Error | null;
   userProfile: WithId<UserProfile> | null;
   isUserProfileLoading: boolean;
+  setUserProfile: React.Dispatch<React.SetStateAction<WithId<UserProfile> | null>>;
   showVoiceStatusPlayer: (user: WithId<UserProfile>) => void;
   isVoicePlayerPlaying: boolean;
   handleDeleteVoiceStatus: () => Promise<void>;
@@ -144,7 +146,7 @@ export const FirebaseProvider: React.FC<FirebaseProviderProps> = ({
             voiceStatusTimestamp: deleteField()
         });
         toast({ title: "Voice Status Deleted" });
-        onVoicePlayerClose(); // Close the sheet after deletion
+        onVoicePlayerClose();
         
         // Optimistically update local state to remove icon immediately
         setUserProfile(currentProfile => {
@@ -259,13 +261,15 @@ export const FirebaseProvider: React.FC<FirebaseProviderProps> = ({
       userError: userAuthState.userError,
       userProfile,
       isUserProfileLoading,
+      setUserProfile,
       showVoiceStatusPlayer,
       isVoicePlayerPlaying,
       handleDeleteVoiceStatus,
       ...callHandler,
       ...videoCallHandler,
     };
-  }, [firebaseApp, firestore, auth, database, userAuthState, userProfile, isUserProfileLoading, callHandler, videoCallHandler, isVoicePlayerPlaying, handleDeleteVoiceStatus]);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [firebaseApp, firestore, auth, database, userAuthState, userProfile, isUserProfileLoading, callHandler, videoCallHandler, isVoicePlayerPlaying, handleDeleteVoiceStatus, setUserProfile]);
 
   // Determine if the call UI should be shown
   const showCallUI = !!callHandler.callStatus && callHandler.callStatus !== 'ended' && callHandler.callStatus !== 'declined' && callHandler.callStatus !== 'missed';
@@ -345,6 +349,7 @@ export const useFirebase = (): FirebaseServicesAndUser => {
     userError: context.userError,
     userProfile: context.userProfile,
     isUserProfileLoading: context.isUserProfileLoading,
+    setUserProfile: context.setUserProfile,
     showVoiceStatusPlayer: context.showVoiceStatusPlayer,
     isVoicePlayerPlaying: context.isVoicePlayerPlaying,
     handleDeleteVoiceStatus: context.handleDeleteVoiceStatus,

@@ -28,7 +28,7 @@ const formatUserId = (uid: string | undefined) => {
     return `blur${uid.substring(uid.length - 6)}`;
 };
 
-export function VoiceStatusPlayer({ user: voiceUser, isOpen, onOpenChange, onDelete, isVoicePlayerPlaying }: { user: WithId<User>, isOpen: boolean, onOpenChange: (open: boolean) => void, onDelete: () => void, isVoicePlayerPlaying: boolean }) {
+export function VoiceStatusPlayer({ user: voiceUser, isOpen, onOpenChange, onDelete, isVoicePlayerPlaying }: { user: WithId<User>, isOpen: boolean, onOpenChange: (open: boolean) => void, onDelete: () => Promise<void>, isVoicePlayerPlaying: boolean }) {
     const { user: currentUser } = useFirebase();
     const [isDeleteAlertOpen, setIsDeleteAlertOpen] = React.useState(false);
 
@@ -36,6 +36,12 @@ export function VoiceStatusPlayer({ user: voiceUser, isOpen, onOpenChange, onDel
 
     const handleDeleteClick = () => {
         setIsDeleteAlertOpen(true);
+    }
+
+    const handleConfirmDelete = async () => {
+        await onDelete();
+        setIsDeleteAlertOpen(false);
+        onOpenChange(false); // Close the main sheet after deletion
     }
 
     return (
@@ -82,7 +88,7 @@ export function VoiceStatusPlayer({ user: voiceUser, isOpen, onOpenChange, onDel
                     </AlertDialogDescription>
                 </AlertDialogHeader>
                 <AlertDialogFooter>
-                    <AlertDialogAction onClick={onDelete} className={cn(buttonVariants({variant: 'destructive'}))}>
+                    <AlertDialogAction onClick={handleConfirmDelete} className={cn(buttonVariants({variant: 'destructive'}))}>
                         Delete
                     </AlertDialogAction>
                     <AlertDialogCancel>Cancel</AlertDialogCancel>

@@ -3,9 +3,8 @@
 "use client";
 
 import { useParams, useRouter } from "next/navigation";
-import { useFirebase, useMemoFirebase, useCollection, type WithId } from "@/firebase";
-import { doc, collection, query, where, getDocs, serverTimestamp, setDoc, getDoc, updateDoc, increment, arrayUnion, arrayRemove, runTransaction } from "firebase/firestore";
-import { useDoc } from "@/firebase/firestore/use-doc";
+import { useFirebase, useMemoFirebase, useCollection, type WithId, useDoc } from "@/firebase";
+import { doc, collection, query, where, getDocs, serverTimestamp, setDoc, getDoc, updateDoc, increment, arrayUnion, arrayRemove, deleteField } from "firebase/firestore";
 import type { Post, User } from "@/lib/types";
 import React, { useMemo, useState, useEffect, useCallback } from "react";
 import Link from "next/link";
@@ -77,43 +76,20 @@ export default function UserProfilePage() {
     const router = useRouter();
     const { toast } = useToast();
     const userId = params.userId as string;
-    const { firestore, user: currentUser, userProfile: currentUserProfile, showVoiceStatusPlayer, handleDeleteVoiceStatus: providerDeleteVoiceStatus } = useFirebase();
+    const { firestore, user: currentUser, userProfile: currentUserProfile, showVoiceStatusPlayer, setUserProfile: setCurrentUserProfile } = useFirebase();
 
     const [posts, setPosts] = useState<WithId<Post>[]>([]);
     const [postsLoading, setPostsLoading] = useState(true);
     const [isMoreOptionsSheetOpen, setIsMoreOptionsSheetOpen] = useState(false);
     const [isAboutSheetOpen, setIsAboutSheetOpen] = useState(false);
     const [isQrDialogOpen, setIsQrDialogOpen] = useState(false);
-    const [user, setUser] = useState<WithId<User> | null>(null);
-    const [userLoading, setUserLoading] = useState(true);
 
     const userRef = useMemoFirebase(() => {
         if (!firestore || !userId) return null;
         return doc(firestore, "users", userId);
     }, [firestore, userId]);
     
-    // Manually handle user doc to allow optimistic updates
-    useEffect(() => {
-        if (!userRef) {
-            setUser(null);
-            setUserLoading(false);
-            return;
-        }
-        setUserLoading(true);
-        const unsubscribe = onSnapshot(userRef, (docSnap) => {
-            if (docSnap.exists()) {
-                setUser({ id: docSnap.id, ...docSnap.data() } as WithId<User>);
-            } else {
-                setUser(null);
-            }
-            setUserLoading(false);
-        }, (error) => {
-            console.error("Error fetching user profile:", error);
-            setUserLoading(false);
-        });
-
-        return () => unsubscribe();
-    }, [userRef]);
+    const { data: user, isLoading: userLoading, setData: setUser } = useDoc<User>(userRef);
 
 
     useEffect(() => {
@@ -223,21 +199,15 @@ export default function UserProfilePage() {
         }
 
         const currentUserDocRef = doc(firestore, "users", currentUser.uid);
+        const newBlockedUsers = isBlocked 
+            ? currentUserProfile?.blockedUsers?.filter(id => id !== userId)
+            : [...(currentUserProfile?.blockedUsers || []), userId];
 
         try {
-            if (isBlocked) {
-                // Unblock user
-                await updateDoc(currentUserDocRef, {
-                    blockedUsers: arrayRemove(userId)
-                });
-                toast({ title: "User Unblocked", description: `You will now see posts and comments from ${formatUserId(userId)}.` });
-            } else {
-                // Block user
-                await updateDoc(currentUserDocRef, {
-                    blockedUsers: arrayUnion(userId)
-                });
-                toast({ title: "User Blocked", description: `You will no longer see posts or comments from ${formatUserId(userId)}.` });
-            }
+            await updateDoc(currentUserDocRef, { blockedUsers: newBlockedUsers });
+             // Optimistic update of the local state
+            setCurrentUserProfile(current => current ? { ...current, blockedUsers: newBlockedUsers } : null);
+            toast({ title: isBlocked ? "User Unblocked" : "User Blocked" });
         } catch (error) {
             console.error("Error blocking/unblocking user:", error);
             const permissionError = new FirestorePermissionError({
@@ -259,21 +229,20 @@ export default function UserProfilePage() {
         }
 
         const currentUserDocRef = doc(firestore, "users", currentUser.uid);
+        const newMutedUsers = isMuted
+            ? currentUserProfile?.mutedUsers?.filter(id => id !== userId)
+            : [...(currentUserProfile?.mutedUsers || []), userId];
 
         try {
-            if (isMuted) {
-                await updateDoc(currentUserDocRef, { mutedUsers: arrayRemove(userId) });
-                toast({ title: "User Unmuted", description: `Posts from ${formatUserId(userId)} will now appear in your feed.` });
-            } else {
-                await updateDoc(currentUserDocRef, { mutedUsers: arrayUnion(userId) });
-                toast({ title: "User Muted", description: `Posts from ${formatUserId(userId)} will no longer appear in your feed.` });
-            }
+            await updateDoc(currentUserDocRef, { mutedUsers: newMutedUsers });
+            setCurrentUserProfile(current => current ? { ...current, mutedUsers: newMutedUsers } : null);
+            toast({ title: isMuted ? "User Unmuted" : "User Muted" });
         } catch (error) {
             console.error("Error muting/unmuting user:", error);
             const permissionError = new FirestorePermissionError({
                 path: currentUserDocRef.path,
                 operation: 'update',
-                requestResourceData: { mutedUsers: `arrayUnion/arrayRemove ${userId}` },
+                requestResourceData: { mutedUsers: newMutedUsers },
             });
             errorEmitter.emit('permission-error', permissionError);
             toast({ variant: "destructive", title: "Error", description: "Could not mute user." });
@@ -289,21 +258,20 @@ export default function UserProfilePage() {
         }
 
         const currentUserDocRef = doc(firestore, "users", currentUser.uid);
+        const newRestrictedUsers = isRestricted
+            ? currentUserProfile?.restrictedUsers?.filter(id => id !== userId)
+            : [...(currentUserProfile?.restrictedUsers || []), userId];
 
         try {
-            if (isRestricted) {
-                await updateDoc(currentUserDocRef, { restrictedUsers: arrayRemove(userId) });
-                toast({ title: "User Unrestricted", description: `Comments from ${formatUserId(userId)} will now appear publicly.` });
-            } else {
-                await updateDoc(currentUserDocRef, { restrictedUsers: arrayUnion(userId) });
-                toast({ title: "User Restricted", description: `Comments from ${formatUserId(userId)} will require your approval.` });
-            }
+            await updateDoc(currentUserDocRef, { restrictedUsers: newRestrictedUsers });
+             setCurrentUserProfile(current => current ? { ...current, restrictedUsers: newRestrictedUsers } : null);
+            toast({ title: isRestricted ? "User Unrestricted" : "User Restricted" });
         } catch (error) {
             console.error("Error restricting user:", error);
             const permissionError = new FirestorePermissionError({
                 path: currentUserDocRef.path,
                 operation: 'update',
-                requestResourceData: { restrictedUsers: `arrayUnion/arrayRemove ${userId}` },
+                requestResourceData: { restrictedUsers: newRestrictedUsers },
             });
             errorEmitter.emit('permission-error', permissionError);
             toast({ variant: "destructive", title: "Error", description: "Could not restrict user." });
@@ -430,12 +398,6 @@ export default function UserProfilePage() {
         })
     };
     
-    const handleDeleteOwnVoiceStatus = async () => {
-        if (currentUser?.uid !== userId) return;
-        await providerDeleteVoiceStatus();
-    }
-
-
     const hasVoiceStatus = useMemo(() => {
         if (!user?.voiceStatusUrl || !user?.voiceStatusTimestamp) return false;
         // Check if the status is within the last 24 hours
@@ -590,7 +552,7 @@ export default function UserProfilePage() {
                                 <a href={user.website} target="_blank" rel="noopener noreferrer" className="flex items-center gap-2 text-sm text-blue-500 hover:underline">
                                     <LinkIcon className="h-4 w-4" />
                                     <span>{user.website.replace(/^(https?:\/\/)?(www\.)?/, '')}</span>
-                                </a>
+                                a>
                             )}
                         </div>
                         
