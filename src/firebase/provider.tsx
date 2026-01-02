@@ -3,7 +3,7 @@
 
 import React, { DependencyList, createContext, useContext, ReactNode, useMemo, useState, useEffect, useRef } from 'react';
 import { FirebaseApp } from 'firebase/app';
-import { Firestore, doc } from 'firebase/firestore';
+import { Firestore, doc, updateDoc, deleteField } from 'firebase/firestore';
 import { Auth, User, onAuthStateChanged } from 'firebase/auth';
 import { Database, ref, onValue, onDisconnect, set, serverTimestamp as dbServerTimestamp } from 'firebase/database';
 import { FirebaseErrorListener } from '@/components/FirebaseErrorListener';
@@ -14,6 +14,9 @@ import { CallView } from '@/components/CallView';
 import { useVideoCallHandler } from '@/hooks/useVideoCallHandler';
 import { VideoCallView } from '@/components/VideoCallView';
 import { VoiceStatusPlayer } from '@/components/VoiceStatusPlayer';
+import { useToast } from '@/hooks/use-toast';
+import { FirestorePermissionError } from './errors';
+import { errorEmitter } from './error-emitter';
 
 interface CallHandlerResult extends ReturnType<typeof useCallHandler> {}
 interface VideoCallHandlerResult extends ReturnType<typeof useVideoCallHandler> {}
@@ -87,6 +90,7 @@ export const FirebaseProvider: React.FC<FirebaseProviderProps> = ({
   database,
   auth,
 }) => {
+  const { toast } = useToast();
   const [userAuthState, setUserAuthState] = useState<UserAuthState>({
     user: null,
     isUserLoading: true, // Start loading until first auth event
@@ -120,6 +124,29 @@ export const FirebaseProvider: React.FC<FirebaseProviderProps> = ({
       });
     }
   };
+
+  const handleDeleteVoiceStatus = async () => {
+    if (!firestore || !userAuthState.user) return;
+
+    const userDocRef = doc(firestore, "users", userAuthState.user.uid);
+    try {
+        await updateDoc(userDocRef, {
+            voiceStatusUrl: deleteField(),
+            voiceStatusTimestamp: deleteField()
+        });
+        toast({ title: "Voice Status Deleted" });
+        onVoicePlayerClose(); // Close the sheet after deletion
+    } catch (error) {
+        const permissionError = new FirestorePermissionError({
+            path: userDocRef.path,
+            operation: 'update',
+            requestResourceData: { voiceStatusUrl: null, voiceStatusTimestamp: null },
+        });
+        errorEmitter.emit('permission-error', permissionError);
+        toast({ variant: "destructive", title: "Error", description: "Could not delete voice status." });
+    }
+  };
+
 
   // Effect to manage the global audio element
   useEffect(() => {
@@ -240,6 +267,7 @@ export const FirebaseProvider: React.FC<FirebaseProviderProps> = ({
           user={voiceStatusUser}
           isOpen={!!voiceStatusUser}
           onOpenChange={(open) => { if (!open) onVoicePlayerClose(); }}
+          onDelete={handleDeleteVoiceStatus}
         />
       )}
       {showVideoCallUI ? (

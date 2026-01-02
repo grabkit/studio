@@ -122,7 +122,7 @@ export default function AccountPage() {
   const { toast } = useToast();
   const [posts, setPosts] = useState<WithId<Post>[]>([]);
   const [postsLoading, setPostsLoading] = useState(true);
-  const [isDeleteAlertOpen, setIsDeleteAlertOpen] = useState(false);
+  
 
 
   useEffect(() => {
@@ -255,28 +255,6 @@ export default function AccountPage() {
       }
   }
 
-  const handleDeleteVoiceStatus = async () => {
-    if (!firestore || !authUser) return;
-
-    const userDocRef = doc(firestore, "users", authUser.uid);
-    try {
-        await updateDoc(userDocRef, {
-            voiceStatusUrl: deleteField(),
-            voiceStatusTimestamp: deleteField()
-        });
-        toast({ title: "Voice Status Deleted" });
-        setIsDeleteAlertOpen(false);
-    } catch (error) {
-        const permissionError = new FirestorePermissionError({
-            path: userDocRef.path,
-            operation: 'update',
-            requestResourceData: { voiceStatusUrl: null, voiceStatusTimestamp: null },
-        });
-        errorEmitter.emit('permission-error', permissionError);
-        toast({ variant: "destructive", title: "Error", description: "Could not delete voice status." });
-    }
-  };
-
 
   return (
     <AppLayout showTopBar={false}>
@@ -297,37 +275,26 @@ export default function AccountPage() {
       <div className="px-4">
         <div className="flex items-start space-x-5 mb-2">
             <div className="flex-shrink-0 text-center">
-                <DropdownMenu>
-                    <DropdownMenuTrigger asChild>
-                        <div className="relative inline-block" role={hasVoiceStatus ? "button" : "none"}>
-                            <Avatar className="h-20 w-20 md:h-24 md:w-24 mx-auto">
-                                <AvatarImage
-                                    src={authUser?.photoURL || undefined}
-                                    alt={userProfile?.name || "User"}
-                                />
-                                <AvatarFallback className="text-3xl font-headline">
-                                    {getInitials(userProfile?.name)}
-                                </AvatarFallback>
-                            </Avatar>
-                            {hasVoiceStatus && (
-                                <div className="absolute inset-0 flex items-center justify-center rounded-full bg-black/30 hover:bg-black/50 transition-colors">
-                                    <BarChart3 className="h-8 w-8 text-white" />
-                                </div>
-                            )}
-                        </div>
-                    </DropdownMenuTrigger>
+                <div 
+                  className="relative inline-block" 
+                  onClick={handleAvatarClick}
+                  role={hasVoiceStatus ? "button" : "none"}
+                >
+                    <Avatar className="h-20 w-20 md:h-24 md:w-24 mx-auto">
+                        <AvatarImage
+                            src={authUser?.photoURL || undefined}
+                            alt={userProfile?.name || "User"}
+                        />
+                        <AvatarFallback className="text-3xl font-headline">
+                            {getInitials(userProfile?.name)}
+                        </AvatarFallback>
+                    </Avatar>
                     {hasVoiceStatus && (
-                        <DropdownMenuContent>
-                            <DropdownMenuItem onClick={handleAvatarClick}>
-                                Play Voice Status
-                            </DropdownMenuItem>
-                            <DropdownMenuItem onClick={() => setIsDeleteAlertOpen(true)} className="text-destructive">
-                                <Trash2 className="mr-2 h-4 w-4" />
-                                Delete Voice Status
-                            </DropdownMenuItem>
-                        </DropdownMenuContent>
+                        <div className="absolute inset-0 flex items-center justify-center rounded-full bg-black/30 hover:bg-black/50 transition-colors">
+                            <BarChart3 className="h-8 w-8 text-white" />
+                        </div>
                     )}
-                </DropdownMenu>
+                </div>
 
                 <p className="font-semibold font-headline mt-2">{formatUserId(authUser?.uid)}</p>
             </div>
@@ -416,23 +383,6 @@ export default function AccountPage() {
                  <BookmarksList bookmarks={bookmarks} bookmarksLoading={bookmarksLoading} />
             </TabsContent>
         </Tabs>
-
-        <AlertDialog open={isDeleteAlertOpen} onOpenChange={setIsDeleteAlertOpen}>
-            <AlertDialogContent>
-                <AlertDialogHeader>
-                    <AlertDialogTitle>Are you sure?</AlertDialogTitle>
-                    <AlertDialogDescription>
-                        This will permanently delete your voice status. This action cannot be undone.
-                    </AlertDialogDescription>
-                </AlertDialogHeader>
-                <AlertDialogFooter>
-                    <AlertDialogCancel>Cancel</AlertDialogCancel>
-                    <AlertDialogAction onClick={handleDeleteVoiceStatus} className={cn(buttonVariants({variant: 'destructive'}))}>
-                    Delete
-                    </AlertDialogAction>
-                </AlertDialogFooter>
-            </AlertDialogContent>
-        </AlertDialog>
 
     </AppLayout>
   );
