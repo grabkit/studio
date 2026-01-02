@@ -240,7 +240,7 @@ export default function VoiceNotePage() {
 
     return (
         <Sheet open={isSheetOpen} onOpenChange={setIsSheetOpen}>
-            <SheetContent side="bottom" className="rounded-t-2xl h-[40dvh] flex flex-col p-6 items-center justify-between">
+            <SheetContent side="bottom" className="rounded-t-2xl h-auto flex flex-col p-6 items-center justify-center gap-6 pb-10">
                  <Button variant="ghost" size="icon" onClick={() => setIsSheetOpen(false)} className="absolute top-3 right-3 text-muted-foreground">
                     <X />
                 </Button>
@@ -305,3 +305,5 @@ export default function VoiceNotePage() {
         </Sheet>
     );
 }
+
+    
