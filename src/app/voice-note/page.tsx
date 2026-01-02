@@ -15,16 +15,17 @@ import { errorEmitter } from "@/firebase/error-emitter";
 import { Textarea } from "@/components/ui/textarea";
 import { generateVoiceStatus } from "@/ai/flows/generate-voice-status-flow";
 import { Label } from "@/components/ui/label";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import Image from "next/image";
 
 
 const voices = [
-    { name: "Algenib", gender: "Male" },
-    { name: "Achernar", gender: "Female" },
-    { name: "Puck", gender: "Male" },
-    { name: "Leda", gender: "Female" },
-    { name: "Umbriel", gender: "Male" },
-    { name: "Vindemiatrix", gender: "Female" },
+    { name: "Algenib", gender: "Male", seed: "male1" },
+    { name: "Achernar", gender: "Female", seed: "female1" },
+    { name: "Puck", gender: "Male", seed: "male2" },
+    { name: "Leda", gender: "Female", seed: "female2" },
+    { name: "Umbriel", gender: "Male", seed: "male3" },
+    { name: "Vindemiatrix", gender: "Female", seed: "female3" },
 ]
 
 export default function VoiceNotePage() {
@@ -115,20 +116,33 @@ export default function VoiceNotePage() {
                                 {text.length} / {charLimit}
                             </p>
                         </div>
-                        <div className="space-y-2">
+                        <div className="space-y-3">
                             <Label htmlFor="voice-select">Choose a Voice</Label>
-                            <Select onValueChange={setSelectedVoice} defaultValue={selectedVoice} disabled={isSubmitting}>
-                                <SelectTrigger id="voice-select" className="w-full">
-                                    <SelectValue placeholder="Select a voice" />
-                                </SelectTrigger>
-                                <SelectContent>
-                                    {voices.map(voice => (
-                                         <SelectItem key={voice.name} value={voice.name}>
-                                            {voice.name} ({voice.gender})
-                                        </SelectItem>
-                                    ))}
-                                </SelectContent>
-                            </Select>
+                            <div className="flex space-x-4 overflow-x-auto pb-2 -mx-4 px-4 no-scrollbar">
+                                {voices.map(voice => (
+                                    <div key={voice.name} className="flex-shrink-0 flex flex-col items-center space-y-2" onClick={() => setSelectedVoice(voice.name)}>
+                                        <div className={cn(
+                                            "p-1 rounded-full cursor-pointer transition-all",
+                                            selectedVoice === voice.name ? "ring-2 ring-primary ring-offset-2 ring-offset-background" : ""
+                                        )}>
+                                            <Avatar className="h-14 w-14 border-2 border-transparent">
+                                                <AvatarImage src={`https://picsum.photos/seed/${voice.seed}/100/100`} />
+                                                <AvatarFallback>{voice.name[0]}</AvatarFallback>
+                                            </Avatar>
+                                        </div>
+                                        <p className="text-xs font-medium text-muted-foreground">{voice.name}</p>
+                                    </div>
+                                ))}
+                            </div>
+                            <style jsx>{`
+                                .no-scrollbar::-webkit-scrollbar {
+                                    display: none;
+                                }
+                                .no-scrollbar {
+                                    -ms-overflow-style: none;
+                                    scrollbar-width: none;
+                                }
+                            `}</style>
                         </div>
                     </div>
                 </div>
