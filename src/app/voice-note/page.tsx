@@ -294,13 +294,13 @@ export default function VoiceNotePage() {
                             </Button>
                         </div>
                         
-                        <div className="w-full max-w-sm h-20">
-                            <canvas ref={canvasRef} className="w-full h-full" />
-                        </div>
-                        
                         <p className="text-lg text-muted-foreground font-mono w-24 text-center">
                             {formatTime(duration)}
                         </p>
+
+                        <div className="w-full max-w-sm h-20">
+                            <canvas ref={canvasRef} className="w-full h-full" />
+                        </div>
                         
                          <div className="w-full max-w-xs mx-auto flex items-center justify-between">
                            <Button size="lg" variant="ghost" className="rounded-full h-16 w-16" onClick={handleRetake}>
