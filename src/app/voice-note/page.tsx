@@ -275,7 +275,7 @@ export default function VoiceNotePage() {
 
     const getButtonIcon = () => {
         switch(recordingStatus) {
-            case 'recording': return <Pause className="h-10 w-10 text-white" fill="white" />;
+            case 'recording': return <Pause className="h-10 w-10 text-black" fill="black" />;
             case 'recorded': return <Play className="h-10 w-10 text-primary-foreground" fill="currentColor" onClick={playPreview}/>;
             default: return <Mic className="h-10 w-10" />; // idle, paused
         }
