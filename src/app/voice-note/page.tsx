@@ -324,17 +324,17 @@ export default function VoiceNotePage() {
                         </div>
                         
                          <div className="w-full max-w-xs mx-auto flex items-center justify-between h-16">
-                           <Button size="lg" variant="secondary" className="rounded-full h-14 w-14" onClick={handleRetake}>
-                                <RefreshCw className="h-6 w-6" />
+                           <Button size="icon" variant="secondary" className="rounded-full h-10 w-10" onClick={handleRetake}>
+                                <RefreshCw className="h-5 w-5" />
                            </Button>
 
                            {(recordingStatus === 'recording' || recordingStatus === 'paused') ? (
-                             <Button size="lg" variant="destructive" className="rounded-full h-14 w-14" onClick={stopRecording}>
-                                <StopCircle className="h-7 w-7" />
+                             <Button size="icon" variant="destructive" className="rounded-full h-10 w-10" onClick={stopRecording}>
+                                <StopCircle className="h-6 w-6" />
                              </Button>
                            ) : (
-                               <Button size="lg" className="rounded-full h-14 w-14 bg-primary hover:bg-primary/90" onClick={handleShare} disabled={!recordedAudioUrl || recordingStatus === 'sharing'}>
-                                    {recordingStatus === "sharing" ? <Loader2 className="h-6 w-6 animate-spin"/> : <Send className="h-6 w-6" />}
+                               <Button size="icon" className="rounded-full h-10 w-10 bg-primary hover:bg-primary/90" onClick={handleShare} disabled={!recordedAudioUrl || recordingStatus === 'sharing'}>
+                                    {recordingStatus === "sharing" ? <Loader2 className="h-5 w-5 animate-spin"/> : <Send className="h-5 w-5" />}
                                </Button>
                            )}
                          </div>
@@ -344,5 +344,3 @@ export default function VoiceNotePage() {
         </Sheet>
     );
 }
-
-    
