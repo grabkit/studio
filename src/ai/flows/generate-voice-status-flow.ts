@@ -48,7 +48,7 @@ const generateVoiceStatusFlow = ai.defineFlow(
           },
         },
       },
-      prompt: { text: promptText },
+      prompt: promptText,
     });
 
     if (!media) {
