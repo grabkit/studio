@@ -52,6 +52,7 @@ export interface FirebaseContextState extends CallHandlerResult, VideoCallHandle
   userProfile: WithId<UserProfile> | null;
   isUserProfileLoading: boolean;
   setUserProfile: React.Dispatch<React.SetStateAction<WithId<UserProfile> | null>>;
+  setActiveUserProfile: (user: WithId<UserProfile> | null) => void;
   showVoiceStatusPlayer: (user: WithId<UserProfile>) => void;
   isVoicePlayerPlaying: boolean;
   handleDeleteVoiceStatus: () => Promise<void>;
@@ -69,6 +70,7 @@ export interface FirebaseServicesAndUser extends CallHandlerResult, VideoCallHan
   userProfile: WithId<UserProfile> | null;
   isUserProfileLoading: boolean;
   setUserProfile: React.Dispatch<React.SetStateAction<WithId<UserProfile> | null>>;
+  setActiveUserProfile: (user: WithId<UserProfile> | null) => void;
   showVoiceStatusPlayer: (user: WithId<UserProfile>) => void;
   isVoicePlayerPlaying: boolean;
   handleDeleteVoiceStatus: () => Promise<void>;
@@ -104,6 +106,7 @@ export const FirebaseProvider: React.FC<FirebaseProviderProps> = ({
   const callHandler = useCallHandler(firestore, userAuthState.user);
   const videoCallHandler = useVideoCallHandler(firestore, userAuthState.user);
   
+  const [activeUserProfile, setActiveUserProfile] = useState<WithId<UserProfile> | null>(null);
   const [voiceStatusUser, setVoiceStatusUser] = useState<WithId<UserProfile> | null>(null);
   const [isVoicePlayerPlaying, setIsVoicePlayerPlaying] = useState(false);
   const voiceAudioRef = useRef<HTMLAudioElement | null>(null);
@@ -129,31 +132,35 @@ export const FirebaseProvider: React.FC<FirebaseProviderProps> = ({
     }
   };
   
-  const userProfileRef = useMemoFirebase(() => {
+  const loggedInUserProfileRef = useMemoFirebase(() => {
     if (!firestore || !userAuthState.user) return null;
     return doc(firestore, 'users', userAuthState.user.uid);
   }, [firestore, userAuthState.user]);
   
-  const { data: userProfile, isLoading: isUserProfileLoading, setData: setUserProfile } = useDoc<UserProfile>(userProfileRef);
+  const { data: loggedInUserProfile, isLoading: isUserProfileLoading, setData: setLoggedInUserProfile } = useDoc<UserProfile>(loggedInUserProfileRef);
+
+  const userProfile = activeUserProfile || loggedInUserProfile;
 
   const handleDeleteVoiceStatus = async () => {
-    if (!firestore || !userAuthState.user) return;
+    if (!firestore || !userAuthState.user || !userProfile) return;
 
-    const userDocRef = doc(firestore, "users", userAuthState.user.uid);
+    const userDocRef = doc(firestore, "users", userProfile.id);
     try {
         await updateDoc(userDocRef, {
             voiceStatusUrl: deleteField(),
             voiceStatusTimestamp: deleteField()
         });
         toast({ title: "Voice Status Deleted" });
-        onVoicePlayerClose();
         
         // Optimistically update local state to remove icon immediately
-        setUserProfile(currentProfile => {
+        const updateState = (currentProfile: WithId<UserProfile> | null) => {
             if (!currentProfile) return null;
             const { voiceStatusUrl, voiceStatusTimestamp, ...rest } = currentProfile;
             return rest as WithId<UserProfile>;
-        });
+        };
+
+        setLoggedInUserProfile(updateState);
+        setActiveUserProfile(updateState);
 
     } catch (error) {
         const permissionError = new FirestorePermissionError({
@@ -261,7 +268,8 @@ export const FirebaseProvider: React.FC<FirebaseProviderProps> = ({
       userError: userAuthState.userError,
       userProfile,
       isUserProfileLoading,
-      setUserProfile,
+      setUserProfile: setLoggedInUserProfile,
+      setActiveUserProfile,
       showVoiceStatusPlayer,
       isVoicePlayerPlaying,
       handleDeleteVoiceStatus,
@@ -269,7 +277,7 @@ export const FirebaseProvider: React.FC<FirebaseProviderProps> = ({
       ...videoCallHandler,
     };
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [firebaseApp, firestore, auth, database, userAuthState, userProfile, isUserProfileLoading, callHandler, videoCallHandler, isVoicePlayerPlaying, handleDeleteVoiceStatus, setUserProfile]);
+  }, [firebaseApp, firestore, auth, database, userAuthState, userProfile, isUserProfileLoading, callHandler, videoCallHandler, isVoicePlayerPlaying]);
 
   // Determine if the call UI should be shown
   const showCallUI = !!callHandler.callStatus && callHandler.callStatus !== 'ended' && callHandler.callStatus !== 'declined' && callHandler.callStatus !== 'missed';
@@ -282,8 +290,15 @@ export const FirebaseProvider: React.FC<FirebaseProviderProps> = ({
         <VoiceStatusPlayer 
           user={voiceStatusUser}
           isOpen={!!voiceStatusUser}
-          onOpenChange={(open) => { if (!open) onVoicePlayerClose(); }}
-          onDelete={handleDeleteVoiceStatus}
+          onOpenChange={(open) => { 
+            if (!open) {
+                onVoicePlayerClose();
+            }
+          }}
+          onDelete={async () => {
+            await handleDeleteVoiceStatus();
+            onVoicePlayerClose();
+          }}
           isVoicePlayerPlaying={isVoicePlayerPlaying}
         />
       )}
@@ -350,6 +365,7 @@ export const useFirebase = (): FirebaseServicesAndUser => {
     userProfile: context.userProfile,
     isUserProfileLoading: context.isUserProfileLoading,
     setUserProfile: context.setUserProfile,
+    setActiveUserProfile: context.setActiveUserProfile,
     showVoiceStatusPlayer: context.showVoiceStatusPlayer,
     isVoicePlayerPlaying: context.isVoicePlayerPlaying,
     handleDeleteVoiceStatus: context.handleDeleteVoiceStatus,
@@ -408,5 +424,3 @@ export function useMemoFirebase<T>(factory: () => T, deps: DependencyList): T | 
   
   return memoized;
 }
-
-    

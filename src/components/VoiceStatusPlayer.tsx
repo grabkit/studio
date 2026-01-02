@@ -88,10 +88,10 @@ export function VoiceStatusPlayer({ user: voiceUser, isOpen, onOpenChange, onDel
                     </AlertDialogDescription>
                 </AlertDialogHeader>
                 <AlertDialogFooter>
+                    <AlertDialogCancel>Cancel</AlertDialogCancel>
                     <AlertDialogAction onClick={handleConfirmDelete} className={cn(buttonVariants({variant: 'destructive'}))}>
                         Delete
                     </AlertDialogAction>
-                    <AlertDialogCancel>Cancel</AlertDialogCancel>
                 </AlertDialogFooter>
             </AlertDialogContent>
         </AlertDialog>

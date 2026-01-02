@@ -76,7 +76,8 @@ export default function UserProfilePage() {
     const router = useRouter();
     const { toast } = useToast();
     const userId = params.userId as string;
-    const { firestore, user: currentUser, userProfile: currentUserProfile, showVoiceStatusPlayer, setUserProfile: setCurrentUserProfile } = useFirebase();
+    const { firestore, user: currentUser, userProfile: currentUserProfile, showVoiceStatusPlayer, setUserProfile: setCurrentUserProfile, setActiveUserProfile, userProfile } = useFirebase();
+    const user = userProfile;
 
     const [posts, setPosts] = useState<WithId<Post>[]>([]);
     const [postsLoading, setPostsLoading] = useState(true);
@@ -89,8 +90,16 @@ export default function UserProfilePage() {
         return doc(firestore, "users", userId);
     }, [firestore, userId]);
     
-    const { data: user, isLoading: userLoading, setData: setUser } = useDoc<User>(userRef);
+    const { data: fetchedUser, isLoading: userLoading, setData: setFetchedUser } = useDoc<User>(userRef);
 
+    useEffect(() => {
+        if(fetchedUser) {
+            setActiveUserProfile(fetchedUser);
+        }
+        return () => {
+            setActiveUserProfile(null);
+        }
+    }, [fetchedUser, setActiveUserProfile]);
 
     useEffect(() => {
         if (currentUser && userId === currentUser.uid) {
@@ -193,7 +202,7 @@ export default function UserProfilePage() {
     }, [currentUserProfile, userId]);
 
     const handleBlockUser = async () => {
-        if (!currentUser || !firestore) {
+        if (!currentUser || !firestore || !currentUserProfile) {
              toast({ variant: "destructive", title: "You must be logged in to block a user." });
             return;
         }
@@ -223,7 +232,7 @@ export default function UserProfilePage() {
     };
 
     const handleMuteUser = async () => {
-        if (!currentUser || !firestore) {
+        if (!currentUser || !firestore || !currentUserProfile) {
             toast({ variant: "destructive", title: "You must be logged in to mute a user." });
             return;
         }
@@ -252,7 +261,7 @@ export default function UserProfilePage() {
     };
     
     const handleRestrictUser = async () => {
-        if (!currentUser || !firestore) {
+        if (!currentUser || !firestore || !currentUserProfile) {
             toast({ variant: "destructive", title: "You must be logged in to restrict a user." });
             return;
         }
