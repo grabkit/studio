@@ -75,6 +75,16 @@
             "type": "string",
             "format": "date-time",
             "description": "Timestamp indicating when the user was last online."
+        },
+        "voiceStatusUrl": {
+            "type": "string",
+            "format": "uri",
+            "description": "The URL to the user's voice status audio file."
+        },
+        "voiceStatusTimestamp": {
+            "type": "string",
+            "format": "date-time",
+            "description": "Timestamp indicating when the voice status was created."
         }
       },
       "required": [

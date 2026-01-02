@@ -3,21 +3,27 @@
 
 import AppLayout from "@/components/AppLayout";
 import { Button } from "@/components/ui/button";
-import { ArrowLeft, Mic, Play, Square, Trash2, Send, Pause } from "lucide-react";
+import { ArrowLeft, Mic, Play, Square, Trash2, Send, Pause, Loader2 } from "lucide-react";
 import { useRouter } from "next/navigation";
 import React, { useState, useRef, useEffect, useCallback } from "react";
 import { cn } from "@/lib/utils";
 import { useToast } from "@/hooks/use-toast";
+import { useFirebase } from "@/firebase";
+import { doc, serverTimestamp, updateDoc } from "firebase/firestore";
+import { FirestorePermissionError } from "@/firebase/errors";
+import { errorEmitter } from "@/firebase/error-emitter";
 
 export default function VoiceNotePage() {
     const router = useRouter();
     const { toast } = useToast();
+    const { user, firestore } = useFirebase();
 
     const [isRecording, setIsRecording] = useState(false);
     const [isPlaying, setIsPlaying] = useState(false);
     const [audioBlob, setAudioBlob] = useState<Blob | null>(null);
     const [audioUrl, setAudioUrl] = useState<string | null>(null);
     const [timeLeft, setTimeLeft] = useState(30);
+    const [isSubmitting, setIsSubmitting] = useState(false);
 
     const mediaRecorderRef = useRef<MediaRecorder | null>(null);
     const timerRef = useRef<NodeJS.Timeout | null>(null);
@@ -29,6 +35,13 @@ export default function VoiceNotePage() {
         const secs = (seconds % 60).toString().padStart(2, '0');
         return `${mins}:${secs}`;
     };
+
+    const stopTimer = useCallback(() => {
+        if (timerRef.current) {
+            clearInterval(timerRef.current);
+            timerRef.current = null;
+        }
+    }, []);
 
     const startTimer = useCallback(() => {
         setTimeLeft(30);
@@ -43,12 +56,15 @@ export default function VoiceNotePage() {
         }, 1000);
     }, []);
 
-    const stopTimer = useCallback(() => {
-        if (timerRef.current) {
-            clearInterval(timerRef.current);
-            timerRef.current = null;
+    
+    const stopRecording = useCallback(() => {
+        if (mediaRecorderRef.current && mediaRecorderRef.current.state === 'recording') {
+            mediaRecorderRef.current.stop();
         }
-    }, []);
+        setIsRecording(false);
+        stopTimer();
+    }, [stopTimer]);
+
 
     const startRecording = async () => {
         try {
@@ -82,14 +98,6 @@ export default function VoiceNotePage() {
         }
     };
 
-    const stopRecording = useCallback(() => {
-        if (mediaRecorderRef.current && mediaRecorderRef.current.state === 'recording') {
-            mediaRecorderRef.current.stop();
-        }
-        setIsRecording(false);
-        stopTimer();
-    }, [stopTimer]);
-
     const handleRecordClick = () => {
         if (isRecording) {
             stopRecording();
@@ -119,6 +127,48 @@ export default function VoiceNotePage() {
             audioRef.current.currentTime = 0;
         }
     };
+    
+    const handleShare = async () => {
+        if (!audioBlob || !user || !firestore) {
+            toast({ variant: 'destructive', title: "No recording to share." });
+            return;
+        }
+        setIsSubmitting(true);
+        
+        // In a real app, you would upload the blob to Firebase Storage
+        // and get a download URL. Here, we'll simulate this.
+        
+        try {
+            // Simulate upload and get a dummy URL. 
+            // Replace this with actual Firebase Storage upload logic.
+            const dummyUrl = `https://dummy-audio-url.com/${user.uid}/${Date.now()}.webm`;
+
+            const userDocRef = doc(firestore, "users", user.uid);
+            await updateDoc(userDocRef, {
+                voiceStatusUrl: dummyUrl,
+                voiceStatusTimestamp: serverTimestamp()
+            });
+
+            toast({
+                title: "Status Updated",
+                description: "Your voice status has been shared.",
+            });
+            router.push('/account');
+        } catch (error) {
+            console.error("Error sharing voice status:", error);
+            const userDocRef = doc(firestore, "users", user.uid);
+             const permissionError = new FirestorePermissionError({
+                path: userDocRef.path,
+                operation: 'update',
+                requestResourceData: { voiceStatusUrl: 'dummy-url' },
+            });
+            errorEmitter.emit('permission-error', permissionError);
+            toast({ variant: 'destructive', title: "Error", description: "Could not share your voice status." });
+        } finally {
+            setIsSubmitting(false);
+        }
+    };
+
 
     useEffect(() => {
         // Cleanup on component unmount
@@ -178,7 +228,7 @@ export default function VoiceNotePage() {
                         variant="outline" 
                         size="icon" 
                         className="h-16 w-16 rounded-full"
-                        disabled={!audioBlob}
+                        disabled={!audioBlob || isSubmitting}
                         onClick={handleClear}
                     >
                         <Trash2 className="h-6 w-6" />
@@ -190,6 +240,7 @@ export default function VoiceNotePage() {
                              isRecording ? "bg-destructive" : "bg-primary"
                         )}
                         onClick={handleRecordClick}
+                        disabled={isSubmitting}
                         >
                         {isRecording ? <Square className="h-10 w-10 fill-white" /> : <Mic className="h-10 w-10" />}
                     </Button>
@@ -200,6 +251,7 @@ export default function VoiceNotePage() {
                             size="icon" 
                             className="h-16 w-16 rounded-full"
                             onClick={handlePlayPause}
+                            disabled={isSubmitting}
                          >
                            {isPlaying ? <Pause className="h-6 w-6" /> : <Play className="h-6 w-6" />}
                         </Button>
@@ -208,11 +260,21 @@ export default function VoiceNotePage() {
                             variant="outline" 
                             size="icon" 
                             className="h-16 w-16 rounded-full"
-                            disabled={!audioBlob}
+                            disabled={true}
                         >
                             <Send className="h-6 w-6" />
                         </Button>
                      )}
+                </div>
+                 <div className="w-full max-w-xs mt-8">
+                     <Button 
+                        className="w-full" 
+                        size="lg"
+                        disabled={!audioBlob || isSubmitting}
+                        onClick={handleShare}
+                    >
+                        {isSubmitting ? <Loader2 className="h-5 w-5 animate-spin"/> : "Share Status"}
+                     </Button>
                 </div>
             </div>
         </AppLayout>
