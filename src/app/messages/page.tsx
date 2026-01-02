@@ -132,7 +132,7 @@ function UpvotedUsers() {
                                  {isCurrentUser && (
                                     <Link href="/voice-note">
                                         <div className="absolute bottom-0 right-0 bg-background p-1 rounded-full border-2 cursor-pointer hover:bg-secondary">
-                                            <Mic className="h-4 w-4 text-primary" />
+                                            <Mic className="h-4 w-4 text-primary" fill="currentColor" />
                                         </div>
                                     </Link>
                                 )}
