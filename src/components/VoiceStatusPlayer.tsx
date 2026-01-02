@@ -2,7 +2,7 @@
 'use client';
 
 import React, { useState, useEffect, useRef } from 'react';
-import { Sheet, SheetContent } from "@/components/ui/sheet";
+import { Sheet, SheetContent, SheetHeader, SheetTitle } from "@/components/ui/sheet";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import type { User } from '@/lib/types';
 import { getInitials } from '@/lib/utils';
@@ -35,6 +35,9 @@ export function VoiceStatusPlayer({ user, isOpen, onOpenChange }: { user: WithId
     return (
         <Sheet open={isOpen} onOpenChange={onOpenChange}>
             <SheetContent side="bottom" className="rounded-t-2xl h-[40dvh] flex flex-col items-center justify-center gap-6">
+                 <SheetHeader className="sr-only">
+                    <SheetTitle>Voice Status by {formatUserId(user.id)}</SheetTitle>
+                </SheetHeader>
                  {user.voiceStatusUrl && (
                     <audio 
                         ref={audioRef}
