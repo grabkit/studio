@@ -3,7 +3,7 @@
 
 import AppLayout from "@/components/AppLayout";
 import { Button } from "@/components/ui/button";
-import { ArrowLeft, Loader2, Play } from "lucide-react";
+import { ArrowLeft, Loader2, Play, Info } from "lucide-react";
 import { useRouter } from "next/navigation";
 import React, { useState } from "react";
 import { cn } from "@/lib/utils";
@@ -16,6 +16,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { generateVoiceStatus } from "@/ai/flows/generate-voice-status-flow";
 import { Label } from "@/components/ui/label";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 
 
 const voices = [
@@ -156,6 +157,15 @@ export default function VoiceNotePage() {
                                 ))}
                             </div>
                         </div>
+
+                         <Alert>
+                            <Info className="h-4 w-4" />
+                            <AlertTitle>Demo Feature</AlertTitle>
+                            <AlertDescription>
+                                Voice generation is for demonstration purposes and is subject to rate limits. For production use, a paid plan is required.
+                            </AlertDescription>
+                        </Alert>
+
                     </div>
                 </div>
 
