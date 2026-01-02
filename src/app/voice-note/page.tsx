@@ -226,6 +226,7 @@ export default function VoiceNotePage() {
                         onPlay={() => setIsPlaying(true)}
                         onPause={() => setIsPlaying(false)}
                         onEnded={() => setIsPlaying(false)}
+                        className="hidden"
                     />
                 )}
 
