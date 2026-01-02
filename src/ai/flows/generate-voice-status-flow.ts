@@ -13,7 +13,7 @@ import wav from 'wav';
 
 
 const GenerateVoiceStatusInputSchema = z.object({
-  text: z.string().max(280).describe('The text to be converted to speech. If empty, a default demo sentence will be used.'),
+  text: z.string().max(280).describe('The text to be converted to speech. Must not be empty.'),
   voiceName: z.string().optional().describe('The name of the voice to use for generation.'),
 });
 export type GenerateVoiceStatusInput = z.infer<typeof GenerateVoiceStatusInputSchema>;
@@ -36,8 +36,6 @@ const generateVoiceStatusFlow = ai.defineFlow(
   },
   async ({text, voiceName}) => {
     
-    const promptText = text || "Hello, you can now use my voice for your status.";
-
     const { media } = await ai.generate({
       model: 'googleai/gemini-2.5-flash-preview-tts',
       config: {
@@ -48,7 +46,7 @@ const generateVoiceStatusFlow = ai.defineFlow(
           },
         },
       },
-      prompt: promptText,
+      prompt: text,
     });
 
     if (!media) {
