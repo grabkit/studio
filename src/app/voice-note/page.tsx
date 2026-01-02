@@ -3,7 +3,7 @@
 
 import AppLayout from "@/components/AppLayout";
 import { Button } from "@/components/ui/button";
-import { ArrowLeft, Mic, Play, Square, Trash2, Send, Pause, Loader2 } from "lucide-react";
+import { ArrowLeft, Mic, Square, Trash2, Send, Loader2, Play, Pause } from "lucide-react";
 import { useRouter } from "next/navigation";
 import React, { useState, useRef, useEffect, useCallback } from "react";
 import { cn } from "@/lib/utils";
@@ -12,22 +12,34 @@ import { useFirebase } from "@/firebase";
 import { doc, serverTimestamp, updateDoc } from "firebase/firestore";
 import { FirestorePermissionError } from "@/firebase/errors";
 import { errorEmitter } from "@/firebase/error-emitter";
+import wav from 'wav';
 
-const supportedMimeTypes = [
-    'audio/mp4',
-    'audio/webm',
-    'audio/ogg',
-];
+async function toWav(
+  pcmData: Buffer,
+  channels = 1,
+  rate = 24000,
+  sampleWidth = 2
+): Promise<string> {
+  return new Promise((resolve, reject) => {
+    const writer = new wav.Writer({
+      channels,
+      sampleRate: rate,
+      bitDepth: sampleWidth * 8,
+    });
 
-const getSupportedMimeType = () => {
-    if (typeof MediaRecorder === 'undefined') return null;
-    for (const mimeType of supportedMimeTypes) {
-        if (MediaRecorder.isTypeSupported(mimeType)) {
-            return mimeType;
-        }
-    }
-    return null;
-};
+    let bufs: any[] = [];
+    writer.on('error', reject);
+    writer.on('data', function (d) {
+      bufs.push(d);
+    });
+    writer.on('end', function () {
+      resolve(Buffer.concat(bufs).toString('base64'));
+    });
+
+    writer.write(pcmData);
+    writer.end();
+  });
+}
 
 
 export default function VoiceNotePage() {
@@ -46,7 +58,6 @@ export default function VoiceNotePage() {
     const timerRef = useRef<NodeJS.Timeout | null>(null);
     const audioRef = useRef<HTMLAudioElement | null>(null);
     const chunksRef = useRef<Blob[]>([]);
-    const mimeTypeRef = useRef<string | null>(null);
 
     const formatTime = (seconds: number) => {
         const mins = Math.floor(seconds / 60).toString().padStart(2, '0');
@@ -85,20 +96,14 @@ export default function VoiceNotePage() {
 
 
     const startRecording = async () => {
-        const supportedMimeType = getSupportedMimeType();
-        if (!supportedMimeType) {
-            toast({
-                variant: 'destructive',
-                title: "Recording not supported",
-                description: "Your browser does not support audio recording."
-            });
-            return;
-        }
-        mimeTypeRef.current = supportedMimeType;
-
         try {
-            const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
-            mediaRecorderRef.current = new MediaRecorder(stream, { mimeType: supportedMimeType });
+            const stream = await navigator.mediaDevices.getUserMedia({ audio: {
+                sampleRate: 24000,
+                channelCount: 1,
+            } });
+            
+            const options = { mimeType: 'audio/webm' };
+            mediaRecorderRef.current = new MediaRecorder(stream, options);
             
             chunksRef.current = [];
 
@@ -107,7 +112,7 @@ export default function VoiceNotePage() {
             };
 
             mediaRecorderRef.current.onstop = () => {
-                const blob = new Blob(chunksRef.current, { type: supportedMimeType });
+                const blob = new Blob(chunksRef.current, { type: 'audio/webm' });
                 setAudioBlob(blob);
                 const url = URL.createObjectURL(blob);
                 setAudioUrl(url);
@@ -156,17 +161,6 @@ export default function VoiceNotePage() {
             audioRef.current.currentTime = 0;
         }
     };
-
-    const blobToBase64 = (blob: Blob): Promise<string> => {
-        return new Promise((resolve, reject) => {
-            const reader = new FileReader();
-            reader.onloadend = () => {
-                resolve(reader.result as string);
-            };
-            reader.onerror = reject;
-            reader.readAsDataURL(blob);
-        });
-    };
     
     const handleShare = async () => {
         if (!audioBlob || !user || !firestore) {
@@ -176,7 +170,9 @@ export default function VoiceNotePage() {
         setIsSubmitting(true);
         
         try {
-            const dataUrl = await blobToBase64(audioBlob);
+            const audioBuffer = await audioBlob.arrayBuffer();
+            const wavBase64 = await toWav(Buffer.from(audioBuffer));
+            const dataUrl = `data:audio/wav;base64,${wavBase64}`;
 
             const userDocRef = doc(firestore, "users", user.uid);
             await updateDoc(userDocRef, {
@@ -315,5 +311,3 @@ export default function VoiceNotePage() {
         </AppLayout>
     );
 }
-
-    
