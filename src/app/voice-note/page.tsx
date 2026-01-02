@@ -118,7 +118,7 @@ export default function VoiceNotePage() {
                         </div>
                         <div className="space-y-3">
                             <Label htmlFor="voice-select">Choose a Voice</Label>
-                            <div className="flex space-x-4 overflow-x-auto pb-2 -mx-4 px-4 no-scrollbar">
+                            <div className="flex space-x-4 overflow-x-auto py-3 -mx-4 px-4 no-scrollbar">
                                 {voices.map(voice => (
                                     <div key={voice.name} className="flex-shrink-0 flex flex-col items-center space-y-2" onClick={() => setSelectedVoice(voice.name)}>
                                         <div className={cn(
