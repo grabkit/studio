@@ -30,22 +30,15 @@ const formatUserId = (uid: string | undefined) => {
 
 export function VoiceStatusPlayer({ user: voiceUser, isOpen, onOpenChange, onDelete, isVoicePlayerPlaying }: { user: WithId<User>, isOpen: boolean, onOpenChange: (open: boolean) => void, onDelete: () => Promise<void>, isVoicePlayerPlaying: boolean }) {
     const { user: currentUser } = useFirebase();
-    const [isDeleteAlertOpen, setIsDeleteAlertOpen] = React.useState(false);
 
     const isOwnStatus = currentUser?.uid === voiceUser.id;
 
-    const handleDeleteClick = () => {
-        setIsDeleteAlertOpen(true);
-    }
-
-    const handleConfirmDelete = async () => {
+    const handleDeleteClick = async () => {
         await onDelete();
-        setIsDeleteAlertOpen(false);
-        onOpenChange(false); // Close the main sheet after deletion
+        onOpenChange(false); // Close the sheet after deletion
     }
 
     return (
-        <>
         <Sheet open={isOpen} onOpenChange={onOpenChange}>
             <SheetContent side="bottom" className="rounded-t-2xl h-auto flex flex-col items-center justify-center gap-6 pb-10">
                  {isOwnStatus && (
@@ -79,22 +72,5 @@ export function VoiceStatusPlayer({ user: voiceUser, isOpen, onOpenChange, onDel
                 
             </SheetContent>
         </Sheet>
-         <AlertDialog open={isDeleteAlertOpen} onOpenChange={setIsDeleteAlertOpen}>
-            <AlertDialogContent>
-                <AlertDialogHeader>
-                    <AlertDialogTitle>Are you sure?</AlertDialogTitle>
-                    <AlertDialogDescription>
-                        This will permanently delete your voice status. This action cannot be undone.
-                    </AlertDialogDescription>
-                </AlertDialogHeader>
-                <AlertDialogFooter>
-                    <AlertDialogCancel>Cancel</AlertDialogCancel>
-                    <AlertDialogAction onClick={handleConfirmDelete} className={cn(buttonVariants({variant: 'destructive'}))}>
-                        Delete
-                    </AlertDialogAction>
-                </AlertDialogFooter>
-            </AlertDialogContent>
-        </AlertDialog>
-        </>
     )
 }
