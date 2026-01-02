@@ -49,6 +49,7 @@ export interface FirebaseContextState extends CallHandlerResult, VideoCallHandle
   userProfile: WithId<UserProfile> | null;
   isUserProfileLoading: boolean;
   showVoiceStatusPlayer: (user: WithId<UserProfile>) => void;
+  isVoicePlayerPlaying: boolean;
 }
 
 // Return type for useFirebase()
@@ -63,6 +64,7 @@ export interface FirebaseServicesAndUser extends CallHandlerResult, VideoCallHan
   userProfile: WithId<UserProfile> | null;
   isUserProfileLoading: boolean;
   showVoiceStatusPlayer: (user: WithId<UserProfile>) => void;
+  isVoicePlayerPlaying: boolean;
 }
 
 // Return type for useUser() - specific to user auth state
@@ -95,13 +97,29 @@ export const FirebaseProvider: React.FC<FirebaseProviderProps> = ({
   const videoCallHandler = useVideoCallHandler(firestore, userAuthState.user);
   
   const [voiceStatusUser, setVoiceStatusUser] = useState<WithId<UserProfile> | null>(null);
+  const [isVoicePlayerPlaying, setIsVoicePlayerPlaying] = useState(false);
+  const voiceAudioRef = useRef<HTMLAudioElement | null>(null);
 
   const showVoiceStatusPlayer = (user: WithId<UserProfile>) => {
     setVoiceStatusUser(user);
+    if (voiceAudioRef.current && user.voiceStatusUrl) {
+      voiceAudioRef.current.src = user.voiceStatusUrl;
+      voiceAudioRef.current.play().catch(e => {
+        console.error("Audio play failed:", e);
+        // Clean up on failure
+        setVoiceStatusUser(null);
+        setIsVoicePlayerPlaying(false);
+      });
+    }
   };
 
   const onVoicePlayerClose = () => {
+    if (voiceAudioRef.current) {
+        voiceAudioRef.current.pause();
+        voiceAudioRef.current.currentTime = 0;
+    }
     setVoiceStatusUser(null);
+    setIsVoicePlayerPlaying(false);
   };
 
 
@@ -176,10 +194,11 @@ export const FirebaseProvider: React.FC<FirebaseProviderProps> = ({
       userProfile,
       isUserProfileLoading,
       showVoiceStatusPlayer,
+      isVoicePlayerPlaying,
       ...callHandler,
       ...videoCallHandler,
     };
-  }, [firebaseApp, firestore, auth, database, userAuthState, userProfile, isUserProfileLoading, callHandler, videoCallHandler]);
+  }, [firebaseApp, firestore, auth, database, userAuthState, userProfile, isUserProfileLoading, callHandler, videoCallHandler, isVoicePlayerPlaying]);
 
   // Determine if the call UI should be shown
   const showCallUI = !!callHandler.callStatus && callHandler.callStatus !== 'ended' && callHandler.callStatus !== 'declined' && callHandler.callStatus !== 'missed';
@@ -188,6 +207,14 @@ export const FirebaseProvider: React.FC<FirebaseProviderProps> = ({
   return (
     <FirebaseContext.Provider value={contextValue}>
       <FirebaseErrorListener />
+      {/* Hidden Global Audio Player for Voice Status */}
+      <audio 
+        ref={voiceAudioRef}
+        onPlay={() => setIsVoicePlayerPlaying(true)}
+        onPause={() => setIsVoicePlayerPlaying(false)}
+        onEnded={onVoicePlayerClose}
+        className="hidden"
+       />
        {voiceStatusUser && (
         <VoiceStatusPlayer 
           user={voiceStatusUser}
@@ -258,6 +285,7 @@ export const useFirebase = (): FirebaseServicesAndUser => {
     userProfile: context.userProfile,
     isUserProfileLoading: context.isUserProfileLoading,
     showVoiceStatusPlayer: context.showVoiceStatusPlayer,
+    isVoicePlayerPlaying: context.isVoicePlayerPlaying,
     startCall: context.startCall,
     answerCall: context.answerCall,
     declineCall: context.declineCall,
