@@ -15,7 +15,17 @@ import { errorEmitter } from "@/firebase/error-emitter";
 import { Textarea } from "@/components/ui/textarea";
 import { generateVoiceStatus } from "@/ai/flows/generate-voice-status-flow";
 import { Label } from "@/components/ui/label";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 
+
+const voices = [
+    { name: "Algenib", gender: "Male" },
+    { name: "Achernar", gender: "Female" },
+    { name: "Puck", gender: "Male" },
+    { name: "Leda", gender: "Female" },
+    { name: "Umbriel", gender: "Male" },
+    { name: "Vindemiatrix", gender: "Female" },
+]
 
 export default function VoiceNotePage() {
     const router = useRouter();
@@ -23,6 +33,7 @@ export default function VoiceNotePage() {
     const { user, firestore } = useFirebase();
 
     const [text, setText] = useState("");
+    const [selectedVoice, setSelectedVoice] = useState(voices[0].name);
     const [isSubmitting, setIsSubmitting] = useState(false);
     const charLimit = 280;
 
@@ -40,7 +51,7 @@ export default function VoiceNotePage() {
         setIsSubmitting(true);
         
         try {
-            const { voiceStatusUrl } = await generateVoiceStatus({ text });
+            const { voiceStatusUrl } = await generateVoiceStatus({ text, voiceName: selectedVoice });
             
             const userDocRef = doc(firestore, "users", user.uid);
             await updateDoc(userDocRef, {
@@ -87,21 +98,38 @@ export default function VoiceNotePage() {
                         <Sparkles className={cn("h-16 w-16 text-primary transition-all", isSubmitting && "animate-pulse")} />
                      </div>
 
-                    <div className="w-full max-w-sm space-y-2">
-                        <Label htmlFor="voice-status-text">What's on your mind?</Label>
-                        <Textarea
-                            id="voice-status-text"
-                            placeholder="Type your status here..."
-                            rows={3}
-                            value={text}
-                            onChange={(e) => setText(e.target.value)}
-                            maxLength={charLimit}
-                            className="text-base"
-                            disabled={isSubmitting}
-                        />
-                        <p className="text-xs text-muted-foreground text-right">
-                            {text.length} / {charLimit}
-                        </p>
+                    <div className="w-full max-w-sm space-y-4">
+                        <div className="space-y-2">
+                             <Label htmlFor="voice-status-text">What's on your mind?</Label>
+                            <Textarea
+                                id="voice-status-text"
+                                placeholder="Type your status here..."
+                                rows={3}
+                                value={text}
+                                onChange={(e) => setText(e.target.value)}
+                                maxLength={charLimit}
+                                className="text-base"
+                                disabled={isSubmitting}
+                            />
+                            <p className="text-xs text-muted-foreground text-right">
+                                {text.length} / {charLimit}
+                            </p>
+                        </div>
+                        <div className="space-y-2">
+                            <Label htmlFor="voice-select">Choose a Voice</Label>
+                            <Select onValueChange={setSelectedVoice} defaultValue={selectedVoice} disabled={isSubmitting}>
+                                <SelectTrigger id="voice-select" className="w-full">
+                                    <SelectValue placeholder="Select a voice" />
+                                </SelectTrigger>
+                                <SelectContent>
+                                    {voices.map(voice => (
+                                         <SelectItem key={voice.name} value={voice.name}>
+                                            {voice.name} ({voice.gender})
+                                        </SelectItem>
+                                    ))}
+                                </SelectContent>
+                            </Select>
+                        </div>
                     </div>
                 </div>
 
@@ -122,6 +150,19 @@ export default function VoiceNotePage() {
                      </Button>
                 </div>
             </div>
+             <style jsx>{`
+                @keyframes spin-slow {
+                  from {
+                    transform: rotate(0deg);
+                  }
+                  to {
+                    transform: rotate(360deg);
+                  }
+                }
+                .animate-spin-slow {
+                  animation: spin-slow 20s linear infinite;
+                }
+            `}</style>
         </AppLayout>
     );
 }
