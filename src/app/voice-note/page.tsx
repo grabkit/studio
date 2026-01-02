@@ -3,74 +3,129 @@
 
 import AppLayout from "@/components/AppLayout";
 import { Button } from "@/components/ui/button";
-import { ArrowLeft, Loader2, Play, Info } from "lucide-react";
+import { ArrowLeft, Loader2, Mic, Play, Square, RefreshCw } from "lucide-react";
 import { useRouter } from "next/navigation";
-import React, { useState } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import { cn } from "@/lib/utils";
 import { useToast } from "@/hooks/use-toast";
 import { useFirebase } from "@/firebase";
 import { doc, serverTimestamp, updateDoc } from "firebase/firestore";
 import { FirestorePermissionError } from "@/firebase/errors";
 import { errorEmitter } from "@/firebase/error-emitter";
-import { Textarea } from "@/components/ui/textarea";
-import { generateVoiceStatus } from "@/ai/flows/generate-voice-status-flow";
-import { Label } from "@/components/ui/label";
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 
-
-const voices = [
-    { name: "Algenib", gender: "Male", seed: "male1" },
-    { name: "Achernar", gender: "Female", seed: "female1" },
-    { name: "Puck", gender: "Male", seed: "male2" },
-    { name: "Leda", gender: "Female", seed: "female2" },
-    { name: "Umbriel", gender: "Male", seed: "male3" },
-    { name: "Vindemiatrix", gender: "Female", seed: "female3" },
-]
+type RecordingStatus = "idle" | "permission-pending" | "recording" | "recorded" | "sharing";
 
 export default function VoiceNotePage() {
     const router = useRouter();
     const { toast } = useToast();
     const { user, firestore } = useFirebase();
 
-    const [text, setText] = useState("");
-    const [selectedVoice, setSelectedVoice] = useState(voices[0].name);
-    const [isGenerating, setIsGenerating] = useState(false);
-    const [isSharing, setIsSharing] = useState(false);
-    const [generatedVoiceUrl, setGeneratedVoiceUrl] = useState<string | null>(null);
+    const [recordingStatus, setRecordingStatus] = useState<RecordingStatus>("idle");
+    const [hasPermission, setHasPermission] = useState(false);
+    const [recordedAudioUrl, setRecordedAudioUrl] = useState<string | null>(null);
+    const [duration, setDuration] = useState(0);
 
-    const charLimit = 280;
-    
-    const handlePreview = async () => {
-        if (!text) {
-            toast({ variant: 'destructive', title: "Text cannot be empty." });
-            return;
-        }
-        setIsGenerating(true);
-        setGeneratedVoiceUrl(null);
+    const mediaRecorderRef = useRef<MediaRecorder | null>(null);
+    const audioChunksRef = useRef<Blob[]>([]);
+    const timerIntervalRef = useRef<NodeJS.Timeout | null>(null);
+    const audioPlayerRef = useRef<HTMLAudioElement | null>(null);
 
-        try {
-            const { voiceStatusUrl } = await generateVoiceStatus({ text, voiceName: selectedVoice });
-            setGeneratedVoiceUrl(voiceStatusUrl);
-            const audio = new Audio(voiceStatusUrl);
-            audio.play();
-        } catch (error: any) {
-            console.error("Error generating voice preview:", error);
-            const errorMessage = error.message || "Could not generate voice preview.";
-             if (errorMessage.includes('429') || errorMessage.toLowerCase().includes('quota')) {
-                 toast({ variant: 'destructive', title: "Too many requests", description: "Please wait a moment and try again." });
-            } else {
-                toast({ variant: 'destructive', title: "Error", description: errorMessage });
+    const maxDuration = 30; // 30 seconds
+
+    useEffect(() => {
+        setRecordingStatus("permission-pending");
+        navigator.mediaDevices.getUserMedia({ audio: true })
+            .then(stream => {
+                setHasPermission(true);
+                setRecordingStatus("idle");
+                const recorder = new MediaRecorder(stream);
+                mediaRecorderRef.current = recorder;
+
+                recorder.ondataavailable = (event) => {
+                    audioChunksRef.current.push(event.data);
+                };
+
+                recorder.onstop = () => {
+                    const audioBlob = new Blob(audioChunksRef.current, { type: 'audio/wav' });
+                    const audioUrl = URL.createObjectURL(audioBlob);
+                    
+                    const reader = new FileReader();
+                    reader.readAsDataURL(audioBlob);
+                    reader.onloadend = () => {
+                        const base64Audio = reader.result as string;
+                        setRecordedAudioUrl(base64Audio);
+                    };
+
+                    setRecordingStatus("recorded");
+                    audioChunksRef.current = [];
+                };
+            })
+            .catch(err => {
+                console.error("Error accessing microphone:", err);
+                setHasPermission(false);
+                setRecordingStatus("idle");
+                toast({
+                    variant: 'destructive',
+                    title: 'Microphone Access Denied',
+                    description: 'Please enable microphone permissions in your browser settings to record a voice status.',
+                });
+                router.back();
+            });
+
+        audioPlayerRef.current = new Audio();
+        
+        return () => {
+            if (timerIntervalRef.current) {
+                clearInterval(timerIntervalRef.current);
             }
-        } finally {
-            setIsGenerating(false);
+        };
+
+    }, [router, toast]);
+
+
+    const startRecording = () => {
+        if (mediaRecorderRef.current && mediaRecorderRef.current.state === "inactive") {
+            mediaRecorderRef.current.start();
+            setRecordingStatus("recording");
+            setDuration(0);
+            timerIntervalRef.current = setInterval(() => {
+                setDuration(prev => {
+                    if (prev + 1 >= maxDuration) {
+                        stopRecording();
+                        return maxDuration;
+                    }
+                    return prev + 1;
+                });
+            }, 1000);
         }
     };
 
+    const stopRecording = () => {
+        if (mediaRecorderRef.current && mediaRecorderRef.current.state === "recording") {
+            mediaRecorderRef.current.stop();
+             if (timerIntervalRef.current) {
+                clearInterval(timerIntervalRef.current);
+            }
+        }
+    };
+    
+    const handleRetake = () => {
+        setRecordedAudioUrl(null);
+        setDuration(0);
+        setRecordingStatus("idle");
+    }
+
+    const playPreview = () => {
+        if (recordedAudioUrl && audioPlayerRef.current) {
+            audioPlayerRef.current.src = recordedAudioUrl;
+            audioPlayerRef.current.play();
+        }
+    };
 
     const handleShare = async () => {
-        if (!generatedVoiceUrl) {
-            toast({ variant: 'destructive', title: "No voice status to share.", description: "Please preview your voice status first." });
+        if (!recordedAudioUrl) {
+            toast({ variant: 'destructive', title: "No voice status to share." });
             return;
         }
         if (!user || !firestore) {
@@ -78,12 +133,12 @@ export default function VoiceNotePage() {
             return;
         }
 
-        setIsSharing(true);
+        setRecordingStatus("sharing");
         
         try {
             const userDocRef = doc(firestore, "users", user.uid);
             await updateDoc(userDocRef, {
-                voiceStatusUrl: generatedVoiceUrl,
+                voiceStatusUrl: recordedAudioUrl,
                 voiceStatusTimestamp: serverTimestamp()
             });
 
@@ -103,9 +158,13 @@ export default function VoiceNotePage() {
             });
             errorEmitter.emit('permission-error', permissionError);
             toast({ variant: 'destructive', title: "Error", description: "Could not share your voice status." });
-        } finally {
-            setIsSharing(false);
+            setRecordingStatus("recorded");
         }
+    };
+    
+    const formatTime = (seconds: number) => {
+        const remainingSeconds = maxDuration - seconds;
+        return `0:${remainingSeconds.toString().padStart(2, '0')}`;
     };
 
 
@@ -117,88 +176,75 @@ export default function VoiceNotePage() {
                 </Button>
                 <h2 className="text-lg font-bold mx-auto -translate-x-4">Create Voice Status</h2>
             </div>
-            <div className="flex flex-col h-full pt-14 pb-8 px-4">
-                <div className="flex-grow space-y-6 pt-4">
-                     <div className="w-full max-w-sm space-y-4 mx-auto">
-                        <div className="space-y-2">
-                             <Label htmlFor="voice-status-text">What's on your mind?</Label>
-                            <Textarea
-                                id="voice-status-text"
-                                placeholder="Type your status here..."
-                                rows={3}
-                                value={text}
-                                onChange={(e) => setText(e.target.value)}
-                                maxLength={charLimit}
-                                className="text-base"
-                                disabled={isGenerating || isSharing}
-                            />
-                            <p className="text-xs text-muted-foreground text-right">
-                                {text.length} / {charLimit}
+            <div className="flex flex-col h-full items-center justify-center pt-14 pb-8 px-4 text-center">
+                 {!hasPermission ? (
+                     <Alert variant="destructive" className="max-w-sm">
+                        <AlertTitle>Microphone Access Required</AlertTitle>
+                        <AlertDescription>
+                            Please enable microphone access in your browser to use this feature.
+                        </AlertDescription>
+                    </Alert>
+                 ) : (
+                    <>
+                        <div className="flex-grow flex flex-col items-center justify-center">
+                             <p className="text-2xl font-bold font-headline mb-4">
+                                {recordingStatus === "recording" && "Recording..."}
+                                {recordingStatus === "recorded" && "Preview"}
+                                {recordingStatus === "idle" && "Tap to Record"}
+                                {recordingStatus === "sharing" && "Sharing..."}
+                                {recordingStatus === "permission-pending" && "Requesting Permission..."}
+                            </p>
+                             <div className="relative flex items-center justify-center">
+                                {recordingStatus === "recording" && (
+                                     <div className="absolute inset-0 rounded-full bg-destructive/20 animate-pulse"></div>
+                                )}
+                                <Button
+                                    variant={recordingStatus === "recording" ? "destructive" : "secondary"}
+                                    size="icon"
+                                    onClick={recordingStatus === "recording" ? stopRecording : startRecording}
+                                    disabled={recordingStatus !== "idle" && recordingStatus !== "recording"}
+                                    className="h-40 w-40 rounded-full"
+                                >
+                                    <Mic className="h-20 w-20" />
+                                </Button>
+                            </div>
+                            <p className="text-lg text-muted-foreground mt-4 font-mono w-24">
+                                {formatTime(duration)}
                             </p>
                         </div>
-                        <div className="space-y-3">
-                            <Label htmlFor="voice-select">Choose a Voice</Label>
-                             <div className="grid grid-cols-3 gap-4">
-                                {voices.map(voice => (
-                                    <div key={voice.name} className="flex-shrink-0 flex flex-col items-center space-y-2" onClick={() => setSelectedVoice(voice.name)}>
-                                        <div className={cn(
-                                            "p-1 rounded-full cursor-pointer transition-all",
-                                            selectedVoice === voice.name ? "ring-2 ring-primary ring-offset-2 ring-offset-background" : ""
-                                        )}>
-                                            <div className="relative">
-                                                <Avatar className="h-20 w-20 border-2 border-transparent">
-                                                    <AvatarImage src={`https://picsum.photos/seed/${voice.seed}/100/100`} />
-                                                    <AvatarFallback>{voice.name[0]}</AvatarFallback>
-                                                </Avatar>
-                                            </div>
-                                        </div>
-                                        <p className="text-xs font-medium text-muted-foreground">{voice.name}</p>
-                                    </div>
-                                ))}
-                            </div>
+                        
+                        <div className="w-full max-w-xs mx-auto mt-8 flex items-center justify-center gap-4">
+                           {recordingStatus === "recorded" && (
+                             <>
+                               <Button size="lg" variant="outline" className="flex-1" onClick={handleRetake}>
+                                    <RefreshCw className="h-5 w-5 mr-2" />
+                                    Retake
+                               </Button>
+                               <Button size="lg" variant="outline" className="flex-1" onClick={playPreview}>
+                                    <Play className="h-5 w-5 mr-2" />
+                                    Preview
+                               </Button>
+                             </>
+                           )}
+                         </div>
+
+                        <div className="w-full max-w-xs mx-auto mt-4">
+                             <Button 
+                                size="lg"
+                                className="w-full"
+                                disabled={recordingStatus !== "recorded"}
+                                onClick={handleShare}
+                            >
+                                {recordingStatus === "sharing" ? (
+                                    <>
+                                        <Loader2 className="h-5 w-5 animate-spin mr-2"/> 
+                                        Sharing...
+                                    </>
+                                ) : "Share Status"}
+                             </Button>
                         </div>
-
-                         <Alert>
-                            <Info className="h-4 w-4" />
-                            <AlertTitle>Demo Feature</AlertTitle>
-                            <AlertDescription>
-                                Voice generation is for demonstration purposes and is subject to rate limits. For production use, a paid plan is required.
-                            </AlertDescription>
-                        </Alert>
-
-                    </div>
-                </div>
-
-
-                <div className="w-full max-w-xs mx-auto mt-8 flex space-x-3">
-                    <Button 
-                        className="flex-1" 
-                        size="lg"
-                        variant="outline"
-                        disabled={!text || isGenerating || isSharing}
-                        onClick={handlePreview}
-                    >
-                        {isGenerating ? (
-                            <Loader2 className="h-5 w-5 animate-spin mr-2"/>
-                        ) : (
-                            <Play className="h-5 w-5 mr-2" />
-                        )}
-                        Preview
-                    </Button>
-                     <Button 
-                        className="flex-1" 
-                        size="lg"
-                        disabled={!generatedVoiceUrl || isGenerating || isSharing}
-                        onClick={handleShare}
-                    >
-                        {isSharing ? (
-                            <>
-                                <Loader2 className="h-5 w-5 animate-spin mr-2"/> 
-                                Sharing...
-                            </>
-                        ) : "Share"}
-                     </Button>
-                </div>
+                    </>
+                 )}
             </div>
         </AppLayout>
     );
