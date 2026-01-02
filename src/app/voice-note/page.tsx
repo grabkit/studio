@@ -261,8 +261,8 @@ export default function VoiceNotePage() {
                 {hasPermission && (
                     <>
                         <div className="relative flex items-center justify-center">
-                             {recordingStatus === "recording" && (
-                                <div className="absolute inset-[-10px] rounded-full border-2 border-primary animate-recording-pulse"></div>
+                            {recordingStatus === "recording" && (
+                               <div className="absolute inset-0 rounded-full animate-recording-pulse"></div>
                             )}
                             <Button
                                 variant={recordingStatus === "recording" ? "destructive" : "default"}
