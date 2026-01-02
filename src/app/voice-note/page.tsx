@@ -3,7 +3,7 @@
 
 import AppLayout from "@/components/AppLayout";
 import { Button } from "@/components/ui/button";
-import { ArrowLeft, Loader2 } from "lucide-react";
+import { ArrowLeft, Loader2, Sparkles } from "lucide-react";
 import { useRouter } from "next/navigation";
 import React, { useState } from "react";
 import { cn } from "@/lib/utils";
@@ -89,7 +89,7 @@ export default function VoiceNotePage() {
                 </Button>
                 <h2 className="text-lg font-bold mx-auto -translate-x-4">Create Voice Status</h2>
             </div>
-            <div className="flex flex-col h-full justify-between pt-14 pb-8 px-4">
+            <div className="flex flex-col h-full pt-14 pb-8 px-4">
                 <div className="flex-grow flex flex-col space-y-6 pt-4">
                     <div className="w-full max-w-sm space-y-4 mx-auto">
                         <div className="space-y-2">
@@ -110,7 +110,7 @@ export default function VoiceNotePage() {
                         </div>
                         <div className="space-y-3">
                             <Label htmlFor="voice-select">Choose a Voice</Label>
-                            <div className="grid grid-cols-3 gap-6 pt-2">
+                            <div className="grid grid-cols-3 gap-4 pt-2">
                                 {voices.map(voice => (
                                     <div key={voice.name} className="flex-shrink-0 flex flex-col items-center space-y-2" onClick={() => setSelectedVoice(voice.name)}>
                                         <div className={cn(
@@ -118,7 +118,7 @@ export default function VoiceNotePage() {
                                             selectedVoice === voice.name ? "ring-2 ring-primary ring-offset-2 ring-offset-background" : ""
                                         )}>
                                             <div className="relative">
-                                                <Avatar className="h-14 w-14 border-2 border-transparent">
+                                                <Avatar className="h-20 w-20 border-2 border-transparent">
                                                     <AvatarImage src={`https://picsum.photos/seed/${voice.seed}/100/100`} />
                                                     <AvatarFallback>{voice.name[0]}</AvatarFallback>
                                                 </Avatar>
