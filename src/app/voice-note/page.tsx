@@ -14,31 +14,35 @@ import { FirestorePermissionError } from "@/firebase/errors";
 import { errorEmitter } from "@/firebase/error-emitter";
 import wav from 'wav';
 
-async function toWav(
-  pcmData: Buffer,
-  channels = 1,
-  rate = 24000,
-  sampleWidth = 2
-): Promise<string> {
-  return new Promise((resolve, reject) => {
-    const writer = new wav.Writer({
-      channels,
-      sampleRate: rate,
-      bitDepth: sampleWidth * 8,
-    });
 
-    let bufs: any[] = [];
-    writer.on('error', reject);
-    writer.on('data', function (d) {
-      bufs.push(d);
-    });
-    writer.on('end', function () {
-      resolve(Buffer.concat(bufs).toString('base64'));
-    });
+async function toWav(pcmData: Float32Array): Promise<string> {
+    const channels = 1;
+    const sampleRate = 24000;
+    const bitDepth = 16;
+    const pcm_i16 = new Int16Array(pcmData.length);
 
-    writer.write(pcmData);
-    writer.end();
-  });
+    for (let i = 0; i < pcmData.length; i++) {
+        const s = Math.max(-1, Math.min(1, pcmData[i]));
+        pcm_i16[i] = s < 0 ? s * 0x8000 : s * 0x7FFF;
+    }
+    
+    const buffer = Buffer.from(pcm_i16.buffer);
+
+    return new Promise((resolve, reject) => {
+        const writer = new wav.Writer({
+            channels,
+            sampleRate,
+            bitDepth,
+        });
+
+        const chunks: Buffer[] = [];
+        writer.on('data', (chunk) => chunks.push(chunk));
+        writer.on('end', () => resolve(Buffer.concat(chunks).toString('base64')));
+        writer.on('error', reject);
+
+        writer.write(buffer);
+        writer.end();
+    });
 }
 
 
@@ -97,10 +101,12 @@ export default function VoiceNotePage() {
 
     const startRecording = async () => {
         try {
-            const stream = await navigator.mediaDevices.getUserMedia({ audio: {
-                sampleRate: 24000,
-                channelCount: 1,
-            } });
+            const stream = await navigator.mediaDevices.getUserMedia({ 
+                audio: {
+                    sampleRate: 24000, // Important for WAV conversion
+                    channelCount: 1,
+                } 
+            });
             
             const options = { mimeType: 'audio/webm' };
             mediaRecorderRef.current = new MediaRecorder(stream, options);
@@ -170,10 +176,17 @@ export default function VoiceNotePage() {
         setIsSubmitting(true);
         
         try {
-            const audioBuffer = await audioBlob.arrayBuffer();
-            const wavBase64 = await toWav(Buffer.from(audioBuffer));
+            // Decode the WebM audio data to raw PCM
+            const audioContext = new (window.AudioContext || (window as any).webkitAudioContext)({ sampleRate: 24000 });
+            const arrayBuffer = await audioBlob.arrayBuffer();
+            const decodedAudioBuffer = await audioContext.decodeAudioData(arrayBuffer);
+            const pcmData = decodedAudioBuffer.getChannelData(0);
+
+            // Convert raw PCM to WAV base64
+            const wavBase64 = await toWav(pcmData);
             const dataUrl = `data:audio/wav;base64,${wavBase64}`;
 
+            // Save to Firestore
             const userDocRef = doc(firestore, "users", user.uid);
             await updateDoc(userDocRef, {
                 voiceStatusUrl: dataUrl,
