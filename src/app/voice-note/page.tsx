@@ -13,6 +13,23 @@ import { doc, serverTimestamp, updateDoc } from "firebase/firestore";
 import { FirestorePermissionError } from "@/firebase/errors";
 import { errorEmitter } from "@/firebase/error-emitter";
 
+const supportedMimeTypes = [
+    'audio/mp4',
+    'audio/webm',
+    'audio/ogg',
+];
+
+const getSupportedMimeType = () => {
+    if (typeof MediaRecorder === 'undefined') return null;
+    for (const mimeType of supportedMimeTypes) {
+        if (MediaRecorder.isTypeSupported(mimeType)) {
+            return mimeType;
+        }
+    }
+    return null;
+};
+
+
 export default function VoiceNotePage() {
     const router = useRouter();
     const { toast } = useToast();
@@ -29,6 +46,7 @@ export default function VoiceNotePage() {
     const timerRef = useRef<NodeJS.Timeout | null>(null);
     const audioRef = useRef<HTMLAudioElement | null>(null);
     const chunksRef = useRef<Blob[]>([]);
+    const mimeTypeRef = useRef<string | null>(null);
 
     const formatTime = (seconds: number) => {
         const mins = Math.floor(seconds / 60).toString().padStart(2, '0');
@@ -67,22 +85,33 @@ export default function VoiceNotePage() {
 
 
     const startRecording = async () => {
+        const supportedMimeType = getSupportedMimeType();
+        if (!supportedMimeType) {
+            toast({
+                variant: 'destructive',
+                title: "Recording not supported",
+                description: "Your browser does not support audio recording."
+            });
+            return;
+        }
+        mimeTypeRef.current = supportedMimeType;
+
         try {
             const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
-            mediaRecorderRef.current = new MediaRecorder(stream, { mimeType: 'audio/webm' });
+            mediaRecorderRef.current = new MediaRecorder(stream, { mimeType: supportedMimeType });
             
-            chunksRef.current = []; // Clear previous chunks
+            chunksRef.current = [];
 
             mediaRecorderRef.current.ondataavailable = (event) => {
                 chunksRef.current.push(event.data);
             };
 
             mediaRecorderRef.current.onstop = () => {
-                const blob = new Blob(chunksRef.current, { type: 'audio/webm' });
+                const blob = new Blob(chunksRef.current, { type: supportedMimeType });
                 setAudioBlob(blob);
                 const url = URL.createObjectURL(blob);
                 setAudioUrl(url);
-                stream.getTracks().forEach(track => track.stop()); // Stop microphone access
+                stream.getTracks().forEach(track => track.stop());
             };
 
             mediaRecorderRef.current.start();
@@ -102,7 +131,7 @@ export default function VoiceNotePage() {
         if (isRecording) {
             stopRecording();
         } else {
-            handleClear(); // Clear previous recording before starting new one
+            handleClear();
             startRecording();
         }
     };
@@ -132,8 +161,7 @@ export default function VoiceNotePage() {
         return new Promise((resolve, reject) => {
             const reader = new FileReader();
             reader.onloadend = () => {
-                const dataUrl = reader.result as string; // This is the full Data URL
-                resolve(dataUrl);
+                resolve(reader.result as string);
             };
             reader.onerror = reject;
             reader.readAsDataURL(blob);
@@ -178,7 +206,6 @@ export default function VoiceNotePage() {
 
 
     useEffect(() => {
-        // Cleanup on component unmount
         return () => {
             stopTimer();
             if (mediaRecorderRef.current && mediaRecorderRef.current.state === 'recording') {
