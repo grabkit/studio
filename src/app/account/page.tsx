@@ -287,7 +287,7 @@ export default function AccountPage() {
                     </Avatar>
                     {hasVoiceStatus && (
                         <div className="absolute bottom-0 right-0 bg-background p-1 rounded-full border-2">
-                            <div className="flex items-center justify-center h-5 w-5 gap-[1px]">
+                            <div className="flex items-center justify-center h-5 w-5 gap-0.5">
                                 <div className="audio-wave-bar-avatar" />
                                 <div className="audio-wave-bar-avatar" />
                                 <div className="audio-wave-bar-avatar" />
