@@ -283,7 +283,7 @@ export default function VoiceNotePage() {
 
     return (
         <Sheet open={isSheetOpen} onOpenChange={setIsSheetOpen}>
-            <SheetContent side="bottom" className="rounded-t-2xl h-auto flex flex-col p-6 items-center justify-center gap-4 pb-10">
+            <SheetContent side="bottom" className="rounded-t-2xl h-auto flex flex-col p-6 items-center justify-center gap-2 pb-10">
                 <SheetHeader className="text-center">
                     <SheetTitle>Create Voice Status</SheetTitle>
                 </SheetHeader>
@@ -324,17 +324,17 @@ export default function VoiceNotePage() {
                         </div>
                         
                          <div className="w-full max-w-xs mx-auto flex items-center justify-between h-16">
-                           <Button size="lg" variant="ghost" className="rounded-full h-16 w-16" onClick={handleRetake}>
-                                <RefreshCw className="h-7 w-7" />
+                           <Button size="lg" variant="secondary" className="rounded-full h-14 w-14" onClick={handleRetake}>
+                                <RefreshCw className="h-6 w-6" />
                            </Button>
 
                            {(recordingStatus === 'recording' || recordingStatus === 'paused') ? (
-                             <Button size="lg" variant="destructive" className="rounded-full h-16 w-16" onClick={stopRecording}>
-                                <StopCircle className="h-8 w-8" />
+                             <Button size="lg" variant="destructive" className="rounded-full h-14 w-14" onClick={stopRecording}>
+                                <StopCircle className="h-7 w-7" />
                              </Button>
                            ) : (
-                               <Button size="lg" className="rounded-full h-16 w-16 bg-primary hover:bg-primary/90" onClick={handleShare} disabled={!recordedAudioUrl || recordingStatus === 'sharing'}>
-                                    {recordingStatus === "sharing" ? <Loader2 className="h-7 w-7 animate-spin"/> : <Send className="h-7 w-7" />}
+                               <Button size="lg" className="rounded-full h-14 w-14 bg-primary hover:bg-primary/90" onClick={handleShare} disabled={!recordedAudioUrl || recordingStatus === 'sharing'}>
+                                    {recordingStatus === "sharing" ? <Loader2 className="h-6 w-6 animate-spin"/> : <Send className="h-6 w-6" />}
                                </Button>
                            )}
                          </div>
