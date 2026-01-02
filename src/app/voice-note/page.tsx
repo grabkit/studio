@@ -92,14 +92,7 @@ export default function VoiceNotePage() {
             </div>
             <div className="flex flex-col h-full justify-between pt-14 pb-8 px-4">
                 <div className="flex-grow flex flex-col items-center justify-center space-y-6">
-                     <div 
-                        className="relative h-48 w-48 rounded-full flex items-center justify-center bg-secondary"
-                        >
-                        <div className="absolute inset-0 rounded-full border-4 border-dashed border-muted-foreground/20 animate-spin-slow"></div>
-                        <Sparkles className={cn("h-16 w-16 text-primary transition-all", isSubmitting && "animate-pulse")} />
-                     </div>
-
-                    <div className="w-full max-w-sm space-y-4">
+                    <div className="w-full max-w-sm space-y-4 pt-10">
                         <div className="space-y-2">
                              <Label htmlFor="voice-status-text">What's on your mind?</Label>
                             <Textarea
@@ -148,7 +141,7 @@ export default function VoiceNotePage() {
                 </div>
 
 
-                <div className="w-full max-w-xs mt-8">
+                <div className="w-full max-w-xs mx-auto mt-8">
                      <Button 
                         className="w-full" 
                         size="lg"
