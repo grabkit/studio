@@ -13,6 +13,7 @@ import { useCallHandler } from '@/hooks/useCallHandler';
 import { CallView } from '@/components/CallView';
 import { useVideoCallHandler } from '@/hooks/useVideoCallHandler';
 import { VideoCallView } from '@/components/VideoCallView';
+import { VoiceStatusPlayer } from '@/components/VoiceStatusPlayer';
 
 interface CallHandlerResult extends ReturnType<typeof useCallHandler> {}
 interface VideoCallHandlerResult extends ReturnType<typeof useVideoCallHandler> {}
@@ -47,6 +48,7 @@ export interface FirebaseContextState extends CallHandlerResult, VideoCallHandle
   // User profile state
   userProfile: WithId<UserProfile> | null;
   isUserProfileLoading: boolean;
+  showVoiceStatusPlayer: (user: WithId<UserProfile>) => void;
 }
 
 // Return type for useFirebase()
@@ -60,6 +62,7 @@ export interface FirebaseServicesAndUser extends CallHandlerResult, VideoCallHan
   userError: Error | null;
   userProfile: WithId<UserProfile> | null;
   isUserProfileLoading: boolean;
+  showVoiceStatusPlayer: (user: WithId<UserProfile>) => void;
 }
 
 // Return type for useUser() - specific to user auth state
@@ -90,6 +93,16 @@ export const FirebaseProvider: React.FC<FirebaseProviderProps> = ({
   
   const callHandler = useCallHandler(firestore, userAuthState.user);
   const videoCallHandler = useVideoCallHandler(firestore, userAuthState.user);
+  
+  const [voiceStatusUser, setVoiceStatusUser] = useState<WithId<UserProfile> | null>(null);
+
+  const showVoiceStatusPlayer = (user: WithId<UserProfile>) => {
+    setVoiceStatusUser(user);
+  };
+
+  const onVoicePlayerClose = () => {
+    setVoiceStatusUser(null);
+  };
 
 
   // Effect to subscribe to Firebase auth state changes and manage presence
@@ -162,6 +175,7 @@ export const FirebaseProvider: React.FC<FirebaseProviderProps> = ({
       userError: userAuthState.userError,
       userProfile,
       isUserProfileLoading,
+      showVoiceStatusPlayer,
       ...callHandler,
       ...videoCallHandler,
     };
@@ -174,6 +188,13 @@ export const FirebaseProvider: React.FC<FirebaseProviderProps> = ({
   return (
     <FirebaseContext.Provider value={contextValue}>
       <FirebaseErrorListener />
+       {voiceStatusUser && (
+        <VoiceStatusPlayer 
+          user={voiceStatusUser}
+          isOpen={!!voiceStatusUser}
+          onOpenChange={(open) => { if (!open) onVoicePlayerClose(); }}
+        />
+      )}
       {showVideoCallUI ? (
         <VideoCallView
             status={videoCallHandler.videoCallStatus}
@@ -236,6 +257,7 @@ export const useFirebase = (): FirebaseServicesAndUser => {
     userError: context.userError,
     userProfile: context.userProfile,
     isUserProfileLoading: context.isUserProfileLoading,
+    showVoiceStatusPlayer: context.showVoiceStatusPlayer,
     startCall: context.startCall,
     answerCall: context.answerCall,
     declineCall: context.declineCall,
