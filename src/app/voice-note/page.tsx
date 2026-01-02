@@ -3,23 +3,133 @@
 
 import AppLayout from "@/components/AppLayout";
 import { Button } from "@/components/ui/button";
-import { ArrowLeft, Mic, Play, Square, Trash2, Send } from "lucide-react";
+import { ArrowLeft, Mic, Play, Square, Trash2, Send, Pause } from "lucide-react";
 import { useRouter } from "next/navigation";
-import React, { useState, useRef, useEffect } from "react";
+import React, { useState, useRef, useEffect, useCallback } from "react";
 import { cn } from "@/lib/utils";
+import { useToast } from "@/hooks/use-toast";
 
 export default function VoiceNotePage() {
     const router = useRouter();
+    const { toast } = useToast();
+
     const [isRecording, setIsRecording] = useState(false);
     const [isPlaying, setIsPlaying] = useState(false);
     const [audioBlob, setAudioBlob] = useState<Blob | null>(null);
+    const [audioUrl, setAudioUrl] = useState<string | null>(null);
     const [timeLeft, setTimeLeft] = useState(30);
+
+    const mediaRecorderRef = useRef<MediaRecorder | null>(null);
+    const timerRef = useRef<NodeJS.Timeout | null>(null);
+    const audioRef = useRef<HTMLAudioElement | null>(null);
+    const chunksRef = useRef<Blob[]>([]);
 
     const formatTime = (seconds: number) => {
         const mins = Math.floor(seconds / 60).toString().padStart(2, '0');
         const secs = (seconds % 60).toString().padStart(2, '0');
         return `${mins}:${secs}`;
     };
+
+    const startTimer = useCallback(() => {
+        setTimeLeft(30);
+        timerRef.current = setInterval(() => {
+            setTimeLeft(prevTime => {
+                if (prevTime <= 1) {
+                    stopRecording();
+                    return 0;
+                }
+                return prevTime - 1;
+            });
+        }, 1000);
+    }, []);
+
+    const stopTimer = useCallback(() => {
+        if (timerRef.current) {
+            clearInterval(timerRef.current);
+            timerRef.current = null;
+        }
+    }, []);
+
+    const startRecording = async () => {
+        try {
+            const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+            mediaRecorderRef.current = new MediaRecorder(stream);
+            
+            chunksRef.current = []; // Clear previous chunks
+
+            mediaRecorderRef.current.ondataavailable = (event) => {
+                chunksRef.current.push(event.data);
+            };
+
+            mediaRecorderRef.current.onstop = () => {
+                const blob = new Blob(chunksRef.current, { type: 'audio/webm' });
+                setAudioBlob(blob);
+                const url = URL.createObjectURL(blob);
+                setAudioUrl(url);
+                stream.getTracks().forEach(track => track.stop()); // Stop microphone access
+            };
+
+            mediaRecorderRef.current.start();
+            setIsRecording(true);
+            startTimer();
+        } catch (error) {
+            console.error("Error starting recording:", error);
+            toast({
+                variant: 'destructive',
+                title: "Microphone access denied",
+                description: "Please allow microphone access in your browser settings to record a voice note."
+            });
+        }
+    };
+
+    const stopRecording = useCallback(() => {
+        if (mediaRecorderRef.current && mediaRecorderRef.current.state === 'recording') {
+            mediaRecorderRef.current.stop();
+        }
+        setIsRecording(false);
+        stopTimer();
+    }, [stopTimer]);
+
+    const handleRecordClick = () => {
+        if (isRecording) {
+            stopRecording();
+        } else {
+            handleClear(); // Clear previous recording before starting new one
+            startRecording();
+        }
+    };
+
+    const handlePlayPause = () => {
+        if (audioRef.current) {
+            if (isPlaying) {
+                audioRef.current.pause();
+            } else {
+                audioRef.current.play();
+            }
+        }
+    };
+
+    const handleClear = () => {
+        setAudioBlob(null);
+        setAudioUrl(null);
+        setTimeLeft(30);
+        setIsPlaying(false);
+        if (audioRef.current) {
+            audioRef.current.pause();
+            audioRef.current.currentTime = 0;
+        }
+    };
+
+    useEffect(() => {
+        // Cleanup on component unmount
+        return () => {
+            stopTimer();
+            if (mediaRecorderRef.current && mediaRecorderRef.current.state === 'recording') {
+                mediaRecorderRef.current.stop();
+            }
+        };
+    }, [stopTimer]);
+    
 
     return (
         <AppLayout showTopBar={false} showBottomNav={false}>
@@ -47,10 +157,21 @@ export default function VoiceNotePage() {
                             {formatTime(timeLeft)}
                         </p>
                         <p className="text-sm text-muted-foreground mt-1">
-                             {isRecording ? "Recording..." : "Tap the button to start recording"}
+                             {audioBlob ? "Recording complete" : isRecording ? "Recording..." : "Tap the button to start recording"}
                         </p>
                     </div>
                 </div>
+
+                {audioUrl && (
+                    <audio
+                        ref={audioRef}
+                        src={audioUrl}
+                        onPlay={() => setIsPlaying(true)}
+                        onPause={() => setIsPlaying(false)}
+                        onEnded={() => setIsPlaying(false)}
+                    />
+                )}
+
 
                 <div className="w-full flex justify-center items-center gap-4">
                     <Button 
@@ -58,6 +179,7 @@ export default function VoiceNotePage() {
                         size="icon" 
                         className="h-16 w-16 rounded-full"
                         disabled={!audioBlob}
+                        onClick={handleClear}
                     >
                         <Trash2 className="h-6 w-6" />
                     </Button>
@@ -67,17 +189,30 @@ export default function VoiceNotePage() {
                             "h-24 w-24 rounded-full shadow-lg transition-colors",
                              isRecording ? "bg-destructive" : "bg-primary"
                         )}
+                        onClick={handleRecordClick}
                         >
                         {isRecording ? <Square className="h-10 w-10 fill-white" /> : <Mic className="h-10 w-10" />}
                     </Button>
-                     <Button 
-                        variant="outline" 
-                        size="icon" 
-                        className="h-16 w-16 rounded-full"
-                        disabled={!audioBlob}
-                    >
-                        <Send className="h-6 w-6" />
-                    </Button>
+
+                     {audioBlob ? (
+                         <Button 
+                            variant="outline" 
+                            size="icon" 
+                            className="h-16 w-16 rounded-full"
+                            onClick={handlePlayPause}
+                         >
+                           {isPlaying ? <Pause className="h-6 w-6" /> : <Play className="h-6 w-6" />}
+                        </Button>
+                     ) : (
+                        <Button 
+                            variant="outline" 
+                            size="icon" 
+                            className="h-16 w-16 rounded-full"
+                            disabled={!audioBlob}
+                        >
+                            <Send className="h-6 w-6" />
+                        </Button>
+                     )}
                 </div>
             </div>
         </AppLayout>
