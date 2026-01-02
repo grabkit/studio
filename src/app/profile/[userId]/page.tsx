@@ -17,7 +17,7 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { ArrowLeft, MessageSquare, ArrowUpRight, ArrowUp, MoreHorizontal, ShieldAlert, Flag, VolumeX, Info, MinusCircle, Link as LinkIcon, QrCode, Calendar, Badge, User as UserIcon, Volume2 } from "lucide-react";
+import { ArrowLeft, MessageSquare, ArrowUpRight, ArrowUp, MoreHorizontal, ShieldAlert, Flag, VolumeX, Info, MinusCircle, Link as LinkIcon, QrCode, Calendar, Badge, User as UserIcon, Volume2, BarChart3 } from "lucide-react";
 import { getInitials, cn, formatLastSeen } from "@/lib/utils";
 import { FirestorePermissionError } from "@/firebase/errors";
 import { errorEmitter } from "@/firebase/error-emitter";
@@ -77,7 +77,7 @@ export default function UserProfilePage() {
     const router = useRouter();
     const { toast } = useToast();
     const userId = params.userId as string;
-    const { firestore, user: currentUser, userProfile: currentUserProfile } = useFirebase();
+    const { firestore, user: currentUser, userProfile: currentUserProfile, showVoiceStatusPlayer } = useFirebase();
 
     const [posts, setPosts] = useState<WithId<Post>[]>([]);
     const [postsLoading, setPostsLoading] = useState(true);
@@ -407,6 +407,19 @@ export default function UserProfilePage() {
         })
     };
 
+    const hasVoiceStatus = useMemo(() => {
+        if (!user?.voiceStatusUrl || !user?.voiceStatusTimestamp) return false;
+        // Check if the status is within the last 24 hours
+        const twentyFourHoursAgo = Date.now() - 24 * 60 * 60 * 1000;
+        return user.voiceStatusTimestamp.toMillis() > twentyFourHoursAgo;
+    }, [user]);
+
+    const handleAvatarClick = () => {
+        if (hasVoiceStatus && user && showVoiceStatusPlayer) {
+            showVoiceStatusPlayer(user);
+        }
+    }
+
 
     if (userLoading || (currentUser && userId === currentUser.uid)) {
         return (
@@ -495,15 +508,22 @@ export default function UserProfilePage() {
                     <div className="px-4">
                          <div className="flex items-start space-x-5 mb-2">
                             <div className="flex-shrink-0 text-center">
-                                <Avatar className="h-20 w-20 md:h-24 md:w-24 mx-auto">
-                                    <AvatarImage
-                                        src={undefined}
-                                        alt={user?.name || "User"}
-                                    />
-                                    <AvatarFallback className="text-3xl font-headline">
-                                        {getInitials(user?.name)}
-                                    </AvatarFallback>
-                                </Avatar>
+                                <div className="relative inline-block" onClick={handleAvatarClick} role={hasVoiceStatus ? "button" : "none"}>
+                                    <Avatar className="h-20 w-20 md:h-24 md:w-24 mx-auto">
+                                        <AvatarImage
+                                            src={undefined}
+                                            alt={user?.name || "User"}
+                                        />
+                                        <AvatarFallback className="text-3xl font-headline">
+                                            {getInitials(user?.name)}
+                                        </AvatarFallback>
+                                    </Avatar>
+                                    {hasVoiceStatus && (
+                                        <div className="absolute inset-0 flex items-center justify-center rounded-full bg-black/30">
+                                            <BarChart3 className="h-8 w-8 text-white animate-pulse" />
+                                        </div>
+                                    )}
+                                </div>
                                 <p className="font-semibold font-headline mt-2">{formatUserId(user?.id)}</p>
                             </div>
                             <div className="flex-1 flex justify-around text-center pt-6">
