@@ -514,11 +514,9 @@ export default function UserProfilePage() {
                                             src={undefined}
                                             alt={user?.name || "User"}
                                         />
-                                        {!hasVoiceStatus && (
-                                            <AvatarFallback className="text-3xl font-headline bg-secondary">
-                                                {getInitials(user?.name)}
-                                            </AvatarFallback>
-                                        )}
+                                        <AvatarFallback className="text-3xl font-headline bg-secondary">
+                                            {getInitials(user?.name)}
+                                        </AvatarFallback>
                                     </Avatar>
                                     {hasVoiceStatus && (
                                         <div className="absolute inset-0 flex items-center justify-center rounded-full">
