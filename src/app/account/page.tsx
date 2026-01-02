@@ -281,9 +281,11 @@ export default function AccountPage() {
                             src={authUser?.photoURL || undefined}
                             alt={userProfile?.name || "User"}
                         />
-                        <AvatarFallback className="text-3xl font-headline">
-                            {getInitials(userProfile?.name)}
-                        </AvatarFallback>
+                        {!hasVoiceStatus && (
+                            <AvatarFallback className="text-3xl font-headline">
+                                {getInitials(userProfile?.name)}
+                            </AvatarFallback>
+                        )}
                     </Avatar>
                     {hasVoiceStatus && (
                         <div className="absolute inset-0 flex items-center justify-center rounded-full">
