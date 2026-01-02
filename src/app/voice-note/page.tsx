@@ -81,14 +81,16 @@ export default function VoiceNotePage() {
 
             canvasCtx.clearRect(0, 0, canvas.width, canvas.height);
             
-            const barWidth = (canvas.width / bufferLength) * 2.5;
-            let x = 0;
+            const lineWidth = 2; // Width of each line
+            const gap = 1; // Gap between lines
+            const totalWidth = bufferLength * (lineWidth + gap);
+            let x = (canvas.width - totalWidth) / 2; // Start x to center the waveform
 
             for (let i = 0; i < bufferLength; i++) {
                 const barHeight = dataArray[i] / 2;
                 canvasCtx.fillStyle = 'hsl(var(--primary))';
-                canvasCtx.fillRect(x, canvas.height / 2 - barHeight / 2, barWidth, barHeight);
-                x += barWidth + 1;
+                canvasCtx.fillRect(x, canvas.height / 2 - barHeight / 2, lineWidth, barHeight);
+                x += lineWidth + gap;
             }
         };
         draw();
@@ -136,7 +138,7 @@ export default function VoiceNotePage() {
             sourceNodeRef.current?.disconnect();
             audioContextRef.current?.close();
         };
-    }, [router, toast, stopVisualization]);
+    }, [router, toast, stopVisualization, visualize]);
 
      useEffect(() => {
         if (!isSheetOpen) {
@@ -260,9 +262,9 @@ export default function VoiceNotePage() {
 
                 {hasPermission && (
                     <>
-                        <div className="relative flex items-center justify-center w-[104px] h-[104px]">
-                            {recordingStatus === "recording" && (
-                                <div className="absolute inset-0 bg-muted rounded-full animate-pulse"></div>
+                        <div className="relative flex items-center justify-center h-[96px] w-[96px]">
+                             {recordingStatus === "recording" && (
+                                <div className="absolute inset-[-10px] rounded-full border-2 border-primary animate-recording-pulse"></div>
                             )}
                             <Button
                                 variant={recordingStatus === "recording" ? "destructive" : "default"}
