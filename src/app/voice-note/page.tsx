@@ -174,7 +174,7 @@ export default function VoiceNotePage() {
             if (mediaRecorderRef.current.state === "paused") {
                 mediaRecorderRef.current.resume();
             } else {
-                mediaRecorderf.current.start();
+                mediaRecorderRef.current.start();
                 audioChunksRef.current = []; // Reset chunks on new recording
             }
             
@@ -348,4 +348,3 @@ export default function VoiceNotePage() {
     );
 }
 
-    
