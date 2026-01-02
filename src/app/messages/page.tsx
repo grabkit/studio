@@ -138,7 +138,7 @@ function UpvotedUsers() {
                                 )}
                                 {!isCurrentUser && hasVoiceStatus && (
                                      <div 
-                                        className="absolute bottom-0 right-0 bg-background p-1 rounded-full border-2 cursor-pointer" 
+                                        className="absolute -bottom-1 -right-1 bg-background p-1 rounded-full border-2 cursor-pointer" 
                                         onClick={() => showVoiceStatusPlayer(user)} 
                                         role="button"
                                     >
@@ -633,5 +633,7 @@ export default function MessagesPage() {
         </AppLayout>
     )
 }
+
+    
 
     
