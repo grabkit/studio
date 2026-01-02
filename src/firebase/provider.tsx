@@ -144,34 +144,17 @@ export const FirebaseProvider: React.FC<FirebaseProviderProps> = ({
   const handleDeleteVoiceStatus = async () => {
     if (!firestore || !userAuthState.user) return;
     const currentUserId = userAuthState.user.uid;
-
-    // Optimistically update UI first
-    const updateState = (profile: WithId<UserProfile> | null) => {
-        if (profile && profile.id === currentUserId) {
-            const { voiceStatusUrl, voiceStatusTimestamp, ...rest } = profile;
-            return rest as WithId<UserProfile>;
-        }
-        return profile;
-    };
+    const userDocRef = doc(firestore, 'users', currentUserId);
     
-    setLoggedInUserProfile(updateState);
-    setActiveUserProfile(updateState);
-    toast({ title: "Voice Status Deleted" });
-    
-    // Close player
-    onVoicePlayerClose();
-
-    // Then, update the server
-    const userDocRef = doc(firestore, "users", currentUserId);
+    // We don't need optimistic updates. The onSnapshot listener in useDoc will
+    // automatically update the UI once the data is deleted from Firestore.
     try {
         await updateDoc(userDocRef, {
             voiceStatusUrl: deleteField(),
             voiceStatusTimestamp: deleteField()
         });
+        toast({ title: "Voice Status Deleted" });
     } catch (error) {
-        // If server update fails, revert the UI state (optional, but good practice)
-        // For simplicity here, we just log the error and let the optimistic update stand.
-        // A more robust solution might re-fetch the user profile.
         console.error("Failed to delete voice status on server:", error);
         const permissionError = new FirestorePermissionError({
             path: userDocRef.path,
@@ -305,7 +288,10 @@ export const FirebaseProvider: React.FC<FirebaseProviderProps> = ({
                 onVoicePlayerClose();
             }
           }}
-          onDelete={handleDeleteVoiceStatus}
+          onDelete={async () => {
+            await handleDeleteVoiceStatus();
+            onVoicePlayerClose(); // Close the player after deletion is initiated
+          }}
           isVoicePlayerPlaying={isVoicePlayerPlaying}
         />
       )}
