@@ -12,12 +12,12 @@ import {z} from 'genkit';
 import wav from 'wav';
 
 
-export const GenerateVoiceStatusInputSchema = z.object({
+const GenerateVoiceStatusInputSchema = z.object({
   text: z.string().min(1).max(280).describe('The text to be converted to speech.'),
 });
 export type GenerateVoiceStatusInput = z.infer<typeof GenerateVoiceStatusInputSchema>;
 
-export const GenerateVoiceStatusOutputSchema = z.object({
+const GenerateVoiceStatusOutputSchema = z.object({
     voiceStatusUrl: z.string().describe("The generated voice status as a WAV audio data URI."),
 });
 export type GenerateVoiceStatusOutput = z.infer<typeof GenerateVoiceStatusOutputSchema>;
