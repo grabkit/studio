@@ -40,6 +40,28 @@ export default function VoiceNotePage() {
 
     const maxDuration = 30; // 30 seconds
 
+    const drawInitialState = useCallback(() => {
+        const canvas = canvasRef.current;
+        if (!canvas) return;
+        const canvasCtx = canvas.getContext('2d');
+        if (!canvasCtx) return;
+
+        const width = canvas.width;
+        const height = canvas.height;
+        const dotCount = 50;
+        const dotWidth = 2;
+        const dotHeight = 2;
+        const gap = (width - (dotCount * dotWidth)) / (dotCount - 1);
+
+        canvasCtx.clearRect(0, 0, width, height);
+        canvasCtx.fillStyle = 'hsl(var(--muted-foreground) / 0.5)';
+
+        for (let i = 0; i < dotCount; i++) {
+            const x = i * (dotWidth + gap);
+            canvasCtx.fillRect(x, height / 2 - dotHeight / 2, dotWidth, dotHeight);
+        }
+    }, []);
+
     const stopVisualization = useCallback(() => {
         if (animationFrameIdRef.current) {
             cancelAnimationFrame(animationFrameIdRef.current);
@@ -49,7 +71,8 @@ export default function VoiceNotePage() {
             const canvasCtx = canvasRef.current.getContext('2d');
             canvasCtx?.clearRect(0, 0, canvasRef.current.width, canvasRef.current.height);
         }
-    }, []);
+        drawInitialState();
+    }, [drawInitialState]);
 
     const visualize = useCallback((stream: MediaStream) => {
         if (!audioContextRef.current) {
@@ -81,10 +104,10 @@ export default function VoiceNotePage() {
 
             canvasCtx.clearRect(0, 0, canvas.width, canvas.height);
             
-            const lineWidth = 2; // Width of each line
-            const gap = 2; // Gap between lines
+            const lineWidth = 2;
+            const gap = 2; 
             const totalWidth = bufferLength * (lineWidth + gap);
-            let x = (canvas.width - totalWidth) / 2; // Start x to center the waveform
+            let x = (canvas.width - totalWidth) / 2;
 
             for (let i = 0; i < bufferLength; i++) {
                 const barHeight = dataArray[i] / 2;
@@ -95,6 +118,10 @@ export default function VoiceNotePage() {
         };
         draw();
     }, []);
+
+    useEffect(() => {
+        drawInitialState(); // Draw dots on initial render
+    }, [drawInitialState]);
 
     useEffect(() => {
         navigator.mediaDevices.getUserMedia({ audio: true })
@@ -174,12 +201,10 @@ export default function VoiceNotePage() {
     };
 
     const handleMicButtonClick = () => {
-        if (recordingStatus === "idle") {
+        if (recordingStatus === "idle" || recordingStatus === "recorded") {
             startRecording();
         } else if (recordingStatus === "recording") {
             stopRecording();
-        } else if (recordingStatus === 'recorded') {
-            playPreview();
         }
     }
     
@@ -187,6 +212,7 @@ export default function VoiceNotePage() {
         setRecordedAudioUrl(null);
         setDuration(0);
         setRecordingStatus("idle");
+        drawInitialState();
     }
 
     const playPreview = () => {
@@ -235,7 +261,7 @@ export default function VoiceNotePage() {
     const getButtonIcon = () => {
         switch(recordingStatus) {
             case 'recording': return <Square className="h-10 w-10 text-white" fill="white" />;
-            case 'recorded': return <Play className="h-10 w-10 text-primary-foreground" fill="currentColor" />;
+            case 'recorded': return <Play className="h-10 w-10 text-primary-foreground" fill="currentColor" onClick={playPreview}/>;
             default: return <Mic className="h-10 w-10" />;
         }
     }
@@ -264,7 +290,7 @@ export default function VoiceNotePage() {
                     <>
                         <div className="relative flex items-center justify-center h-[96px] w-[96px]">
                              {recordingStatus === "recording" && (
-                                <div className="absolute inset-[-10px] rounded-full border-2 border-primary animate-recording-pulse"></div>
+                                <div className="absolute inset-[-10px] rounded-full border-primary animate-pulse" style={{ animation: 'pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite', boxShadow: '0 0 0 0 hsl(var(--primary))' }}></div>
                             )}
                             <Button
                                 variant={recordingStatus === "recording" ? "destructive" : "default"}
@@ -299,3 +325,4 @@ export default function VoiceNotePage() {
         </Sheet>
     );
 }
+
