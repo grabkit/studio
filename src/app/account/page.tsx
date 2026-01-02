@@ -287,7 +287,11 @@ export default function AccountPage() {
                     </Avatar>
                     {hasVoiceStatus && (
                         <div className="absolute inset-0 flex items-center justify-center rounded-full bg-black/30">
-                            <BarChart3 className="h-8 w-8 text-white" />
+                            <div className="flex items-center justify-center h-10 gap-1.5">
+                                <div className="audio-wave-bar-avatar" />
+                                <div className="audio-wave-bar-avatar" />
+                                <div className="audio-wave-bar-avatar" />
+                            </div>
                         </div>
                     )}
                 </div>
