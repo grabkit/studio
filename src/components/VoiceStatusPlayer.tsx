@@ -49,7 +49,7 @@ export function VoiceStatusPlayer({ user: voiceUser, isOpen, onOpenChange, onDel
         <Sheet open={isOpen} onOpenChange={onOpenChange}>
             <SheetContent side="bottom" className="rounded-t-2xl h-auto flex flex-col items-center justify-center gap-6 pb-10">
                  {isOwnStatus && (
-                    <Button variant="ghost" size="icon" onClick={handleDeleteClick} className="absolute top-4 right-4 text-muted-foreground hover:text-destructive">
+                    <Button variant="ghost" size="icon" onClick={handleDeleteClick} className="absolute top-4 left-4 text-muted-foreground hover:text-destructive">
                         <Trash2 className="h-5 w-5" />
                     </Button>
                 )}
