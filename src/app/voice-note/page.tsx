@@ -260,9 +260,9 @@ export default function VoiceNotePage() {
 
                 {hasPermission && (
                     <>
-                        <div className="relative flex items-center justify-center">
+                        <div className="relative flex items-center justify-center w-[104px] h-[104px]">
                             {recordingStatus === "recording" && (
-                                <div className="absolute h-26 w-26 bg-muted rounded-full animate-pulse"></div>
+                                <div className="absolute inset-0 rounded-full bg-muted animate-pulse"></div>
                             )}
                             <Button
                                 variant={recordingStatus === "recording" ? "destructive" : "default"}
@@ -296,7 +296,7 @@ export default function VoiceNotePage() {
                                </Button>
                              </>
                            ) : (
-                               <div className="h-11"></div> // Placeholder to prevent layout shift
+                               <div className="h-11"></div> 
                            )}
                          </div>
                     </>
@@ -305,5 +305,3 @@ export default function VoiceNotePage() {
         </Sheet>
     );
 }
-
-    
