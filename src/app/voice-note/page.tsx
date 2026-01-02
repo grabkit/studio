@@ -3,47 +3,18 @@
 
 import AppLayout from "@/components/AppLayout";
 import { Button } from "@/components/ui/button";
-import { ArrowLeft, Mic, Square, Trash2, Send, Loader2, Play, Pause } from "lucide-react";
+import { ArrowLeft, Loader2, Send, Mic, Sparkles } from "lucide-react";
 import { useRouter } from "next/navigation";
-import React, { useState, useRef, useEffect, useCallback } from "react";
+import React, { useState, useEffect, useCallback } from "react";
 import { cn } from "@/lib/utils";
 import { useToast } from "@/hooks/use-toast";
 import { useFirebase } from "@/firebase";
 import { doc, serverTimestamp, updateDoc } from "firebase/firestore";
 import { FirestorePermissionError } from "@/firebase/errors";
 import { errorEmitter } from "@/firebase/error-emitter";
-import wav from 'wav';
-
-
-async function toWav(pcmData: Float32Array): Promise<string> {
-    const channels = 1;
-    const sampleRate = 24000;
-    const bitDepth = 16;
-    const pcm_i16 = new Int16Array(pcmData.length);
-
-    for (let i = 0; i < pcmData.length; i++) {
-        const s = Math.max(-1, Math.min(1, pcmData[i]));
-        pcm_i16[i] = s < 0 ? s * 0x8000 : s * 0x7FFF;
-    }
-    
-    const buffer = Buffer.from(pcm_i16.buffer);
-
-    return new Promise((resolve, reject) => {
-        const writer = new wav.Writer({
-            channels,
-            sampleRate,
-            bitDepth,
-        });
-
-        const chunks: Buffer[] = [];
-        writer.on('data', (chunk) => chunks.push(chunk));
-        writer.on('end', () => resolve(Buffer.concat(chunks).toString('base64')));
-        writer.on('error', reject);
-
-        writer.write(buffer);
-        writer.end();
-    });
-}
+import { Textarea } from "@/components/ui/textarea";
+import { generateVoiceStatus } from "@/ai/flows/generate-voice-status-flow";
+import { Label } from "@/components/ui/label";
 
 
 export default function VoiceNotePage() {
@@ -51,153 +22,38 @@ export default function VoiceNotePage() {
     const { toast } = useToast();
     const { user, firestore } = useFirebase();
 
-    const [isRecording, setIsRecording] = useState(false);
-    const [isPlaying, setIsPlaying] = useState(false);
-    const [audioBlob, setAudioBlob] = useState<Blob | null>(null);
-    const [audioUrl, setAudioUrl] = useState<string | null>(null);
-    const [timeLeft, setTimeLeft] = useState(30);
+    const [text, setText] = useState("");
     const [isSubmitting, setIsSubmitting] = useState(false);
-
-    const mediaRecorderRef = useRef<MediaRecorder | null>(null);
-    const timerRef = useRef<NodeJS.Timeout | null>(null);
-    const audioRef = useRef<HTMLAudioElement | null>(null);
-    const chunksRef = useRef<Blob[]>([]);
-
-    const formatTime = (seconds: number) => {
-        const mins = Math.floor(seconds / 60).toString().padStart(2, '0');
-        const secs = (seconds % 60).toString().padStart(2, '0');
-        return `${mins}:${secs}`;
-    };
-
-    const stopTimer = useCallback(() => {
-        if (timerRef.current) {
-            clearInterval(timerRef.current);
-            timerRef.current = null;
-        }
-    }, []);
-
-    
-    const stopRecording = useCallback(() => {
-        if (mediaRecorderRef.current && mediaRecorderRef.current.state === 'recording') {
-            mediaRecorderRef.current.stop();
-        }
-        setIsRecording(false);
-        stopTimer();
-    }, [stopTimer]);
-    
-    const startTimer = useCallback(() => {
-        setTimeLeft(30);
-        timerRef.current = setInterval(() => {
-            setTimeLeft(prevTime => {
-                if (prevTime <= 1) {
-                    stopRecording();
-                    return 0;
-                }
-                return prevTime - 1;
-            });
-        }, 1000);
-    }, [stopRecording]);
+    const charLimit = 280;
 
 
-    const startRecording = async () => {
-        try {
-            const stream = await navigator.mediaDevices.getUserMedia({ 
-                audio: {
-                    sampleRate: 24000, // Important for WAV conversion
-                    channelCount: 1,
-                } 
-            });
-            
-            const options = { mimeType: 'audio/webm' };
-            mediaRecorderRef.current = new MediaRecorder(stream, options);
-            
-            chunksRef.current = [];
-
-            mediaRecorderRef.current.ondataavailable = (event) => {
-                chunksRef.current.push(event.data);
-            };
-
-            mediaRecorderRef.current.onstop = () => {
-                const blob = new Blob(chunksRef.current, { type: 'audio/webm' });
-                setAudioBlob(blob);
-                const url = URL.createObjectURL(blob);
-                setAudioUrl(url);
-                stream.getTracks().forEach(track => track.stop());
-            };
-
-            mediaRecorderRef.current.start();
-            setIsRecording(true);
-            startTimer();
-        } catch (error) {
-            console.error("Error starting recording:", error);
-            toast({
-                variant: 'destructive',
-                title: "Microphone access denied",
-                description: "Please allow microphone access in your browser settings to record a voice note."
-            });
-        }
-    };
-
-    const handleRecordClick = () => {
-        if (isRecording) {
-            stopRecording();
-        } else {
-            handleClear();
-            startRecording();
-        }
-    };
-
-    const handlePlayPause = () => {
-        if (audioRef.current) {
-            if (isPlaying) {
-                audioRef.current.pause();
-            } else {
-                audioRef.current.play();
-            }
-        }
-    };
-
-    const handleClear = () => {
-        setAudioBlob(null);
-        setAudioUrl(null);
-        setTimeLeft(30);
-        setIsPlaying(false);
-        if (audioRef.current) {
-            audioRef.current.pause();
-            audioRef.current.currentTime = 0;
-        }
-    };
-    
     const handleShare = async () => {
-        if (!audioBlob || !user || !firestore) {
-            toast({ variant: 'destructive', title: "No recording to share." });
+        if (!text) {
+            toast({ variant: 'destructive', title: "Text cannot be empty." });
             return;
         }
+        if (!user || !firestore) {
+            toast({ variant: 'destructive', title: "You must be logged in." });
+            return;
+        }
+
         setIsSubmitting(true);
         
         try {
-            // Decode the WebM audio data to raw PCM
-            const audioContext = new (window.AudioContext || (window as any).webkitAudioContext)({ sampleRate: 24000 });
-            const arrayBuffer = await audioBlob.arrayBuffer();
-            const decodedAudioBuffer = await audioContext.decodeAudioData(arrayBuffer);
-            const pcmData = decodedAudioBuffer.getChannelData(0);
-
-            // Convert raw PCM to WAV base64
-            const wavBase64 = await toWav(pcmData);
-            const dataUrl = `data:audio/wav;base64,${wavBase64}`;
-
-            // Save to Firestore
+            const { voiceStatusUrl } = await generateVoiceStatus({ text });
+            
             const userDocRef = doc(firestore, "users", user.uid);
             await updateDoc(userDocRef, {
-                voiceStatusUrl: dataUrl,
+                voiceStatusUrl: voiceStatusUrl,
                 voiceStatusTimestamp: serverTimestamp()
             });
 
             toast({
                 title: "Status Updated",
-                description: "Your voice status has been shared.",
+                description: "Your new voice status has been shared.",
             });
             router.push('/account');
+
         } catch (error) {
             console.error("Error sharing voice status:", error);
             const userDocRef = doc(firestore, "users", user.uid);
@@ -214,110 +70,55 @@ export default function VoiceNotePage() {
     };
 
 
-    useEffect(() => {
-        return () => {
-            stopTimer();
-            if (mediaRecorderRef.current && mediaRecorderRef.current.state === 'recording') {
-                mediaRecorderRef.current.stop();
-            }
-        };
-    }, [stopTimer]);
-    
-
     return (
         <AppLayout showTopBar={false} showBottomNav={false}>
              <div className="fixed top-0 left-0 right-0 z-10 flex items-center p-2 bg-background border-b h-14 max-w-2xl mx-auto sm:px-4">
                 <Button variant="ghost" size="icon" onClick={() => router.back()}>
                     <ArrowLeft />
                 </Button>
-                <h2 className="text-lg font-bold mx-auto -translate-x-4">Create Voice Note</h2>
+                <h2 className="text-lg font-bold mx-auto -translate-x-4">Create Voice Status</h2>
             </div>
-            <div className="flex flex-col h-full justify-between items-center pt-14 pb-8 px-4">
-                <div className="flex-grow flex flex-col items-center justify-center space-y-8">
+            <div className="flex flex-col h-full justify-between pt-14 pb-8 px-4">
+                <div className="flex-grow flex flex-col items-center justify-center space-y-6">
                      <div 
                         className="relative h-48 w-48 rounded-full flex items-center justify-center bg-secondary"
                         >
                         <div className="absolute inset-0 rounded-full border-4 border-dashed border-muted-foreground/20 animate-spin-slow"></div>
-                         <div className={cn(
-                             "absolute inset-2 rounded-full bg-primary/10 transition-transform duration-500",
-                             isRecording ? 'scale-100' : 'scale-0'
-                         )}></div>
-                        <Mic className={cn("h-16 w-16 text-primary transition-colors", isRecording && "text-destructive")} />
+                        <Sparkles className={cn("h-16 w-16 text-primary transition-all", isSubmitting && "animate-pulse")} />
                      </div>
 
-                    <div className="text-center">
-                        <p className="text-5xl font-bold font-mono tracking-tighter text-primary">
-                            {formatTime(timeLeft)}
-                        </p>
-                        <p className="text-sm text-muted-foreground mt-1">
-                             {audioBlob ? "Recording complete" : isRecording ? "Recording..." : "Tap the button to start recording"}
+                    <div className="w-full max-w-sm space-y-2">
+                        <Label htmlFor="voice-status-text">What's on your mind?</Label>
+                        <Textarea
+                            id="voice-status-text"
+                            placeholder="Type your status here..."
+                            rows={3}
+                            value={text}
+                            onChange={(e) => setText(e.target.value)}
+                            maxLength={charLimit}
+                            className="text-base"
+                            disabled={isSubmitting}
+                        />
+                        <p className="text-xs text-muted-foreground text-right">
+                            {text.length} / {charLimit}
                         </p>
                     </div>
                 </div>
 
-                {audioUrl && (
-                    <audio
-                        ref={audioRef}
-                        src={audioUrl}
-                        onPlay={() => setIsPlaying(true)}
-                        onPause={() => setIsPlaying(false)}
-                        onEnded={() => setIsPlaying(false)}
-                        className="hidden"
-                    />
-                )}
 
-
-                <div className="w-full flex justify-center items-center gap-4">
-                    <Button 
-                        variant="outline" 
-                        size="icon" 
-                        className="h-16 w-16 rounded-full"
-                        disabled={!audioBlob || isSubmitting}
-                        onClick={handleClear}
-                    >
-                        <Trash2 className="h-6 w-6" />
-                    </Button>
-                     <Button 
-                        size="icon" 
-                        className={cn(
-                            "h-24 w-24 rounded-full shadow-lg transition-colors",
-                             isRecording ? "bg-destructive" : "bg-primary"
-                        )}
-                        onClick={handleRecordClick}
-                        disabled={isSubmitting}
-                        >
-                        {isRecording ? <Square className="h-10 w-10 fill-white" /> : <Mic className="h-10 w-10" />}
-                    </Button>
-
-                     {audioBlob ? (
-                         <Button 
-                            variant="outline" 
-                            size="icon" 
-                            className="h-16 w-16 rounded-full"
-                            onClick={handlePlayPause}
-                            disabled={isSubmitting}
-                         >
-                           {isPlaying ? <Pause className="h-6 w-6" /> : <Play className="h-6 w-6" />}
-                        </Button>
-                     ) : (
-                        <Button 
-                            variant="outline" 
-                            size="icon" 
-                            className="h-16 w-16 rounded-full"
-                            disabled={true}
-                        >
-                            <Send className="h-6 w-6" />
-                        </Button>
-                     )}
-                </div>
-                 <div className="w-full max-w-xs mt-8">
+                <div className="w-full max-w-xs mt-8">
                      <Button 
                         className="w-full" 
                         size="lg"
-                        disabled={!audioBlob || isSubmitting}
+                        disabled={!text || isSubmitting}
                         onClick={handleShare}
                     >
-                        {isSubmitting ? <Loader2 className="h-5 w-5 animate-spin"/> : "Share Status"}
+                        {isSubmitting ? (
+                            <>
+                                <Loader2 className="h-5 w-5 animate-spin mr-2"/> 
+                                Generating...
+                            </>
+                        ) : "Share Voice Status"}
                      </Button>
                 </div>
             </div>
