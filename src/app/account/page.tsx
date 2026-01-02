@@ -249,6 +249,12 @@ export default function AccountPage() {
     return userProfile.voiceStatusTimestamp.toMillis() > twentyFourHoursAgo;
   }, [userProfile]);
 
+  const handleAvatarClick = () => {
+      if (hasVoiceStatus && userProfile && showVoiceStatusPlayer) {
+          showVoiceStatusPlayer(userProfile);
+      }
+  };
+
 
   return (
     <AppLayout showTopBar={false}>
@@ -269,7 +275,7 @@ export default function AccountPage() {
       <div className="px-4">
         <div className="flex items-start space-x-5 mb-2">
             <div className="flex-shrink-0 text-center">
-                <div className="relative inline-block">
+                <div className="relative inline-block" onClick={handleAvatarClick} role={hasVoiceStatus ? "button" : "none"}>
                     <Avatar className="h-20 w-20 md:h-24 md:w-24 mx-auto">
                         <AvatarImage
                             src={authUser?.photoURL || undefined}
