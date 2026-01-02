@@ -90,6 +90,8 @@ export default function VoiceNotePage() {
             const lineWidth = 2;
             const gap = 2; 
             const centerX = canvas.width / 2;
+            const startOffset = (lineWidth + gap) / 2;
+
 
             for (let i = 0; i < bufferLength; i++) {
                 const barHeight = dataArray[i] / 2.5;
@@ -100,9 +102,9 @@ export default function VoiceNotePage() {
                 canvasCtx.fillStyle = 'hsl(var(--primary))';
                 
                 // Draw line to the right of center
-                canvasCtx.fillRect(centerX + (i * (lineWidth + gap)), canvas.height / 2 - barHeight / 2, lineWidth, barHeight);
+                canvasCtx.fillRect(centerX + startOffset + (i * (lineWidth + gap)), canvas.height / 2 - barHeight / 2, lineWidth, barHeight);
                 // Draw mirrored line to the left of center
-                canvasCtx.fillRect(centerX - (i * (lineWidth + gap)) - lineWidth, canvas.height / 2 - barHeight / 2, lineWidth, barHeight);
+                canvasCtx.fillRect(centerX - startOffset - (i * (lineWidth + gap)) - lineWidth, canvas.height / 2 - barHeight / 2, lineWidth, barHeight);
             }
         };
         draw();
