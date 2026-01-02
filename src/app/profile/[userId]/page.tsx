@@ -552,7 +552,7 @@ export default function UserProfilePage() {
                                 <a href={user.website} target="_blank" rel="noopener noreferrer" className="flex items-center gap-2 text-sm text-blue-500 hover:underline">
                                     <LinkIcon className="h-4 w-4" />
                                     <span>{user.website.replace(/^(https?:\/\/)?(www\.)?/, '')}</span>
-                                a>
+                                </a>
                             )}
                         </div>
                         
@@ -664,5 +664,3 @@ export default function UserProfilePage() {
         </AppLayout>
     );
 }
-
-    
