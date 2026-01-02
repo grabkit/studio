@@ -146,8 +146,13 @@ export const FirebaseProvider: React.FC<FirebaseProviderProps> = ({
     const currentUserId = userAuthState.user.uid;
     const userDocRef = doc(firestore, 'users', currentUserId);
     
-    // We don't need optimistic updates. The onSnapshot listener in useDoc will
-    // automatically update the UI once the data is deleted from Firestore.
+    // Optimistic update of local state
+    setLoggedInUserProfile(currentProfile => {
+        if (!currentProfile) return null;
+        const { voiceStatusUrl, voiceStatusTimestamp, ...rest } = currentProfile;
+        return rest as WithId<UserProfile>;
+    });
+    
     try {
         await updateDoc(userDocRef, {
             voiceStatusUrl: deleteField(),
@@ -155,6 +160,8 @@ export const FirebaseProvider: React.FC<FirebaseProviderProps> = ({
         });
         toast({ title: "Voice Status Deleted" });
     } catch (error) {
+        // Revert optimistic update on error
+        setLoggedInUserProfile(loggedInUserProfile);
         console.error("Failed to delete voice status on server:", error);
         const permissionError = new FirestorePermissionError({
             path: userDocRef.path,
@@ -417,3 +424,5 @@ export function useMemoFirebase<T>(factory: () => T, deps: DependencyList): T | 
   
   return memoized;
 }
+
+    
