@@ -1,5 +1,4 @@
 
-
 "use client";
 
 import AppLayout from "@/components/AppLayout";
@@ -121,23 +120,25 @@ function UpvotedUsers() {
                         const name = isCurrentUser ? 'Your Profile' : formatUserId(user.id);
                         
                         return (
-                         <Link key={user.id} href={href} className="flex-shrink-0">
-                            <div className="flex flex-col items-center w-20">
-                                 <div className="relative">
+                         <div key={user.id} className="flex-shrink-0 flex flex-col items-center w-20">
+                             <div className="relative">
+                                <Link href={href}>
                                     <Avatar className="h-16 w-16">
                                         <AvatarFallback>{getInitials(user.name)}</AvatarFallback>
                                     </Avatar>
-                                     {isCurrentUser && (
-                                        <Link href="/voice-note">
-                                            <div className="absolute bottom-0 right-0 bg-background p-1 rounded-full border-2 cursor-pointer hover:bg-secondary">
-                                                <Mic className="h-4 w-4 text-primary" />
-                                            </div>
-                                        </Link>
-                                    )}
-                                </div>
-                                <p className="text-xs font-semibold truncate w-full text-center mt-2">{name}</p>
+                                </Link>
+                                 {isCurrentUser && (
+                                    <Link href="/voice-note">
+                                        <div className="absolute bottom-0 right-0 bg-background p-1 rounded-full border-2 cursor-pointer hover:bg-secondary">
+                                            <Mic className="h-4 w-4 text-primary" />
+                                        </div>
+                                    </Link>
+                                )}
                             </div>
-                        </Link>
+                            <Link href={href}>
+                                <p className="text-xs font-semibold truncate w-full text-center mt-2">{name}</p>
+                            </Link>
+                        </div>
                         )
                     })}
                 </div>
