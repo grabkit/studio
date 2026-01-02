@@ -29,7 +29,7 @@ import { ReportDialog } from "@/components/ReportDialog";
 import { QrCodeDialog } from "@/components/QrCodeDialog";
 
 
-function AboutProfileSheet({ user, isOpen, onOpenChange }: { user: User, isOpen: boolean, onOpenChange: (open: boolean) => void }) {
+function AboutProfileSheet({ user, isOpen, onOpenChange }: { user: WithId<User>, isOpen: boolean, onOpenChange: (open: boolean) => void }) {
     const formatUserId = (uid: string | undefined) => {
         if (!uid) return "blur??????";
         return `blur${uid.substring(uid.length - 6)}`;
@@ -77,13 +77,43 @@ export default function UserProfilePage() {
     const router = useRouter();
     const { toast } = useToast();
     const userId = params.userId as string;
-    const { firestore, user: currentUser, userProfile: currentUserProfile, showVoiceStatusPlayer } = useFirebase();
+    const { firestore, user: currentUser, userProfile: currentUserProfile, showVoiceStatusPlayer, handleDeleteVoiceStatus: providerDeleteVoiceStatus } = useFirebase();
 
     const [posts, setPosts] = useState<WithId<Post>[]>([]);
     const [postsLoading, setPostsLoading] = useState(true);
     const [isMoreOptionsSheetOpen, setIsMoreOptionsSheetOpen] = useState(false);
     const [isAboutSheetOpen, setIsAboutSheetOpen] = useState(false);
     const [isQrDialogOpen, setIsQrDialogOpen] = useState(false);
+    const [user, setUser] = useState<WithId<User> | null>(null);
+    const [userLoading, setUserLoading] = useState(true);
+
+    const userRef = useMemoFirebase(() => {
+        if (!firestore || !userId) return null;
+        return doc(firestore, "users", userId);
+    }, [firestore, userId]);
+    
+    // Manually handle user doc to allow optimistic updates
+    useEffect(() => {
+        if (!userRef) {
+            setUser(null);
+            setUserLoading(false);
+            return;
+        }
+        setUserLoading(true);
+        const unsubscribe = onSnapshot(userRef, (docSnap) => {
+            if (docSnap.exists()) {
+                setUser({ id: docSnap.id, ...docSnap.data() } as WithId<User>);
+            } else {
+                setUser(null);
+            }
+            setUserLoading(false);
+        }, (error) => {
+            console.error("Error fetching user profile:", error);
+            setUserLoading(false);
+        });
+
+        return () => unsubscribe();
+    }, [userRef]);
 
 
     useEffect(() => {
@@ -91,11 +121,6 @@ export default function UserProfilePage() {
             router.replace('/account');
         }
     }, [currentUser, userId, router]);
-
-    const userRef = useMemoFirebase(() => {
-        if (!firestore || !userId) return null;
-        return doc(firestore, "users", userId);
-    }, [firestore, userId]);
     
     useEffect(() => {
       if (!firestore || !userId) return;
@@ -160,8 +185,6 @@ export default function UserProfilePage() {
             });
         }
     }, [firestore, currentUser, posts]);
-
-    const { data: user, isLoading: userLoading } = useDoc<User>(userRef);
 
     const bookmarksQuery = useMemoFirebase(() => {
         if (!firestore || !currentUser) return null;
@@ -406,6 +429,12 @@ export default function UserProfilePage() {
             });
         })
     };
+    
+    const handleDeleteOwnVoiceStatus = async () => {
+        if (currentUser?.uid !== userId) return;
+        await providerDeleteVoiceStatus();
+    }
+
 
     const hasVoiceStatus = useMemo(() => {
         if (!user?.voiceStatusUrl || !user?.voiceStatusTimestamp) return false;
@@ -673,3 +702,5 @@ export default function UserProfilePage() {
         </AppLayout>
     );
 }
+
+    
