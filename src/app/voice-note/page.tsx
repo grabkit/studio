@@ -3,9 +3,9 @@
 
 import AppLayout from "@/components/AppLayout";
 import { Button } from "@/components/ui/button";
-import { ArrowLeft, Loader2, Send, Mic, Sparkles } from "lucide-react";
+import { ArrowLeft, Loader2 } from "lucide-react";
 import { useRouter } from "next/navigation";
-import React, { useState, useEffect, useCallback } from "react";
+import React, { useState, useRef, useCallback } from "react";
 import { cn } from "@/lib/utils";
 import { useToast } from "@/hooks/use-toast";
 import { useFirebase } from "@/firebase";
@@ -16,7 +16,6 @@ import { Textarea } from "@/components/ui/textarea";
 import { generateVoiceStatus } from "@/ai/flows/generate-voice-status-flow";
 import { Label } from "@/components/ui/label";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import Image from "next/image";
 
 
 const voices = [
@@ -36,8 +35,10 @@ export default function VoiceNotePage() {
     const [text, setText] = useState("");
     const [selectedVoice, setSelectedVoice] = useState(voices[0].name);
     const [isSubmitting, setIsSubmitting] = useState(false);
-    const charLimit = 280;
+    const [demoPlayingVoice, setDemoPlayingVoice] = useState<string | null>(null);
 
+    const charLimit = 280;
+    const audioPlayerRef = useRef<HTMLAudioElement | null>(null);
 
     const handleShare = async () => {
         if (!text) {
@@ -80,6 +81,41 @@ export default function VoiceNotePage() {
             setIsSubmitting(false);
         }
     };
+    
+    const playDemo = useCallback(async (voiceName: string) => {
+        // Stop any currently playing audio
+        if (audioPlayerRef.current) {
+            audioPlayerRef.current.pause();
+            audioPlayerRef.current.src = "";
+        }
+
+        setSelectedVoice(voiceName);
+        setDemoPlayingVoice(voiceName);
+
+        try {
+            const { voiceStatusUrl } = await generateVoiceStatus({ text: "", voiceName });
+            
+            if (!audioPlayerRef.current) {
+                audioPlayerRef.current = new Audio();
+            }
+            
+            audioPlayerRef.current.src = voiceStatusUrl;
+            audioPlayerRef.current.play();
+
+            audioPlayerRef.current.onended = () => {
+                setDemoPlayingVoice(null);
+            };
+            audioPlayerRef.current.onerror = () => {
+                 toast({ variant: 'destructive', title: "Error", description: "Could not play voice demo." });
+                 setDemoPlayingVoice(null);
+            }
+
+        } catch (error) {
+            console.error("Error playing demo:", error);
+            toast({ variant: 'destructive', title: "Error", description: "Could not generate voice demo." });
+            setDemoPlayingVoice(null);
+        }
+    }, [toast]);
 
 
     return (
@@ -91,8 +127,8 @@ export default function VoiceNotePage() {
                 <h2 className="text-lg font-bold mx-auto -translate-x-4">Create Voice Status</h2>
             </div>
             <div className="flex flex-col h-full justify-between pt-14 pb-8 px-4">
-                <div className="flex-grow flex flex-col items-center space-y-6">
-                    <div className="w-full max-w-sm space-y-4 pt-4">
+                <div className="flex-grow flex flex-col space-y-6">
+                    <div className="w-full max-w-sm space-y-4 pt-4 mx-auto">
                         <div className="space-y-2">
                              <Label htmlFor="voice-status-text">What's on your mind?</Label>
                             <Textarea
@@ -113,15 +149,22 @@ export default function VoiceNotePage() {
                             <Label htmlFor="voice-select">Choose a Voice</Label>
                             <div className="flex space-x-4 overflow-x-auto py-3 -mx-4 px-4 no-scrollbar">
                                 {voices.map(voice => (
-                                    <div key={voice.name} className="flex-shrink-0 flex flex-col items-center space-y-2" onClick={() => setSelectedVoice(voice.name)}>
+                                    <div key={voice.name} className="flex-shrink-0 flex flex-col items-center space-y-2" onClick={() => playDemo(voice.name)}>
                                         <div className={cn(
                                             "p-1 rounded-full cursor-pointer transition-all",
                                             selectedVoice === voice.name ? "ring-2 ring-primary ring-offset-2 ring-offset-background" : ""
                                         )}>
-                                            <Avatar className="h-14 w-14 border-2 border-transparent">
-                                                <AvatarImage src={`https://picsum.photos/seed/${voice.seed}/100/100`} />
-                                                <AvatarFallback>{voice.name[0]}</AvatarFallback>
-                                            </Avatar>
+                                            <div className="relative">
+                                                <Avatar className="h-14 w-14 border-2 border-transparent">
+                                                    <AvatarImage src={`https://picsum.photos/seed/${voice.seed}/100/100`} />
+                                                    <AvatarFallback>{voice.name[0]}</AvatarFallback>
+                                                </Avatar>
+                                                {demoPlayingVoice === voice.name && (
+                                                    <div className="absolute inset-0 flex items-center justify-center bg-black/50 rounded-full">
+                                                        <Loader2 className="h-6 w-6 animate-spin text-white" />
+                                                    </div>
+                                                )}
+                                            </div>
                                         </div>
                                         <p className="text-xs font-medium text-muted-foreground">{voice.name}</p>
                                     </div>
@@ -145,13 +188,13 @@ export default function VoiceNotePage() {
                      <Button 
                         className="w-full" 
                         size="lg"
-                        disabled={!text || isSubmitting}
+                        disabled={!text || isSubmitting || !!demoPlayingVoice}
                         onClick={handleShare}
                     >
                         {isSubmitting ? (
                             <>
                                 <Loader2 className="h-5 w-5 animate-spin mr-2"/> 
-                                Generating...
+                                Sharing...
                             </>
                         ) : "Share Voice Status"}
                      </Button>
