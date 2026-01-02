@@ -39,7 +39,7 @@ function UpvotedUserSkeleton() {
 }
 
 function UpvotedUsers() {
-    const { firestore, user: currentUser, userProfile } = useFirebase();
+    const { firestore, user: currentUser, userProfile, showVoiceStatusPlayer } = useFirebase();
     const [upvotedUsers, setUpvotedUsers] = useState<WithId<User>[]>([]);
     const [isLoading, setIsLoading] = useState(true);
 
@@ -119,6 +119,8 @@ function UpvotedUsers() {
                         const href = isCurrentUser ? '/account' : `/profile/${user.id}`;
                         const name = isCurrentUser ? 'Your Profile' : formatUserId(user.id);
                         
+                        const hasVoiceStatus = user?.voiceStatusUrl && user?.voiceStatusTimestamp && (Date.now() - user.voiceStatusTimestamp.toMillis() < 24 * 60 * 60 * 1000);
+
                         return (
                          <div key={user.id} className="flex-shrink-0 flex flex-col items-center w-20">
                              <div className="relative">
@@ -127,12 +129,27 @@ function UpvotedUsers() {
                                         <AvatarFallback>{getInitials(user.name)}</AvatarFallback>
                                     </Avatar>
                                 </Link>
-                                 {isCurrentUser && (
+                                 {isCurrentUser && !hasVoiceStatus && (
                                     <Link href="/voice-note">
                                         <div className="absolute bottom-0 right-0 bg-background p-1 rounded-full border-2 cursor-pointer hover:bg-secondary">
                                             <Mic className="h-4 w-4 text-primary" />
                                         </div>
                                     </Link>
+                                )}
+                                {hasVoiceStatus && (
+                                     <div 
+                                        className="absolute bottom-0 right-0 bg-background p-1 rounded-full border-2 cursor-pointer" 
+                                        onClick={() => showVoiceStatusPlayer(user)} 
+                                        role="button"
+                                    >
+                                        <div className="flex items-center justify-center h-5 w-5 gap-0.5">
+                                            <div className="audio-wave-bar-avatar" />
+                                            <div className="audio-wave-bar-avatar" />
+                                            <div className="audio-wave-bar-avatar" />
+                                            <div className="audio-wave-bar-avatar" />
+                                            <div className="audio-wave-bar-avatar" />
+                                        </div>
+                                    </div>
                                 )}
                             </div>
                             <Link href={href}>
@@ -616,3 +633,5 @@ export default function MessagesPage() {
         </AppLayout>
     )
 }
+
+    
