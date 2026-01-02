@@ -283,10 +283,7 @@ export default function VoiceNotePage() {
 
     return (
         <Sheet open={isSheetOpen} onOpenChange={setIsSheetOpen}>
-            <SheetContent side="bottom" className="rounded-t-2xl h-auto flex flex-col p-6 items-center justify-center gap-2 pb-10">
-                 <Button variant="ghost" size="icon" onClick={() => setIsSheetOpen(false)} className="absolute top-3 right-3 text-muted-foreground">
-                    <X />
-                </Button>
+            <SheetContent side="bottom" className="rounded-t-2xl h-auto flex flex-col p-6 items-center justify-center gap-4 pb-10">
                 <SheetHeader className="text-center">
                     <SheetTitle>Create Voice Status</SheetTitle>
                 </SheetHeader>
