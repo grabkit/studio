@@ -43,6 +43,15 @@ export default function VoiceNotePage() {
         }
     }, []);
 
+    
+    const stopRecording = useCallback(() => {
+        if (mediaRecorderRef.current && mediaRecorderRef.current.state === 'recording') {
+            mediaRecorderRef.current.stop();
+        }
+        setIsRecording(false);
+        stopTimer();
+    }, [stopTimer]);
+    
     const startTimer = useCallback(() => {
         setTimeLeft(30);
         timerRef.current = setInterval(() => {
@@ -54,22 +63,13 @@ export default function VoiceNotePage() {
                 return prevTime - 1;
             });
         }, 1000);
-    }, []);
-
-    
-    const stopRecording = useCallback(() => {
-        if (mediaRecorderRef.current && mediaRecorderRef.current.state === 'recording') {
-            mediaRecorderRef.current.stop();
-        }
-        setIsRecording(false);
-        stopTimer();
-    }, [stopTimer]);
+    }, [stopRecording]);
 
 
     const startRecording = async () => {
         try {
             const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
-            mediaRecorderRef.current = new MediaRecorder(stream);
+            mediaRecorderRef.current = new MediaRecorder(stream, { mimeType: 'audio/webm' });
             
             chunksRef.current = []; // Clear previous chunks
 
@@ -127,6 +127,20 @@ export default function VoiceNotePage() {
             audioRef.current.currentTime = 0;
         }
     };
+
+    const blobToBase64 = (blob: Blob): Promise<string> => {
+        return new Promise((resolve, reject) => {
+            const reader = new FileReader();
+            reader.onloadend = () => {
+                // result is a data URL: "data:audio/webm;base64,..."
+                // We only need the Base64 part after the comma.
+                const base64String = reader.result as string;
+                resolve(base64String);
+            };
+            reader.onerror = reject;
+            reader.readAsDataURL(blob);
+        });
+    };
     
     const handleShare = async () => {
         if (!audioBlob || !user || !firestore) {
@@ -135,17 +149,12 @@ export default function VoiceNotePage() {
         }
         setIsSubmitting(true);
         
-        // In a real app, you would upload the blob to Firebase Storage
-        // and get a download URL. Here, we'll simulate this.
-        
         try {
-            // Simulate upload and get a dummy URL. 
-            // Replace this with actual Firebase Storage upload logic.
-            const dummyUrl = `https://dummy-audio-url.com/${user.uid}/${Date.now()}.webm`;
+            const dataUrl = await blobToBase64(audioBlob);
 
             const userDocRef = doc(firestore, "users", user.uid);
             await updateDoc(userDocRef, {
-                voiceStatusUrl: dummyUrl,
+                voiceStatusUrl: dataUrl,
                 voiceStatusTimestamp: serverTimestamp()
             });
 
@@ -160,7 +169,7 @@ export default function VoiceNotePage() {
              const permissionError = new FirestorePermissionError({
                 path: userDocRef.path,
                 operation: 'update',
-                requestResourceData: { voiceStatusUrl: 'dummy-url' },
+                requestResourceData: { voiceStatusUrl: 'base64-data-url' },
             });
             errorEmitter.emit('permission-error', permissionError);
             toast({ variant: 'destructive', title: "Error", description: "Could not share your voice status." });
