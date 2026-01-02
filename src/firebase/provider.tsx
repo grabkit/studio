@@ -142,34 +142,44 @@ export const FirebaseProvider: React.FC<FirebaseProviderProps> = ({
   const userProfile = activeUserProfile || loggedInUserProfile;
 
   const handleDeleteVoiceStatus = async () => {
-    if (!firestore || !userAuthState.user || !userProfile) return;
+    if (!firestore || !userAuthState.user) return;
+    const currentUserId = userAuthState.user.uid;
 
-    const userDocRef = doc(firestore, "users", userProfile.id);
+    // Optimistically update UI first
+    const updateState = (profile: WithId<UserProfile> | null) => {
+        if (profile && profile.id === currentUserId) {
+            const { voiceStatusUrl, voiceStatusTimestamp, ...rest } = profile;
+            return rest as WithId<UserProfile>;
+        }
+        return profile;
+    };
+    
+    setLoggedInUserProfile(updateState);
+    setActiveUserProfile(updateState);
+    toast({ title: "Voice Status Deleted" });
+    
+    // Close player
+    onVoicePlayerClose();
+
+    // Then, update the server
+    const userDocRef = doc(firestore, "users", currentUserId);
     try {
         await updateDoc(userDocRef, {
             voiceStatusUrl: deleteField(),
             voiceStatusTimestamp: deleteField()
         });
-        toast({ title: "Voice Status Deleted" });
-        
-        // Optimistically update local state to remove icon immediately
-        const updateState = (currentProfile: WithId<UserProfile> | null) => {
-            if (!currentProfile) return null;
-            const { voiceStatusUrl, voiceStatusTimestamp, ...rest } = currentProfile;
-            return rest as WithId<UserProfile>;
-        };
-
-        setLoggedInUserProfile(updateState);
-        setActiveUserProfile(updateState);
-
     } catch (error) {
+        // If server update fails, revert the UI state (optional, but good practice)
+        // For simplicity here, we just log the error and let the optimistic update stand.
+        // A more robust solution might re-fetch the user profile.
+        console.error("Failed to delete voice status on server:", error);
         const permissionError = new FirestorePermissionError({
             path: userDocRef.path,
             operation: 'update',
             requestResourceData: { voiceStatusUrl: null, voiceStatusTimestamp: null },
         });
         errorEmitter.emit('permission-error', permissionError);
-        toast({ variant: "destructive", title: "Error", description: "Could not delete voice status." });
+        toast({ variant: "destructive", title: "Error", description: "Could not delete voice status from server." });
     }
   };
 
@@ -295,10 +305,7 @@ export const FirebaseProvider: React.FC<FirebaseProviderProps> = ({
                 onVoicePlayerClose();
             }
           }}
-          onDelete={async () => {
-            await handleDeleteVoiceStatus();
-            onVoicePlayerClose();
-          }}
+          onDelete={handleDeleteVoiceStatus}
           isVoicePlayerPlaying={isVoicePlayerPlaying}
         />
       )}
