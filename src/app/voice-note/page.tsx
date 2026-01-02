@@ -6,7 +6,6 @@ import { Button } from "@/components/ui/button";
 import { ArrowLeft, Loader2, Mic, Play, Square, RefreshCw } from "lucide-react";
 import { useRouter } from "next/navigation";
 import React, { useState, useEffect, useRef, useCallback } from "react";
-import { cn } from "@/lib/utils";
 import { useToast } from "@/hooks/use-toast";
 import { useFirebase } from "@/firebase";
 import { doc, serverTimestamp, updateDoc } from "firebase/firestore";
@@ -94,15 +93,24 @@ export default function VoiceNotePage() {
             audioContextRef.current = new (window.AudioContext || (window as any).webkitAudioContext)();
         }
         const audioContext = audioContextRef.current;
+        
+        // Ensure old connections are closed before creating new ones
+        if(sourceRef.current) {
+            sourceRef.current.disconnect();
+        }
+        
+        sourceRef.current = audioContext.createMediaStreamSource(stream);
+        
         if (!analyserRef.current) {
             analyserRef.current = audioContext.createAnalyser();
         }
-        if (!sourceRef.current) {
-            sourceRef.current = audioContext.createMediaStreamSource(stream);
-        }
-
+        
         analyserRef.current.fftSize = 2048;
         sourceRef.current.connect(analyserRef.current);
+        
+        if (animationFrameIdRef.current) {
+            cancelAnimationFrame(animationFrameIdRef.current);
+        }
         drawWaveform();
     }, [drawWaveform]);
 
@@ -115,9 +123,6 @@ export default function VoiceNotePage() {
                 setRecordingStatus("idle");
                 const recorder = new MediaRecorder(stream);
                 mediaRecorderRef.current = recorder;
-
-                // Setup visualization
-                setupAudioVisualization(stream);
 
                 recorder.ondataavailable = (event) => {
                     audioChunksRef.current.push(event.data);
@@ -167,15 +172,13 @@ export default function VoiceNotePage() {
 
     const startRecording = () => {
         if (mediaRecorderRef.current && mediaRecorderRef.current.state === "inactive") {
-            mediaRecorderRef.current.start();
-            setRecordingStatus("recording");
-            setDuration(0);
-            
-            // Restart visualization if it was stopped
+            // Setup visualization with the active stream before starting
             if (mediaRecorderRef.current.stream) {
                  setupAudioVisualization(mediaRecorderRef.current.stream);
             }
-
+            mediaRecorderRef.current.start();
+            setRecordingStatus("recording");
+            setDuration(0);
 
             timerIntervalRef.current = setInterval(() => {
                 setDuration(prev => {
@@ -194,10 +197,11 @@ export default function VoiceNotePage() {
             mediaRecorderRef.current.stop();
              if (timerIntervalRef.current) {
                 clearInterval(timerIntervalRef.current);
-            }
-            if (animationFrameIdRef.current) {
+             }
+             if (animationFrameIdRef.current) {
                 cancelAnimationFrame(animationFrameIdRef.current);
-            }
+                animationFrameIdRef.current = null;
+             }
         }
     };
     
@@ -279,9 +283,7 @@ export default function VoiceNotePage() {
                     <>
                         <div className="flex-grow flex flex-col items-center justify-center w-full">
                             <div className="w-full max-w-md h-24 mb-6">
-                                {recordingStatus !== "recorded" && (
-                                     <canvas ref={canvasRef} className="w-full h-full" width="600" height="100"></canvas>
-                                )}
+                                <canvas ref={canvasRef} className="w-full h-full" width="600" height="100"></canvas>
                             </div>
                            
                              <div className="relative flex items-center justify-center">
