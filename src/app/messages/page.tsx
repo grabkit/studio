@@ -1,5 +1,4 @@
 
-
 "use client";
 
 import AppLayout from "@/components/AppLayout";
@@ -128,7 +127,7 @@ function UpvotedUsers() {
                                         <AvatarFallback>{getInitials(user.name)}</AvatarFallback>
                                     </Avatar>
                                      {isCurrentUser && (
-                                        <div className="absolute bottom-0 left-0 bg-background p-1 rounded-full border-2">
+                                        <div className="absolute bottom-0 right-0 bg-background p-1 rounded-full border-2">
                                             <Mic className="h-4 w-4 text-primary" />
                                         </div>
                                     )}
