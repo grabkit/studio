@@ -46,20 +46,7 @@ export default function VoiceNotePage() {
         const canvasCtx = canvas.getContext('2d');
         if (!canvasCtx) return;
 
-        const width = canvas.width;
-        const height = canvas.height;
-        const dotCount = 50;
-        const dotWidth = 2;
-        const dotHeight = 2;
-        const gap = (width - (dotCount * dotWidth)) / (dotCount - 1);
-
-        canvasCtx.clearRect(0, 0, width, height);
-        canvasCtx.fillStyle = 'hsl(var(--muted-foreground) / 0.5)';
-
-        for (let i = 0; i < dotCount; i++) {
-            const x = i * (dotWidth + gap);
-            canvasCtx.fillRect(x, height / 2 - dotHeight / 2, dotWidth, dotHeight);
-        }
+        canvasCtx.clearRect(0, 0, canvas.width, canvas.height);
     }, []);
 
     const stopVisualization = useCallback(() => {
@@ -165,7 +152,7 @@ export default function VoiceNotePage() {
             sourceNodeRef.current?.disconnect();
             audioContextRef.current?.close();
         };
-    }, [router, toast, stopVisualization, visualize]);
+    }, [router, toast, stopVisualization, visualize, drawInitialState]);
 
      useEffect(() => {
         if (!isSheetOpen) {
@@ -288,9 +275,9 @@ export default function VoiceNotePage() {
 
                 {hasPermission && (
                     <>
-                        <div className="relative flex items-center justify-center h-[96px] w-[96px]">
-                             {recordingStatus === "recording" && (
-                                <div className="absolute inset-[-10px] rounded-full border-primary animate-pulse" style={{ animation: 'pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite', boxShadow: '0 0 0 0 hsl(var(--primary))' }}></div>
+                        <div className="relative flex items-center justify-center h-[104px] w-[104px]">
+                            {recordingStatus === "recording" && (
+                                <div className="absolute inset-0 rounded-full bg-muted animate-pulse"></div>
                             )}
                             <Button
                                 variant={recordingStatus === "recording" ? "destructive" : "default"}
