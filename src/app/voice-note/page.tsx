@@ -5,7 +5,7 @@ import AppLayout from "@/components/AppLayout";
 import { Button } from "@/components/ui/button";
 import { ArrowLeft, Loader2 } from "lucide-react";
 import { useRouter } from "next/navigation";
-import React, { useState, useRef, useCallback } from "react";
+import React, { useState } from "react";
 import { cn } from "@/lib/utils";
 import { useToast } from "@/hooks/use-toast";
 import { useFirebase } from "@/firebase";
@@ -110,7 +110,7 @@ export default function VoiceNotePage() {
                         </div>
                         <div className="space-y-3">
                             <Label htmlFor="voice-select">Choose a Voice</Label>
-                            <div className="flex space-x-4 overflow-x-auto py-3 -mx-4 px-4 no-scrollbar">
+                            <div className="grid grid-cols-3 gap-6 pt-2">
                                 {voices.map(voice => (
                                     <div key={voice.name} className="flex-shrink-0 flex flex-col items-center space-y-2" onClick={() => setSelectedVoice(voice.name)}>
                                         <div className={cn(
@@ -128,15 +128,6 @@ export default function VoiceNotePage() {
                                     </div>
                                 ))}
                             </div>
-                            <style jsx>{`
-                                .no-scrollbar::-webkit-scrollbar {
-                                    display: none;
-                                }
-                                .no-scrollbar {
-                                    -ms-overflow-style: none;
-                                    scrollbar-width: none;
-                                }
-                            `}</style>
                         </div>
                     </div>
                 </div>
