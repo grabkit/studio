@@ -32,7 +32,7 @@ export default function VoiceNotePage() {
     const timerIntervalRef = useRef<NodeJS.Timeout | null>(null);
     const audioPlayerRef = useRef<HTMLAudioElement | null>(null);
 
-    const canvasRef = useRef<HTMLCanvasElement>(null);
+    const canvasRef = useRef<HTMLCanvasElement | null>(null);
     const audioContextRef = useRef<AudioContext | null>(null);
     const analyserRef = useRef<AnalyserNode | null>(null);
     const sourceNodeRef = useRef<MediaStreamAudioSourceNode | null>(null);
@@ -277,7 +277,7 @@ export default function VoiceNotePage() {
         switch(recordingStatus) {
             case 'recording': return <Pause className="h-10 w-10 text-black" fill="black" />;
             case 'recorded': return <Play className="h-10 w-10 text-primary-foreground" fill="currentColor" onClick={playPreview}/>;
-            default: return <Mic className="h-10 w-10" />; // idle, paused
+            default: return <Mic className="h-10 w-10 text-primary-foreground" />; // idle, paused
         }
     }
 
@@ -309,7 +309,10 @@ export default function VoiceNotePage() {
                                 size="icon"
                                 onClick={handleMicButtonClick}
                                 disabled={recordingStatus === 'permission-pending' || recordingStatus === 'sharing'}
-                                className="h-24 w-24 rounded-full shadow-lg relative"
+                                className={cn(
+                                    "h-24 w-24 rounded-full shadow-lg relative",
+                                    (recordingStatus === 'idle' || recordingStatus === 'paused' || recordingStatus === 'recorded') && 'animate-gradient'
+                                )}
                             >
                                {getButtonIcon()}
                             </Button>
