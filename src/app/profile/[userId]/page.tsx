@@ -519,7 +519,7 @@ export default function UserProfilePage() {
                                         </AvatarFallback>
                                     </Avatar>
                                     {hasVoiceStatus && (
-                                        <div className="absolute inset-0 flex items-center justify-center rounded-full bg-black/30">
+                                        <div className="absolute inset-0 flex items-center justify-center rounded-full">
                                             <div className="flex items-center justify-center h-10 gap-1.5">
                                                 <div className="audio-wave-bar-avatar" />
                                                 <div className="audio-wave-bar-avatar" />
