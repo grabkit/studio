@@ -96,14 +96,11 @@ export default function VoiceNotePage() {
             for (let i = 0; i < bufferLength; i++) {
                 const barHeight = dataArray[i] / 2.5;
 
-                // Don't draw if height is negligible
                 if (barHeight < 1) continue;
 
                 canvasCtx.fillStyle = 'hsl(var(--primary))';
                 
-                // Draw line to the right of center
                 canvasCtx.fillRect(centerX + startOffset + (i * (lineWidth + gap)), canvas.height / 2 - barHeight / 2, lineWidth, barHeight);
-                // Draw mirrored line to the left of center
                 canvasCtx.fillRect(centerX - startOffset - (i * (lineWidth + gap)) - lineWidth, canvas.height / 2 - barHeight / 2, lineWidth, barHeight);
             }
         };
@@ -306,7 +303,7 @@ export default function VoiceNotePage() {
                            <Button size="lg" variant="ghost" className="rounded-full h-16 w-16" onClick={handleRetake}>
                                 <RefreshCw className="h-7 w-7" />
                            </Button>
-                           <Button size="lg" variant="ghost" className="rounded-full h-16 w-16" onClick={handleShare} disabled={!recordedAudioUrl || recordingStatus === 'sharing'}>
+                           <Button size="lg" className="rounded-full h-16 w-16 bg-primary hover:bg-primary/90" onClick={handleShare} disabled={!recordedAudioUrl || recordingStatus === 'sharing'}>
                                 {recordingStatus === "sharing" ? <Loader2 className="h-7 w-7 animate-spin"/> : <Send className="h-7 w-7" />}
                            </Button>
                          </div>
