@@ -3,7 +3,7 @@
 
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from "@/components/ui/sheet";
 import { Button } from "@/components/ui/button";
-import { Loader2, Mic, Play, Square, RefreshCw, Share, X } from "lucide-react";
+import { Loader2, Mic, Play, Square, RefreshCw, X, Send } from "lucide-react";
 import { useRouter } from "next/navigation";
 import React, { useState, useEffect, useRef, useCallback } from "react";
 import { useToast } from "@/hooks/use-toast";
@@ -262,7 +262,7 @@ export default function VoiceNotePage() {
                     <>
                         <div className="relative flex items-center justify-center w-[104px] h-[104px]">
                             {recordingStatus === "recording" && (
-                                <div className="absolute inset-0 rounded-full bg-muted animate-pulse"></div>
+                                <div className="absolute inset-0 bg-muted rounded-full animate-pulse"></div>
                             )}
                             <Button
                                 variant={recordingStatus === "recording" ? "destructive" : "default"}
@@ -283,21 +283,13 @@ export default function VoiceNotePage() {
                             <canvas ref={canvasRef} className="w-full h-full" />
                         </div>
                         
-                        <div className="w-full max-w-xs mx-auto flex items-center justify-center gap-4">
-                           {recordingStatus === "recorded" ? (
-                             <>
-                               <Button size="lg" variant="outline" className="flex-1" onClick={handleRetake}>
-                                    <RefreshCw className="h-5 w-5 mr-2" />
-                                    Retake
-                               </Button>
-                               <Button size="lg" className="flex-1" onClick={handleShare}>
-                                    <Share className="h-5 w-5 mr-2" />
-                                    {recordingStatus === "sharing" ? <Loader2 className="h-5 w-5 animate-spin"/> : "Share"}
-                               </Button>
-                             </>
-                           ) : (
-                               <div className="h-11"></div> 
-                           )}
+                         <div className="w-full max-w-xs mx-auto flex items-center justify-between">
+                           <Button size="lg" variant="ghost" className="rounded-full h-16 w-16" onClick={handleRetake}>
+                                <RefreshCw className="h-7 w-7" />
+                           </Button>
+                           <Button size="lg" variant="ghost" className="rounded-full h-16 w-16" onClick={handleShare} disabled={!recordedAudioUrl || recordingStatus === 'sharing'}>
+                                {recordingStatus === "sharing" ? <Loader2 className="h-7 w-7 animate-spin"/> : <Send className="h-7 w-7" />}
+                           </Button>
                          </div>
                     </>
                 )}
