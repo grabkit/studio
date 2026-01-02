@@ -37,12 +37,6 @@ export function VoiceStatusPlayer({ user: voiceUser, isOpen, onOpenChange, onDel
     const handleDeleteClick = () => {
         setIsDeleteAlertOpen(true);
     }
-    
-    const confirmDelete = () => {
-        onDelete();
-        setIsDeleteAlertOpen(false);
-    }
-
 
     return (
         <>
@@ -88,7 +82,7 @@ export function VoiceStatusPlayer({ user: voiceUser, isOpen, onOpenChange, onDel
                     </AlertDialogDescription>
                 </AlertDialogHeader>
                 <AlertDialogFooter>
-                    <AlertDialogAction onClick={confirmDelete} className={cn(buttonVariants({variant: 'destructive'}))}>
+                    <AlertDialogAction onClick={onDelete} className={cn(buttonVariants({variant: 'destructive'}))}>
                         Delete
                     </AlertDialogAction>
                     <AlertDialogCancel>Cancel</AlertDialogCancel>
