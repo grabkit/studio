@@ -54,10 +54,6 @@ export default function VoiceNotePage() {
             cancelAnimationFrame(animationFrameIdRef.current);
             animationFrameIdRef.current = null;
         }
-         if (canvasRef.current) {
-            const canvasCtx = canvasRef.current.getContext('2d');
-            canvasCtx?.clearRect(0, 0, canvasRef.current.width, canvasRef.current.height);
-        }
         drawInitialState();
     }, [drawInitialState]);
 
@@ -93,21 +89,27 @@ export default function VoiceNotePage() {
             
             const lineWidth = 2;
             const gap = 2; 
-            const totalWidth = bufferLength * (lineWidth + gap);
-            let x = (canvas.width - totalWidth) / 2;
+            const centerX = canvas.width / 2;
 
             for (let i = 0; i < bufferLength; i++) {
-                const barHeight = dataArray[i] / 2;
+                const barHeight = dataArray[i] / 2.5;
+
+                // Don't draw if height is negligible
+                if (barHeight < 1) continue;
+
                 canvasCtx.fillStyle = 'hsl(var(--primary))';
-                canvasCtx.fillRect(x, canvas.height / 2 - barHeight / 2, lineWidth, barHeight);
-                x += lineWidth + gap;
+                
+                // Draw line to the right of center
+                canvasCtx.fillRect(centerX + (i * (lineWidth + gap)), canvas.height / 2 - barHeight / 2, lineWidth, barHeight);
+                // Draw mirrored line to the left of center
+                canvasCtx.fillRect(centerX - (i * (lineWidth + gap)) - lineWidth, canvas.height / 2 - barHeight / 2, lineWidth, barHeight);
             }
         };
         draw();
     }, []);
 
     useEffect(() => {
-        drawInitialState(); // Draw dots on initial render
+        drawInitialState();
     }, [drawInitialState]);
 
     useEffect(() => {
@@ -152,7 +154,7 @@ export default function VoiceNotePage() {
             sourceNodeRef.current?.disconnect();
             audioContextRef.current?.close();
         };
-    }, [router, toast, stopVisualization, visualize, drawInitialState]);
+    }, [router, toast, stopVisualization, drawInitialState]);
 
      useEffect(() => {
         if (!isSheetOpen) {
