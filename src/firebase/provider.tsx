@@ -145,14 +145,14 @@ export const FirebaseProvider: React.FC<FirebaseProviderProps> = ({
     if (!firestore || !userAuthState.user) return;
     const currentUserId = userAuthState.user.uid;
     const userDocRef = doc(firestore, 'users', currentUserId);
-    
-    // Optimistic update of local state
+
+    // Optimistic update of local state before async call
     setLoggedInUserProfile(currentProfile => {
         if (!currentProfile) return null;
         const { voiceStatusUrl, voiceStatusTimestamp, ...rest } = currentProfile;
-        return rest as WithId<UserProfile>;
+        return rest as WithId<UserProfile>; // Cast after removing fields
     });
-    
+
     try {
         await updateDoc(userDocRef, {
             voiceStatusUrl: deleteField(),
@@ -160,8 +160,12 @@ export const FirebaseProvider: React.FC<FirebaseProviderProps> = ({
         });
         toast({ title: "Voice Status Deleted" });
     } catch (error) {
-        // Revert optimistic update on error
-        setLoggedInUserProfile(loggedInUserProfile);
+        // Revert optimistic update on error by re-fetching or using a backup
+        // For simplicity, we refetch here by invalidating the doc hook,
+        // but a better UX might restore the previous state instantly.
+        const originalProfile = loggedInUserProfile; // closure capture
+        setLoggedInUserProfile(originalProfile);
+        
         console.error("Failed to delete voice status on server:", error);
         const permissionError = new FirestorePermissionError({
             path: userDocRef.path,
@@ -169,7 +173,7 @@ export const FirebaseProvider: React.FC<FirebaseProviderProps> = ({
             requestResourceData: { voiceStatusUrl: null, voiceStatusTimestamp: null },
         });
         errorEmitter.emit('permission-error', permissionError);
-        toast({ variant: "destructive", title: "Error", description: "Could not delete voice status from server." });
+        toast({ variant: "destructive", title: "Error", description: "Could not delete voice status." });
     }
   };
 

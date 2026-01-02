@@ -40,58 +40,33 @@ function UpvotedUserSkeleton() {
 
 function UpvotedUsers() {
     const { firestore, user: currentUser, userProfile, showVoiceStatusPlayer } = useFirebase();
-    const [upvotedUsers, setUpvotedUsers] = useState<WithId<User>[]>([]);
-    const [isLoading, setIsLoading] = useState(true);
 
-    useEffect(() => {
-        if (!firestore || !currentUser) {
-            setIsLoading(false);
-            return;
-        };
+    const upvotedByQuery = useMemoFirebase(() => {
+      if (!firestore || !currentUser) return null;
+      return query(
+        collection(firestore, "users"),
+        where("upvotedBy", "array-contains", currentUser.uid)
+      );
+    }, [firestore, currentUser]);
 
-        const fetchUpvotedUsers = async () => {
-            setIsLoading(true);
-            try {
-                const usersQuery = query(
-                    collection(firestore, 'users'),
-                    where('upvotedBy', 'array-contains', currentUser.uid)
-                );
-                const querySnapshot = await getDocs(usersQuery);
-                const users = querySnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as WithId<User>));
-                
-                // Filter out the current user from the fetched list to avoid duplication
-                const otherUsers = users.filter(user => user.id !== currentUser.uid);
+    const { data: upvotedUsersData, isLoading: upvotedUsersLoading } = useCollection<User>(upvotedByQuery);
+    
+    const upvotedUsers = useMemo(() => {
+        if (!currentUser || !userProfile) return [];
 
-                // Create a profile object for the current user
-                const currentUserAsUser = {
-                    id: currentUser.uid,
-                    name: userProfile?.name || currentUser.displayName || 'You',
-                    ...userProfile
-                } as WithId<User>;
-                
-                // Prepend the current user to the list
-                setUpvotedUsers([currentUserAsUser, ...otherUsers]);
-                
-            } catch (error) {
-                console.error("Error fetching upvoted users:", error);
-                 // If fetching fails, at least show the current user
-                if (userProfile) {
-                     const currentUserAsUser = {
-                        id: currentUser.uid,
-                        name: userProfile?.name || currentUser.displayName || 'You',
-                        ...userProfile
-                    } as WithId<User>;
-                    setUpvotedUsers([currentUserAsUser]);
-                }
-            } finally {
-                setIsLoading(false);
-            }
-        };
+        const otherUsers = upvotedUsersData?.filter(user => user.id !== currentUser.uid) || [];
 
-        fetchUpvotedUsers();
-    }, [firestore, currentUser, userProfile]);
+        const currentUserAsUser = {
+            id: currentUser.uid,
+            name: userProfile?.name || currentUser.displayName || 'You',
+            ...userProfile
+        } as WithId<User>;
 
-    if (isLoading) {
+        return [currentUserAsUser, ...otherUsers];
+    }, [currentUser, userProfile, upvotedUsersData]);
+
+
+    if (upvotedUsersLoading && !userProfile) {
         return (
             <div className="p-4 border-b">
                 <h2 className="text-lg font-semibold font-headline mb-3">Upvoted</h2>
@@ -129,7 +104,7 @@ function UpvotedUsers() {
                                         <AvatarFallback>{getInitials(user.name)}</AvatarFallback>
                                     </Avatar>
                                 </Link>
-                                 {isCurrentUser && (
+                                 {isCurrentUser ? (
                                     <Link href="/voice-note">
                                         <div className="absolute -bottom-1 -right-1 bg-background p-1 rounded-full border-2 cursor-pointer hover:bg-secondary">
                                             <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="h-4 w-4 text-primary">
@@ -139,10 +114,9 @@ function UpvotedUsers() {
                                             </svg>
                                         </div>
                                     </Link>
-                                )}
-                                {!isCurrentUser && hasVoiceStatus && (
+                                ) : hasVoiceStatus && (
                                      <div 
-                                        className="absolute -bottom-1 -right-1 bg-background p-1 rounded-full border-2 cursor-pointer" 
+                                        className="absolute -right-1 -bottom-1 bg-background p-1 rounded-full border-2 cursor-pointer" 
                                         onClick={() => showVoiceStatusPlayer(user)} 
                                         role="button"
                                     >
@@ -641,3 +615,4 @@ export default function MessagesPage() {
     
 
     
+
