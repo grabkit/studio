@@ -91,8 +91,8 @@ export default function VoiceNotePage() {
                 <h2 className="text-lg font-bold mx-auto -translate-x-4">Create Voice Status</h2>
             </div>
             <div className="flex flex-col h-full justify-between pt-14 pb-8 px-4">
-                <div className="flex-grow flex flex-col items-center justify-center space-y-6">
-                    <div className="w-full max-w-sm space-y-4 pt-10">
+                <div className="flex-grow flex flex-col items-center space-y-6">
+                    <div className="w-full max-w-sm space-y-4 pt-4">
                         <div className="space-y-2">
                              <Label htmlFor="voice-status-text">What's on your mind?</Label>
                             <Textarea
