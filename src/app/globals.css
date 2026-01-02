@@ -23,7 +23,6 @@
     --border: 214.3 31.8% 91.4%;
     --input: 214.3 31.8% 91.4%;
     --ring: 222.2 84% 4.9%;
-    --radius: 0.5rem;
     --online-glow-color: 135 58% 49%;
   }
 }
@@ -197,5 +196,24 @@
   }
   .animate-spin-slow {
     animation: spin-slow 20s linear infinite;
+  }
+
+  @keyframes recording-pulse {
+    0% {
+      transform: scale(1);
+      opacity: 0.5;
+    }
+    50% {
+      transform: scale(1.1);
+      opacity: 0.7;
+    }
+    100% {
+      transform: scale(1);
+      opacity: 0.5;
+    }
+  }
+
+  .animate-recording-pulse {
+    animation: recording-pulse 2s infinite ease-in-out;
   }
 }
