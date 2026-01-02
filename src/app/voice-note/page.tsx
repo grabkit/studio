@@ -3,7 +3,7 @@
 
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from "@/components/ui/sheet";
 import { Button } from "@/components/ui/button";
-import { Loader2, Mic, Play, Square, RefreshCw, X, Send } from "lucide-react";
+import { Loader2, Mic, Play, Square, RefreshCw, X, Send, Pause, StopCircle } from "lucide-react";
 import { useRouter } from "next/navigation";
 import React, { useState, useEffect, useRef, useCallback } from "react";
 import { useToast } from "@/hooks/use-toast";
@@ -14,7 +14,7 @@ import { errorEmitter } from "@/firebase/error-emitter";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { cn } from "@/lib/utils";
 
-type RecordingStatus = "idle" | "permission-pending" | "recording" | "recorded" | "sharing";
+type RecordingStatus = "idle" | "permission-pending" | "recording" | "paused" | "recorded" | "sharing";
 
 export default function VoiceNotePage() {
     const router = useRouter();
@@ -68,11 +68,13 @@ export default function VoiceNotePage() {
             analyserRef.current.fftSize = 256;
         }
         
-        if (sourceNodeRef.current) {
-            sourceNodeRef.current.disconnect();
+        if (sourceNodeRef.current?.mediaStream.id !== stream.id) {
+            if (sourceNodeRef.current) {
+                sourceNodeRef.current.disconnect();
+            }
+            sourceNodeRef.current = audioContext.createMediaStreamSource(stream);
+            sourceNodeRef.current.connect(analyserRef.current);
         }
-        sourceNodeRef.current = audioContext.createMediaStreamSource(stream);
-        sourceNodeRef.current.connect(analyserRef.current);
 
         const bufferLength = analyserRef.current.frequencyBinCount;
         const dataArray = new Uint8Array(bufferLength);
@@ -83,6 +85,12 @@ export default function VoiceNotePage() {
 
         const draw = () => {
             animationFrameIdRef.current = requestAnimationFrame(draw);
+            
+            if (recordingStatus === 'paused') {
+                // Don't draw if paused, but keep the animation frame loop running
+                return;
+            }
+
             analyserRef.current?.getByteFrequencyData(dataArray);
 
             canvasCtx.clearRect(0, 0, canvas.width, canvas.height);
@@ -105,7 +113,7 @@ export default function VoiceNotePage() {
             }
         };
         draw();
-    }, []);
+    }, [recordingStatus]);
 
     useEffect(() => {
         drawInitialState();
@@ -162,11 +170,17 @@ export default function VoiceNotePage() {
     }, [isSheetOpen, router]);
 
     const startRecording = () => {
-        if (mediaRecorderRef.current && mediaRecorderRef.current.state === "inactive") {
+        if (mediaRecorderRef.current) {
+            if (mediaRecorderRef.current.state === "paused") {
+                mediaRecorderRef.current.resume();
+            } else {
+                mediaRecorderf.current.start();
+                audioChunksRef.current = []; // Reset chunks on new recording
+            }
+            
             visualize(mediaRecorderRef.current.stream);
-            mediaRecorderRef.current.start();
             setRecordingStatus("recording");
-            setDuration(0);
+            
             timerIntervalRef.current = setInterval(() => {
                 setDuration(prev => {
                     if (prev + 1 >= maxDuration) {
@@ -178,9 +192,19 @@ export default function VoiceNotePage() {
             }, 1000);
         }
     };
+    
+    const pauseRecording = () => {
+        if (mediaRecorderRef.current && mediaRecorderRef.current.state === "recording") {
+            mediaRecorderRef.current.pause();
+            if (timerIntervalRef.current) {
+                clearInterval(timerIntervalRef.current);
+            }
+            setRecordingStatus("paused");
+        }
+    };
 
     const stopRecording = () => {
-        if (mediaRecorderRef.current && mediaRecorderRef.current.state === "recording") {
+        if (mediaRecorderRef.current && (mediaRecorderRef.current.state === "recording" || mediaRecorderRef.current.state === "paused")) {
             mediaRecorderRef.current.stop();
             if (timerIntervalRef.current) {
                 clearInterval(timerIntervalRef.current);
@@ -190,9 +214,12 @@ export default function VoiceNotePage() {
 
     const handleMicButtonClick = () => {
         if (recordingStatus === "idle" || recordingStatus === "recorded") {
+            handleRetake(); // Reset and start new recording
             startRecording();
+        } else if (recordingStatus === "paused") {
+            startRecording(); // This will resume
         } else if (recordingStatus === "recording") {
-            stopRecording();
+            pauseRecording();
         }
     }
     
@@ -240,7 +267,7 @@ export default function VoiceNotePage() {
     };
     
     const formatTime = (seconds: number) => {
-        const remainingSeconds = recordingStatus === 'recording' ? seconds : maxDuration;
+        const remainingSeconds = recordingStatus === 'recording' || recordingStatus === 'paused' ? seconds : maxDuration;
         const m = Math.floor(remainingSeconds / 60);
         const s = remainingSeconds % 60;
         return `${m}:${s.toString().padStart(2, '0')}`;
@@ -248,9 +275,9 @@ export default function VoiceNotePage() {
 
     const getButtonIcon = () => {
         switch(recordingStatus) {
-            case 'recording': return <Square className="h-10 w-10 text-white" fill="white" />;
+            case 'recording': return <Pause className="h-10 w-10 text-white" fill="white" />;
             case 'recorded': return <Play className="h-10 w-10 text-primary-foreground" fill="currentColor" onClick={playPreview}/>;
-            default: return <Mic className="h-10 w-10" />;
+            default: return <Mic className="h-10 w-10" />; // idle, paused
         }
     }
 
@@ -276,12 +303,20 @@ export default function VoiceNotePage() {
 
                 {hasPermission && (
                     <>
+                        <p className="text-lg text-muted-foreground font-mono w-24 text-center h-7">
+                           {formatTime(duration)}
+                        </p>
+
+                        <div className="w-full max-w-sm h-20">
+                            <canvas ref={canvasRef} className="w-full h-full" />
+                        </div>
+                        
                         <div className="relative flex items-center justify-center h-[104px] w-[104px]">
-                            {recordingStatus === "recording" && (
+                            {(recordingStatus === "recording") && (
                                 <div className="absolute inset-0 rounded-full bg-muted animate-pulse"></div>
                             )}
                             <Button
-                                variant={recordingStatus === "recording" ? "destructive" : "default"}
+                                variant={recordingStatus === "recording" ? "secondary" : "default"}
                                 size="icon"
                                 onClick={handleMicButtonClick}
                                 disabled={recordingStatus === 'permission-pending' || recordingStatus === 'sharing'}
@@ -291,21 +326,20 @@ export default function VoiceNotePage() {
                             </Button>
                         </div>
                         
-                        <p className="text-lg text-muted-foreground font-mono w-24 text-center">
-                            {formatTime(duration)}
-                        </p>
-
-                        <div className="w-full max-w-sm h-20">
-                            <canvas ref={canvasRef} className="w-full h-full" />
-                        </div>
-                        
-                         <div className="w-full max-w-xs mx-auto flex items-center justify-between">
+                         <div className="w-full max-w-xs mx-auto flex items-center justify-between h-16">
                            <Button size="lg" variant="ghost" className="rounded-full h-16 w-16" onClick={handleRetake}>
                                 <RefreshCw className="h-7 w-7" />
                            </Button>
-                           <Button size="lg" className="rounded-full h-16 w-16 bg-primary hover:bg-primary/90" onClick={handleShare} disabled={!recordedAudioUrl || recordingStatus === 'sharing'}>
-                                {recordingStatus === "sharing" ? <Loader2 className="h-7 w-7 animate-spin"/> : <Send className="h-7 w-7" />}
-                           </Button>
+
+                           {(recordingStatus === 'recording' || recordingStatus === 'paused') ? (
+                             <Button size="lg" variant="destructive" className="rounded-full h-16 w-16" onClick={stopRecording}>
+                                <StopCircle className="h-8 w-8" />
+                             </Button>
+                           ) : (
+                               <Button size="lg" className="rounded-full h-16 w-16 bg-primary hover:bg-primary/90" onClick={handleShare} disabled={!recordedAudioUrl || recordingStatus === 'sharing'}>
+                                    {recordingStatus === "sharing" ? <Loader2 className="h-7 w-7 animate-spin"/> : <Send className="h-7 w-7" />}
+                               </Button>
+                           )}
                          </div>
                     </>
                 )}
@@ -313,3 +347,5 @@ export default function VoiceNotePage() {
         </Sheet>
     );
 }
+
+    
