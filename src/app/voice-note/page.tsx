@@ -53,9 +53,14 @@ export default function VoiceNotePage() {
             setGeneratedVoiceUrl(voiceStatusUrl);
             const audio = new Audio(voiceStatusUrl);
             audio.play();
-        } catch (error) {
+        } catch (error: any) {
             console.error("Error generating voice preview:", error);
-            toast({ variant: 'destructive', title: "Error", description: "Could not generate voice preview." });
+            const errorMessage = error.message || "Could not generate voice preview.";
+             if (errorMessage.includes('429') || errorMessage.toLowerCase().includes('quota')) {
+                 toast({ variant: 'destructive', title: "Too many requests", description: "Please wait a moment and try again." });
+            } else {
+                toast({ variant: 'destructive', title: "Error", description: errorMessage });
+            }
         } finally {
             setIsGenerating(false);
         }
