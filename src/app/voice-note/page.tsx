@@ -132,10 +132,8 @@ export default function VoiceNotePage() {
         return new Promise((resolve, reject) => {
             const reader = new FileReader();
             reader.onloadend = () => {
-                // result is a data URL: "data:audio/webm;base64,..."
-                // We only need the Base64 part after the comma.
-                const base64String = reader.result as string;
-                resolve(base64String);
+                const dataUrl = reader.result as string; // This is the full Data URL
+                resolve(dataUrl);
             };
             reader.onerror = reject;
             reader.readAsDataURL(blob);
