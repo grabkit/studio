@@ -99,20 +99,7 @@ export const FirebaseProvider: React.FC<FirebaseProviderProps> = ({
   const [voiceStatusUser, setVoiceStatusUser] = useState<WithId<UserProfile> | null>(null);
   const [isVoicePlayerPlaying, setIsVoicePlayerPlaying] = useState(false);
   const voiceAudioRef = useRef<HTMLAudioElement | null>(null);
-
-  const showVoiceStatusPlayer = (user: WithId<UserProfile>) => {
-    setVoiceStatusUser(user);
-    if (voiceAudioRef.current && user.voiceStatusUrl) {
-      voiceAudioRef.current.src = user.voiceStatusUrl;
-      voiceAudioRef.current.play().catch(e => {
-        console.error("Audio play failed:", e);
-        // Clean up on failure
-        setVoiceStatusUser(null);
-        setIsVoicePlayerPlaying(false);
-      });
-    }
-  };
-
+  
   const onVoicePlayerClose = () => {
     if (voiceAudioRef.current) {
         voiceAudioRef.current.pause();
@@ -121,6 +108,47 @@ export const FirebaseProvider: React.FC<FirebaseProviderProps> = ({
     setVoiceStatusUser(null);
     setIsVoicePlayerPlaying(false);
   };
+
+  const showVoiceStatusPlayer = (user: WithId<UserProfile>) => {
+    setVoiceStatusUser(user);
+    if (voiceAudioRef.current && user.voiceStatusUrl) {
+      voiceAudioRef.current.src = user.voiceStatusUrl;
+      voiceAudioRef.current.play().catch(e => {
+        console.error("Audio play failed:", e);
+        // Clean up on failure
+        onVoicePlayerClose();
+      });
+    }
+  };
+
+  // Effect to manage the global audio element
+  useEffect(() => {
+    // This effect runs only on the client, creating the audio element safely.
+    const audio = new Audio();
+    audio.className = 'hidden';
+    document.body.appendChild(audio);
+    voiceAudioRef.current = audio;
+
+    const handlePlay = () => setIsVoicePlayerPlaying(true);
+    const handlePause = () => setIsVoicePlayerPlaying(false);
+    const handleEnded = () => onVoicePlayerClose();
+
+    audio.addEventListener('play', handlePlay);
+    audio.addEventListener('pause', handlePause);
+    audio.addEventListener('ended', handleEnded);
+
+    // Cleanup function to remove the element and listeners
+    return () => {
+      audio.removeEventListener('play', handlePlay);
+      audio.removeEventListener('pause', handlePause);
+      audio.removeEventListener('ended', handleEnded);
+      if (document.body.contains(audio)) {
+        document.body.removeChild(audio);
+      }
+      voiceAudioRef.current = null;
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []); // Empty dependency array ensures this runs only once on the client
 
 
   // Effect to subscribe to Firebase auth state changes and manage presence
@@ -198,7 +226,7 @@ export const FirebaseProvider: React.FC<FirebaseProviderProps> = ({
       ...callHandler,
       ...videoCallHandler,
     };
-  }, [firebaseApp, firestore, auth, database, userAuthState, userProfile, isUserProfileLoading, callHandler, videoCallHandler, isVoicePlayerPlaying]);
+  }, [firebaseApp, firestore, auth, database, userAuthState, userProfile, isUserProfileLoading, callHandler, videoCallHandler, isVoicePlayerPlaying, showVoiceStatusPlayer]);
 
   // Determine if the call UI should be shown
   const showCallUI = !!callHandler.callStatus && callHandler.callStatus !== 'ended' && callHandler.callStatus !== 'declined' && callHandler.callStatus !== 'missed';
@@ -207,14 +235,6 @@ export const FirebaseProvider: React.FC<FirebaseProviderProps> = ({
   return (
     <FirebaseContext.Provider value={contextValue}>
       <FirebaseErrorListener />
-      {/* Hidden Global Audio Player for Voice Status */}
-      <audio 
-        ref={voiceAudioRef}
-        onPlay={() => setIsVoicePlayerPlaying(true)}
-        onPause={() => setIsVoicePlayerPlaying(false)}
-        onEnded={onVoicePlayerClose}
-        className="hidden"
-       />
        {voiceStatusUser && (
         <VoiceStatusPlayer 
           user={voiceStatusUser}
