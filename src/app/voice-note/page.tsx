@@ -155,9 +155,9 @@ export default function VoiceNotePage() {
                 </div>
 
 
-                <div className="w-full max-w-xs mx-auto mt-8 space-y-3">
+                <div className="w-full max-w-xs mx-auto mt-8 flex space-x-3">
                     <Button 
-                        className="w-full" 
+                        className="flex-1" 
                         size="lg"
                         variant="outline"
                         disabled={!text || isGenerating || isSharing}
@@ -168,10 +168,10 @@ export default function VoiceNotePage() {
                         ) : (
                             <Play className="h-5 w-5 mr-2" />
                         )}
-                        Preview Voice
+                        Preview
                     </Button>
                      <Button 
-                        className="w-full" 
+                        className="flex-1" 
                         size="lg"
                         disabled={!generatedVoiceUrl || isGenerating || isSharing}
                         onClick={handleShare}
