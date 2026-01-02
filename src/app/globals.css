@@ -188,7 +188,7 @@
   
   .audio-wave-bar-avatar {
       width: 2px;
-      height: 0.75rem;
+      height: 0.5rem;
       background-color: hsl(var(--primary));
       animation: audio-wave-avatar 1.2s infinite ease-in-out;
   }

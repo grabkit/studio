@@ -142,7 +142,7 @@ function UpvotedUsers() {
                                         onClick={() => showVoiceStatusPlayer(user)} 
                                         role="button"
                                     >
-                                        <div className="flex items-center justify-center h-5 w-5 gap-0.5">
+                                        <div className="flex items-center justify-center h-4 w-4 gap-0.5">
                                             <div className="audio-wave-bar-avatar" />
                                             <div className="audio-wave-bar-avatar" />
                                             <div className="audio-wave-bar-avatar" />
