@@ -282,7 +282,7 @@ export default function AccountPage() {
                             alt={userProfile?.name || "User"}
                         />
                         {!hasVoiceStatus && (
-                            <AvatarFallback className="text-3xl font-headline">
+                            <AvatarFallback className="text-3xl font-headline bg-secondary">
                                 {getInitials(userProfile?.name)}
                             </AvatarFallback>
                         )}
