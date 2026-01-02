@@ -48,6 +48,12 @@ export function VoiceStatusPlayer({ user: voiceUser, isOpen, onOpenChange, onDel
         <>
         <Sheet open={isOpen} onOpenChange={onOpenChange}>
             <SheetContent side="bottom" className="rounded-t-2xl h-auto flex flex-col items-center justify-center gap-6 pb-10">
+                 {isOwnStatus && (
+                    <Button variant="ghost" size="icon" onClick={handleDeleteClick} className="absolute top-4 right-4 text-muted-foreground hover:text-destructive">
+                        <Trash2 className="h-5 w-5" />
+                    </Button>
+                )}
+                
                  <SheetHeader className="sr-only">
                     <SheetTitle>Voice Status by {formatUserId(voiceUser.id)}</SheetTitle>
                 </SheetHeader>
@@ -71,12 +77,6 @@ export function VoiceStatusPlayer({ user: voiceUser, isOpen, onOpenChange, onDel
                     </div>
                 )}
                 
-                {isOwnStatus && (
-                    <Button variant="destructive" onClick={handleDeleteClick} className="mt-4">
-                        <Trash2 className="mr-2 h-4 w-4" />
-                        Delete Status
-                    </Button>
-                )}
             </SheetContent>
         </Sheet>
          <AlertDialog open={isDeleteAlertOpen} onOpenChange={setIsDeleteAlertOpen}>
@@ -88,10 +88,10 @@ export function VoiceStatusPlayer({ user: voiceUser, isOpen, onOpenChange, onDel
                     </AlertDialogDescription>
                 </AlertDialogHeader>
                 <AlertDialogFooter>
-                    <AlertDialogCancel>Cancel</AlertDialogCancel>
                     <AlertDialogAction onClick={confirmDelete} className={cn(buttonVariants({variant: 'destructive'}))}>
-                    Delete
+                        Delete
                     </AlertDialogAction>
+                    <AlertDialogCancel>Cancel</AlertDialogCancel>
                 </AlertDialogFooter>
             </AlertDialogContent>
         </AlertDialog>
