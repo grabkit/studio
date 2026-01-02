@@ -303,14 +303,6 @@ export default function VoiceNotePage() {
 
                 {hasPermission && (
                     <>
-                        <p className="text-lg text-muted-foreground font-mono w-24 text-center h-7">
-                           {formatTime(duration)}
-                        </p>
-
-                        <div className="w-full max-w-sm h-20">
-                            <canvas ref={canvasRef} className="w-full h-full" />
-                        </div>
-                        
                         <div className="relative flex items-center justify-center h-[104px] w-[104px]">
                             {(recordingStatus === "recording") && (
                                 <div className="absolute inset-0 rounded-full bg-muted animate-pulse"></div>
@@ -324,6 +316,14 @@ export default function VoiceNotePage() {
                             >
                                {getButtonIcon()}
                             </Button>
+                        </div>
+                        
+                         <p className="text-lg text-muted-foreground font-mono w-24 text-center h-7">
+                           {formatTime(duration)}
+                        </p>
+
+                        <div className="w-full max-w-sm h-20">
+                            <canvas ref={canvasRef} className="w-full h-full" />
                         </div>
                         
                          <div className="w-full max-w-xs mx-auto flex items-center justify-between h-16">
@@ -347,4 +347,3 @@ export default function VoiceNotePage() {
         </Sheet>
     );
 }
-
