@@ -7,7 +7,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { getInitials, formatMessageTimestamp } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
-import { MessageSquare, Mail, Trash2, BellOff, CheckCircle, User as UserIcon, Bell } from "lucide-react";
+import { MessageSquare, Mail, Trash2, BellOff, CheckCircle, User as UserIcon, Bell, Mic } from "lucide-react";
 import { useFirebase, useMemoFirebase } from "@/firebase";
 import { collection, query, where, doc, updateDoc, deleteDoc, arrayUnion, arrayRemove, getDocs } from "firebase/firestore";
 import { useCollection, type WithId } from "@/firebase/firestore/use-collection";
@@ -123,9 +123,16 @@ function UpvotedUsers() {
                         return (
                          <Link key={user.id} href={href} className="flex-shrink-0">
                             <div className="flex flex-col items-center w-20">
-                                 <Avatar className="h-16 w-16">
-                                    <AvatarFallback>{getInitials(user.name)}</AvatarFallback>
-                                </Avatar>
+                                 <div className="relative">
+                                    <Avatar className="h-16 w-16">
+                                        <AvatarFallback>{getInitials(user.name)}</AvatarFallback>
+                                    </Avatar>
+                                     {isCurrentUser && (
+                                        <div className="absolute bottom-0 left-0 bg-background p-1 rounded-full border-2">
+                                            <Mic className="h-4 w-4 text-primary" />
+                                        </div>
+                                    )}
+                                </div>
                                 <p className="text-xs font-semibold truncate w-full text-center mt-2">{name}</p>
                             </div>
                         </Link>
