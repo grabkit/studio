@@ -224,7 +224,7 @@ export default function VoiceNotePage() {
     };
     
     const formatTime = (seconds: number) => {
-        const remainingSeconds = recordingStatus === 'idle' ? maxDuration : seconds;
+        const remainingSeconds = recordingStatus === 'recording' ? seconds : maxDuration;
         const m = Math.floor(remainingSeconds / 60);
         const s = remainingSeconds % 60;
         return `${m}:${s.toString().padStart(2, '0')}`;
@@ -260,14 +260,6 @@ export default function VoiceNotePage() {
 
                 {hasPermission && (
                     <>
-                        <div className="w-full max-w-sm h-20">
-                            <canvas ref={canvasRef} className="w-full h-full" />
-                        </div>
-
-                        <p className="text-lg text-muted-foreground font-mono w-24 text-center">
-                            {formatTime(duration)}
-                        </p>
-
                         <div className="relative flex items-center justify-center">
                              {recordingStatus === "recording" && (
                                 <div className="absolute inset-[-10px] rounded-full border-2 border-primary animate-recording-pulse"></div>
@@ -281,6 +273,14 @@ export default function VoiceNotePage() {
                             >
                                {getButtonIcon()}
                             </Button>
+                        </div>
+                        
+                        <p className="text-lg text-muted-foreground font-mono w-24 text-center">
+                            {formatTime(duration)}
+                        </p>
+
+                        <div className="w-full max-w-sm h-20">
+                            <canvas ref={canvasRef} className="w-full h-full" />
                         </div>
                         
                         <div className="w-full max-w-xs mx-auto flex items-center justify-center gap-4">
