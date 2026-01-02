@@ -5,7 +5,7 @@ import AppLayout from "@/components/AppLayout";
 import { Button } from "@/components/ui/button";
 import { ArrowLeft, Loader2, Mic, Play, Square, RefreshCw } from "lucide-react";
 import { useRouter } from "next/navigation";
-import React, { useState, useEffect, useRef } from "react";
+import React, { useState, useEffect, useRef, useCallback } from "react";
 import { cn } from "@/lib/utils";
 import { useToast } from "@/hooks/use-toast";
 import { useFirebase } from "@/firebase";
@@ -26,12 +26,86 @@ export default function VoiceNotePage() {
     const [recordedAudioUrl, setRecordedAudioUrl] = useState<string | null>(null);
     const [duration, setDuration] = useState(0);
 
+    // Refs for recording logic
     const mediaRecorderRef = useRef<MediaRecorder | null>(null);
     const audioChunksRef = useRef<Blob[]>([]);
     const timerIntervalRef = useRef<NodeJS.Timeout | null>(null);
     const audioPlayerRef = useRef<HTMLAudioElement | null>(null);
 
+    // Refs for waveform visualization
+    const canvasRef = useRef<HTMLCanvasElement>(null);
+    const audioContextRef = useRef<AudioContext | null>(null);
+    const analyserRef = useRef<AnalyserNode | null>(null);
+    const sourceRef = useRef<MediaStreamAudioSourceNode | null>(null);
+    const animationFrameIdRef = useRef<number | null>(null);
+
     const maxDuration = 30; // 30 seconds
+
+    const drawWaveform = useCallback(() => {
+        if (!analyserRef.current || !canvasRef.current) return;
+
+        const analyser = analyserRef.current;
+        const canvas = canvasRef.current;
+        const canvasCtx = canvas.getContext('2d');
+        if (!canvasCtx) return;
+
+        const bufferLength = analyser.frequencyBinCount;
+        const dataArray = new Uint8Array(bufferLength);
+
+        canvasCtx.clearRect(0, 0, canvas.width, canvas.height);
+
+        const draw = () => {
+            animationFrameIdRef.current = requestAnimationFrame(draw);
+
+            analyser.getByteTimeDomainData(dataArray);
+
+            canvasCtx.fillStyle = 'hsl(var(--background))';
+            canvasCtx.fillRect(0, 0, canvas.width, canvas.height);
+
+            canvasCtx.lineWidth = 2;
+            canvasCtx.strokeStyle = 'hsl(var(--primary))';
+            canvasCtx.beginPath();
+
+            const sliceWidth = canvas.width * 1.0 / bufferLength;
+            let x = 0;
+
+            for (let i = 0; i < bufferLength; i++) {
+                const v = dataArray[i] / 128.0;
+                const y = v * canvas.height / 2;
+
+                if (i === 0) {
+                    canvasCtx.moveTo(x, y);
+                } else {
+                    canvasCtx.lineTo(x, y);
+                }
+
+                x += sliceWidth;
+            }
+
+            canvasCtx.lineTo(canvas.width, canvas.height / 2);
+            canvasCtx.stroke();
+        };
+
+        draw();
+    }, []);
+
+    const setupAudioVisualization = useCallback((stream: MediaStream) => {
+        if (!audioContextRef.current) {
+            audioContextRef.current = new (window.AudioContext || (window as any).webkitAudioContext)();
+        }
+        const audioContext = audioContextRef.current;
+        if (!analyserRef.current) {
+            analyserRef.current = audioContext.createAnalyser();
+        }
+        if (!sourceRef.current) {
+            sourceRef.current = audioContext.createMediaStreamSource(stream);
+        }
+
+        analyserRef.current.fftSize = 2048;
+        sourceRef.current.connect(analyserRef.current);
+        drawWaveform();
+    }, [drawWaveform]);
+
 
     useEffect(() => {
         setRecordingStatus("permission-pending");
@@ -41,6 +115,9 @@ export default function VoiceNotePage() {
                 setRecordingStatus("idle");
                 const recorder = new MediaRecorder(stream);
                 mediaRecorderRef.current = recorder;
+
+                // Setup visualization
+                setupAudioVisualization(stream);
 
                 recorder.ondataavailable = (event) => {
                     audioChunksRef.current.push(event.data);
@@ -59,6 +136,9 @@ export default function VoiceNotePage() {
 
                     setRecordingStatus("recorded");
                     audioChunksRef.current = [];
+                     if (animationFrameIdRef.current) {
+                        cancelAnimationFrame(animationFrameIdRef.current);
+                    }
                 };
             })
             .catch(err => {
@@ -76,12 +156,13 @@ export default function VoiceNotePage() {
         audioPlayerRef.current = new Audio();
         
         return () => {
-            if (timerIntervalRef.current) {
-                clearInterval(timerIntervalRef.current);
-            }
+            if (timerIntervalRef.current) clearInterval(timerIntervalRef.current);
+            if (animationFrameIdRef.current) cancelAnimationFrame(animationFrameIdRef.current);
+            sourceRef.current?.disconnect();
+            audioContextRef.current?.close();
         };
 
-    }, [router, toast]);
+    }, [router, toast, setupAudioVisualization]);
 
 
     const startRecording = () => {
@@ -89,6 +170,13 @@ export default function VoiceNotePage() {
             mediaRecorderRef.current.start();
             setRecordingStatus("recording");
             setDuration(0);
+            
+            // Restart visualization if it was stopped
+            if (mediaRecorderRef.current.stream) {
+                 setupAudioVisualization(mediaRecorderRef.current.stream);
+            }
+
+
             timerIntervalRef.current = setInterval(() => {
                 setDuration(prev => {
                     if (prev + 1 >= maxDuration) {
@@ -106,6 +194,9 @@ export default function VoiceNotePage() {
             mediaRecorderRef.current.stop();
              if (timerIntervalRef.current) {
                 clearInterval(timerIntervalRef.current);
+            }
+            if (animationFrameIdRef.current) {
+                cancelAnimationFrame(animationFrameIdRef.current);
             }
         }
     };
@@ -186,14 +277,13 @@ export default function VoiceNotePage() {
                     </Alert>
                  ) : (
                     <>
-                        <div className="flex-grow flex flex-col items-center justify-center">
-                             <p className="text-2xl font-bold font-headline mb-4">
-                                {recordingStatus === "recording" && "Recording..."}
-                                {recordingStatus === "recorded" && "Preview"}
-                                {recordingStatus === "idle" && "Tap to Record"}
-                                {recordingStatus === "sharing" && "Sharing..."}
-                                {recordingStatus === "permission-pending" && "Requesting Permission..."}
-                            </p>
+                        <div className="flex-grow flex flex-col items-center justify-center w-full">
+                            <div className="w-full max-w-md h-24 mb-6">
+                                {recordingStatus !== "recorded" && (
+                                     <canvas ref={canvasRef} className="w-full h-full" width="600" height="100"></canvas>
+                                )}
+                            </div>
+                           
                              <div className="relative flex items-center justify-center">
                                 {recordingStatus === "recording" && (
                                      <div className="absolute inset-0 rounded-full bg-destructive/20 animate-pulse"></div>
@@ -205,7 +295,7 @@ export default function VoiceNotePage() {
                                     disabled={recordingStatus !== "idle" && recordingStatus !== "recording"}
                                     className="h-40 w-40 rounded-full"
                                 >
-                                    <Mic className="h-20 w-20" />
+                                    {recordingStatus === "recording" ? <Square className="h-16 w-16" fill="currentColor" /> : <Mic className="h-20 w-20" />}
                                 </Button>
                             </div>
                             <p className="text-lg text-muted-foreground mt-4 font-mono w-24">
