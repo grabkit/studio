@@ -124,6 +124,13 @@ export const FirebaseProvider: React.FC<FirebaseProviderProps> = ({
       });
     }
   };
+  
+  const userProfileRef = useMemoFirebase(() => {
+    if (!firestore || !userAuthState.user) return null;
+    return doc(firestore, 'users', userAuthState.user.uid);
+  }, [firestore, userAuthState.user]);
+  
+  const { data: userProfile, isLoading: isUserProfileLoading, setData: setUserProfile } = useDoc<UserProfile>(userProfileRef);
 
   const handleDeleteVoiceStatus = async () => {
     if (!firestore || !userAuthState.user) return;
@@ -136,6 +143,15 @@ export const FirebaseProvider: React.FC<FirebaseProviderProps> = ({
         });
         toast({ title: "Voice Status Deleted" });
         onVoicePlayerClose(); // Close the sheet after deletion
+        
+        // Optimistically update local state to remove icon immediately
+        if (userProfile) {
+          const updatedProfile = { ...userProfile };
+          delete updatedProfile.voiceStatusUrl;
+          delete updatedProfile.voiceStatusTimestamp;
+          setUserProfile(updatedProfile as WithId<UserProfile>);
+        }
+
     } catch (error) {
         const permissionError = new FirestorePermissionError({
             path: userDocRef.path,
@@ -227,12 +243,6 @@ export const FirebaseProvider: React.FC<FirebaseProviderProps> = ({
     return () => unsubscribe(); // Cleanup
   }, [auth, database, firestore]);
   
-  const userProfileRef = useMemoFirebase(() => {
-    if (!firestore || !userAuthState.user) return null;
-    return doc(firestore, 'users', userAuthState.user.uid);
-  }, [firestore, userAuthState.user]);
-  
-  const { data: userProfile, isLoading: isUserProfileLoading } = useDoc<UserProfile>(userProfileRef);
 
   // Memoize the context value
   const contextValue = useMemo((): FirebaseContextState => {
