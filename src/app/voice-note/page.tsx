@@ -90,7 +90,7 @@ export default function VoiceNotePage() {
             const lineWidth = 2;
             const gap = 2; 
             const centerX = canvas.width / 2;
-            const startOffset = (lineWidth + gap) / 2;
+            const startOffset = gap / 2;
 
 
             for (let i = 0; i < bufferLength; i++) {
