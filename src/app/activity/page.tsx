@@ -27,7 +27,7 @@ const notificationInfo = {
     },
     comment: {
         icon: MessageCircle,
-        text: "commented on your post",
+        text: "replied to your post", // This will be a fallback
         color: "text-blue-500"
     },
     comment_approval: {
@@ -78,9 +78,15 @@ function NotificationItem({ notification }: { notification: WithId<Notification>
                 <p className="text-sm">
                     <span className="font-bold">{formatUserId(notification.fromUserId)}</span>
                     {' '}
-                    {info.text}
-                    {notification.postContent && (
-                       <span className="text-muted-foreground italic"> "{notification.postContent}"</span>
+                     {notification.type === 'comment' ? (
+                        <span className="text-muted-foreground italic">"{notification.activityContent}"</span>
+                    ) : (
+                       <>
+                        {info.text}
+                        {notification.activityContent && (
+                           <span className="text-muted-foreground italic"> "{notification.activityContent}"</span>
+                        )}
+                       </>
                     )}
                 </p>
                 <p className="text-xs text-muted-foreground mt-1">

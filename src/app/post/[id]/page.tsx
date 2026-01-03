@@ -143,10 +143,10 @@ function PostDetailItem({ post }: { post: WithId<Post> }) {
             const existingNotif = await getDocs(q);
             if (existingNotif.empty) {
                 const notificationRef = doc(notificationsRef);
-                const notificationData: Omit<Notification, 'id'> = {
+                const notificationData: Partial<Notification> = {
                     type: 'like',
                     postId: post.id,
-                    postContent: post.content.substring(0, 100),
+                    activityContent: post.content.substring(0, 100),
                     fromUserId: user.uid,
                     timestamp: serverTimestamp(),
                     read: false,
@@ -346,7 +346,7 @@ function CommentForm({ post, commentsAllowed }: { post: WithId<Post>, commentsAl
   }, [firestore, post]);
   const { data: postAuthorProfile } = useDoc<UserProfile>(postAuthorRef);
 
-  const onSubmit = async (values: z.infer<typeof CommentFormSchema>) => {
+  const onSubmit = async (values: z.infer<typeof CommentFormSchema>>) => {
     if (!user || !firestore) {
       toast({ variant: "destructive", title: "You must be logged in to comment." });
       return;
@@ -380,10 +380,10 @@ function CommentForm({ post, commentsAllowed }: { post: WithId<Post>, commentsAl
         const notificationRef = doc(collection(firestore, 'users', post.authorId, 'notifications'));
         if (isRestricted) {
              toast({ title: "Comment submitted for approval", description: "The author has restricted comments, so your comment will be visible after they approve it." });
-             const notificationData: Omit<Notification, 'id'> = {
+             const notificationData: Partial<Notification> = {
                 type: 'comment_approval',
                 postId: post.id,
-                postContent: post.content.substring(0, 100),
+                activityContent: values.content.substring(0, 100),
                 fromUserId: user.uid,
                 timestamp: serverTimestamp(),
                 read: false,
@@ -392,10 +392,10 @@ function CommentForm({ post, commentsAllowed }: { post: WithId<Post>, commentsAl
                 console.error("Failed to create approval notification:", serverError);
             });
         } else {
-            const notificationData: Omit<Notification, 'id'> = {
+            const notificationData: Partial<Notification> = {
                 type: 'comment',
                 postId: post.id,
-                postContent: post.content.substring(0, 100),
+                activityContent: values.content.substring(0, 100),
                 fromUserId: user.uid,
                 timestamp: serverTimestamp(),
                 read: false,

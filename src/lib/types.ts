@@ -80,7 +80,7 @@ export interface Notification {
     id: string;
     type: 'like' | 'comment' | 'comment_approval' | 'upvote' | 'message_request';
     postId?: string;
-    postContent?: string;
+    activityContent?: string;
     fromUserId: string;
     timestamp: Timestamp;
     read: boolean;
