@@ -8,7 +8,7 @@ import { useCollection, type WithId } from "@/firebase/firestore/use-collection"
 import { Card, CardContent } from "@/components/ui/card";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Skeleton } from "@/components/ui/skeleton";
-import type { Post, Bookmark, PollOption, Notification, User, Conversation, LinkMetadata } from "@/lib/types";
+import type { Post, Bookmark, PollOption, Notification, User, LinkMetadata } from "@/lib/types";
 import { Heart, MessageCircle, Repeat, ArrowUpRight, MoreHorizontal, Edit, Trash2, Bookmark as BookmarkIcon, CheckCircle2, Slash, RefreshCw, Pin } from "lucide-react";
 import { cn, formatTimestamp, getInitials } from "@/lib/utils";
 import { useToast } from "@/hooks/use-toast";
@@ -287,6 +287,11 @@ export function PostItem({ post, bookmarks, updatePost, onDelete }: { post: With
       });
   };
 
+  const handleEditPost = () => {
+    setIsMoreOptionsSheetOpen(false);
+    router.push(`/post?postId=${post.id}`);
+  };
+
   const handleRepost = () => {
     const encodedContent = encodeURIComponent(post.content);
     router.push(`/post?content=${encodedContent}`);
@@ -365,7 +370,7 @@ export function PostItem({ post, bookmarks, updatePost, onDelete }: { post: With
                             </SheetHeader>
                             <div className="grid gap-2 py-4">
                                  <div className="border rounded-2xl">
-                                    <Button variant="ghost" className="justify-between text-base py-6 rounded-2xl w-full" onClick={() => toast({ title: "Coming Soon!", description: "Editing posts will be available in a future update." })}>
+                                    <Button variant="ghost" className="justify-between text-base py-6 rounded-2xl w-full" onClick={handleEditPost}>
                                         <span>Edit</span>
                                         <Edit className="h-5 w-5" />
                                     </Button>
@@ -608,7 +613,7 @@ export default function HomePage() {
           )}
           
           {!isLoading && displayedPosts && filteredPosts.map((post) => (
-              <PostItem key={post.id} post={post} bookmarks={bookmarks} updatePost={updatePost} />
+              <PostItem key={post.id} post={post} bookmarks={bookmarks} updatePost={updatePost} onDelete={(id) => setDisplayedPosts(posts => posts?.filter(p => p.id !== id) ?? [])} />
             ))
           }
         </div>

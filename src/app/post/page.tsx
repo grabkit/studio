@@ -2,13 +2,14 @@
 "use client";
 
 import * as React from "react";
-import { useState, Suspense } from "react";
+import { useState, Suspense, useEffect } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { useForm, useFieldArray } from "react-hook-form";
 import * as z from "zod";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { collection, serverTimestamp, setDoc, doc } from "firebase/firestore";
+import { collection, serverTimestamp, setDoc, doc, updateDoc, getDoc } from "firebase/firestore";
 import { useFirebase, useUser } from "@/firebase";
+import type { Post } from "@/lib/types";
 
 import {
   Sheet,
@@ -121,7 +122,8 @@ function PostPageComponent() {
   const { firestore } = useFirebase();
 
   const repostContent = searchParams.get('content') || "";
-
+  const postId = searchParams.get('postId');
+  const isEditMode = !!postId;
 
   const form = useForm<z.infer<typeof postSchema>>({
     resolver: zodResolver(postSchema),
@@ -136,6 +138,28 @@ function PostPageComponent() {
     control: form.control,
     name: "pollOptions",
   });
+  
+  useEffect(() => {
+    if (isEditMode && firestore && postId) {
+      const fetchPostData = async () => {
+        const postRef = doc(firestore, 'posts', postId);
+        const postSnap = await getDoc(postRef);
+        if (postSnap.exists()) {
+          const postData = postSnap.data() as Post;
+          // Populate the form with existing post data
+          form.reset({
+            content: postData.content,
+            commentsAllowed: postData.commentsAllowed,
+            isPoll: postData.type === 'poll',
+            // Note: poll options editing is not supported in this version
+            // but we set the flag correctly.
+          });
+        }
+      };
+      fetchPostData();
+    }
+  }, [isEditMode, postId, firestore, form]);
+
 
   const isPoll = form.watch("isPoll");
   const linkMetadata = form.watch("linkMetadata");
@@ -185,43 +209,66 @@ function PostPageComponent() {
 
     form.trigger();
     
-    const postsColRef = collection(firestore, `posts`);
-    const newPostRef = doc(postsColRef);
-    
-    const newPostData: any = {
-      id: newPostRef.id,
-      authorId: user.uid,
-      content: values.content,
-      timestamp: serverTimestamp(),
-      likes: [],
-      likeCount: 0,
-      commentCount: 0,
-      commentsAllowed: values.commentsAllowed,
-      type: values.isPoll ? 'poll' : 'text',
-      ...(values.linkMetadata && { linkMetadata: values.linkMetadata }),
-    };
-
-    if (values.isPoll) {
-        newPostData.pollOptions = values.pollOptions.map(opt => ({ option: opt.option, votes: 0 }));
-        newPostData.voters = {};
-    }
-
-    setDoc(newPostRef, newPostData)
-      .then(() => {
-        form.reset();
-        setIsOpen(false);
-      })
-      .catch((serverError) => {
-        const permissionError = new FirestorePermissionError({
-            path: newPostRef.path,
-            operation: 'create',
-            requestResourceData: newPostData
+    if (isEditMode && postId) {
+      // Logic for updating an existing post
+      const postRef = doc(firestore, `posts`, postId);
+      const updatedData = {
+        content: values.content,
+        commentsAllowed: values.commentsAllowed,
+      };
+      updateDoc(postRef, updatedData)
+        .then(() => {
+            form.reset();
+            setIsOpen(false);
+        })
+        .catch((serverError) => {
+            const permissionError = new FirestorePermissionError({
+                path: postRef.path,
+                operation: 'update',
+                requestResourceData: updatedData
+            });
+            errorEmitter.emit('permission-error', permissionError);
         });
-        errorEmitter.emit('permission-error', permissionError);
-      })
-      .finally(() => {
-        // No need for isSubmitting state, react-hook-form provides it
-      });
+
+    } else {
+        // Logic for creating a new post
+        const newPostRef = doc(collection(firestore, `posts`));
+        
+        const newPostData: any = {
+          id: newPostRef.id,
+          authorId: user.uid,
+          content: values.content,
+          timestamp: serverTimestamp(),
+          likes: [],
+          likeCount: 0,
+          commentCount: 0,
+          commentsAllowed: values.commentsAllowed,
+          type: values.isPoll ? 'poll' : 'text',
+          ...(values.linkMetadata && { linkMetadata: values.linkMetadata }),
+        };
+
+        if (values.isPoll) {
+            newPostData.pollOptions = values.pollOptions.map(opt => ({ option: opt.option, votes: 0 }));
+            newPostData.voters = {};
+        }
+
+        setDoc(newPostRef, newPostData)
+          .then(() => {
+            form.reset();
+            setIsOpen(false);
+          })
+          .catch((serverError) => {
+            const permissionError = new FirestorePermissionError({
+                path: newPostRef.path,
+                operation: 'create',
+                requestResourceData: newPostData
+            });
+            errorEmitter.emit('permission-error', permissionError);
+          })
+          .finally(() => {
+            // No need for isSubmitting state, react-hook-form provides it
+          });
+    }
   };
 
 
@@ -234,8 +281,10 @@ function PostPageComponent() {
                 <X className="h-4 w-4" />
             </Button>
           </SheetClose>
-          <SheetTitle className="text-base font-bold">Create Post</SheetTitle>
-          <SheetDescription className="sr-only">Create a new post by writing content. You can also disable replies before publishing.</SheetDescription>
+          <SheetTitle className="text-base font-bold">{isEditMode ? 'Edit Post' : 'Create Post'}</SheetTitle>
+          <SheetDescription className="sr-only">
+            {isEditMode ? 'Edit your existing post.' : 'Create a new post by writing content. You can also disable replies before publishing.'}
+          </SheetDescription>
         </div>
         
         <div className="flex-grow flex flex-col pt-14">
@@ -333,10 +382,10 @@ function PostPageComponent() {
                                 <div className="p-4 border-t bg-background w-full fixed bottom-0 left-0 right-0">
                                     <div className="flex items-center justify-between">
                                         <div className="flex items-center space-x-1">
-                                            <Button type="button" variant="ghost" size="icon" onClick={() => setShowLinkInput(!showLinkInput)} disabled={!!linkMetadata}>
+                                            <Button type="button" variant="ghost" size="icon" onClick={() => setShowLinkInput(!showLinkInput)} disabled={!!linkMetadata || isEditMode}>
                                                 <LinkIcon className="h-5 w-5 text-muted-foreground" />
                                             </Button>
-                                            <Button type="button" variant="ghost" size="icon" onClick={() => form.setValue('isPoll', !isPoll, { shouldValidate: true })}>
+                                            <Button type="button" variant="ghost" size="icon" onClick={() => form.setValue('isPoll', !isPoll, { shouldValidate: true })} disabled={isEditMode}>
                                                 <ListOrdered className={cn("h-5 w-5 text-muted-foreground", isPoll && "text-primary")} />
                                             </Button>
                                              <FormField
@@ -357,7 +406,7 @@ function PostPageComponent() {
                                                 />
                                         </div>
                                         <Button type="submit" disabled={form.formState.isSubmitting} className="rounded-full w-32">
-                                            {form.formState.isSubmitting ? <Loader2 className="h-4 w-4 animate-spin" /> : 'Publish'}
+                                            {form.formState.isSubmitting ? <Loader2 className="h-4 w-4 animate-spin" /> : (isEditMode ? 'Save Changes' : 'Publish')}
                                         </Button>
                                     </div>
                                 </div>
@@ -379,5 +428,3 @@ export default function PostPage() {
     </Suspense>
   );
 }
-
-    
