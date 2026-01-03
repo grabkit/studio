@@ -82,7 +82,7 @@ function BookmarksList({ bookmarks, bookmarksLoading }: { bookmarks: WithId<Book
     }, [firestore, bookmarks, bookmarksLoading]);
 
     const handleLikeInBookmark = (postId: string) => {
-        if (!firestore || !user) return;
+        if (!user || !firestore) return;
         
         const originalPost = bookmarkedPosts.find(p => p.id === postId);
         if (!originalPost) return;
@@ -112,20 +112,27 @@ function BookmarksList({ bookmarks, bookmarksLoading }: { bookmarks: WithId<Book
             }
 
             const freshPost = postDoc.data() as Post;
-            const freshLikes = freshPost.likes || [];
-            const userHasLiked = freshLikes.includes(user.uid);
+            const currentLikes = freshPost.likes || [];
+            const userHasLiked = currentLikes.includes(user.uid);
+
+            let updatedLikes;
+            let updatedLikeCount;
 
             if (userHasLiked) {
-                transaction.update(postRef, {
-                    likeCount: increment(-1),
-                    likes: arrayRemove(user.uid)
-                });
+                // Unlike
+                updatedLikeCount = (freshPost.likeCount || 1) - 1;
+                updatedLikes = currentLikes.filter(uid => uid !== user.uid);
             } else {
-                transaction.update(postRef, {
-                    likeCount: increment(1),
-                    likes: arrayUnion(user.uid)
-                });
+                // Like
+                updatedLikeCount = (freshPost.likeCount || 0) + 1;
+                updatedLikes = [...currentLikes, user.uid];
             }
+            
+            transaction.update(postRef, {
+                likeCount: updatedLikeCount,
+                likes: updatedLikes,
+            });
+
         }).catch(error => {
             console.error("Like transaction failed: ", error);
             // Revert optimistic update
@@ -171,7 +178,7 @@ function BookmarksList({ bookmarks, bookmarksLoading }: { bookmarks: WithId<Book
                     key={post.id} 
                     post={post} 
                     bookmarks={bookmarks} 
-                    updatePost={(id, data) => setBookmarkedPosts(posts => posts.map(p => p.id === id ? {...p, ...data} : p))}
+                    updatePost={handleLikeInBookmark}
                     onDelete={() => setBookmarkedPosts(posts => posts.filter(p => p.id !== post.id))}
                 />
             ))}
@@ -472,3 +479,5 @@ export default function AccountPage() {
     </AppLayout>
   );
 }
+
+    

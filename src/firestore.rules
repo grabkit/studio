@@ -58,11 +58,8 @@ service cloud.firestore {
           // Allow editing post content by owner
           (isOwner(resource.data.authorId) && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['content', 'commentsAllowed', 'isPinned'])) ||
           
-          // Allow liking/unliking, which modifies both likeCount and likes array
-          (
-            (request.resource.data.likeCount == resource.data.likeCount + 1 && request.resource.data.likes == resource.data.likes.concat([request.auth.uid])) ||
-            (request.resource.data.likeCount == resource.data.likeCount - 1 && request.resource.data.likes == resource.data.likes.remove(request.auth.uid))
-          ) ||
+          // Allow a user to only modify 'likes' and 'likeCount' fields on a post
+          (request.resource.data.diff(resource.data).affectedKeys().hasOnly(['likes', 'likeCount'])) ||
 
           // Allow updating comment count (by functions, basically)
           (request.resource.data.diff(resource.data).affectedKeys().hasOnly(['commentCount'])) ||
@@ -215,3 +212,5 @@ service cloud.firestore {
     }
   }
 }
+
+    

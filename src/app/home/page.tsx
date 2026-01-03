@@ -225,7 +225,7 @@ export function PostItem({ post, bookmarks, updatePost, onDelete, onPin, showPin
     }
     
     const postRef = doc(firestore, 'posts', post.id);
-    const originalPost = { ...post };
+    const originalPostState = { ...post };
 
     // Optimistic UI update
     const newLikes = hasLiked
@@ -242,28 +242,32 @@ export function PostItem({ post, bookmarks, updatePost, onDelete, onPin, showPin
                 throw "Post does not exist!";
             }
 
-            const currentPost = postDoc.data() as Post;
-            const currentLikes = currentPost.likes || [];
+            const freshPost = postDoc.data() as Post;
+            const currentLikes = freshPost.likes || [];
             const userHasLiked = currentLikes.includes(user.uid);
+
+            let updatedLikes;
+            let updatedLikeCount;
 
             if (userHasLiked) {
                 // Unlike
-                transaction.update(postRef, {
-                    likeCount: increment(-1),
-                    likes: arrayRemove(user.uid)
-                });
+                updatedLikeCount = (freshPost.likeCount || 1) - 1;
+                updatedLikes = currentLikes.filter(uid => uid !== user.uid);
             } else {
                 // Like
-                transaction.update(postRef, {
-                    likeCount: increment(1),
-                    likes: arrayUnion(user.uid)
-                });
+                updatedLikeCount = (freshPost.likeCount || 0) + 1;
+                updatedLikes = [...currentLikes, user.uid];
             }
+            
+            transaction.update(postRef, {
+                likeCount: updatedLikeCount,
+                likes: updatedLikes,
+            });
         });
 
     } catch (e: any) {
         // Revert optimistic update on error
-        updatePost(post.id, { likes: originalPost.likes, likeCount: originalPost.likeCount });
+        updatePost(post.id, { likes: originalPostState.likes, likeCount: originalPostState.likeCount });
         
         console.error("Like transaction failed: ", e);
         const permissionError = new FirestorePermissionError({
@@ -642,3 +646,5 @@ export default function HomePage() {
     </AppLayout>
   );
 }
+
+    
