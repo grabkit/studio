@@ -3,14 +3,15 @@
 
 import React, { useState, useEffect } from 'react';
 import { useFirebase } from '@/firebase';
-import { collectionGroup, query, where, getDocs, orderBy, limit, collection, getDoc, doc } from 'firebase/firestore';
+import { collectionGroup, query, where, getDocs, orderBy, limit, doc, getDoc } from 'firebase/firestore';
 import type { WithId } from '@/firebase/firestore/use-collection';
 import type { Comment, Post, ReplyItem } from '@/lib/types';
 import { Skeleton } from './ui/skeleton';
 import { Avatar, AvatarFallback } from './ui/avatar';
 import { getInitials, formatTimestamp } from '@/lib/utils';
 import Link from 'next/link';
-import { usePresence } from '@/hooks/usePresence';
+import { useDoc } from '@/firebase/firestore/use-doc';
+
 
 function ReplySkeleton() {
     return (
@@ -32,36 +33,36 @@ const formatUserId = (uid: string | undefined) => {
     return `blur${uid.substring(uid.length - 6)}`;
 };
 
-function Reply({ reply }: { reply: WithId<ReplyItem> }) {
+function Reply({ comment, post }: { comment: WithId<Comment>, post: WithId<Post> | null }) {
+    const { user } = useFirebase();
 
     return (
          <div className="p-4 space-y-3">
-            {/* Original Post Snippet */}
-             <div className="text-sm text-muted-foreground pl-10">
-                <Link href={`/profile/${reply.authorId}`} className="text-primary hover:underline">{formatUserId(reply.authorId)}</Link> replied to your post: 
-                <span className="italic"> "{reply.postContent.substring(0, 50)}..."</span>
-            </div>
+             {post && (
+                <div className="text-sm text-muted-foreground pl-10">
+                   You replied to <Link href={`/profile/${post.authorId}`} className="text-primary hover:underline">{formatUserId(post.authorId)}</Link>
+                </div>
+             )}
 
-            {/* The Reply */}
             <div className="flex space-x-3">
                 <Avatar className="h-8 w-8">
-                    <AvatarFallback>{getInitials(reply.authorId)}</AvatarFallback>
+                    <AvatarFallback>{getInitials(user?.displayName)}</AvatarFallback>
                 </Avatar>
                 <div className="flex-1">
                     <div className="flex justify-between items-center">
                         <div className="flex items-center space-x-2">
-                            <Link href={`/profile/${reply.authorId}`} className="font-semibold text-sm hover:underline">
-                                {formatUserId(reply.authorId)}
-                            </Link>
+                            <span className="font-semibold text-sm hover:underline">
+                                {formatUserId(comment.authorId)}
+                            </span>
                             <span className="text-xs text-muted-foreground">
-                            {reply.timestamp
-                                ? formatTimestamp(reply.timestamp.toDate())
+                            {comment.timestamp
+                                ? formatTimestamp(comment.timestamp.toDate())
                                 : ""}
                             </span>
                         </div>
                     </div>
-                    <Link href={`/post/${reply.postId}`}>
-                        <p className="text-sm text-foreground whitespace-pre-wrap hover:bg-secondary/50 rounded p-1 -m-1">{reply.content}</p>
+                    <Link href={`/post/${comment.postId}`}>
+                        <p className="text-sm text-foreground whitespace-pre-wrap hover:bg-secondary/50 rounded p-1 -m-1">{comment.content}</p>
                     </Link>
                 </div>
             </div>
@@ -69,10 +70,31 @@ function Reply({ reply }: { reply: WithId<ReplyItem> }) {
     )
 }
 
+function ReplyItemWrapper({ comment }: { comment: WithId<Comment> }) {
+    const { firestore } = useFirebase();
+    const [post, setPost] = useState<WithId<Post> | null>(null);
+    
+    useEffect(() => {
+        if (!firestore) return;
+        const postRef = doc(firestore, 'posts', comment.postId);
+        getDoc(postRef).then(docSnap => {
+            if (docSnap.exists()) {
+                setPost({ id: docSnap.id, ...docSnap.data() } as WithId<Post>);
+            }
+        });
+    }, [firestore, comment.postId]);
+    
+    if (!post) {
+        return <ReplySkeleton />;
+    }
+
+    return <Reply comment={comment} post={post} />;
+}
+
 
 export function RepliesList({ userId }: { userId: string }) {
     const { firestore } = useFirebase();
-    const [replies, setReplies] = useState<WithId<ReplyItem>[]>([]);
+    const [replies, setReplies] = useState<WithId<Comment>[]>([]);
     const [isLoading, setIsLoading] = useState(true);
 
     useEffect(() => {
@@ -81,68 +103,16 @@ export function RepliesList({ userId }: { userId: string }) {
         const fetchUserReplies = async () => {
             setIsLoading(true);
             try {
-                // Step 1: Get all posts created by the user.
-                const userPostsQuery = query(collection(firestore, 'posts'), where('authorId', '==', userId));
-                const postsSnapshot = await getDocs(userPostsQuery);
+                // Use a collectionGroup query to get all comments by the user
+                const commentsQuery = query(
+                    collectionGroup(firestore, 'comments'),
+                    where('authorId', '==', userId),
+                    orderBy('timestamp', 'desc'),
+                    limit(50)
+                );
 
-                if (postsSnapshot.empty) {
-                    setReplies([]);
-                    setIsLoading(false);
-                    return;
-                }
-
-                const postsData: { [key: string]: Post } = {};
-                postsSnapshot.forEach(doc => {
-                    postsData[doc.id] = { id: doc.id, ...doc.data() } as Post;
-                });
-                const postIds = Object.keys(postsData);
-
-                // Step 2: Fetch all comments where 'postId' is in the list of the user's post IDs.
-                // Firestore 'in' queries are limited to 30 items per query.
-                const MAX_COMMENTS_FETCH = 30;
-                let allComments: WithId<Comment>[] = [];
-
-                for (let i = 0; i < postIds.length; i += MAX_COMMENTS_FETCH) {
-                    const chunk = postIds.slice(i, i + MAX_COMMENTS_FETCH);
-                    if (chunk.length > 0) {
-                        // This query requires an index, which we want to avoid.
-                        // const commentsQuery = query(
-                        //     collectionGroup(firestore, 'comments'),
-                        //     where('postId', 'in', chunk)
-                        // );
-                        
-                        // New approach: Query each subcollection individually
-                        for (const postId of chunk) {
-                             const commentsSubcollectionQuery = query(
-                                collection(firestore, 'posts', postId, 'comments')
-                            );
-                            const commentsSnapshot = await getDocs(commentsSubcollectionQuery);
-                            const chunkComments = commentsSnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as WithId<Comment>));
-                            allComments = [...allComments, ...chunkComments];
-                        }
-                    }
-                }
-
-                // Filter out replies made by the user themselves
-                const receivedReplies = allComments.filter(comment => comment.authorId !== userId);
-                
-                // Sort replies by timestamp client-side
-                receivedReplies.sort((a, b) => {
-                    const timeA = a.timestamp?.toMillis() || 0;
-                    const timeB = b.timestamp?.toMillis() || 0;
-                    return timeB - timeA;
-                });
-
-                // Step 3: Combine comment data with original post data
-                const fetchedReplies: WithId<ReplyItem>[] = receivedReplies.map(comment => {
-                    const post = postsData[comment.postId];
-                    return {
-                        ...comment,
-                        id: comment.id,
-                        postContent: post?.content || "Original post content not found.",
-                        postAuthorId: post?.authorId, // The author of the original post
-                    };
-                });
+                const querySnapshot = await getDocs(commentsQuery);
+                const fetchedReplies = querySnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as WithId<Comment>));
                 
                 setReplies(fetchedReplies);
 
@@ -171,7 +141,7 @@ export function RepliesList({ userId }: { userId: string }) {
         return (
             <div className="text-center py-16">
                 <h3 className="text-xl font-headline text-primary">No Replies Yet</h3>
-                <p className="text-muted-foreground">Replies to this user's posts will appear here.</p>
+                <p className="text-muted-foreground">This user hasn't replied to any posts.</p>
             </div>
         );
     }
@@ -179,7 +149,7 @@ export function RepliesList({ userId }: { userId: string }) {
     return (
         <div className="divide-y border-b">
             {replies.map(reply => (
-                <Reply key={reply.id} reply={reply} />
+                <ReplyItemWrapper key={reply.id} comment={reply} />
             ))}
         </div>
     );
