@@ -5,7 +5,7 @@
 import { useParams, useRouter } from "next/navigation";
 import { useFirebase, useMemoFirebase, useCollection, type WithId, useDoc } from "@/firebase";
 import { doc, collection, query, where, getDocs, serverTimestamp, setDoc, getDoc, updateDoc, increment, arrayUnion, arrayRemove, deleteField } from "firebase/firestore";
-import type { Post, User } from "@/lib/types";
+import type { Post, User, Notification } from "@/lib/types";
 import React, { useMemo, useState, useEffect, useCallback } from "react";
 import Link from "next/link";
 import { useToast } from "@/hooks/use-toast";
@@ -315,6 +315,15 @@ export default function UserProfilePage() {
                     lastReadTimestamps: { [currentUserId]: serverTimestamp() }
                 };
                 await setDoc(conversationRef, newConversationData);
+                
+                const notificationRef = doc(collection(firestore, 'users', userId, 'notifications'));
+                const notificationData: Omit<Notification, 'id'> = {
+                    type: 'message_request',
+                    fromUserId: currentUserId,
+                    timestamp: serverTimestamp(),
+                    read: false,
+                };
+                await setDoc(notificationRef, { ...notificationData, id: notificationRef.id });
             }
             
             router.push(`/messages/${userId}`);
@@ -387,7 +396,7 @@ export default function UserProfilePage() {
     }, [user, currentUser]);
 
     const handleUpvoteUser = () => {
-        if (!currentUser || !user || !userRef) return;
+        if (!currentUser || !user || !userRef || !firestore) return;
 
         const payload = {
             upvotes: increment(hasUpvotedUser ? -1 : 1),
@@ -395,6 +404,20 @@ export default function UserProfilePage() {
         };
 
         updateDoc(userRef, payload)
+        .then(() => {
+             if (!hasUpvotedUser) {
+                const notificationRef = doc(collection(firestore, 'users', user.id, 'notifications'));
+                const notificationData: Omit<Notification, 'id'> = {
+                    type: 'upvote',
+                    fromUserId: currentUser.uid,
+                    timestamp: serverTimestamp(),
+                    read: false,
+                };
+                setDoc(notificationRef, { ...notificationData, id: notificationRef.id }).catch(serverError => {
+                    console.error("Failed to create upvote notification:", serverError);
+                });
+            }
+        })
         .catch(err => {
             const permissionError = new FirestorePermissionError({
                 path: userRef.path,

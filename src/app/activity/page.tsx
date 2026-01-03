@@ -9,7 +9,7 @@ import type { Notification } from "@/lib/types";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import Link from "next/link";
-import { Heart, MessageCircle, AlertTriangle } from "lucide-react";
+import { Heart, MessageCircle, AlertTriangle, UserUp, Mail } from "lucide-react";
 import { cn, formatTimestamp, getInitials } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import { useEffect } from "react";
@@ -34,6 +34,16 @@ const notificationInfo = {
         icon: AlertTriangle,
         text: "reply needs your approval",
         color: "text-amber-500"
+    },
+    upvote: {
+        icon: UserUp,
+        text: "upvoted your profile",
+        color: "text-green-500"
+    },
+    message_request: {
+        icon: Mail,
+        text: "wants to send you a message",
+        color: "text-purple-500"
     }
 }
 
@@ -41,15 +51,17 @@ const notificationInfo = {
 function NotificationItem({ notification }: { notification: WithId<Notification> }) {
     const info = notificationInfo[notification.type] || notificationInfo.comment;
     const Icon = info.icon;
+    
+    const isProfileActivity = notification.type === 'upvote' || notification.type === 'message_request';
+    const linkHref = isProfileActivity ? `/profile/${notification.fromUserId}` : `/post/${notification.postId}`;
 
     return (
-        <Link href={`/post/${notification.postId}`} className={cn(
+        <Link href={linkHref} className={cn(
             "flex items-start space-x-4 p-4 border-b transition-colors hover:bg-accent",
             !notification.read && "bg-primary/5"
         )}>
              <div className="relative">
                 <Avatar className="h-10 w-10">
-                    {/* For comment_approval, the avatar can be a generic one or the post author's */}
                     <AvatarFallback>{getInitials(notification.fromUserId)}</AvatarFallback>
                 </Avatar>
                 <div className="absolute -bottom-1 -right-1 bg-background rounded-full p-0.5">
@@ -60,8 +72,10 @@ function NotificationItem({ notification }: { notification: WithId<Notification>
                 <p className="text-sm">
                     <span className="font-bold">{formatUserId(notification.fromUserId)}</span>
                     {' '}
-                    {info.text}:
-                    <span className="text-muted-foreground italic"> "{notification.postContent}"</span>
+                    {info.text}
+                    {notification.postContent && (
+                       <span className="text-muted-foreground italic"> "{notification.postContent}"</span>
+                    )}
                 </p>
                 <p className="text-xs text-muted-foreground mt-1">
                     {formatTimestamp(notification.timestamp.toDate())}
