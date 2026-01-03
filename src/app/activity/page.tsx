@@ -55,7 +55,7 @@ function NotificationItem({ notification }: { notification: WithId<Notification>
     const isProfileActivity = notification.type === 'upvote' || notification.type === 'message_request';
     const linkHref = isProfileActivity ? `/profile/${notification.fromUserId}` : `/post/${notification.postId}`;
 
-    const isFilledIcon = notification.type === 'like' || notification.type === 'message_request';
+    const isFilledIcon = notification.type === 'like' || notification.type === 'message_request' || notification.type === 'comment';
 
 
     return (
