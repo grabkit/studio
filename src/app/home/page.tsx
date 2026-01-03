@@ -234,7 +234,6 @@ export function PostItem({ post, bookmarks, updatePost, onDelete, onPin, showPin
     const likesPayload = { likes: hasLiked ? arrayRemove(user.uid) : arrayUnion(user.uid) };
     
     try {
-        // Perform two separate updates
         await updateDoc(postRef, likeCountPayload);
         await updateDoc(postRef, likesPayload);
 
@@ -248,7 +247,7 @@ export function PostItem({ post, bookmarks, updatePost, onDelete, onPin, showPin
                 const notificationData: Omit<Notification, 'id'> = {
                     type: 'like',
                     postId: post.id,
-                    postContent: post.content.substring(0, 100), // snippet of post content
+                    activityContent: post.content.substring(0, 100), // snippet of post content
                     fromUserId: user.uid,
                     timestamp: serverTimestamp(),
                     read: false,
@@ -639,3 +638,5 @@ export default function HomePage() {
     </AppLayout>
   );
 }
+
+    

@@ -167,7 +167,6 @@ export default function AccountPage() {
             return newPosts;
         });
 
-        // Also update firestore in the background
         if (firestore && authUser) {
             const postRef = doc(firestore, 'posts', postId);
             const hasLiked = updatedData.likes?.includes(authUser.uid);
@@ -175,11 +174,9 @@ export default function AccountPage() {
             const likeCountPayload = { likeCount: increment(hasLiked ? 1 : -1) };
             const likesPayload = { likes: hasLiked ? arrayUnion(authUser.uid) : arrayRemove(authUser.uid) };
 
-            // Perform two separate updates
             updateDoc(postRef, likeCountPayload).then(() => {
                 return updateDoc(postRef, likesPayload);
             }).catch(serverError => {
-                 // Revert optimistic update on error
                 setPosts(currentPosts => {
                     if (!currentPosts) return [];
                      return currentPosts.map(p =>
@@ -203,7 +200,6 @@ export default function AccountPage() {
   const handlePinPost = useCallback((postId: string, currentStatus: boolean) => {
     if (!firestore) return;
 
-    // Optimistic update
     setPosts(currentPosts => {
         const newPosts = currentPosts.map(p =>
             p.id === postId ? { ...p, isPinned: !currentStatus } : p
@@ -219,14 +215,12 @@ export default function AccountPage() {
     });
 
 
-    // Server update
     const postRef = doc(firestore, 'posts', postId);
     updateDoc(postRef, { isPinned: !currentStatus })
       .then(() => {
         toast({ title: currentStatus ? "Post unpinned" : "Post pinned" });
       })
       .catch(serverError => {
-        // Revert optimistic update on error
         setPosts(currentPosts => {
             const revertedPosts = currentPosts.map(p =>
                 p.id === postId ? { ...p, isPinned: currentStatus } : p
@@ -261,7 +255,6 @@ export default function AccountPage() {
   
   const karmaScore = useMemo(() => {
     if (!posts) return 0;
-    // For now, karma is just total post likes. Can be extended later.
     return posts.reduce((acc, post) => acc + (post.likeCount || 0), 0);
   }, [posts]);
 
@@ -449,3 +442,5 @@ export default function AccountPage() {
     </AppLayout>
   );
 }
+
+    

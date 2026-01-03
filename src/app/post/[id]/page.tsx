@@ -132,8 +132,6 @@ function PostDetailItem({ post }: { post: WithId<Post> }) {
     const likesPayload = { likes: hasLiked ? arrayRemove(user.uid) : arrayUnion(user.uid) };
 
     try {
-        // We can't do optimistic updates here as easily because useDoc doesn't have an update function.
-        // For simplicity, we'll just await the server response.
         await updateDoc(postRef, likeCountPayload);
         await updateDoc(postRef, likesPayload);
 
@@ -347,7 +345,7 @@ function CommentForm({ post, commentsAllowed }: { post: WithId<Post>, commentsAl
   }, [firestore, post]);
   const { data: postAuthorProfile } = useDoc<UserProfile>(postAuthorRef);
 
-  const onSubmit = async (values: z.infer<typeof CommentFormSchema>) => {
+  const onSubmit = async (values: z.infer<typeof CommentFormSchema>>) => {
     if (!user || !firestore) {
       toast({ variant: "destructive", title: "You must be logged in to comment." });
       return;
@@ -792,3 +790,5 @@ export default function PostDetailPage() {
     </AppLayout>
   );
 }
+
+    

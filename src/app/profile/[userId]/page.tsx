@@ -161,7 +161,6 @@ export default function UserProfilePage() {
             );
         });
         
-        // Also update firestore in the background
         if (firestore && currentUser) {
             const postRef = doc(firestore, 'posts', postId);
             const hasLiked = updatedData.likes?.includes(currentUser.uid);
@@ -169,11 +168,9 @@ export default function UserProfilePage() {
             const likeCountPayload = { likeCount: increment(hasLiked ? 1 : -1) };
             const likesPayload = { likes: hasLiked ? arrayUnion(currentUser.uid) : arrayRemove(currentUser.uid) };
 
-            // Perform two separate updates
             updateDoc(postRef, likeCountPayload).then(() => {
                 return updateDoc(postRef, likesPayload);
             }).catch(serverError => {
-                 // Revert optimistic update on error
                  setPosts(currentPosts => {
                     if (!currentPosts) return [];
                      return currentPosts.map(p =>
@@ -742,3 +739,5 @@ export default function UserProfilePage() {
         </AppLayout>
     );
 }
+
+    
