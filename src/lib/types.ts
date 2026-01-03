@@ -20,6 +20,8 @@ export interface Post {
     timestamp: Timestamp;
     authorId: string;
     content: string;
+    likes: string[];
+    likeCount: number;
     commentCount: number;
     commentsAllowed?: boolean;
     isPinned?: boolean;

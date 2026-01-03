@@ -1,4 +1,5 @@
 
+
 "use client";
 
 import AppLayout from "@/components/AppLayout";
@@ -159,8 +160,6 @@ export default function AccountPage() {
 }, [firestore, authUser]);
 
   const updatePostState = useCallback((postId: string, updatedData: Partial<Post>) => {
-    // Like functionality is removed, this function may not be needed for posts.
-    // Kept for potential future use with other optimistic updates (e.g., bookmarks on this page).
     setPosts(currentPosts => {
         if (!currentPosts) return [];
         return currentPosts.map(p =>

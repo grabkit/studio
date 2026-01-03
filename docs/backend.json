@@ -260,16 +260,16 @@
             },
             "type": {
                 "type": "string",
-                "enum": ["like", "comment", "comment_approval"],
+                "enum": ["comment", "comment_approval", "upvote", "message_request"],
                 "description": "The type of activity."
             },
             "postId": {
                 "type": "string",
-                "description": "The ID of the post the activity is related to."
+                "description": "The ID of the post the activity is related to. Not present for upvote or message_request types."
             },
             "postContent": {
                 "type": "string",
-                "description": "A snippet of the content of the post."
+                "description": "A snippet of the content of the post. Not present for upvote or message_request types."
             },
             "fromUserId": {
                 "type": "string",
@@ -285,7 +285,7 @@
                 "description": "Whether the user has read the notification."
             }
         },
-        "required": ["id", "type", "postId", "fromUserId", "timestamp", "read"]
+        "required": ["id", "type", "fromUserId", "timestamp", "read"]
     },
     "Conversation": {
       "$schema": "http://json-schema.org/draft-07/schema#",
@@ -624,6 +624,5 @@
     "reasoning": "The Firestore structure is designed for a public, social-media-style application. User profiles are stored in a `/users` collection, while all posts are stored in a single top-level `/posts` collection. This global `posts` collection allows any user to easily query and view all public posts. Security rules are configured to enforce that while all authenticated user can read posts, only the original author (`authorId` must match `request.auth.uid`) can write, update, or delete their own posts. Comments are stored in a subcollection under each post for clear organization. User-specific data like bookmarks and notifications are stored in subcollections under the respective user's document for security and scalability. Messaging is handled through a top-level `conversations` collection, with messages stored in a subcollection. This allows for efficient querying of conversations a user is part of, while keeping the actual message data separate. A `reports` collection is added for moderation purposes, allowing users to report content or other users. A `calls` collection with `callerCandidates` and `answerCandidates` subcollections is added to facilitate WebRTC voice call signaling. A separate `videoCalls` collection with its own candidate subcollections is added for the new video call functionality to keep it isolated from the existing voice call feature."
   }
 }
-    
 
     

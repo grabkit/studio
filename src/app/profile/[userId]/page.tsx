@@ -1,4 +1,5 @@
 
+
 "use client";
 
 import { useParams, useRouter } from "next/navigation";
@@ -153,8 +154,6 @@ export default function UserProfilePage() {
     }, [firestore, userId]);
 
     const updatePostState = useCallback((postId: string, updatedData: Partial<Post>) => {
-        // Like functionality is removed, this function may not be needed for posts.
-        // Kept for potential future use with other optimistic updates.
         setPosts(currentPosts => {
             if (!currentPosts) return [];
             return currentPosts.map(p =>

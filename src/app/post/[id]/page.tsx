@@ -1,4 +1,5 @@
 
+
 "use client";
 
 import { useFirebase, useMemoFirebase, useUser } from "@/firebase";
@@ -106,7 +107,7 @@ function LinkPreview({ metadata }: { metadata: LinkMetadata }) {
     )
 }
 
-function PostDetailItem({ post }: { post: WithId<Post> }) {
+function PostDetailItem({ post, updatePost }: { post: WithId<Post>, updatePost: (data: Partial<Post>) => void }) {
   const { user, firestore } = useFirebase();
   const { toast } = useToast();
   const router = useRouter();
@@ -115,13 +116,25 @@ function PostDetailItem({ post }: { post: WithId<Post> }) {
   const isOwner = user?.uid === post.authorId;
   const repliesAllowed = post.commentsAllowed !== false;
 
-  const handleLike = async () => {
-    // Like functionality is removed. This function does nothing.
-    toast({
-        title: "Feature Disabled",
-        description: "Liking posts is temporarily disabled.",
-    });
+  const hasLiked = post.likes?.includes(user?.uid || '');
+
+  const handleLike = () => {
+    if (!user || !firestore) {
+        toast({ variant: "destructive", title: "You must be logged in to like a post." });
+        return;
+    }
+
+    const newLikes = hasLiked
+        ? post.likes.filter((id) => id !== user.uid)
+        : [...(post.likes || []), user.uid];
+    
+    const newLikeCount = hasLiked ? (post.likeCount ?? 1) - 1 : (post.likeCount ?? 0) + 1;
+
+    updatePost({ likes: newLikes, likeCount: newLikeCount });
+
+    // Database logic will be added in the next step
   };
+
 
   const handleDeletePost = async () => {
     if (!firestore || !isOwner) return;
@@ -223,7 +236,7 @@ function PostDetailItem({ post }: { post: WithId<Post> }) {
 
             <div className="border-t border-b -mx-4 my-2 px-4 py-2 text-sm text-muted-foreground flex items-center justify-around">
                 <div className="flex items-center space-x-2">
-                    <span className="font-bold text-foreground">0</span>
+                    <span className="font-bold text-foreground">{formatCount(post.likeCount)}</span>
                     <span>Likes</span>
                 </div>
                  <div className="flex items-center space-x-2">
@@ -239,10 +252,11 @@ function PostDetailItem({ post }: { post: WithId<Post> }) {
             <div className="flex items-center justify-around pt-2 text-muted-foreground">
                 <button
                     onClick={handleLike}
-                    className="flex items-center space-x-1 hover:text-pink-500"
+                    className={cn("flex items-center space-x-1", hasLiked && "text-pink-500")}
                 >
                     <Heart
                     className="h-5 w-5"
+                    fill={hasLiked ? 'currentColor' : 'none'}
                     />
                 </button>
                 <button className={cn(
@@ -678,8 +692,16 @@ export default function PostDetailPage() {
     );
   }, [firestore, id]);
 
-  const { data: post, isLoading: isPostLoading } = useDoc<Post>(postRef);
+  const { data: post, isLoading: isPostLoading, setData: setPost } = useDoc<Post>(postRef);
   const { data: comments, isLoading: areCommentsLoading } = useCollection<Comment>(commentsQuery);
+  
+  const updatePostState = (updatedData: Partial<Post>) => {
+    setPost(currentPost => {
+        if (!currentPost) return null;
+        return { ...currentPost, ...updatedData };
+    });
+  };
+
 
   if (isPostLoading) {
     return (
@@ -731,7 +753,7 @@ export default function PostDetailPage() {
             <h2 className="text-lg font-bold mx-auto -translate-x-4">Post</h2>
         </div>
         <div className="pt-14 pb-40">
-            <PostDetailItem post={post} />
+            <PostDetailItem post={post} updatePost={updatePostState} />
             <div>
                 {(post.commentsAllowed !== false && areCommentsLoading) && <div className="p-4 text-center">Loading replies...</div>}
                 

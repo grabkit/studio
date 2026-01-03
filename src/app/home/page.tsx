@@ -1,4 +1,5 @@
 
+
 "use client";
 
 import AppLayout from "@/components/AppLayout";
@@ -207,13 +208,32 @@ export function PostItem({ post, bookmarks, updatePost, onDelete, onPin, showPin
   const isBookmarked = useMemo(() => bookmarks?.some(b => b.postId === post.id), [bookmarks, post.id]);
   const repliesAllowed = post.commentsAllowed !== false;
 
+  const hasLiked = useMemo(() => {
+    if (!user) return false;
+    return post.likes?.includes(user.uid);
+  }, [post.likes, user]);
 
-  const handleLike = async () => {
-    // Like functionality is removed. This function does nothing.
-    toast({
-        title: "Feature Disabled",
-        description: "Liking posts is temporarily disabled.",
-    });
+
+  const handleLike = () => {
+    if (!user || !firestore || !updatePost) {
+        toast({
+            variant: "destructive",
+            title: "Authentication Error",
+            description: "You must be logged in to like a post.",
+        });
+        return;
+    }
+
+    // Optimistic UI update
+    const newLikes = hasLiked
+        ? post.likes.filter((id) => id !== user.uid)
+        : [...(post.likes || []), user.uid];
+    
+    const newLikeCount = hasLiked ? (post.likeCount ?? 1) - 1 : (post.likeCount ?? 0) + 1;
+
+    updatePost(post.id, { likes: newLikes, likeCount: newLikeCount });
+
+    // We will add the database logic in the next step.
   };
 
   const handleDeletePost = async () => {
@@ -374,9 +394,9 @@ export function PostItem({ post, bookmarks, updatePost, onDelete, onPin, showPin
 
             <div className="flex items-center justify-between pt-2 text-muted-foreground">
                 <div className="flex items-center space-x-6">
-                  <button className="flex items-center space-x-1">
-                    <Heart className="h-4 w-4" />
-                    <span className="text-xs"></span>
+                  <button onClick={handleLike} className={cn("flex items-center space-x-1", hasLiked && "text-pink-500")}>
+                    <Heart className="h-4 w-4" fill={hasLiked ? 'currentColor' : 'none'} />
+                    <span className="text-xs">{post.likeCount > 0 ? formatCount(post.likeCount) : ''}</span>
                   </button>
                   <CommentButtonWrapper
                     href={`/post/${post.id}`}
@@ -455,25 +475,17 @@ export default function HomePage() {
     return query(collection(firestore, 'posts'), orderBy("timestamp", "desc"), limit(50));
   }, [firestore]);
 
-  const { data: initialPosts, isLoading: postsFromHookLoading } = useCollection<Post>(postsQuery);
-
-  const [displayedPosts, setDisplayedPosts] = useState<WithId<Post>[] | null>(null);
-
-  useEffect(() => {
-    if(initialPosts) {
-      setDisplayedPosts(initialPosts);
-    }
-  }, [initialPosts]);
+  const { data: initialPosts, isLoading: postsFromHookLoading, setData: setPostsData } = useCollection<Post>(postsQuery);
 
   const updatePost = useCallback((postId: string, updatedData: Partial<Post>) => {
-    setDisplayedPosts(currentPosts => {
+    setPostsData(currentPosts => {
         if (!currentPosts) return null;
         const newPosts = currentPosts.map(p =>
             p.id === postId ? { ...p, ...updatedData } : p
         );
         return newPosts;
     });
-  }, []);
+  }, [setPostsData]);
 
   const bookmarksQuery = useMemoFirebase(() => {
     if (!firestore || !user) return null;
@@ -491,7 +503,7 @@ export default function HomePage() {
         
         // Shuffle the posts for a dynamic feed feel on refresh
         fetchedPosts.sort(() => Math.random() - 0.5);
-        setDisplayedPosts(fetchedPosts);
+        setPostsData(fetchedPosts);
 
     } catch (error) {
         console.error("Error fetching posts:", error);
@@ -536,10 +548,14 @@ export default function HomePage() {
   const isLoading = postsFromHookLoading || bookmarksLoading;
 
   const filteredPosts = useMemo(() => {
-    if (!displayedPosts) return [];
+    if (!initialPosts) return [];
     const mutedUsers = userProfile?.mutedUsers || [];
-    return displayedPosts.filter(post => !mutedUsers.includes(post.authorId));
-  }, [displayedPosts, userProfile]);
+    return initialPosts.filter(post => !mutedUsers.includes(post.authorId));
+  }, [initialPosts, userProfile]);
+
+  const handleDeletePostOptimistic = (postId: string) => {
+    setPostsData(currentPosts => currentPosts?.filter(p => p.id !== postId) ?? []);
+  }
 
   return (
     <AppLayout>
@@ -561,7 +577,7 @@ export default function HomePage() {
            </div>
         </div>
         <div className="divide-y border-b pt-12">
-          {(isLoading || !displayedPosts) && (
+          {(isLoading || !initialPosts) && (
             <>
               <PostSkeleton />
               <PostSkeleton />
@@ -571,15 +587,15 @@ export default function HomePage() {
             </>
           )}
 
-          {!isLoading && displayedPosts && filteredPosts.length === 0 && (
+          {!isLoading && initialPosts && filteredPosts.length === 0 && (
             <div className="text-center py-10 h-screen">
               <h2 className="text-2xl font-headline text-primary">No posts yet!</h2>
               <p className="text-muted-foreground mt-2">Be the first to post something.</p>
             </div>
           )}
           
-          {!isLoading && displayedPosts && filteredPosts.map((post) => (
-              <PostItem key={post.id} post={post} bookmarks={bookmarks} updatePost={updatePost} onDelete={(id) => setDisplayedPosts(posts => posts?.filter(p => p.id !== id) ?? [])} />
+          {!isLoading && initialPosts && filteredPosts.map((post) => (
+              <PostItem key={post.id} post={post} bookmarks={bookmarks} updatePost={updatePost} onDelete={handleDeletePostOptimistic} />
             ))
           }
         </div>
