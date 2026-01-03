@@ -203,70 +203,17 @@ export function PostItem({ post, bookmarks, updatePost, onDelete, onPin, showPin
   const [isShareSheetOpen, setIsShareSheetOpen] = useState(false);
   const [isMoreOptionsSheetOpen, setIsMoreOptionsSheetOpen] = useState(false);
   
-  const hasLiked = user ? post.likes?.includes(user.uid) : false;
   const isOwner = user?.uid === post.authorId;
   const isBookmarked = useMemo(() => bookmarks?.some(b => b.postId === post.id), [bookmarks, post.id]);
   const repliesAllowed = post.commentsAllowed !== false;
 
 
   const handleLike = async () => {
-    if (!user || !firestore || !updatePost) {
-        toast({
-            variant: "destructive",
-            title: "Authentication Error",
-            description: "You must be logged in to like a post.",
-        });
-        return;
-    }
-
-    const newLikes = hasLiked
-        ? post.likes.filter(uid => uid !== user.uid)
-        : [...(post.likes || []), user.uid];
-    
-    const newLikeCount = newLikes.length;
-
-    // Optimistic update
-    updatePost(post.id, { likes: newLikes, likeCount: newLikeCount });
-
-    // Server update
-    const postRef = doc(firestore, 'posts', post.id);
-    const likeCountPayload = { likeCount: increment(hasLiked ? -1 : 1) };
-    const likesPayload = { likes: hasLiked ? arrayRemove(user.uid) : arrayUnion(user.uid) };
-    
-    try {
-        await updateDoc(postRef, likeCountPayload);
-        await updateDoc(postRef, likesPayload);
-
-        if (!isOwner && !hasLiked) {
-             const notificationsRef = collection(firestore, 'users', post.authorId, 'notifications');
-            const q = query(notificationsRef, where('postId', '==', post.id), where('fromUserId', '==', user.uid), where('type', '==', 'like'));
-            
-            const existingNotif = await getDocs(q);
-            if (existingNotif.empty) {
-                const notificationRef = doc(notificationsRef);
-                const notificationData: Omit<Notification, 'id'> = {
-                    type: 'like',
-                    postId: post.id,
-                    activityContent: post.content.substring(0, 100), // snippet of post content
-                    fromUserId: user.uid,
-                    timestamp: serverTimestamp(),
-                    read: false,
-                };
-                await setDoc(notificationRef, { ...notificationData, id: notificationRef.id });
-            }
-        }
-    } catch (serverError) {
-        // Revert optimistic update on error
-        updatePost(post.id, { likes: post.likes, likeCount: post.likeCount });
-        
-        // It's tricky to know which part failed, so we create a generic error object for the LLM
-        const permissionError = new FirestorePermissionError({
-            path: postRef.path,
-            operation: 'update',
-            requestResourceData: { likeCount: 'increment', likes: 'arrayUnion/arrayRemove' }, // Generic payload
-        });
-        errorEmitter.emit('permission-error', permissionError);
-    }
+    // Like functionality is removed. This function does nothing.
+    toast({
+        title: "Feature Disabled",
+        description: "Liking posts is temporarily disabled.",
+    });
   };
 
   const handleDeletePost = async () => {
@@ -427,9 +374,9 @@ export function PostItem({ post, bookmarks, updatePost, onDelete, onPin, showPin
 
             <div className="flex items-center justify-between pt-2 text-muted-foreground">
                 <div className="flex items-center space-x-6">
-                  <button onClick={handleLike} className="flex items-center space-x-1 hover:text-pink-500">
-                    <Heart className={cn("h-4 w-4", hasLiked && "text-pink-500 fill-pink-500")} />
-                    <span className="text-xs">{post.likeCount > 0 ? formatCount(post.likeCount) : ''}</span>
+                  <button className="flex items-center space-x-1">
+                    <Heart className="h-4 w-4" />
+                    <span className="text-xs"></span>
                   </button>
                   <CommentButtonWrapper
                     href={`/post/${post.id}`}

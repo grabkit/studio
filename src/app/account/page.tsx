@@ -159,41 +159,15 @@ export default function AccountPage() {
 }, [firestore, authUser]);
 
   const updatePostState = useCallback((postId: string, updatedData: Partial<Post>) => {
-        setPosts(currentPosts => {
-            if (!currentPosts) return [];
-            const newPosts = currentPosts.map(p =>
-                p.id === postId ? { ...p, ...updatedData } : p
-            );
-            return newPosts;
-        });
-
-        if (firestore && authUser) {
-            const postRef = doc(firestore, 'posts', postId);
-            const hasLiked = updatedData.likes?.includes(authUser.uid);
-
-            const likeCountPayload = { likeCount: increment(hasLiked ? 1 : -1) };
-            const likesPayload = { likes: hasLiked ? arrayUnion(authUser.uid) : arrayRemove(authUser.uid) };
-
-            try {
-                updateDoc(postRef, likeCountPayload);
-                updateDoc(postRef, likesPayload);
-            } catch (serverError) {
-                // Revert UI on failure
-                setPosts(currentPosts => {
-                    if (!currentPosts) return [];
-                    return currentPosts.map(p =>
-                        p.id === postId ? { ...p, likes: p.likes, likeCount: p.likeCount } : p
-                    );
-                });
-                const permissionError = new FirestorePermissionError({
-                    path: postRef.path,
-                    operation: 'update',
-                    requestResourceData: { like: 'like/unlike operation' },
-                });
-                errorEmitter.emit('permission-error', permissionError);
-            }
-        }
-    }, [firestore, authUser]);
+    // Like functionality is removed, this function may not be needed for posts.
+    // Kept for potential future use with other optimistic updates (e.g., bookmarks on this page).
+    setPosts(currentPosts => {
+        if (!currentPosts) return [];
+        return currentPosts.map(p =>
+            p.id === postId ? { ...p, ...updatedData } : p
+        );
+    });
+    }, []);
 
   const handleDeletePost = useCallback((postId: string) => {
     setPosts(currentPosts => currentPosts.filter(p => p.id !== postId));
@@ -255,11 +229,6 @@ export default function AccountPage() {
 
   const { data: bookmarks, isLoading: bookmarksLoading } = useCollection<Bookmark>(bookmarksQuery);
   
-  const karmaScore = useMemo(() => {
-    if (!posts) return 0;
-    return posts.reduce((acc, post) => acc + (post.likeCount || 0), 0);
-  }, [posts]);
-
 
   const formatUserId = (uid: string | undefined) => {
     if (!uid) return "blur??????";
@@ -363,14 +332,6 @@ export default function AccountPage() {
                         <div className="font-bold text-lg">{posts?.length ?? 0}</div>
                     )}
                     <p className="text-sm text-muted-foreground">Posts</p>
-                </div>
-                <div>
-                    {isLoading ? (
-                        <div className="font-bold text-lg"><Skeleton className="h-6 w-8 mx-auto" /></div>
-                    ) : (
-                        <div className="font-bold text-lg">{karmaScore}</div>
-                    )}
-                    <p className="text-sm text-muted-foreground">Karma</p>
                 </div>
                 <div>
                     {isLoading ? (

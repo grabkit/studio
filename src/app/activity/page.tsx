@@ -20,11 +20,6 @@ const formatUserId = (uid: string | undefined) => {
 };
 
 const notificationInfo = {
-    like: {
-        icon: Heart,
-        text: "liked your post",
-        color: "text-pink-500"
-    },
     comment: {
         icon: MessageCircle,
         text: "replied to your post", // This will be a fallback
@@ -55,7 +50,7 @@ function NotificationItem({ notification }: { notification: WithId<Notification>
     const isProfileActivity = notification.type === 'upvote' || notification.type === 'message_request';
     const linkHref = isProfileActivity ? `/profile/${notification.fromUserId}` : `/post/${notification.postId}`;
 
-    const isFilledIcon = notification.type === 'like' || notification.type === 'message_request' || notification.type === 'comment';
+    const isFilledIcon = notification.type === 'message_request' || notification.type === 'comment';
 
 
     return (
@@ -171,3 +166,5 @@ export default function ActivityPage() {
         </AppLayout>
     )
 }
+
+    

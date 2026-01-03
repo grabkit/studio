@@ -112,54 +112,15 @@ function PostDetailItem({ post }: { post: WithId<Post> }) {
   const router = useRouter();
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
 
-  const hasLiked = user ? post.likes?.includes(user.uid) : false;
   const isOwner = user?.uid === post.authorId;
   const repliesAllowed = post.commentsAllowed !== false;
 
   const handleLike = async () => {
-    if (!user || !firestore) {
-      toast({
-        variant: "destructive",
-        title: "Authentication Error",
-        description: "You must be logged in to like a post.",
-      });
-      return;
-    }
-
-    const postRef = doc(firestore, "posts", post.id);
-    const likeCountPayload = { likeCount: increment(hasLiked ? -1 : 1) };
-    const likesPayload = { likes: hasLiked ? arrayRemove(user.uid) : arrayUnion(user.uid) };
-
-    try {
-        await updateDoc(postRef, likeCountPayload);
-        await updateDoc(postRef, likesPayload);
-
-        if (!isOwner && !hasLiked) {
-             const notificationsRef = collection(firestore, 'users', post.authorId, 'notifications');
-            const q = query(notificationsRef, where('postId', '==', post.id), where('fromUserId', '==', user.uid), where('type', '==', 'like'));
-            
-            const existingNotif = await getDocs(q);
-            if (existingNotif.empty) {
-                const notificationRef = doc(notificationsRef);
-                const notificationData: Partial<Notification> = {
-                    type: 'like',
-                    postId: post.id,
-                    activityContent: post.content.substring(0, 100),
-                    fromUserId: user.uid,
-                    timestamp: serverTimestamp(),
-                    read: false,
-                };
-                await setDoc(notificationRef, { ...notificationData, id: notificationRef.id });
-            }
-        }
-    } catch (serverError) {
-        const permissionError = new FirestorePermissionError({
-            path: postRef.path,
-            operation: 'update',
-            requestResourceData: { like: 'like/unlike operation' },
-        });
-        errorEmitter.emit('permission-error', permissionError);
-    }
+    // Like functionality is removed. This function does nothing.
+    toast({
+        title: "Feature Disabled",
+        description: "Liking posts is temporarily disabled.",
+    });
   };
 
   const handleDeletePost = async () => {
@@ -262,7 +223,7 @@ function PostDetailItem({ post }: { post: WithId<Post> }) {
 
             <div className="border-t border-b -mx-4 my-2 px-4 py-2 text-sm text-muted-foreground flex items-center justify-around">
                 <div className="flex items-center space-x-2">
-                    <span className="font-bold text-foreground">{formatCount(post.likeCount)}</span>
+                    <span className="font-bold text-foreground">0</span>
                     <span>Likes</span>
                 </div>
                  <div className="flex items-center space-x-2">
@@ -281,7 +242,7 @@ function PostDetailItem({ post }: { post: WithId<Post> }) {
                     className="flex items-center space-x-1 hover:text-pink-500"
                 >
                     <Heart
-                    className={cn("h-5 w-5", hasLiked && "text-pink-500 fill-pink-500")}
+                    className="h-5 w-5"
                     />
                 </button>
                 <button className={cn(

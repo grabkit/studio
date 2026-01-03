@@ -20,8 +20,6 @@ export interface Post {
     timestamp: Timestamp;
     authorId: string;
     content: string;
-    likes: string[];
-    likeCount: number;
     commentCount: number;
     commentsAllowed?: boolean;
     isPinned?: boolean;
@@ -78,7 +76,7 @@ export interface UserPost extends Post {
 
 export interface Notification {
     id: string;
-    type: 'like' | 'comment' | 'comment_approval' | 'upvote' | 'message_request';
+    type: 'comment' | 'comment_approval' | 'upvote' | 'message_request';
     postId?: string;
     activityContent?: string;
     fromUserId: string;
@@ -162,8 +160,5 @@ export interface VideoIceCandidate {
     sdpMLineIndex: number | null;
     usernameFragment: string | null;
 }
-    
-
-    
 
     
