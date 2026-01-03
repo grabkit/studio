@@ -62,6 +62,12 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 
 
 const formatUserId = (uid: string | undefined) => {
@@ -462,7 +468,6 @@ function CommentItem({ comment, postAuthorId }: { comment: WithId<Comment>, post
 
   const [isSheetOpen, setIsSheetOpen] = useState(false);
   const [isEditing, setIsEditing] = useState(false);
-  const [editedContent, setEditedContent] = useState(comment.content);
   const [isUpdating, setIsUpdating] = useState(false);
 
   const isPostOwner = user && user.uid === postAuthorId;
@@ -770,3 +775,5 @@ export default function PostDetailPage() {
     </AppLayout>
   );
 }
+
+    
