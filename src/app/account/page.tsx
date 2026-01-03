@@ -1,3 +1,4 @@
+
 "use client";
 
 import AppLayout from "@/components/AppLayout";
@@ -35,6 +36,7 @@ import {
 
 function BookmarksList({ bookmarks, bookmarksLoading }: { bookmarks: WithId<Bookmark>[] | null, bookmarksLoading: boolean }) {
     const { firestore, user } = useFirebase();
+    const { toast } = useToast();
     const [bookmarkedPosts, setBookmarkedPosts] = useState<WithId<Post>[]>([]);
     const [isLoading, setIsLoading] = useState(true);
 
@@ -79,31 +81,16 @@ function BookmarksList({ bookmarks, bookmarksLoading }: { bookmarks: WithId<Book
 
     }, [firestore, bookmarks, bookmarksLoading]);
 
-    if (isLoading) {
-        return (
-            <>
-                <PostSkeleton />
-                <PostSkeleton />
-            </>
-        );
-    }
-
-    if (bookmarkedPosts.length === 0) {
-        return (
-            <div className="text-center py-16">
-                <h3 className="text-xl font-headline text-primary">No Bookmarks Yet</h3>
-                <p className="text-muted-foreground">You haven't bookmarked any posts.</p>
-            </div>
-        )
-    }
-
-    const handleLikeInBookmark = (postId: string, currentPost: WithId<Post>) => {
+    const handleLikeInBookmark = (postId: string) => {
         if (!firestore || !user) return;
-
-        const updatedPost = { ...currentPost };
-        const hasLiked = updatedPost.likes?.includes(user.uid);
         
+        const originalPost = bookmarkedPosts.find(p => p.id === postId);
+        if (!originalPost) return;
+
+        const hasLiked = originalPost.likes?.includes(user.uid);
+
         // Optimistic UI update
+        const updatedPost = { ...originalPost };
         if (hasLiked) {
             updatedPost.likes = updatedPost.likes.filter(id => id !== user.uid);
             updatedPost.likeCount = (updatedPost.likeCount || 1) - 1;
@@ -143,14 +130,38 @@ function BookmarksList({ bookmarks, bookmarksLoading }: { bookmarks: WithId<Book
             console.error("Like transaction failed: ", error);
             // Revert optimistic update
             setBookmarkedPosts(currentPosts => 
-                currentPosts.map(p => p.id === postId ? currentPost : p)
+                currentPosts.map(p => p.id === postId ? originalPost : p)
             );
+            const permissionError = new FirestorePermissionError({
+                path: postRef.path,
+                operation: 'update',
+                requestResourceData: { likeCount: 'increment/decrement', likes: 'arrayUnion/arrayRemove' },
+            });
+            errorEmitter.emit('permission-error', permissionError);
             toast({
                 variant: 'destructive',
                 title: 'Error',
                 description: 'Could not update like status.'
             })
         });
+    }
+
+    if (isLoading) {
+        return (
+            <>
+                <PostSkeleton />
+                <PostSkeleton />
+            </>
+        );
+    }
+
+    if (bookmarkedPosts.length === 0) {
+        return (
+            <div className="text-center py-16">
+                <h3 className="text-xl font-headline text-primary">No Bookmarks Yet</h3>
+                <p className="text-muted-foreground">You haven't bookmarked any posts.</p>
+            </div>
+        )
     }
 
     return (
@@ -160,7 +171,8 @@ function BookmarksList({ bookmarks, bookmarksLoading }: { bookmarks: WithId<Book
                     key={post.id} 
                     post={post} 
                     bookmarks={bookmarks} 
-                    onLike={() => handleLikeInBookmark(post.id, post)}
+                    updatePost={(id, data) => setBookmarkedPosts(posts => posts.map(p => p.id === id ? {...p, ...data} : p))}
+                    onDelete={() => setBookmarkedPosts(posts => posts.filter(p => p.id !== post.id))}
                 />
             ))}
         </div>
@@ -441,7 +453,7 @@ export default function AccountPage() {
                           key={post.id} 
                           post={post} 
                           bookmarks={bookmarks} 
-                          onLike={() => updatePostState(post.id, post)}
+                          updatePost={updatePostState}
                           onDelete={handleDeletePost} 
                           onPin={handlePinPost} 
                           showPinStatus={true} 
@@ -451,7 +463,7 @@ export default function AccountPage() {
             </TabsContent>
              <TabsContent value="replies" className="mt-0">
                  {authUser?.uid && <RepliesList userId={authUser.uid} />}
-            </TabsContent>
+             </TabsContent>
              <TabsContent value="bookmarks" className="mt-0">
                  <BookmarksList bookmarks={bookmarks} bookmarksLoading={bookmarksLoading} />
              </TabsContent>

@@ -225,10 +225,11 @@ export function PostItem({ post, bookmarks, updatePost, onDelete, onPin, showPin
     }
     
     const postRef = doc(firestore, 'posts', post.id);
+    const originalPost = { ...post };
 
     // Optimistic UI update
     const newLikes = hasLiked
-        ? post.likes.filter((id) => id !== user.uid)
+        ? (post.likes || []).filter((id) => id !== user.uid)
         : [...(post.likes || []), user.uid];
     
     const newLikeCount = hasLiked ? (post.likeCount ?? 1) - 1 : (post.likeCount ?? 0) + 1;
@@ -244,28 +245,25 @@ export function PostItem({ post, bookmarks, updatePost, onDelete, onPin, showPin
             const currentPost = postDoc.data() as Post;
             const currentLikes = currentPost.likes || [];
             const userHasLiked = currentLikes.includes(user.uid);
-            let updatedLikes;
-            let updatedLikeCount;
 
             if (userHasLiked) {
                 // Unlike
-                updatedLikeCount = (currentPost.likeCount || 1) - 1;
-                updatedLikes = currentLikes.filter(uid => uid !== user.uid);
+                transaction.update(postRef, {
+                    likeCount: increment(-1),
+                    likes: arrayRemove(user.uid)
+                });
             } else {
                 // Like
-                updatedLikeCount = (currentPost.likeCount || 0) + 1;
-                updatedLikes = [...currentLikes, user.uid];
+                transaction.update(postRef, {
+                    likeCount: increment(1),
+                    likes: arrayUnion(user.uid)
+                });
             }
-            
-            transaction.update(postRef, {
-                likeCount: updatedLikeCount,
-                likes: updatedLikes,
-            });
         });
 
     } catch (e: any) {
         // Revert optimistic update on error
-        updatePost(post.id, { likes: post.likes, likeCount: post.likeCount });
+        updatePost(post.id, { likes: originalPost.likes, likeCount: originalPost.likeCount });
         
         console.error("Like transaction failed: ", e);
         const permissionError = new FirestorePermissionError({

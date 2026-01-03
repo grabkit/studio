@@ -1,3 +1,4 @@
+
 "use client";
 
 import { useParams, useRouter } from "next/navigation";
@@ -154,11 +155,65 @@ export default function UserProfilePage() {
     const updatePostState = useCallback((postId: string, updatedData: Partial<Post>) => {
         setPosts(currentPosts => {
             if (!currentPosts) return [];
-            return currentPosts.map(p =>
-                p.id === postId ? { ...p, ...updatedData } : p
+            
+            const originalPost = currentPosts.find(p => p.id === postId);
+            if (!originalPost) return currentPosts;
+
+            const hasLiked = originalPost.likes?.includes(currentUser?.uid ?? '');
+
+             // Optimistic UI update
+            const newLikes = hasLiked
+                ? (originalPost.likes || []).filter((id) => id !== currentUser!.uid)
+                : [...(originalPost.likes || []), currentUser!.uid];
+            
+            const newLikeCount = hasLiked ? (originalPost.likeCount ?? 1) - 1 : (originalPost.likeCount ?? 0) + 1;
+            
+            const optimisticallyUpdatedPosts = currentPosts.map(p =>
+                p.id === postId ? { ...p, likes: newLikes, likeCount: newLikeCount } : p
             );
+            
+            setPosts(optimisticallyUpdatedPosts);
+
+
+            // Firestore Transaction
+            const postRef = doc(firestore, 'posts', postId);
+            runTransaction(firestore, async (transaction) => {
+                const postDoc = await transaction.get(postRef);
+                if (!postDoc.exists()) throw "Post does not exist!";
+
+                const freshPost = postDoc.data() as Post;
+                const freshLikes = freshPost.likes || [];
+                const userHasLiked = freshLikes.includes(currentUser!.uid);
+
+                if (userHasLiked) {
+                    transaction.update(postRef, {
+                        likeCount: increment(-1),
+                        likes: arrayRemove(currentUser!.uid)
+                    });
+                } else {
+                    transaction.update(postRef, {
+                        likeCount: increment(1),
+                        likes: arrayUnion(currentUser!.uid)
+                    });
+                }
+            }).catch(error => {
+                console.error("Like transaction failed: ", error);
+                setPosts(currentPosts); // Revert to original state
+                const permissionError = new FirestorePermissionError({
+                    path: postRef.path,
+                    operation: 'update',
+                    requestResourceData: { likeCount: 'increment/decrement', likes: 'arrayUnion/arrayRemove' },
+                });
+                errorEmitter.emit('permission-error', permissionError);
+                toast({
+                    variant: 'destructive',
+                    title: 'Error',
+                    description: 'Could not update like status.'
+                })
+            });
         });
-    }, []);
+    }, [firestore, currentUser, toast]);
+
 
     const bookmarksQuery = useMemoFirebase(() => {
         if (!firestore || !currentUser) return null;
@@ -638,7 +693,7 @@ export default function UserProfilePage() {
                                           key={post.id} 
                                           post={post} 
                                           bookmarks={bookmarks} 
-                                          onLike={() => updatePostState(post.id, post)}
+                                          updatePost={updatePostState}
                                           showPinStatus={true} 
                                         />
                                     ))}
