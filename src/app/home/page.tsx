@@ -234,7 +234,6 @@ export function PostItem({ post, bookmarks, updatePost, onDelete, onPin, showPin
     const likesPayload = { likes: hasLiked ? arrayRemove(user.uid) : arrayUnion(user.uid) };
     
     try {
-        // Split into two separate updates
         await updateDoc(postRef, likeCountPayload);
         await updateDoc(postRef, likesPayload);
 
@@ -641,3 +640,5 @@ export default function HomePage() {
     </AppLayout>
   );
 }
+
+    

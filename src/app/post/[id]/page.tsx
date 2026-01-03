@@ -344,7 +344,7 @@ function CommentForm({ post, commentsAllowed }: { post: WithId<Post>, commentsAl
   }, [firestore, post]);
   const { data: postAuthorProfile } = useDoc<UserProfile>(postAuthorRef);
 
-  const onSubmit = async (values: z.infer<typeof CommentFormSchema>>) => {
+  const onSubmit = async (values: z.infer<typeof CommentFormSchema>) => {
     if (!user || !firestore) {
       toast({ variant: "destructive", title: "You must be logged in to comment." });
       return;
@@ -789,3 +789,5 @@ export default function PostDetailPage() {
     </AppLayout>
   );
 }
+
+    
