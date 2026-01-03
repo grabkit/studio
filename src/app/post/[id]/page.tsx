@@ -35,7 +35,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { Button, buttonVariants } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { Form, FormControl, FormField, FormItem, FormMessage } from "@/components/ui/form";
-import { Heart, MessageCircle, ArrowUpRight, Trash2, MoreHorizontal, Edit, ArrowLeft, Repeat, Check, AlertTriangle, Slash } from "lucide-react";
+import { Heart, MessageCircle, ArrowUpRight, Trash2, MoreHorizontal, Edit, ArrowLeft, Repeat, Check, AlertTriangle, Slash, Loader2 } from "lucide-react";
 import { cn, formatTimestamp, getInitials } from "@/lib/utils";
 import { useToast } from "@/hooks/use-toast";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -44,11 +44,14 @@ import { useForm } from "react-hook-form";
 import { errorEmitter } from "@/firebase/error-emitter";
 import { FirestorePermissionError } from "@/firebase/errors";
 import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu";
+  Sheet,
+  SheetContent,
+  SheetHeader,
+  SheetTitle,
+  SheetDescription,
+  SheetTrigger,
+  SheetClose,
+} from "@/components/ui/sheet";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -448,18 +451,34 @@ function CommentForm({ post, commentsAllowed }: { post: WithId<Post>, commentsAl
   );
 }
 
+const updateCommentSchema = z.object({
+  content: z.string().min(1, "Comment cannot be empty").max(280, "Comment is too long."),
+});
+
 function CommentItem({ comment, postAuthorId }: { comment: WithId<Comment>, postAuthorId?: string }) {
   const { user } = useUser();
   const { firestore } = useFirebase();
   const { toast } = useToast();
 
+  const [isSheetOpen, setIsSheetOpen] = useState(false);
+  const [isEditing, setIsEditing] = useState(false);
+  const [editedContent, setEditedContent] = useState(comment.content);
+  const [isUpdating, setIsUpdating] = useState(false);
+
   const isPostOwner = user && user.uid === postAuthorId;
   const isCommentOwner = user && user.uid === comment.authorId;
-  const canDelete = isPostOwner || isCommentOwner;
+  const canManage = isPostOwner || isCommentOwner;
   const isPendingApproval = comment.status === 'pending_approval';
+  
+  const form = useForm<z.infer<typeof updateCommentSchema>>({
+    resolver: zodResolver(updateCommentSchema),
+    defaultValues: { content: comment.content },
+  });
+
 
   const handleDelete = () => {
-    if (!firestore || !canDelete) return;
+    setIsSheetOpen(false);
+    if (!firestore || !canManage) return;
 
     const commentRef = doc(firestore, "posts", comment.postId, "comments", comment.id);
     const postRef = doc(firestore, "posts", comment.postId);
@@ -477,6 +496,34 @@ function CommentItem({ comment, postAuthorId }: { comment: WithId<Comment>, post
     });
   };
   
+  const handleEdit = () => {
+    setIsSheetOpen(false);
+    setIsEditing(true);
+  }
+  
+  const handleUpdate = async (values: z.infer<typeof updateCommentSchema>) => {
+    if (!firestore || !isCommentOwner) return;
+    setIsUpdating(true);
+    
+    const commentRef = doc(firestore, "posts", comment.postId, "comments", comment.id);
+    
+    try {
+        await updateDoc(commentRef, { content: values.content });
+        setIsEditing(false);
+    } catch (serverError) {
+        const permissionError = new FirestorePermissionError({
+            path: commentRef.path,
+            operation: 'update',
+            requestResourceData: { content: values.content },
+        });
+        errorEmitter.emit('permission-error', permissionError);
+        toast({ variant: 'destructive', title: 'Error', description: 'Could not update your comment.' });
+    } finally {
+        setIsUpdating(false);
+    }
+  }
+
+
   const handleApprove = () => {
       if (!firestore || !isPostOwner) return;
       const commentRef = doc(firestore, "posts", comment.postId, "comments", comment.id);
@@ -516,8 +563,66 @@ function CommentItem({ comment, postAuthorId }: { comment: WithId<Comment>, post
                     : ""}
                 </span>
             </div>
+            {canManage && !isEditing && (
+                 <Sheet open={isSheetOpen} onOpenChange={setIsSheetOpen}>
+                    <SheetTrigger asChild>
+                        <Button variant="ghost" size="icon" className="h-6 w-6">
+                            <MoreHorizontal className="h-4 w-4" />
+                        </Button>
+                    </SheetTrigger>
+                    <SheetContent side="bottom" className="rounded-t-lg">
+                        <SheetHeader className="text-left">
+                            <SheetTitle>Options for reply</SheetTitle>
+                            <SheetDescription>Manage your reply.</SheetDescription>
+                        </SheetHeader>
+                        <div className="grid gap-2 py-4">
+                             {isCommentOwner && (
+                                <div className="border rounded-2xl">
+                                    <Button variant="ghost" className="justify-between text-base py-6 rounded-2xl w-full" onClick={handleEdit}>
+                                        <span className="font-semibold">Edit</span>
+                                        <Edit className="h-5 w-5" />
+                                    </Button>
+                                </div>
+                             )}
+                            <div className="border rounded-2xl">
+                                <Button variant="ghost" className="justify-between text-base py-6 rounded-2xl w-full text-destructive hover:text-destructive" onClick={handleDelete}>
+                                    <span className="font-semibold">Delete</span>
+                                    <Trash2 className="h-5 w-5" />
+                                </Button>
+                            </div>
+                        </div>
+                    </SheetContent>
+                </Sheet>
+            )}
         </div>
-        <p className={cn("text-sm text-foreground whitespace-pre-wrap", isPendingApproval && "text-muted-foreground")}>{comment.content}</p>
+        
+        {isEditing ? (
+             <Form {...form}>
+                <form onSubmit={form.handleSubmit(handleUpdate)} className="space-y-3 mt-2">
+                    <FormField
+                        control={form.control}
+                        name="content"
+                        render={({ field }) => (
+                            <FormItem>
+                                <FormControl>
+                                    <Textarea {...field} className="text-sm" />
+                                </FormControl>
+                                <FormMessage />
+                            </FormItem>
+                        )}
+                    />
+                    <div className="flex justify-end gap-2">
+                        <Button type="button" variant="ghost" size="sm" onClick={() => setIsEditing(false)}>Cancel</Button>
+                        <Button type="submit" size="sm" disabled={isUpdating}>
+                            {isUpdating && <Loader2 className="h-4 w-4 mr-2 animate-spin" />}
+                            Save
+                        </Button>
+                    </div>
+                </form>
+            </Form>
+        ) : (
+            <p className={cn("text-sm text-foreground whitespace-pre-wrap", isPendingApproval && "text-muted-foreground")}>{comment.content}</p>
+        )}
         
         {isPendingApproval && isPostOwner && (
             <div className="mt-3 p-3 bg-amber-50 border border-amber-200 rounded-lg">
@@ -665,9 +770,3 @@ export default function PostDetailPage() {
     </AppLayout>
   );
 }
-
-    
-
-
-
-    
