@@ -57,10 +57,11 @@ service cloud.firestore {
       allow update: if isSignedIn() && (
           // Allow editing post content by owner
           (isOwner(resource.data.authorId) && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['content', 'commentsAllowed', 'isPinned'])) ||
-          // Allow any user to like/unlike a post, which only modifies likeCount and likes
-           (request.resource.data.likeCount == resource.data.likeCount + 1 || request.resource.data.likeCount == resource.data.likeCount - 1) &&
-           (request.resource.data.likes.size() == resource.data.likes.size() + 1 || request.resource.data.likes.size() == resource.data.likes.size() - 1) ||
-           // Allow updating comment count (by functions, basically)
+          // Allow any user to like/unlike a post, which only modifies likeCount
+          (request.resource.data.diff(resource.data).affectedKeys().hasOnly(['likeCount'])) ||
+          // Allow any user to like/unlike a post, which only modifies likes array
+          (request.resource.data.diff(resource.data).affectedKeys().hasOnly(['likes'])) ||
+          // Allow updating comment count (by functions, basically)
           (request.resource.data.diff(resource.data).affectedKeys().hasOnly(['commentCount'])) ||
           // Allow voting on a poll by any active user who hasn't voted yet
           (request.resource.data.diff(resource.data).affectedKeys().hasAll(['pollOptions', 'voters']) && !resource.data.voters.keys().hasAny([request.auth.uid]))
@@ -125,7 +126,7 @@ service cloud.firestore {
     match /videoCalls/{videoCallId} {
       allow get: if isSignedIn();
       allow list: if isSignedIn();
-      create: if isSignedIn() && request.resource.data.callerId == request.auth.uid;
+      allow create: if isSignedIn() && request.resource.data.callerId == request.auth.uid;
       allow update: if isVideoCallParticipant(videoCallId);
       allow delete: if isVideoCallParticipant(videoCallId);
       
