@@ -33,7 +33,7 @@ service cloud.firestore {
       allow delete: if false; 
       
       match /replies/{commentId} {
-        allow read, list: if isOwner(userId);
+        allow read, list: if isSignedIn();
         allow create, delete: if isSignedIn();
         allow update: if isOwner(userId) || isOwner(resource.data.authorId);
       }
