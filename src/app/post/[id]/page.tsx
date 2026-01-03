@@ -36,7 +36,7 @@ import { Button, buttonVariants } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { Form, FormControl, FormField, FormItem, FormMessage } from "@/components/ui/form";
 import { Heart, MessageCircle, ArrowUpRight, Trash2, MoreHorizontal, Edit, ArrowLeft, Repeat, Check, AlertTriangle, Slash, Loader2 } from "lucide-react";
-import { cn, formatTimestamp, getInitials } from "@/lib/utils";
+import { cn, formatTimestamp, getInitials, formatCount } from "@/lib/utils";
 import { useToast } from "@/hooks/use-toast";
 import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
@@ -258,11 +258,11 @@ function PostDetailItem({ post }: { post: WithId<Post> }) {
 
             <div className="border-t border-b -mx-4 my-2 px-4 py-2 text-sm text-muted-foreground flex items-center justify-around">
                 <div className="flex items-center space-x-2">
-                    <span className="font-bold text-foreground">{post.likeCount}</span>
+                    <span className="font-bold text-foreground">{formatCount(post.likeCount)}</span>
                     <span>Likes</span>
                 </div>
                  <div className="flex items-center space-x-2">
-                    <span className="font-bold text-foreground">{post.commentCount}</span>
+                    <span className="font-bold text-foreground">{formatCount(post.commentCount)}</span>
                     <span>Replies</span>
                 </div>
                  <div className="flex items-center space-x-2">
@@ -785,5 +785,3 @@ export default function PostDetailPage() {
     </AppLayout>
   );
 }
-
-    

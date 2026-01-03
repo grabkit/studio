@@ -10,7 +10,7 @@ import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Skeleton } from "@/components/ui/skeleton";
 import type { Post, Bookmark, PollOption, Notification, User, LinkMetadata } from "@/lib/types";
 import { Heart, MessageCircle, Repeat, ArrowUpRight, MoreHorizontal, Edit, Trash2, Bookmark as BookmarkIcon, CheckCircle2, Slash, RefreshCw, Pin } from "lucide-react";
-import { cn, formatTimestamp, getInitials } from "@/lib/utils";
+import { cn, formatTimestamp, getInitials, formatCount } from "@/lib/utils";
 import { useToast } from "@/hooks/use-toast";
 import { FirestorePermissionError } from "@/firebase/errors";
 import { errorEmitter } from "@/firebase/error-emitter";
@@ -424,7 +424,7 @@ export function PostItem({ post, bookmarks, updatePost, onDelete, onPin, showPin
                 <div className="flex items-center space-x-6">
                   <button onClick={handleLike} className="flex items-center space-x-1 hover:text-pink-500">
                     <Heart className={cn("h-4 w-4", hasLiked && "text-pink-500 fill-pink-500")} />
-                    <span className="text-xs">{post.likeCount > 0 ? post.likeCount : ''}</span>
+                    <span className="text-xs">{post.likeCount > 0 ? formatCount(post.likeCount) : ''}</span>
                   </button>
                   <CommentButtonWrapper
                     href={`/post/${post.id}`}
@@ -437,7 +437,7 @@ export function PostItem({ post, bookmarks, updatePost, onDelete, onPin, showPin
                       <MessageCircle className="h-4 w-4" />
                       {!repliesAllowed && <Slash className="absolute top-0 left-0 h-4 w-4 stroke-[2.5px]" />}
                     </div>
-                    <span className="text-xs">{post.commentCount > 0 ? post.commentCount : ''}</span>
+                    <span className="text-xs">{post.commentCount > 0 ? formatCount(post.commentCount) : ''}</span>
                   </CommentButtonWrapper>
                   <button onClick={handleRepost} className="flex items-center space-x-1 hover:text-green-500">
                     <Repeat className={cn("h-4 w-4")} />
