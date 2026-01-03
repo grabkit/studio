@@ -385,18 +385,18 @@ export function PostItem({ post, bookmarks, updatePost, onDelete, onPin, showPin
                             <div className="grid gap-2 py-4">
                                  <div className="border rounded-2xl">
                                     <Button variant="ghost" className="justify-between text-base py-6 rounded-2xl w-full" onClick={handleEditPost}>
-                                        <span>Edit</span>
+                                        <span className="font-semibold">Edit</span>
                                         <Edit className="h-5 w-5" />
                                     </Button>
                                     <div className="border-t"></div>
                                      <Button variant="ghost" className="justify-between text-base py-6 rounded-2xl w-full" onClick={handlePinPost}>
-                                        <span>{post.isPinned ? "Unpin Post" : "Pin Post"}</span>
+                                        <span className="font-semibold">{post.isPinned ? "Unpin Post" : "Pin Post"}</span>
                                         <Pin className="h-5 w-5" />
                                     </Button>
                                  </div>
                                 <div className="border rounded-2xl">
                                     <Button variant="ghost" className="justify-between text-base py-6 rounded-2xl w-full text-destructive hover:text-destructive" onClick={handleDeletePost}>
-                                        <span>Delete</span>
+                                        <span className="font-semibold">Delete</span>
                                         <Trash2 className="h-5 w-5" />
                                     </Button>
                                 </div>
@@ -627,7 +627,7 @@ export default function HomePage() {
           )}
           
           {!isLoading && displayedPosts && filteredPosts.map((post) => (
-              <PostItem key={post.id} post={post} bookmarks={bookmarks} updatePost={updatePost} onDelete={(id) => setDisplayedPosts(posts => posts?.filter(p => p.id !== id) ?? [])} />
+              <PostItem key={post.id} post={post} bookmarks={bookmarks} updatePost={updatePost} onDelete={(id) => setDisplayedPosts(posts => posts?.filter(p => p.id !== id) ?? [])} onPin={onPin} />
             ))
           }
         </div>
