@@ -31,7 +31,7 @@ import { Button, buttonVariants } from "@/components/ui/button";
 import { useRouter } from "next/navigation";
 import { usePresence } from "@/hooks/usePresence";
 import { ShareSheet } from "@/components/ShareSheet";
-import { Sheet, SheetContent, SheetDescription, SheetHeader, SheetTitle, SheetTrigger } from "@/components/ui/sheet";
+import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger, SheetDescription } from "@/components/ui/sheet";
 
 
 const formatUserId = (uid: string | undefined) => {
@@ -196,7 +196,7 @@ function PollComponent({ post, user }: { post: WithId<Post>, user: any }) {
     );
 }
 
-export function PostItem({ post, bookmarks, updatePost, onDelete, onPin }: { post: WithId<Post>, bookmarks: WithId<Bookmark>[] | null, updatePost?: (id: string, data: Partial<Post>) => void, onDelete?: (id: string) => void, onPin?: (id: string, currentStatus: boolean) => void }) {
+export function PostItem({ post, bookmarks, updatePost, onDelete, onPin, showPinStatus = false }: { post: WithId<Post>, bookmarks: WithId<Bookmark>[] | null, updatePost?: (id: string, data: Partial<Post>) => void, onDelete?: (id: string) => void, onPin?: (id: string, currentStatus: boolean) => void, showPinStatus?: boolean }) {
   const { user, firestore } = useFirebase();
   const { toast } = useToast();
   const router = useRouter();
@@ -267,6 +267,7 @@ export function PostItem({ post, bookmarks, updatePost, onDelete, onPin }: { pos
   const handleDeletePost = async () => {
     if (!firestore || !isOwner) return;
     setIsMoreOptionsSheetOpen(false); // Close sheet immediately
+    
     const postRef = doc(firestore, 'posts', post.id);
     deleteDoc(postRef)
       .then(() => {
@@ -346,7 +347,7 @@ export function PostItem({ post, bookmarks, updatePost, onDelete, onPin }: { pos
     <>
     <Card className="w-full shadow-none border-x-0 border-t-0 rounded-none">
       <CardContent className="p-4">
-        {post.isPinned && (
+        {showPinStatus && post.isPinned && (
           <div className="flex items-center gap-2 text-xs text-muted-foreground mb-2 pl-10">
             <Pin className="h-3 w-3" />
             <span>Pinned</span>
@@ -634,5 +635,3 @@ export default function HomePage() {
     </AppLayout>
   );
 }
-
-    

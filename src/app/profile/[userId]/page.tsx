@@ -606,7 +606,7 @@ export default function UserProfilePage() {
                                         </div>
                                     )}
                                     {posts?.map((post) => (
-                                        <HomePostItem key={post.id} post={post} bookmarks={bookmarks} updatePost={updatePostState} />
+                                        <HomePostItem key={post.id} post={post} bookmarks={bookmarks} updatePost={updatePostState} showPinStatus={true} />
                                     ))}
                                 </div>
                             </TabsContent>
@@ -682,5 +682,3 @@ export default function UserProfilePage() {
         </AppLayout>
     );
 }
-
-    

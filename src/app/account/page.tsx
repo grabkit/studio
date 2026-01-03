@@ -431,7 +431,7 @@ export default function AccountPage() {
                         </div>
                     )}
                     {posts?.map((post) => (
-                        <HomePostItem key={post.id} post={post} bookmarks={bookmarks} updatePost={updatePostState} onDelete={handleDeletePost} onPin={handlePinPost} />
+                        <HomePostItem key={post.id} post={post} bookmarks={bookmarks} updatePost={updatePostState} onDelete={handleDeletePost} onPin={handlePinPost} showPinStatus={true} />
                     ))}
                 </div>
             </TabsContent>
@@ -446,5 +446,3 @@ export default function AccountPage() {
     </AppLayout>
   );
 }
-
-    
