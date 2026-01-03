@@ -174,22 +174,24 @@ export default function AccountPage() {
             const likeCountPayload = { likeCount: increment(hasLiked ? 1 : -1) };
             const likesPayload = { likes: hasLiked ? arrayUnion(authUser.uid) : arrayRemove(authUser.uid) };
 
-            updateDoc(postRef, likeCountPayload).then(() => {
-                return updateDoc(postRef, likesPayload);
-            }).catch(serverError => {
-                setPosts(currentPosts => {
-                    if (!currentPosts) return [];
-                     return currentPosts.map(p =>
-                        p.id === postId ? { ...p, likes: p.likes, likeCount: p.likeCount } : p
-                    );
+            // Execute as two separate updates
+            updateDoc(postRef, likeCountPayload)
+                .then(() => updateDoc(postRef, likesPayload))
+                .catch(serverError => {
+                    // Revert UI on failure
+                    setPosts(currentPosts => {
+                        if (!currentPosts) return [];
+                        return currentPosts.map(p =>
+                            p.id === postId ? { ...p, likes: p.likes, likeCount: p.likeCount } : p
+                        );
+                    });
+                    const permissionError = new FirestorePermissionError({
+                        path: postRef.path,
+                        operation: 'update',
+                        requestResourceData: { like: 'like/unlike operation' },
+                    });
+                    errorEmitter.emit('permission-error', permissionError);
                 });
-                const permissionError = new FirestorePermissionError({
-                    path: postRef.path,
-                    operation: 'update',
-                    requestResourceData: { ...likeCountPayload, ...likesPayload },
-                });
-                errorEmitter.emit('permission-error', permissionError);
-            });
         }
     }, [firestore, authUser]);
 
@@ -442,5 +444,3 @@ export default function AccountPage() {
     </AppLayout>
   );
 }
-
-    

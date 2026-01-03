@@ -234,6 +234,7 @@ export function PostItem({ post, bookmarks, updatePost, onDelete, onPin, showPin
     const likesPayload = { likes: hasLiked ? arrayRemove(user.uid) : arrayUnion(user.uid) };
     
     try {
+        // Split into two separate updates
         await updateDoc(postRef, likeCountPayload);
         await updateDoc(postRef, likesPayload);
 
@@ -258,10 +259,12 @@ export function PostItem({ post, bookmarks, updatePost, onDelete, onPin, showPin
     } catch (serverError) {
         // Revert optimistic update on error
         updatePost(post.id, { likes: post.likes, likeCount: post.likeCount });
+        
+        // It's tricky to know which part failed, so we create a generic error object for the LLM
         const permissionError = new FirestorePermissionError({
             path: postRef.path,
             operation: 'update',
-            requestResourceData: { ...likeCountPayload, ...likesPayload },
+            requestResourceData: { likeCount: 'increment', likes: 'arrayUnion/arrayRemove' }, // Generic payload
         });
         errorEmitter.emit('permission-error', permissionError);
     }
@@ -638,5 +641,3 @@ export default function HomePage() {
     </AppLayout>
   );
 }
-
-    

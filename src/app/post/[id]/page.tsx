@@ -1,5 +1,4 @@
 
-
 "use client";
 
 import { useFirebase, useMemoFirebase, useUser } from "@/firebase";
@@ -157,7 +156,7 @@ function PostDetailItem({ post }: { post: WithId<Post> }) {
         const permissionError = new FirestorePermissionError({
             path: postRef.path,
             operation: 'update',
-            requestResourceData: { ...likeCountPayload, ...likesPayload },
+            requestResourceData: { like: 'like/unlike operation' },
         });
         errorEmitter.emit('permission-error', permissionError);
     }
@@ -790,5 +789,3 @@ export default function PostDetailPage() {
     </AppLayout>
   );
 }
-
-    

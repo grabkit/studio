@@ -73,7 +73,7 @@ service cloud.firestore {
       allow delete: if isSignedIn() && (isOwner(resource.data.authorId) || isOwner(get(/databases/$(database)/documents/posts/$(postId)).data.authorId));
       allow update: if isSignedIn() && (
           // Allow comment owner to edit their own comment content
-          (isOwner(resource.data.authorId) && request.resource.data.diff(resource.data).affectedKeys().hasAll(['content', 'lastEdited'])) ||
+          (isOwner(resource.data.authorId) && request.resource.data.diff(resource.data).hasAll(['content', 'lastEdited'])) ||
           // Allow post owner to approve a comment
           (isOwner(get(/databases/$(database)/documents/posts/$(postId)).data.authorId) && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['status']))
       );
@@ -206,5 +206,3 @@ service cloud.firestore {
     }
   }
 }
-
-    
