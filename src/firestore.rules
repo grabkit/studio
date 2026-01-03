@@ -58,7 +58,7 @@ service cloud.firestore {
           // Allow editing post content by owner
           (isOwner(resource.data.authorId) && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['content', 'commentsAllowed', 'isPinned'])) ||
           // Allow liking/unliking a post by any active user
-          (request.resource.data.diff(resource.data).affectedKeys().hasOnly(['likes', 'likeCount'])) ||
+          (request.resource.data.diff(resource.data).affectedKeys().hasAll(['likes', 'likeCount'])) ||
            // Allow updating comment count (by functions, basically)
           (request.resource.data.diff(resource.data).affectedKeys().hasOnly(['commentCount'])) ||
           // Allow voting on a poll by any active user who hasn't voted yet
