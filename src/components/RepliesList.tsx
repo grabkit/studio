@@ -1,3 +1,4 @@
+
 "use client";
 
 import React, { useState, useEffect } from 'react';
@@ -102,18 +103,21 @@ export function RepliesList({ userId }: { userId: string }) {
         const fetchUserReplies = async () => {
             setIsLoading(true);
             try {
-                // Use a simpler query without ordering to avoid needing a composite index.
-                // We will sort the results on the client-side.
+                // Fetch comments from the collection group without a 'where' clause that requires an index.
+                // We will filter and sort on the client-side.
                 const commentsQuery = query(
                     collectionGroup(firestore, 'comments'),
-                    where('authorId', '==', userId),
-                    limit(50)
+                    limit(50) // Limit the initial fetch to a reasonable number
                 );
 
                 const querySnapshot = await getDocs(commentsQuery);
-                let fetchedReplies = querySnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as WithId<Comment>));
                 
-                // Sort the replies by timestamp on the client side
+                // Filter by authorId on the client
+                let fetchedReplies = querySnapshot.docs
+                    .map(doc => ({ id: doc.id, ...doc.data() } as WithId<Comment>))
+                    .filter(comment => comment.authorId === userId);
+                
+                // Sort the filtered replies by timestamp on the client side
                 fetchedReplies.sort((a, b) => {
                     const timeA = a.timestamp?.toMillis() || 0;
                     const timeB = b.timestamp?.toMillis() || 0;
