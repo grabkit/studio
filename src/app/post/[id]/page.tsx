@@ -118,21 +118,62 @@ function PostDetailItem({ post, updatePost }: { post: WithId<Post>, updatePost: 
 
   const hasLiked = post.likes?.includes(user?.uid || '');
 
-  const handleLike = () => {
+  const handleLike = async () => {
     if (!user || !firestore) {
         toast({ variant: "destructive", title: "You must be logged in to like a post." });
         return;
     }
 
+    const postRef = doc(firestore, 'posts', post.id);
+
+    // Optimistic UI update
     const newLikes = hasLiked
-        ? post.likes.filter((id) => id !== user.uid)
+        ? (post.likes || []).filter((id) => id !== user.uid)
         : [...(post.likes || []), user.uid];
     
     const newLikeCount = hasLiked ? (post.likeCount ?? 1) - 1 : (post.likeCount ?? 0) + 1;
-
     updatePost({ likes: newLikes, likeCount: newLikeCount });
+    
+    try {
+        await runTransaction(firestore, async (transaction) => {
+            const postDoc = await transaction.get(postRef);
+            if (!postDoc.exists()) {
+                throw "Post does not exist!";
+            }
 
-    // Database logic will be added in the next step
+            const currentPost = postDoc.data() as Post;
+            const currentLikes = currentPost.likes || [];
+            const userHasLiked = currentLikes.includes(user.uid);
+            let updatedLikes;
+            let updatedLikeCount;
+
+            if (userHasLiked) {
+                // Unlike
+                updatedLikeCount = (currentPost.likeCount || 1) - 1;
+                updatedLikes = currentLikes.filter(uid => uid !== user.uid);
+            } else {
+                // Like
+                updatedLikeCount = (currentPost.likeCount || 0) + 1;
+                updatedLikes = [...currentLikes, user.uid];
+            }
+            
+            transaction.update(postRef, {
+                likeCount: updatedLikeCount,
+                likes: updatedLikes,
+            });
+        });
+    } catch (e: any) {
+        // Revert optimistic update on error
+        updatePost({ likes: post.likes, likeCount: post.likeCount });
+        
+        console.error("Like transaction failed: ", e);
+        const permissionError = new FirestorePermissionError({
+            path: postRef.path,
+            operation: 'update',
+            requestResourceData: { likeCount: 'increment/decrement', likes: 'arrayUnion/arrayRemove' },
+        });
+        errorEmitter.emit('permission-error', permissionError);
+    }
   };
 
 
@@ -772,5 +813,7 @@ export default function PostDetailPage() {
     </AppLayout>
   );
 }
+
+    
 
     

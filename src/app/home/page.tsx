@@ -214,7 +214,7 @@ export function PostItem({ post, bookmarks, updatePost, onDelete, onPin, showPin
   }, [post.likes, user]);
 
 
-  const handleLike = () => {
+  const handleLike = async () => {
     if (!user || !firestore || !updatePost) {
         toast({
             variant: "destructive",
@@ -223,6 +223,8 @@ export function PostItem({ post, bookmarks, updatePost, onDelete, onPin, showPin
         });
         return;
     }
+    
+    const postRef = doc(firestore, 'posts', post.id);
 
     // Optimistic UI update
     const newLikes = hasLiked
@@ -230,10 +232,49 @@ export function PostItem({ post, bookmarks, updatePost, onDelete, onPin, showPin
         : [...(post.likes || []), user.uid];
     
     const newLikeCount = hasLiked ? (post.likeCount ?? 1) - 1 : (post.likeCount ?? 0) + 1;
-
     updatePost(post.id, { likes: newLikes, likeCount: newLikeCount });
 
-    // We will add the database logic in the next step.
+    try {
+        await runTransaction(firestore, async (transaction) => {
+            const postDoc = await transaction.get(postRef);
+            if (!postDoc.exists()) {
+                throw "Post does not exist!";
+            }
+
+            const currentPost = postDoc.data() as Post;
+            const currentLikes = currentPost.likes || [];
+            const userHasLiked = currentLikes.includes(user.uid);
+            let updatedLikes;
+            let updatedLikeCount;
+
+            if (userHasLiked) {
+                // Unlike
+                updatedLikeCount = (currentPost.likeCount || 1) - 1;
+                updatedLikes = currentLikes.filter(uid => uid !== user.uid);
+            } else {
+                // Like
+                updatedLikeCount = (currentPost.likeCount || 0) + 1;
+                updatedLikes = [...currentLikes, user.uid];
+            }
+            
+            transaction.update(postRef, {
+                likeCount: updatedLikeCount,
+                likes: updatedLikes,
+            });
+        });
+
+    } catch (e: any) {
+        // Revert optimistic update on error
+        updatePost(post.id, { likes: post.likes, likeCount: post.likeCount });
+        
+        console.error("Like transaction failed: ", e);
+        const permissionError = new FirestorePermissionError({
+            path: postRef.path,
+            operation: 'update',
+            requestResourceData: { likeCount: 'increment/decrement', likes: 'arrayUnion/arrayRemove' },
+        });
+        errorEmitter.emit('permission-error', permissionError);
+    }
   };
 
   const handleDeletePost = async () => {
@@ -603,5 +644,7 @@ export default function HomePage() {
     </AppLayout>
   );
 }
+
+    
 
     
