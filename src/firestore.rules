@@ -22,18 +22,15 @@ service cloud.firestore {
     }
 
     match /users/{userId} {
-      allow get: if true; // Allow public read for profiles
+      allow get: if true; 
       allow list: if isSignedIn();
       allow create: if request.auth.uid == userId;
       allow update: if isSignedIn() && (
-        // Allow a user to update their own profile fields.
         (isOwner(userId) && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['name', 'bio', 'website', 'gender', 'blockedUsers', 'mutedUsers', 'restrictedUsers', 'lastReadTimestamps', 'voiceStatusUrl', 'voiceStatusTimestamp'])) ||
-        // Allow removing voice status fields by the owner. This is for when the user deletes their voice status.
         (isOwner(userId) && !request.resource.data.keys().hasAll(['voiceStatusUrl', 'voiceStatusTimestamp']) && resource.data.keys().hasAll(['voiceStatusUrl', 'voiceStatusTimestamp'])) ||
-        // Allow any signed-in user to update only 'upvotes' and 'upvotedBy' on another user's profile.
         (request.resource.data.diff(resource.data).affectedKeys().hasAll(['upvotes', 'upvotedBy']))
       );
-      allow delete: if false; // Deletes are not allowed.
+      allow delete: if false; 
     }
     
     match /users/{userId}/bookmarks/{postId} {
@@ -44,7 +41,6 @@ service cloud.firestore {
     
     match /users/{userId}/notifications/{notificationId} {
       allow get, list: if isOwner(userId);
-      // Notifications can be created for any user, but the creator must be active.
       allow create: if isSignedIn(); 
       allow update: if isOwner(userId) && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['read']);
       allow delete: if false;
@@ -55,28 +51,25 @@ service cloud.firestore {
       allow create: if isSignedIn() && (isNewTextPost() || isNewPollPost());
       allow delete: if isSignedIn() && isOwner(resource.data.authorId);
       allow update: if isSignedIn() && (
-          // Allow editing post content by owner
           (isOwner(resource.data.authorId) && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['content', 'commentsAllowed', 'isPinned'])) ||
-          
-          // Allow a user to only modify 'likes' and 'likeCount' fields on a post
-           (request.resource.data.diff(resource.data).affectedKeys().hasOnly(['likes', 'likeCount'])) ||
-
-          // Allow updating comment count (by functions, basically)
+          (request.resource.data.diff(resource.data).affectedKeys().hasOnly(['likes', 'likeCount'])) ||
           (request.resource.data.diff(resource.data).affectedKeys().hasOnly(['commentCount'])) ||
-
-          // Allow voting on a poll by any active user who hasn't voted yet
           (request.resource.data.diff(resource.data).affectedKeys().hasAll(['pollOptions', 'voters']) && !resource.data.voters.keys().hasAny([request.auth.uid]))
       );
     }
     
-    match /{path=**}/comments/{commentId} {
-      allow read, list: if isSignedIn();
-      allow create: if isSignedIn() && isValidNewComment(path[1], commentId);
-      allow delete: if isSignedIn() && (isOwner(resource.data.authorId) || isOwner(get(/databases/$(database)/documents/posts/$(path[1])).data.authorId));
+    match /posts/{postId}/comments/{commentId} {
+      allow get: if isSignedIn();
+      allow create: if isSignedIn() && isValidNewComment(postId, commentId);
+      allow delete: if isSignedIn() && (isOwner(resource.data.authorId) || isOwner(get(/databases/$(database)/documents/posts/$(postId)).data.authorId));
       allow update: if isSignedIn() && (
           (isOwner(resource.data.authorId) && request.resource.data.diff(resource.data).hasAll(['content', 'lastEdited'])) ||
-          (isOwner(get(/databases/$(database)/documents/posts/$(path[1])).data.authorId) && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['status']))
+          (isOwner(get(/databases/$(database)/documents/posts/$(postId)).data.authorId) && request.resource.data.affectedKeys().hasOnly(['status']))
       );
+    }
+
+    match /{path=**}/comments/{commentId} {
+      allow list: if isSignedIn();
     }
 
     match /conversations/{conversationId} {
@@ -95,7 +88,7 @@ service cloud.firestore {
     }
     
      match /reports/{reportId} {
-      allow read, list, update, delete: if false; // Only admins should be able to access reports
+      allow read, list, update, delete: if false;
       allow create: if isSignedIn() && isValidNewReport(reportId);
     }
 
@@ -139,7 +132,7 @@ service cloud.firestore {
       let data = request.resource.data;
       return data.id == reportId
         && data.reporterUserId == request.auth.uid
-        && data.reportedUserId != request.auth.uid // Cannot report self
+        && data.reportedUserId != request.auth.uid
         && data.reason is string
         && data.status == 'pending'
         && data.keys().hasOnly(['id', 'reporterUserId', 'reportedUserId', 'reason', 'timestamp', 'status']);
@@ -148,18 +141,15 @@ service cloud.firestore {
     function isValidNewMessage() {
       let data = request.resource.data;
       let allowedKeys = ['id', 'senderId', 'text', 'timestamp', 'replyToMessageId', 'replyToMessageText', 'postId', 'isForwarded'];
-      // Common validations
       return data.senderId == request.auth.uid
         && (
             (data.text is string && data.text.size() > 0 && data.text.size() <= 1000) || 
             (data.keys().has('postId') && data.postId is string)
            )
-        // Reply-specific validations (if reply fields exist)
         && (
              (!data.keys().hasAny(['replyToMessageId', 'replyToMessageText'])) ||
              (data.replyToMessageId is string && data.replyToMessageText is string)
            )
-        // Ensure no other fields are present other than the allowed ones
         && data.keys().hasOnly(allowedKeys);
     }
 
@@ -173,7 +163,6 @@ service cloud.firestore {
         && data.isPinned == false
         && data.likeCount == 0
         && data.likes is list && data.likes.size() == 0
-        // Ensure no poll data is present
         && !data.keys().hasAny(['pollOptions', 'voters']);
     }
 
@@ -187,9 +176,8 @@ service cloud.firestore {
         && data.isPinned == false
         && data.likeCount == 0
         && data.likes is list && data.likes.size() == 0
-        // Poll specific validations
         && data.pollOptions is list && data.pollOptions.size() >= 2 && data.pollOptions.size() <= 4
-        && data.pollOptions[0].votes == 0 // Check votes on first option as a proxy
+        && data.pollOptions[0].votes == 0
         && data.voters is map && data.voters.size() == 0;
     }
 
