@@ -196,7 +196,7 @@ function PollComponent({ post, user }: { post: WithId<Post>, user: any }) {
     );
 }
 
-export function PostItem({ post, bookmarks, updatePost }: { post: WithId<Post>, bookmarks: WithId<Bookmark>[] | null, updatePost?: (id: string, data: Partial<Post>) => void }) {
+export function PostItem({ post, bookmarks, updatePost, onDelete }: { post: WithId<Post>, bookmarks: WithId<Bookmark>[] | null, updatePost?: (id: string, data: Partial<Post>) => void, onDelete?: (id: string) => void }) {
   const { user, firestore } = useFirebase();
   const { toast } = useToast();
   const router = useRouter();
@@ -274,6 +274,9 @@ export function PostItem({ post, bookmarks, updatePost }: { post: WithId<Post>, 
           title: "Post Deleted",
           description: "Your post has been successfully deleted.",
         });
+        if (onDelete) {
+          onDelete(post.id);
+        }
       })
       .catch((serverError) => {
         const permissionError = new FirestorePermissionError({

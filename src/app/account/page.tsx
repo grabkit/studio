@@ -190,6 +190,10 @@ export default function AccountPage() {
         }
     }, [firestore, authUser, posts]);
 
+  const handleDeletePost = useCallback((postId: string) => {
+    setPosts(currentPosts => currentPosts.filter(p => p.id !== postId));
+  }, []);
+
 
 
   const bookmarksQuery = useMemoFirebase(() => {
@@ -374,7 +378,7 @@ export default function AccountPage() {
                         </div>
                     )}
                     {posts?.map((post) => (
-                        <HomePostItem key={post.id} post={post} bookmarks={bookmarks} updatePost={updatePostState} />
+                        <HomePostItem key={post.id} post={post} bookmarks={bookmarks} updatePost={updatePostState} onDelete={handleDeletePost} />
                     ))}
                 </div>
             </TabsContent>
