@@ -136,7 +136,7 @@ function PostDetailItem({ post }: { post: WithId<Post> }) {
     try {
         await updateDoc(postRef, payload);
 
-         if (!isOwner && !hasLiked) {
+        if (!isOwner && !hasLiked) {
              const notificationsRef = collection(firestore, 'users', post.authorId, 'notifications');
             const q = query(notificationsRef, where('postId', '==', post.id), where('fromUserId', '==', user.uid), where('type', '==', 'like'));
             
