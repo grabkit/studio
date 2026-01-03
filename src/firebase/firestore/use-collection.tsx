@@ -1,7 +1,7 @@
 
 'use client';
 
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, Dispatch, SetStateAction } from 'react';
 import {
   Query,
   onSnapshot,
@@ -27,8 +27,7 @@ export interface UseCollectionResult<T> {
   data: WithId<T>[] | null; // Document data with ID, or null.
   isLoading: boolean;       // True if loading.
   error: FirestoreError | Error | null; // Error object, or null.
-  update: (id: string, data: Partial<T>) => void; // Function to optimistically update a document
-  remove: (id: string) => void; // Function to optimistically remove a document
+  setData: Dispatch<SetStateAction<WithId<T>[] | null>>;
 }
 
 /* Internal implementation of Query:
@@ -114,26 +113,9 @@ export function useCollection<T = any>(
     return () => unsubscribe();
   }, [memoizedTargetRefOrQuery]);
 
-  const updateItem = useCallback((id: string, updatedData: Partial<T>) => {
-    setData(prevData => {
-      if (!prevData) return null;
-      return prevData.map(item =>
-        item.id === id ? { ...item, ...updatedData } : item
-      );
-    });
-  }, []);
-
-  const removeItem = useCallback((id: string) => {
-    setData(prevData => {
-        if (!prevData) return null;
-        return prevData.filter(item => item.id !== id);
-    });
-  }, []);
-
-
   if(memoizedTargetRefOrQuery && !memoizedTargetRefOrQuery.__memo) {
     throw new Error(memoizedTargetRefOrQuery + ' was not properly memoized using useMemoFirebase');
   }
   
-  return { data, isLoading, error, update: updateItem, remove: removeItem };
+  return { data, isLoading, error, setData };
 }

@@ -244,8 +244,8 @@ export function PostItem({ post, bookmarks, updatePost, onDelete, onPin, showPin
             const currentPost = postDoc.data() as Post;
             const currentLikes = currentPost.likes || [];
             const userHasLiked = currentLikes.includes(user.uid);
-            let updatedLikes;
             let updatedLikeCount;
+            let updatedLikes;
 
             if (userHasLiked) {
                 // Unlike
@@ -271,7 +271,7 @@ export function PostItem({ post, bookmarks, updatePost, onDelete, onPin, showPin
         const permissionError = new FirestorePermissionError({
             path: postRef.path,
             operation: 'update',
-            requestResourceData: { likeCount: 'increment/decrement', likes: 'arrayUnion/arrayRemove' },
+            requestResourceData: { likeCount: 'increment', likes: 'arrayUnion/arrayRemove' },
         });
         errorEmitter.emit('permission-error', permissionError);
     }
@@ -516,17 +516,17 @@ export default function HomePage() {
     return query(collection(firestore, 'posts'), orderBy("timestamp", "desc"), limit(50));
   }, [firestore]);
 
-  const { data: initialPosts, isLoading: postsFromHookLoading, setData: setPostsData } = useCollection<Post>(postsQuery);
+  const { data: initialPosts, isLoading: postsFromHookLoading, setData } = useCollection<Post>(postsQuery);
 
   const updatePost = useCallback((postId: string, updatedData: Partial<Post>) => {
-    setPostsData(currentPosts => {
+    setData(currentPosts => {
         if (!currentPosts) return null;
         const newPosts = currentPosts.map(p =>
             p.id === postId ? { ...p, ...updatedData } : p
         );
         return newPosts;
     });
-  }, [setPostsData]);
+  }, [setData]);
 
   const bookmarksQuery = useMemoFirebase(() => {
     if (!firestore || !user) return null;
@@ -544,7 +544,7 @@ export default function HomePage() {
         
         // Shuffle the posts for a dynamic feed feel on refresh
         fetchedPosts.sort(() => Math.random() - 0.5);
-        setPostsData(fetchedPosts);
+        setData(fetchedPosts);
 
     } catch (error) {
         console.error("Error fetching posts:", error);
@@ -595,7 +595,7 @@ export default function HomePage() {
   }, [initialPosts, userProfile]);
 
   const handleDeletePostOptimistic = (postId: string) => {
-    setPostsData(currentPosts => currentPosts?.filter(p => p.id !== postId) ?? []);
+    setData(currentPosts => currentPosts?.filter(p => p.id !== postId) ?? []);
   }
 
   return (
@@ -644,7 +644,3 @@ export default function HomePage() {
     </AppLayout>
   );
 }
-
-    
-
-    
