@@ -3,7 +3,7 @@
 
 import AppLayout from "@/components/AppLayout";
 import { useFirebase, useMemoFirebase, useUser } from "@/firebase";
-import { collection, query, orderBy, limit, doc, updateDoc, arrayUnion, arrayRemove, increment, deleteDoc, setDoc, serverTimestamp, getDoc, runTransaction, getDocs } from "firebase/firestore";
+import { collection, query, orderBy, limit, doc, updateDoc, arrayUnion, arrayRemove, increment, deleteDoc, setDoc, serverTimestamp, getDoc, runTransaction, getDocs, where } from "firebase/firestore";
 import { useCollection, type WithId } from "@/firebase/firestore/use-collection";
 import { Card, CardContent } from "@/components/ui/card";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
@@ -239,18 +239,22 @@ export function PostItem({ post, bookmarks, updatePost, onDelete, onPin, showPin
         await updateDoc(postRef, payload);
 
         if (!isOwner && !hasLiked) {
-            const notificationRef = doc(collection(firestore, 'users', post.authorId, 'notifications'));
-            const notificationData: Omit<Notification, 'id'> = {
-                type: 'like',
-                postId: post.id,
-                postContent: post.content.substring(0, 100), // snippet of post content
-                fromUserId: user.uid,
-                timestamp: serverTimestamp(),
-                read: false,
-            };
-            setDoc(notificationRef, { ...notificationData, id: notificationRef.id }).catch(serverError => {
-                console.error("Failed to create like notification:", serverError);
-            });
+             const notificationsRef = collection(firestore, 'users', post.authorId, 'notifications');
+            const q = query(notificationsRef, where('postId', '==', post.id), where('fromUserId', '==', user.uid), where('type', '==', 'like'));
+            
+            const existingNotif = await getDocs(q);
+            if (existingNotif.empty) {
+                const notificationRef = doc(notificationsRef);
+                const notificationData: Omit<Notification, 'id'> = {
+                    type: 'like',
+                    postId: post.id,
+                    postContent: post.content.substring(0, 100), // snippet of post content
+                    fromUserId: user.uid,
+                    timestamp: serverTimestamp(),
+                    read: false,
+                };
+                await setDoc(notificationRef, { ...notificationData, id: notificationRef.id });
+            }
         }
     } catch (serverError) {
         // Revert optimistic update on error

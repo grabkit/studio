@@ -17,7 +17,9 @@ import {
   setDoc,
   updateDoc,
   getDoc,
-  runTransaction
+  runTransaction,
+  getDocs,
+  where,
 } from "firebase/firestore";
 import { useCollection, type WithId } from "@/firebase/firestore/use-collection";
 import { useDoc } from "@/firebase/firestore/use-doc";
@@ -134,19 +136,23 @@ function PostDetailItem({ post }: { post: WithId<Post> }) {
     try {
         await updateDoc(postRef, payload);
 
-        if (!isOwner && !hasLiked) {
-            const notificationRef = doc(collection(firestore, 'users', post.authorId, 'notifications'));
-            const notificationData: Omit<Notification, 'id'> = {
-                type: 'like',
-                postId: post.id,
-                postContent: post.content.substring(0, 100),
-                fromUserId: user.uid,
-                timestamp: serverTimestamp(),
-                read: false,
-            };
-            setDoc(notificationRef, { ...notificationData, id: notificationRef.id }).catch(serverError => {
-                console.error("Failed to create like notification:", serverError);
-            });
+         if (!isOwner && !hasLiked) {
+             const notificationsRef = collection(firestore, 'users', post.authorId, 'notifications');
+            const q = query(notificationsRef, where('postId', '==', post.id), where('fromUserId', '==', user.uid), where('type', '==', 'like'));
+            
+            const existingNotif = await getDocs(q);
+            if (existingNotif.empty) {
+                const notificationRef = doc(notificationsRef);
+                const notificationData: Omit<Notification, 'id'> = {
+                    type: 'like',
+                    postId: post.id,
+                    postContent: post.content.substring(0, 100),
+                    fromUserId: user.uid,
+                    timestamp: serverTimestamp(),
+                    read: false,
+                };
+                await setDoc(notificationRef, { ...notificationData, id: notificationRef.id });
+            }
         }
     } catch (serverError) {
         const permissionError = new FirestorePermissionError({
@@ -458,7 +464,7 @@ function CommentForm({ post, commentsAllowed }: { post: WithId<Post>, commentsAl
 }
 
 const updateCommentSchema = z.object({
-  content: z.string().min(1, "Comment cannot be empty").max(280, "Comment is too long."),
+  content: z.string().min(1, "Comment cannot be empty.").max(280, "Comment is too long."),
 });
 
 function CommentItem({ comment, postAuthorId }: { comment: WithId<Comment>, postAuthorId?: string }) {
