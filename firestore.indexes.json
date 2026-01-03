@@ -6,7 +6,7 @@
       "queryScope": "COLLECTION_GROUP",
       "fields": [
         {
-          "fieldPath": "authorId",
+          "fieldPath": "postAuthorId",
           "order": "ASCENDING"
         },
         {
@@ -28,4 +28,3 @@
   ],
   "fieldOverrides": []
 }
-

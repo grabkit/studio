@@ -141,19 +141,19 @@ function PostDetailItem({ post, updatePost }: { post: WithId<Post>, updatePost: 
                 throw "Post does not exist!";
             }
 
-            const currentPost = postDoc.data() as Post;
-            const currentLikes = currentPost.likes || [];
+            const freshPost = postDoc.data() as Post;
+            const currentLikes = freshPost.likes || [];
             const userHasLiked = currentLikes.includes(user.uid);
             let updatedLikes;
             let updatedLikeCount;
 
             if (userHasLiked) {
                 // Unlike
-                updatedLikeCount = (currentPost.likeCount || 1) - 1;
+                updatedLikeCount = (freshPost.likeCount || 1) - 1;
                 updatedLikes = currentLikes.filter(uid => uid !== user.uid);
             } else {
                 // Like
-                updatedLikeCount = (currentPost.likeCount || 0) + 1;
+                updatedLikeCount = (freshPost.likeCount || 0) + 1;
                 updatedLikes = [...currentLikes, user.uid];
             }
             
@@ -377,6 +377,7 @@ function CommentForm({ post, commentsAllowed }: { post: WithId<Post>, commentsAl
       id: commentRef.id,
       postId: post.id,
       authorId: user.uid,
+      postAuthorId: post.authorId, // Add post author ID for querying replies
       content: values.content,
       status: commentStatus,
     };

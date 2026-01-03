@@ -1,4 +1,5 @@
 
+
 "use client";
 
 import React, { useState, useEffect } from 'react';
@@ -11,6 +12,7 @@ import { Avatar, AvatarFallback } from './ui/avatar';
 import { getInitials, formatTimestamp } from '@/lib/utils';
 import Link from 'next/link';
 import { useDoc } from '@/firebase/firestore/use-doc';
+import { useCollection } from '@/firebase/firestore/use-collection';
 
 
 function ReplySkeleton() {
@@ -93,48 +95,19 @@ function ReplyItemWrapper({ comment }: { comment: WithId<Comment> }) {
 
 
 export function RepliesList({ userId }: { userId: string }) {
-    const { firestore } = useFirebase();
-    const [replies, setReplies] = useState<WithId<Comment>[]>([]);
-    const [isLoading, setIsLoading] = useState(true);
-
-    useEffect(() => {
-        if (!firestore || !userId) return;
-
-        const fetchUserReplies = async () => {
-            setIsLoading(true);
-            try {
-                // Fetch comments from the collection group without a 'where' clause that requires an index.
-                // We will filter and sort on the client-side.
-                const commentsQuery = query(
-                    collectionGroup(firestore, 'comments'),
-                    limit(50) // Limit the initial fetch to a reasonable number
-                );
-
-                const querySnapshot = await getDocs(commentsQuery);
-                
-                // Filter by authorId on the client
-                let fetchedReplies = querySnapshot.docs
-                    .map(doc => ({ id: doc.id, ...doc.data() } as WithId<Comment>))
-                    .filter(comment => comment.authorId === userId);
-                
-                // Sort the filtered replies by timestamp on the client side
-                fetchedReplies.sort((a, b) => {
-                    const timeA = a.timestamp?.toMillis() || 0;
-                    const timeB = b.timestamp?.toMillis() || 0;
-                    return timeB - timeA;
-                });
-                
-                setReplies(fetchedReplies);
-
-            } catch (error) {
-                console.error("Error fetching user replies:", error);
-            } finally {
-                setIsLoading(false);
-            }
-        };
-
-        fetchUserReplies();
+    const { firestore, useMemoFirebase } = useFirebase();
+    
+    const commentsQuery = useMemoFirebase(() => {
+        if (!firestore || !userId) return null;
+        return query(
+            collectionGroup(firestore, 'comments'),
+            where('postAuthorId', '==', userId),
+            orderBy('timestamp', 'desc'),
+            limit(50)
+        );
     }, [firestore, userId]);
+    
+    const { data: replies, isLoading } = useCollection<Comment>(commentsQuery);
 
 
     if (isLoading) {
@@ -147,11 +120,11 @@ export function RepliesList({ userId }: { userId: string }) {
         )
     }
 
-    if (replies.length === 0) {
+    if (!replies || replies.length === 0) {
         return (
             <div className="text-center py-16">
                 <h3 className="text-xl font-headline text-primary">No Replies Yet</h3>
-                <p className="text-muted-foreground">This user hasn't replied to any posts.</p>
+                <p className="text-muted-foreground">This user hasn't received any replies.</p>
             </div>
         );
     }
