@@ -513,7 +513,10 @@ function CommentItem({ comment, postAuthorId }: { comment: WithId<Comment>, post
     const commentRef = doc(firestore, "posts", comment.postId, "comments", comment.id);
     
     try {
-        await updateDoc(commentRef, { content: values.content });
+        await updateDoc(commentRef, { 
+            content: values.content,
+            lastEdited: serverTimestamp()
+        });
         setIsEditing(false);
     } catch (serverError) {
         const permissionError = new FirestorePermissionError({
@@ -558,15 +561,22 @@ function CommentItem({ comment, postAuthorId }: { comment: WithId<Comment>, post
       </Avatar>
       <div className="flex-1">
         <div className="flex justify-between items-center">
-            <div className="flex items-center space-x-2">
-                <Link href={`/profile/${comment.authorId}`} className="font-semibold text-sm hover:underline">
+            <div className="flex items-center space-x-2 text-xs text-muted-foreground">
+                <Link href={`/profile/${comment.authorId}`} className="font-semibold text-sm text-foreground hover:underline">
                     {formatUserId(comment.authorId)}
                 </Link>
-                <span className="text-xs text-muted-foreground">
-                {comment.timestamp
-                    ? formatTimestamp(comment.timestamp.toDate())
-                    : ""}
+                <span>•</span>
+                <span>
+                    {comment.timestamp
+                        ? formatTimestamp(comment.timestamp.toDate())
+                        : ""}
                 </span>
+                {comment.lastEdited && (
+                    <>
+                        <span>•</span>
+                        <span className="italic">Edited</span>
+                    </>
+                )}
             </div>
             {canManage && !isEditing && (
                  <Sheet open={isSheetOpen} onOpenChange={setIsSheetOpen}>

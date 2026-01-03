@@ -73,7 +73,7 @@ service cloud.firestore {
       allow delete: if isSignedIn() && (isOwner(resource.data.authorId) || isOwner(get(/databases/$(database)/documents/posts/$(postId)).data.authorId));
       allow update: if isSignedIn() && (
           // Allow comment owner to edit their own comment content
-          (isOwner(resource.data.authorId) && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['content'])) ||
+          (isOwner(resource.data.authorId) && request.resource.data.diff(resource.data).affectedKeys().hasAll(['content', 'lastEdited'])) ||
           // Allow post owner to approve a comment
           (isOwner(get(/databases/$(database)/documents/posts/$(postId)).data.authorId) && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['status']))
       );
@@ -201,7 +201,7 @@ service cloud.firestore {
             && data.content is string && data.content.size() > 0
             && data.id == commentId
             && data.status in ['approved', 'pending_approval']
-            && data.keys().hasOnly(['id', 'postId', 'content', 'authorId', 'timestamp', 'status']);
+            && data.keys().hasOnly(['id', 'postId', 'content', 'authorId', 'timestamp', 'status', 'lastEdited']);
     }
   }
 }

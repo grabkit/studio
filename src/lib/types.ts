@@ -43,6 +43,7 @@ export interface Comment {
     timestamp: Timestamp;
     postAuthorId?: string; // This might be added in the fetch logic
     status: 'approved' | 'pending_approval';
+    lastEdited?: Timestamp;
 }
 
 export interface User {
