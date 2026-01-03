@@ -9,19 +9,13 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Skeleton } from "@/components/ui/skeleton";
 import type { Post, Bookmark, PollOption, Notification, User, Conversation, LinkMetadata } from "@/lib/types";
-import { Heart, MessageCircle, Repeat, ArrowUpRight, MoreHorizontal, Edit, Trash2, Bookmark as BookmarkIcon, CheckCircle2, Slash, RefreshCw } from "lucide-react";
+import { Heart, MessageCircle, Repeat, ArrowUpRight, MoreHorizontal, Edit, Trash2, Bookmark as BookmarkIcon, CheckCircle2, Slash, RefreshCw, Pin } from "lucide-react";
 import { cn, formatTimestamp, getInitials } from "@/lib/utils";
 import { useToast } from "@/hooks/use-toast";
 import { FirestorePermissionError } from "@/firebase/errors";
 import { errorEmitter } from "@/firebase/error-emitter";
 import Link from "next/link";
 import Image from "next/image";
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -37,6 +31,7 @@ import { Button, buttonVariants } from "@/components/ui/button";
 import { useRouter } from "next/navigation";
 import { usePresence } from "@/hooks/usePresence";
 import { ShareSheet } from "@/components/ShareSheet";
+import { Sheet, SheetContent, SheetDescription, SheetHeader, SheetTitle, SheetTrigger } from "@/components/ui/sheet";
 
 
 const formatUserId = (uid: string | undefined) => {
@@ -207,6 +202,7 @@ export function PostItem({ post, bookmarks, updatePost }: { post: WithId<Post>, 
   const router = useRouter();
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
   const [isShareSheetOpen, setIsShareSheetOpen] = useState(false);
+  const [isMoreOptionsSheetOpen, setIsMoreOptionsSheetOpen] = useState(false);
   
   const hasLiked = user ? post.likes?.includes(user.uid) : false;
   const isOwner = user?.uid === post.authorId;
@@ -354,23 +350,38 @@ export function PostItem({ post, bookmarks, updatePost }: { post: WithId<Post>, 
                 </div>
                <div className="flex items-center">
                  {isOwner && (
-                    <DropdownMenu>
-                      <DropdownMenuTrigger asChild>
-                        <Button variant="ghost" size="icon" className="h-6 w-6">
-                            <MoreHorizontal className="h-4 w-4" />
-                        </Button>
-                      </DropdownMenuTrigger>
-                      <DropdownMenuContent align="end">
-                        <DropdownMenuItem>
-                          <Edit className="mr-2 h-4 w-4" />
-                          <span>Edit Post</span>
-                        </DropdownMenuItem>
-                        <DropdownMenuItem onClick={() => setIsDeleteDialogOpen(true)} className="text-destructive">
-                           <Trash2 className="mr-2 h-4 w-4" />
-                           <span>Delete Post</span>
-                        </DropdownMenuItem>
-                      </DropdownMenuContent>
-                    </DropdownMenu>
+                     <Sheet open={isMoreOptionsSheetOpen} onOpenChange={setIsMoreOptionsSheetOpen}>
+                        <SheetTrigger asChild>
+                            <Button variant="ghost" size="icon" className="h-6 w-6">
+                                <MoreHorizontal className="h-4 w-4" />
+                            </Button>
+                        </SheetTrigger>
+                        <SheetContent side="bottom" className="rounded-t-lg">
+                            <SheetHeader className="text-left">
+                                <SheetTitle>Options for post</SheetTitle>
+                                <SheetDescription>Manage your post.</SheetDescription>
+                            </SheetHeader>
+                            <div className="grid gap-2 py-4">
+                                 <div className="border rounded-2xl">
+                                    <Button variant="ghost" className="justify-between text-base py-6 rounded-2xl w-full" onClick={() => toast({ title: "Coming Soon!", description: "Editing posts will be available in a future update." })}>
+                                        <span>Edit</span>
+                                        <Edit className="h-5 w-5" />
+                                    </Button>
+                                    <div className="border-t"></div>
+                                     <Button variant="ghost" className="justify-between text-base py-6 rounded-2xl w-full" onClick={() => toast({ title: "Coming Soon!", description: "Pinning posts will be available in a future update." })}>
+                                        <span>Pin Post</span>
+                                        <Pin className="h-5 w-5" />
+                                    </Button>
+                                 </div>
+                                <div className="border rounded-2xl">
+                                    <Button variant="ghost" className="justify-between text-base py-6 rounded-2xl w-full text-destructive hover:text-destructive" onClick={() => { setIsMoreOptionsSheetOpen(false); setIsDeleteDialogOpen(true); }}>
+                                        <span>Delete</span>
+                                        <Trash2 className="h-5 w-5" />
+                                    </Button>
+                                </div>
+                            </div>
+                        </SheetContent>
+                    </Sheet>
                  )}
                </div>
             </div>
