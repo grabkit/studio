@@ -243,6 +243,7 @@ function PostPageComponent() {
           likeCount: 0,
           commentCount: 0,
           commentsAllowed: values.commentsAllowed,
+          isPinned: false,
           type: values.isPoll ? 'poll' : 'text',
           ...(values.linkMetadata && { linkMetadata: values.linkMetadata }),
         };
