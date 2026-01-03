@@ -5,7 +5,7 @@
 import { useParams, useRouter } from "next/navigation";
 import { useFirebase, useMemoFirebase, useCollection, type WithId, useDoc } from "@/firebase";
 import { doc, collection, query, where, getDocs, serverTimestamp, setDoc, getDoc, updateDoc, increment, arrayUnion, arrayRemove, deleteField } from "firebase/firestore";
-import type { Post, User, Notification } from "@/lib/types";
+import type { Post, User, Notification, Conversation } from "@/lib/types";
 import React, { useMemo, useState, useEffect, useCallback } from "react";
 import Link from "next/link";
 import { useToast } from "@/hooks/use-toast";
@@ -91,6 +91,19 @@ export default function UserProfilePage() {
     }, [firestore, userId]);
     
     const { data: fetchedUser, isLoading: userLoading, setData: setFetchedUser } = useDoc<User>(userRef);
+
+    // Fetch conversation status
+    const conversationId = useMemo(() => {
+        if (!currentUser || !userId) return null;
+        return [currentUser.uid, userId].sort().join('_');
+    }, [currentUser, userId]);
+
+    const conversationRef = useMemoFirebase(() => {
+        if (!firestore || !conversationId) return null;
+        return doc(firestore, 'conversations', conversationId);
+    }, [firestore, conversationId]);
+
+    const { data: conversation, isLoading: isConversationLoading } = useDoc<Conversation>(conversationRef);
 
     useEffect(() => {
         if(fetchedUser) {
@@ -294,40 +307,38 @@ export default function UserProfilePage() {
 
 
     const handleStartConversation = async () => {
-        if (!currentUser || !firestore || !userId || currentUser.uid === userId) return;
-
-        const currentUserId = currentUser.uid;
-        const conversationId = [currentUserId, userId].sort().join('_');
-        const conversationRef = doc(firestore, 'conversations', conversationId);
-
-        try {
-            const docSnap = await getDoc(conversationRef);
-
-            if (!docSnap.exists()) {
-                const newConversationData = {
-                    id: conversationId,
-                    participantIds: [currentUserId, userId].sort(),
-                    lastMessage: '',
-                    lastUpdated: serverTimestamp(),
-                    status: 'pending',
-                    requesterId: currentUserId,
-                    unreadCounts: { [currentUserId]: 0, [userId]: 0 },
-                    lastReadTimestamps: { [currentUserId]: serverTimestamp() }
-                };
-                await setDoc(conversationRef, newConversationData);
-                
-                const notificationRef = doc(collection(firestore, 'users', userId, 'notifications'));
-                const notificationData: Omit<Notification, 'id'> = {
-                    type: 'message_request',
-                    fromUserId: currentUserId,
-                    timestamp: serverTimestamp(),
-                    read: false,
-                };
-                await setDoc(notificationRef, { ...notificationData, id: notificationRef.id });
-            }
-            
+        if (!currentUser || !firestore || !userId || currentUser.uid === userId || !conversationRef) return;
+        
+        // If conversation already exists (pending or accepted), just navigate
+        if (conversation) {
             router.push(`/messages/${userId}`);
+            return;
+        }
 
+        // If conversation doesn't exist, create it
+        try {
+            const newConversationData = {
+                id: conversationId,
+                participantIds: [currentUser.uid, userId].sort(),
+                lastMessage: '',
+                lastUpdated: serverTimestamp(),
+                status: 'pending',
+                requesterId: currentUser.uid,
+                unreadCounts: { [currentUser.uid]: 0, [userId]: 0 },
+                lastReadTimestamps: { [currentUser.uid]: serverTimestamp() }
+            };
+            await setDoc(conversationRef, newConversationData);
+            
+            const notificationRef = doc(collection(firestore, 'users', userId, 'notifications'));
+            const notificationData: Omit<Notification, 'id'> = {
+                type: 'message_request',
+                fromUserId: currentUser.uid,
+                timestamp: serverTimestamp(),
+                read: false,
+            };
+            await setDoc(notificationRef, { ...notificationData, id: notificationRef.id });
+
+            // No navigation here, the button state will change to "Requested"
         } catch (error: any) {
             console.error("Error handling conversation:", error);
             const permissionError = new FirestorePermissionError({
@@ -511,7 +522,32 @@ export default function UserProfilePage() {
         )
     }
 
-    const isLoading = postsLoading || userLoading;
+    const isLoading = postsLoading || userLoading || isConversationLoading;
+    
+    const getMessageButton = () => {
+        if (!conversation) {
+            return (
+                <Button onClick={handleStartConversation} variant="secondary" className="flex-1 font-bold">
+                    Message
+                </Button>
+            );
+        }
+
+        if (conversation.status === 'pending') {
+            return (
+                <Button variant="secondary" className="flex-1 font-bold" disabled>
+                    Requested
+                </Button>
+            );
+        }
+
+        // status === 'accepted'
+        return (
+            <Button onClick={handleStartConversation} variant="secondary" className="flex-1 font-bold">
+                Message
+            </Button>
+        );
+    };
 
     return (
         <AppLayout showTopBar={false}>
@@ -601,9 +637,7 @@ export default function UserProfilePage() {
                              <Button onClick={handleUpvoteUser} variant={hasUpvotedUser ? "default" : "secondary"} className="flex-1 font-bold">
                                 {hasUpvotedUser ? "Upvoted" : "Upvote"}
                             </Button>
-                            <Button onClick={handleStartConversation} variant="secondary" className="flex-1 font-bold">
-                                Message
-                            </Button>
+                            {getMessageButton()}
                         </div>
                     </div>
                     <Tabs defaultValue="posts" className="w-full">
