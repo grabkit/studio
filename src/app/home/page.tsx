@@ -31,7 +31,7 @@ import { Button, buttonVariants } from "@/components/ui/button";
 import { useRouter } from "next/navigation";
 import { usePresence } from "@/hooks/usePresence";
 import { ShareSheet } from "@/components/ShareSheet";
-import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger, SheetDescription } from "@/components/ui/sheet";
+import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetDescription, SheetTrigger, SheetClose } from "@/components/ui/sheet";
 
 
 const formatUserId = (uid: string | undefined) => {
@@ -70,7 +70,7 @@ function LinkPreview({ metadata }: { metadata: LinkMetadata }) {
     )
 }
 
-function PollComponent({ post, user }: { post: WithId<Post>, user: any }) {
+export function PollComponent({ post, user }: { post: WithId<Post>, user: any }) {
     const { firestore } = useFirebase();
     const { toast } = useToast();
     const [isProcessing, setIsProcessing] = useState(false);

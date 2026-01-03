@@ -16,15 +16,17 @@ import {
   deleteDoc,
   setDoc,
   updateDoc,
-  getDoc
+  getDoc,
+  runTransaction
 } from "firebase/firestore";
 import { useCollection, type WithId } from "@/firebase/firestore/use-collection";
 import { useDoc } from "@/firebase/firestore/use-doc";
-import type { Post, Comment, Notification, User as UserProfile, LinkMetadata } from "@/lib/types";
+import type { Post, Comment, Notification, User as UserProfile, LinkMetadata, PollOption } from "@/lib/types";
 import { useParams, useRouter } from "next/navigation";
 import React, { useState } from "react";
 import Link from 'next/link';
 import Image from "next/image";
+import { PollComponent } from "@/app/home/page";
 
 import AppLayout from "@/components/AppLayout";
 import { Card, CardContent } from "@/components/ui/card";
@@ -239,6 +241,10 @@ function PostDetailItem({ post }: { post: WithId<Post> }) {
             <p className="text-foreground text-base whitespace-pre-wrap">{post.content}</p>
 
             {post.linkMetadata && <LinkPreview metadata={post.linkMetadata} />}
+            
+            {post.type === 'poll' && post.pollOptions && (
+              <PollComponent post={post} user={user} />
+            )}
 
 
             <div className="border-t border-b -mx-4 my-2 px-4 py-2 text-sm text-muted-foreground flex items-center justify-around">
@@ -325,7 +331,7 @@ function CommentForm({ post, commentsAllowed }: { post: WithId<Post>, commentsAl
   }, [firestore, post]);
   const { data: postAuthorProfile } = useDoc<UserProfile>(postAuthorRef);
 
-  const onSubmit = async (values: z.infer<typeof CommentFormSchema>) => {
+  const onSubmit = async (values: z.infer<typeof CommentFormSchema>>) => {
     if (!user || !firestore) {
       toast({ variant: "destructive", title: "You must be logged in to comment." });
       return;
@@ -661,3 +667,4 @@ export default function PostDetailPage() {
 }
 
     
+
