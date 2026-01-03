@@ -230,13 +230,13 @@ export function PostItem({ post, bookmarks, updatePost, onDelete, onPin, showPin
 
     // Server update
     const postRef = doc(firestore, 'posts', post.id);
-    const payload = {
-        likes: hasLiked ? arrayRemove(user.uid) : arrayUnion(user.uid),
-        likeCount: increment(hasLiked ? -1 : 1)
-    };
+    const likeCountPayload = { likeCount: increment(hasLiked ? -1 : 1) };
+    const likesPayload = { likes: hasLiked ? arrayRemove(user.uid) : arrayUnion(user.uid) };
     
     try {
-        await updateDoc(postRef, payload);
+        // Perform two separate updates
+        await updateDoc(postRef, likeCountPayload);
+        await updateDoc(postRef, likesPayload);
 
         if (!isOwner && !hasLiked) {
              const notificationsRef = collection(firestore, 'users', post.authorId, 'notifications');
@@ -262,7 +262,7 @@ export function PostItem({ post, bookmarks, updatePost, onDelete, onPin, showPin
         const permissionError = new FirestorePermissionError({
             path: postRef.path,
             operation: 'update',
-            requestResourceData: payload,
+            requestResourceData: { ...likeCountPayload, ...likesPayload },
         });
         errorEmitter.emit('permission-error', permissionError);
     }

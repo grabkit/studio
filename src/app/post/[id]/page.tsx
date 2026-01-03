@@ -128,13 +128,14 @@ function PostDetailItem({ post }: { post: WithId<Post> }) {
     }
 
     const postRef = doc(firestore, "posts", post.id);
-    const payload = {
-        likes: hasLiked ? arrayRemove(user.uid) : arrayUnion(user.uid),
-        likeCount: increment(hasLiked ? -1 : 1),
-    };
+    const likeCountPayload = { likeCount: increment(hasLiked ? -1 : 1) };
+    const likesPayload = { likes: hasLiked ? arrayRemove(user.uid) : arrayUnion(user.uid) };
 
     try {
-        await updateDoc(postRef, payload);
+        // We can't do optimistic updates here as easily because useDoc doesn't have an update function.
+        // For simplicity, we'll just await the server response.
+        await updateDoc(postRef, likeCountPayload);
+        await updateDoc(postRef, likesPayload);
 
         if (!isOwner && !hasLiked) {
              const notificationsRef = collection(firestore, 'users', post.authorId, 'notifications');
@@ -158,7 +159,7 @@ function PostDetailItem({ post }: { post: WithId<Post> }) {
         const permissionError = new FirestorePermissionError({
             path: postRef.path,
             operation: 'update',
-            requestResourceData: payload,
+            requestResourceData: { ...likeCountPayload, ...likesPayload },
         });
         errorEmitter.emit('permission-error', permissionError);
     }

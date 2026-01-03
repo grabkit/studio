@@ -164,28 +164,31 @@ export default function UserProfilePage() {
         // Also update firestore in the background
         if (firestore && currentUser) {
             const postRef = doc(firestore, 'posts', postId);
-            const currentPost = posts.find(p => p.id === postId);
-            if (!currentPost) return;
-
             const hasLiked = updatedData.likes?.includes(currentUser.uid);
 
-            const payload = {
-                likes: hasLiked ? arrayUnion(currentUser.uid) : arrayRemove(currentUser.uid),
-                likeCount: increment(hasLiked ? 1 : -1)
-            };
+            const likeCountPayload = { likeCount: increment(hasLiked ? 1 : -1) };
+            const likesPayload = { likes: hasLiked ? arrayUnion(currentUser.uid) : arrayRemove(currentUser.uid) };
 
-            updateDoc(postRef, payload).catch(serverError => {
+            // Perform two separate updates
+            updateDoc(postRef, likeCountPayload).then(() => {
+                return updateDoc(postRef, likesPayload);
+            }).catch(serverError => {
                  // Revert optimistic update on error
-                setPosts(posts);
+                 setPosts(currentPosts => {
+                    if (!currentPosts) return [];
+                     return currentPosts.map(p =>
+                        p.id === postId ? { ...p, likes: p.likes, likeCount: p.likeCount } : p
+                    );
+                });
                 const permissionError = new FirestorePermissionError({
                     path: postRef.path,
                     operation: 'update',
-                    requestResourceData: payload,
+                    requestResourceData: { ...likeCountPayload, ...likesPayload },
                 });
                 errorEmitter.emit('permission-error', permissionError);
             });
         }
-    }, [firestore, currentUser, posts]);
+    }, [firestore, currentUser]);
 
     const bookmarksQuery = useMemoFirebase(() => {
         if (!firestore || !currentUser) return null;

@@ -168,30 +168,33 @@ export default function AccountPage() {
         });
 
         // Also update firestore in the background
-        if (firestore) {
+        if (firestore && authUser) {
             const postRef = doc(firestore, 'posts', postId);
-            const currentPost = posts.find(p => p.id === postId);
-            if (!currentPost || !authUser) return;
-
             const hasLiked = updatedData.likes?.includes(authUser.uid);
 
-            const payload = {
-                likes: hasLiked ? arrayUnion(authUser.uid) : arrayRemove(authUser.uid),
-                likeCount: increment(hasLiked ? 1 : -1)
-            };
+            const likeCountPayload = { likeCount: increment(hasLiked ? 1 : -1) };
+            const likesPayload = { likes: hasLiked ? arrayUnion(authUser.uid) : arrayRemove(authUser.uid) };
 
-            updateDoc(postRef, payload).catch(serverError => {
+            // Perform two separate updates
+            updateDoc(postRef, likeCountPayload).then(() => {
+                return updateDoc(postRef, likesPayload);
+            }).catch(serverError => {
                  // Revert optimistic update on error
-                setPosts(currentPosts);
+                setPosts(currentPosts => {
+                    if (!currentPosts) return [];
+                     return currentPosts.map(p =>
+                        p.id === postId ? { ...p, likes: p.likes, likeCount: p.likeCount } : p
+                    );
+                });
                 const permissionError = new FirestorePermissionError({
                     path: postRef.path,
                     operation: 'update',
-                    requestResourceData: payload,
+                    requestResourceData: { ...likeCountPayload, ...likesPayload },
                 });
                 errorEmitter.emit('permission-error', permissionError);
             });
         }
-    }, [firestore, authUser, posts]);
+    }, [firestore, authUser]);
 
   const handleDeletePost = useCallback((postId: string) => {
     setPosts(currentPosts => currentPosts.filter(p => p.id !== postId));
