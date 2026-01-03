@@ -200,7 +200,6 @@ export function PostItem({ post, bookmarks, updatePost }: { post: WithId<Post>, 
   const { user, firestore } = useFirebase();
   const { toast } = useToast();
   const router = useRouter();
-  const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
   const [isShareSheetOpen, setIsShareSheetOpen] = useState(false);
   const [isMoreOptionsSheetOpen, setIsMoreOptionsSheetOpen] = useState(false);
   
@@ -267,6 +266,7 @@ export function PostItem({ post, bookmarks, updatePost }: { post: WithId<Post>, 
 
   const handleDeletePost = async () => {
     if (!firestore || !isOwner) return;
+    setIsMoreOptionsSheetOpen(false); // Close sheet immediately
     const postRef = doc(firestore, 'posts', post.id);
     deleteDoc(postRef)
       .then(() => {
@@ -274,7 +274,6 @@ export function PostItem({ post, bookmarks, updatePost }: { post: WithId<Post>, 
           title: "Post Deleted",
           description: "Your post has been successfully deleted.",
         });
-        setIsDeleteDialogOpen(false);
       })
       .catch((serverError) => {
         const permissionError = new FirestorePermissionError({
@@ -374,7 +373,7 @@ export function PostItem({ post, bookmarks, updatePost }: { post: WithId<Post>, 
                                     </Button>
                                  </div>
                                 <div className="border rounded-2xl">
-                                    <Button variant="ghost" className="justify-between text-base py-6 rounded-2xl w-full text-destructive hover:text-destructive" onClick={() => { setIsMoreOptionsSheetOpen(false); setIsDeleteDialogOpen(true); }}>
+                                    <Button variant="ghost" className="justify-between text-base py-6 rounded-2xl w-full text-destructive hover:text-destructive" onClick={handleDeletePost}>
                                         <span>Delete</span>
                                         <Trash2 className="h-5 w-5" />
                                     </Button>
@@ -432,23 +431,6 @@ export function PostItem({ post, bookmarks, updatePost }: { post: WithId<Post>, 
           </div>
         </div>
       </CardContent>
-       <AlertDialog open={isDeleteDialogOpen} onOpenChange={setIsDeleteDialogOpen}>
-        <AlertDialogContent>
-          <AlertDialogHeader>
-            <AlertDialogTitle>Are you sure?</AlertDialogTitle>
-            <AlertDialogDescription>
-              This action cannot be undone. This will permanently delete your
-              post and remove its data from our servers.
-            </AlertDialogDescription>
-          </AlertDialogHeader>
-          <AlertDialogFooter>
-            <AlertDialogCancel>Cancel</AlertDialogCancel>
-            <AlertDialogAction onClick={handleDeletePost} className={cn(buttonVariants({variant: 'destructive'}))}>
-              Delete
-            </AlertDialogAction>
-          </AlertDialogFooter>
-        </AlertDialogContent>
-      </AlertDialog>
     </Card>
     <ShareSheet post={post} isOpen={isShareSheetOpen} onOpenChange={setIsShareSheetOpen} />
     </>
