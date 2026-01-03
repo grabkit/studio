@@ -57,7 +57,7 @@ service cloud.firestore {
       allow delete: if isSignedIn() && isOwner(resource.data.authorId);
       allow update: if isSignedIn() && (
           // Allow editing post content by owner
-          (isOwner(resource.data.authorId) && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['content', 'commentsAllowed'])) ||
+          (isOwner(resource.data.authorId) && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['content', 'commentsAllowed', 'isPinned'])) ||
           // Allow liking/unliking a post by any active user
           (request.resource.data.diff(resource.data).affectedKeys().hasOnly(['likes', 'likeCount'])) ||
            // Allow updating comment count (by functions, basically)
@@ -165,6 +165,7 @@ service cloud.firestore {
         && data.likeCount == 0
         && data.commentCount == 0
         && data.commentsAllowed is bool
+        && (!data.keys().has('isPinned') || data.isPinned == false)
         && data.likes is list && data.likes.size() == 0
         // Ensure no poll data is present
         && !data.keys().hasAny(['pollOptions', 'voters']);
@@ -178,6 +179,7 @@ service cloud.firestore {
         && data.likeCount == 0
         && data.commentCount == 0
         && data.commentsAllowed is bool
+        && (!data.keys().has('isPinned') || data.isPinned == false)
         && data.likes is list && data.likes.size() == 0
         // Poll specific validations
         && data.pollOptions is list && data.pollOptions.size() >= 2 && data.pollOptions.size() <= 4
@@ -199,4 +201,6 @@ service cloud.firestore {
   }
 }
     
+    
+
     

@@ -118,13 +118,16 @@ export default function UserProfilePage() {
                   where("authorId", "==", userId)
               );
               const querySnapshot = await getDocs(postsQuery);
-              const userPosts = querySnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as WithId<Post>));
+              let userPosts = querySnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as WithId<Post>));
 
-              userPosts.sort((a, b) => {
-                  const timeA = a.timestamp?.toMillis() || 0;
-                  const timeB = b.timestamp?.toMillis() || 0;
-                  return timeB - timeA;
-              });
+               // Sort by pinned status first, then by timestamp
+                userPosts.sort((a, b) => {
+                    if (a.isPinned && !b.isPinned) return -1;
+                    if (!a.isPinned && b.isPinned) return 1;
+                    const timeA = a.timestamp?.toMillis() || 0;
+                    const timeB = b.timestamp?.toMillis() || 0;
+                    return timeB - timeA;
+                });
 
               setPosts(userPosts);
           } catch (error) {
@@ -679,3 +682,5 @@ export default function UserProfilePage() {
         </AppLayout>
     );
 }
+
+    

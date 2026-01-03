@@ -196,7 +196,7 @@ function PollComponent({ post, user }: { post: WithId<Post>, user: any }) {
     );
 }
 
-export function PostItem({ post, bookmarks, updatePost, onDelete }: { post: WithId<Post>, bookmarks: WithId<Bookmark>[] | null, updatePost?: (id: string, data: Partial<Post>) => void, onDelete?: (id: string) => void }) {
+export function PostItem({ post, bookmarks, updatePost, onDelete, onPin }: { post: WithId<Post>, bookmarks: WithId<Bookmark>[] | null, updatePost?: (id: string, data: Partial<Post>) => void, onDelete?: (id: string) => void, onPin?: (id: string, currentStatus: boolean) => void }) {
   const { user, firestore } = useFirebase();
   const { toast } = useToast();
   const router = useRouter();
@@ -292,6 +292,13 @@ export function PostItem({ post, bookmarks, updatePost, onDelete }: { post: With
     router.push(`/post?postId=${post.id}`);
   };
 
+  const handlePinPost = () => {
+    if (!isOwner || !onPin) return;
+    setIsMoreOptionsSheetOpen(false);
+    onPin(post.id, post.isPinned || false);
+  };
+
+
   const handleRepost = () => {
     const encodedContent = encodeURIComponent(post.content);
     router.push(`/post?content=${encodedContent}`);
@@ -339,6 +346,12 @@ export function PostItem({ post, bookmarks, updatePost, onDelete }: { post: With
     <>
     <Card className="w-full shadow-none border-x-0 border-t-0 rounded-none">
       <CardContent className="p-4">
+        {post.isPinned && (
+          <div className="flex items-center gap-2 text-xs text-muted-foreground mb-2 pl-10">
+            <Pin className="h-3 w-3" />
+            <span>Pinned</span>
+          </div>
+        )}
         <div className="flex space-x-3">
           <Link href={`/profile/${post.authorId}`}>
             <Avatar className="h-10 w-10">
@@ -375,8 +388,8 @@ export function PostItem({ post, bookmarks, updatePost, onDelete }: { post: With
                                         <Edit className="h-5 w-5" />
                                     </Button>
                                     <div className="border-t"></div>
-                                     <Button variant="ghost" className="justify-between text-base py-6 rounded-2xl w-full" onClick={() => toast({ title: "Coming Soon!", description: "Pinning posts will be available in a future update." })}>
-                                        <span>Pin Post</span>
+                                     <Button variant="ghost" className="justify-between text-base py-6 rounded-2xl w-full" onClick={handlePinPost}>
+                                        <span>{post.isPinned ? "Unpin Post" : "Pin Post"}</span>
                                         <Pin className="h-5 w-5" />
                                     </Button>
                                  </div>
@@ -621,3 +634,5 @@ export default function HomePage() {
     </AppLayout>
   );
 }
+
+    

@@ -136,9 +136,12 @@ export default function AccountPage() {
                 where("authorId", "==", authUser.uid)
             );
             const querySnapshot = await getDocs(postsQuery);
-            const userPosts = querySnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as WithId<Post>));
+            let userPosts = querySnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as WithId<Post>));
             
+            // Sort by pinned status first, then by timestamp
             userPosts.sort((a, b) => {
+                if (a.isPinned && !b.isPinned) return -1;
+                if (!a.isPinned && b.isPinned) return 1;
                 const timeA = a.timestamp?.toMillis() || 0;
                 const timeB = b.timestamp?.toMillis() || 0;
                 return timeB - timeA;
@@ -193,6 +196,56 @@ export default function AccountPage() {
   const handleDeletePost = useCallback((postId: string) => {
     setPosts(currentPosts => currentPosts.filter(p => p.id !== postId));
   }, []);
+
+  const handlePinPost = useCallback((postId: string, currentStatus: boolean) => {
+    if (!firestore) return;
+
+    // Optimistic update
+    setPosts(currentPosts => {
+        const newPosts = currentPosts.map(p =>
+            p.id === postId ? { ...p, isPinned: !currentStatus } : p
+        );
+        newPosts.sort((a, b) => {
+            if (a.isPinned && !b.isPinned) return -1;
+            if (!a.isPinned && b.isPinned) return 1;
+            const timeA = a.timestamp?.toMillis() || 0;
+            const timeB = b.timestamp?.toMillis() || 0;
+            return timeB - timeA;
+        });
+        return newPosts;
+    });
+
+
+    // Server update
+    const postRef = doc(firestore, 'posts', postId);
+    updateDoc(postRef, { isPinned: !currentStatus })
+      .then(() => {
+        toast({ title: currentStatus ? "Post unpinned" : "Post pinned" });
+      })
+      .catch(serverError => {
+        // Revert optimistic update on error
+        setPosts(currentPosts => {
+            const revertedPosts = currentPosts.map(p =>
+                p.id === postId ? { ...p, isPinned: currentStatus } : p
+            );
+             revertedPosts.sort((a, b) => {
+                if (a.isPinned && !b.isPinned) return -1;
+                if (!a.isPinned && b.isPinned) return 1;
+                const timeA = a.timestamp?.toMillis() || 0;
+                const timeB = b.timestamp?.toMillis() || 0;
+                return timeB - timeA;
+            });
+            return revertedPosts;
+        });
+        const permissionError = new FirestorePermissionError({
+            path: postRef.path,
+            operation: 'update',
+            requestResourceData: { isPinned: !currentStatus },
+        });
+        errorEmitter.emit('permission-error', permissionError);
+        toast({ variant: 'destructive', title: "Error", description: "Could not update pin status."});
+      });
+  }, [firestore, toast]);
 
 
 
@@ -378,7 +431,7 @@ export default function AccountPage() {
                         </div>
                     )}
                     {posts?.map((post) => (
-                        <HomePostItem key={post.id} post={post} bookmarks={bookmarks} updatePost={updatePostState} onDelete={handleDeletePost} />
+                        <HomePostItem key={post.id} post={post} bookmarks={bookmarks} updatePost={updatePostState} onDelete={handleDeletePost} onPin={handlePinPost} />
                     ))}
                 </div>
             </TabsContent>
@@ -393,3 +446,5 @@ export default function AccountPage() {
     </AppLayout>
   );
 }
+
+    

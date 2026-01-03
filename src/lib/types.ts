@@ -24,6 +24,7 @@ export interface Post {
     likeCount: number;
     commentCount: number;
     commentsAllowed?: boolean;
+    isPinned?: boolean;
 
     // Poll specific fields
     type?: 'text' | 'poll';
@@ -160,6 +161,8 @@ export interface VideoIceCandidate {
     sdpMLineIndex: number | null;
     usernameFragment: string | null;
 }
+    
+
     
 
     
