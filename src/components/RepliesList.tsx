@@ -3,7 +3,7 @@
 "use client";
 
 import React, { useState, useEffect } from 'react';
-import { useFirebase } from '@/firebase';
+import { useFirebase, useMemoFirebase } from '@/firebase';
 import { collectionGroup, query, where, getDocs, orderBy, limit, doc, getDoc } from 'firebase/firestore';
 import type { WithId } from '@/firebase/firestore/use-collection';
 import type { Comment, Post, ReplyItem } from '@/lib/types';
@@ -95,7 +95,7 @@ function ReplyItemWrapper({ comment }: { comment: WithId<Comment> }) {
 
 
 export function RepliesList({ userId }: { userId: string }) {
-    const { firestore, useMemoFirebase } = useFirebase();
+    const { firestore } = useFirebase();
     
     const commentsQuery = useMemoFirebase(() => {
         if (!firestore || !userId) return null;
