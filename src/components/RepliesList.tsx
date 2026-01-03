@@ -122,18 +122,17 @@ export function RepliesList({ userId }: { userId: string }) {
                 const allReplies: WithId<Comment>[] = [];
                 for (let i = 0; i < postIds.length; i += 30) {
                     const batchIds = postIds.slice(i, i + 30);
+                    // IMPORTANT: Removed orderBy from the query to avoid needing a composite index.
                     const repliesQuery = query(
                         collectionGroup(firestore, 'comments'),
-                        where('postId', 'in', batchIds),
-                        orderBy('timestamp', 'desc'),
-                        limit(50) // Limit per batch to avoid fetching too many comments at once
+                        where('postId', 'in', batchIds)
                     );
                     const repliesSnapshot = await getDocs(repliesQuery);
                     const batchReplies = repliesSnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as WithId<Comment>));
                     allReplies.push(...batchReplies);
                 }
 
-                // Sort all collected replies by timestamp
+                // Sort all collected replies by timestamp on the client-side
                 allReplies.sort((a, b) => b.timestamp.toMillis() - a.timestamp.toMillis());
 
                 setReplies(allReplies);
