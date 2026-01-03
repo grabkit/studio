@@ -59,7 +59,7 @@ service cloud.firestore {
           (isOwner(resource.data.authorId) && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['content', 'commentsAllowed', 'isPinned'])) ||
           
           // Allow a user to only modify 'likes' and 'likeCount' fields on a post
-          (request.resource.data.diff(resource.data).affectedKeys().hasOnly(['likes', 'likeCount'])) ||
+           (request.resource.data.diff(resource.data).affectedKeys().hasOnly(['likes', 'likeCount'])) ||
 
           // Allow updating comment count (by functions, basically)
           (request.resource.data.diff(resource.data).affectedKeys().hasOnly(['commentCount'])) ||
@@ -69,19 +69,13 @@ service cloud.firestore {
       );
     }
     
-    match /{document=**}/comments/{commentId} {
+    match /{path=**}/comments/{commentId} {
       allow read, list: if isSignedIn();
-    }
-    
-    match /posts/{postId}/comments/{commentId} {
-      // Create, update, delete rules still need to be specific
-      allow create: if isSignedIn() && isValidNewComment(postId, commentId);
-      allow delete: if isSignedIn() && (isOwner(resource.data.authorId) || isOwner(get(/databases/$(database)/documents/posts/$(postId)).data.authorId));
+      allow create: if isSignedIn() && isValidNewComment(path[1], commentId);
+      allow delete: if isSignedIn() && (isOwner(resource.data.authorId) || isOwner(get(/databases/$(database)/documents/posts/$(path[1])).data.authorId));
       allow update: if isSignedIn() && (
-          // Allow comment owner to edit their own comment content
           (isOwner(resource.data.authorId) && request.resource.data.diff(resource.data).hasAll(['content', 'lastEdited'])) ||
-          // Allow post owner to approve a comment
-          (isOwner(get(/databases/$(database)/documents/posts/$(postId)).data.authorId) && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['status']))
+          (isOwner(get(/databases/$(database)/documents/posts/$(path[1])).data.authorId) && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['status']))
       );
     }
 
