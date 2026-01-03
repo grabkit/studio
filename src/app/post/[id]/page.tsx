@@ -318,7 +318,7 @@ const CommentFormSchema = z.object({
 
 function CommentForm({ post, commentsAllowed }: { post: WithId<Post>, commentsAllowed?: boolean }) {
   const { user } = useUser();
-  const { firestore, userProfile } = useFirebase();
+  const { firestore } = useFirebase();
   const { toast } = useToast();
   const form = useForm<z.infer<typeof CommentFormSchema>>({
     resolver: zodResolver(CommentFormSchema),
@@ -331,7 +331,7 @@ function CommentForm({ post, commentsAllowed }: { post: WithId<Post>, commentsAl
   }, [firestore, post]);
   const { data: postAuthorProfile } = useDoc<UserProfile>(postAuthorRef);
 
-  const onSubmit = async (values: z.infer<typeof CommentFormSchema>>) => {
+  const onSubmit = async (values: z.infer<typeof CommentFormSchema>) => {
     if (!user || !firestore) {
       toast({ variant: "destructive", title: "You must be logged in to comment." });
       return;
@@ -668,3 +668,6 @@ export default function PostDetailPage() {
 
     
 
+
+
+    
