@@ -244,8 +244,8 @@ export function PostItem({ post, bookmarks, updatePost, onDelete, onPin, showPin
             const currentPost = postDoc.data() as Post;
             const currentLikes = currentPost.likes || [];
             const userHasLiked = currentLikes.includes(user.uid);
-            let updatedLikeCount;
             let updatedLikes;
+            let updatedLikeCount;
 
             if (userHasLiked) {
                 // Unlike
@@ -271,7 +271,7 @@ export function PostItem({ post, bookmarks, updatePost, onDelete, onPin, showPin
         const permissionError = new FirestorePermissionError({
             path: postRef.path,
             operation: 'update',
-            requestResourceData: { likeCount: 'increment', likes: 'arrayUnion/arrayRemove' },
+            requestResourceData: { likeCount: 'increment/decrement', likes: 'arrayUnion/arrayRemove' },
         });
         errorEmitter.emit('permission-error', permissionError);
     }
@@ -516,17 +516,17 @@ export default function HomePage() {
     return query(collection(firestore, 'posts'), orderBy("timestamp", "desc"), limit(50));
   }, [firestore]);
 
-  const { data: initialPosts, isLoading: postsFromHookLoading, setData } = useCollection<Post>(postsQuery);
-
+  const { data: initialPosts, isLoading: postsLoading, setData } = useCollection<Post>(postsQuery);
+  
   const updatePost = useCallback((postId: string, updatedData: Partial<Post>) => {
     setData(currentPosts => {
         if (!currentPosts) return null;
-        const newPosts = currentPosts.map(p =>
+        return currentPosts.map(p =>
             p.id === postId ? { ...p, ...updatedData } : p
         );
-        return newPosts;
     });
   }, [setData]);
+
 
   const bookmarksQuery = useMemoFirebase(() => {
     if (!firestore || !user) return null;
@@ -586,7 +586,7 @@ export default function HomePage() {
   };
 
 
-  const isLoading = postsFromHookLoading || bookmarksLoading;
+  const isLoading = postsLoading || bookmarksLoading;
 
   const filteredPosts = useMemo(() => {
     if (!initialPosts) return [];
