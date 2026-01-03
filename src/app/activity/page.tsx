@@ -55,8 +55,11 @@ function NotificationItem({ notification }: { notification: WithId<Notification>
     const isProfileActivity = notification.type === 'upvote' || notification.type === 'message_request';
     const linkHref = isProfileActivity ? `/profile/${notification.fromUserId}` : `/post/${notification.postId}`;
 
+    const isFilledIcon = notification.type === 'like' || notification.type === 'message_request';
+
+
     return (
-        <Link href={linkHref} className={cn(
+        <Link href={linkHref || '#'} className={cn(
             "flex items-start space-x-4 p-4 border-b transition-colors hover:bg-accent",
             !notification.read && "bg-primary/5"
         )}>
@@ -65,7 +68,10 @@ function NotificationItem({ notification }: { notification: WithId<Notification>
                     <AvatarFallback>{getInitials(notification.fromUserId)}</AvatarFallback>
                 </Avatar>
                 <div className="absolute -bottom-1 -right-1 bg-background rounded-full p-0.5">
-                     <Icon className={cn("h-4 w-4", info.color)} />
+                     <Icon 
+                        className={cn("h-4 w-4", info.color)} 
+                        fill={isFilledIcon ? "currentColor" : "none"}
+                    />
                 </div>
             </div>
             <div className="flex-1">
@@ -78,7 +84,7 @@ function NotificationItem({ notification }: { notification: WithId<Notification>
                     )}
                 </p>
                 <p className="text-xs text-muted-foreground mt-1">
-                    {notification.timestamp.toDate ? formatTimestamp(notification.timestamp.toDate()) : '...'}
+                    {notification.timestamp?.toDate ? formatTimestamp(notification.timestamp.toDate()) : '...'}
                 </p>
             </div>
         </Link>
