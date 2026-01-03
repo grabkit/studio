@@ -3,9 +3,10 @@
 "use client";
 
 import React, { useState, useEffect } from 'react';
-import { useFirebase } from '@/firebase';
-import { collection, query, where, getDocs, orderBy, limit, doc, getDoc, collectionGroup } from 'firebase/firestore';
+import { useFirebase, useMemoFirebase } from '@/firebase';
+import { collection, query, getDocs, orderBy, limit, doc, getDoc, collectionGroup } from 'firebase/firestore';
 import type { WithId } from '@/firebase/firestore/use-collection';
+import { useCollection } from '@/firebase/firestore/use-collection';
 import type { Comment, Post } from '@/lib/types';
 import { Skeleton } from './ui/skeleton';
 import { Avatar, AvatarFallback } from './ui/avatar';
@@ -37,7 +38,7 @@ function Reply({ comment, post }: { comment: WithId<Comment>, post: WithId<Post>
     const { user } = useFirebase();
 
     return (
-         <div className="p-4 space-y-3">
+         <div className="p-4 space-y-3 border-b">
              {post && (
                 <div className="text-sm text-muted-foreground pl-10">
                    Replied to <Link href={`/profile/${post.authorId}`} className="text-primary hover:underline">{formatUserId(post.authorId)}</Link>
@@ -74,21 +75,27 @@ function Reply({ comment, post }: { comment: WithId<Comment>, post: WithId<Post>
 function ReplyItemWrapper({ comment }: { comment: WithId<Comment> }) {
     const { firestore } = useFirebase();
     const [post, setPost] = useState<WithId<Post> | null>(null);
+    const [isLoading, setIsLoading] = useState(true);
     
     useEffect(() => {
         if (!firestore) return;
+        setIsLoading(true);
         const postRef = doc(firestore, 'posts', comment.postId);
         getDoc(postRef).then(docSnap => {
             if (docSnap.exists()) {
                 setPost({ id: docSnap.id, ...docSnap.data() } as WithId<Post>);
             }
+            setIsLoading(false);
         });
     }, [firestore, comment.postId]);
     
-    if (!post) {
-        // We show a skeleton, but it could be that the post was deleted.
-        // A more robust solution might handle that case specifically.
+    if (isLoading) {
         return <ReplySkeleton />;
+    }
+
+    // Don't render if the original post was deleted
+    if (!post) {
+        return null;
     }
 
     return <Reply comment={comment} post={post} />;
@@ -97,56 +104,18 @@ function ReplyItemWrapper({ comment }: { comment: WithId<Comment> }) {
 
 export function RepliesList({ userId }: { userId: string }) {
     const { firestore } = useFirebase();
-    const [replies, setReplies] = useState<WithId<Comment>[]>([]);
-    const [isLoading, setIsLoading] = useState(true);
-
-    useEffect(() => {
-        if (!firestore || !userId) return;
-
-        const fetchUserReplies = async () => {
-            setIsLoading(true);
-            try {
-                // Step 1: Get all the post IDs for the user
-                const postsQuery = query(collection(firestore, "posts"), where("authorId", "==", userId));
-                const postsSnapshot = await getDocs(postsQuery);
-                const postIds = postsSnapshot.docs.map(doc => doc.id);
-
-                if (postIds.length === 0) {
-                    setReplies([]);
-                    setIsLoading(false);
-                    return;
-                }
-                
-                // Step 2: Query the 'comments' collection group for comments where postId is in the user's postIds
-                // Firestore 'in' queries are limited to 30 items. We will handle it in batches.
-                const allReplies: WithId<Comment>[] = [];
-                for (let i = 0; i < postIds.length; i += 30) {
-                    const batchIds = postIds.slice(i, i + 30);
-                    // IMPORTANT: Removed orderBy from the query to avoid needing a composite index.
-                    const repliesQuery = query(
-                        collectionGroup(firestore, 'comments'),
-                        where('postId', 'in', batchIds)
-                    );
-                    const repliesSnapshot = await getDocs(repliesQuery);
-                    const batchReplies = repliesSnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as WithId<Comment>));
-                    allReplies.push(...batchReplies);
-                }
-
-                // Sort all collected replies by timestamp on the client-side
-                allReplies.sort((a, b) => b.timestamp.toMillis() - a.timestamp.toMillis());
-
-                setReplies(allReplies);
-
-            } catch (error) {
-                console.error("Error fetching user replies:", error);
-            } finally {
-                setIsLoading(false);
-            }
-        };
-
-        fetchUserReplies();
+    
+    const repliesQuery = useMemoFirebase(() => {
+        if (!firestore || !userId) return null;
+        // Fetch replies directly from the user's 'replies' subcollection
+        return query(
+            collection(firestore, 'users', userId, 'replies'),
+            orderBy('timestamp', 'desc'),
+            limit(50)
+        );
     }, [firestore, userId]);
-
+    
+    const { data: replies, isLoading } = useCollection<Comment>(repliesQuery);
 
     if (isLoading) {
         return (
@@ -158,17 +127,17 @@ export function RepliesList({ userId }: { userId: string }) {
         )
     }
 
-    if (replies.length === 0) {
+    if (replies === null || replies.length === 0) {
         return (
             <div className="text-center py-16">
                 <h3 className="text-xl font-headline text-primary">No Replies Yet</h3>
-                <p className="text-muted-foreground">This user hasn't received any replies.</p>
+                <p className="text-muted-foreground">Replies to this user's posts will appear here.</p>
             </div>
         );
     }
 
     return (
-        <div className="divide-y border-b">
+        <div className="divide-y">
             {replies.map(reply => (
                 <ReplyItemWrapper key={reply.id} comment={reply} />
             ))}

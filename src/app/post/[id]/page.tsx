@@ -368,6 +368,7 @@ function CommentForm({ post, commentsAllowed }: { post: WithId<Post>, commentsAl
 
     const postRef = doc(firestore, "posts", post.id);
     const commentRef = doc(collection(firestore, "posts", post.id, "comments"));
+    const postAuthorRepliesRef = doc(collection(firestore, `users/${post.authorId}/replies`));
     
     const isRestricted = postAuthorProfile?.restrictedUsers?.includes(user.uid);
     const commentStatus = isRestricted ? 'pending_approval' : 'approved';
@@ -377,14 +378,22 @@ function CommentForm({ post, commentsAllowed }: { post: WithId<Post>, commentsAl
       id: commentRef.id,
       postId: post.id,
       authorId: user.uid,
-      postAuthorId: post.authorId, // Add post author ID for querying replies
+      postAuthorId: post.authorId, 
       content: values.content,
       status: commentStatus,
     };
     
     const batch = writeBatch(firestore);
     batch.set(commentRef, {...newComment, timestamp: serverTimestamp()});
-    batch.update(postRef, { commentCount: increment(1) });
+
+    if (commentStatus === 'approved') {
+        batch.update(postRef, { commentCount: increment(1) });
+    }
+    
+    // Denormalize/copy the comment to the post author's replies subcollection
+    const replyData = { ...newComment, id: postAuthorRepliesRef.id, timestamp: serverTimestamp() };
+    batch.set(postAuthorRepliesRef, replyData);
+
 
     batch.commit()
       .then(() => {
@@ -508,10 +517,15 @@ function CommentItem({ comment, postAuthorId }: { comment: WithId<Comment>, post
 
     const commentRef = doc(firestore, "posts", comment.postId, "comments", comment.id);
     const postRef = doc(firestore, "posts", comment.postId);
+    const replyRef = doc(firestore, `users/${comment.postAuthorId}/replies`, comment.id);
+
 
     const batch = writeBatch(firestore);
     batch.delete(commentRef);
-    batch.update(postRef, { commentCount: increment(-1) });
+    batch.delete(replyRef); // Also delete the denormalized reply
+    if (comment.status === 'approved') {
+        batch.update(postRef, { commentCount: increment(-1) });
+    }
 
     batch.commit().catch(serverError => {
         const permissionError = new FirestorePermissionError({
@@ -532,18 +546,25 @@ function CommentItem({ comment, postAuthorId }: { comment: WithId<Comment>, post
     setIsUpdating(true);
     
     const commentRef = doc(firestore, "posts", comment.postId, "comments", comment.id);
+    const replyRef = doc(firestore, `users/${comment.postAuthorId}/replies`, comment.id);
+
+    const updateData = { 
+        content: values.content,
+        lastEdited: serverTimestamp()
+    };
     
     try {
-        await updateDoc(commentRef, { 
-            content: values.content,
-            lastEdited: serverTimestamp()
-        });
+        const batch = writeBatch(firestore);
+        batch.update(commentRef, updateData);
+        batch.update(replyRef, updateData);
+        await batch.commit();
+
         setIsEditing(false);
     } catch (serverError) {
         const permissionError = new FirestorePermissionError({
             path: commentRef.path,
             operation: 'update',
-            requestResourceData: { content: values.content },
+            requestResourceData: updateData,
         });
         errorEmitter.emit('permission-error', permissionError);
         toast({ variant: 'destructive', title: 'Error', description: 'Could not update your comment.' });
@@ -556,7 +577,15 @@ function CommentItem({ comment, postAuthorId }: { comment: WithId<Comment>, post
   const handleApprove = () => {
       if (!firestore || !isPostOwner) return;
       const commentRef = doc(firestore, "posts", comment.postId, "comments", comment.id);
-      updateDoc(commentRef, { status: 'approved' })
+      const postRef = doc(firestore, "posts", comment.postId);
+      const replyRef = doc(firestore, `users/${comment.postAuthorId}/replies`, comment.id);
+      
+      const batch = writeBatch(firestore);
+      batch.update(commentRef, { status: 'approved' });
+      batch.update(replyRef, { status: 'approved' });
+      batch.update(postRef, { commentCount: increment(1) });
+      
+      batch.commit()
         .then(() => {
             toast({ title: "Comment Approved" });
         })
@@ -814,7 +843,3 @@ export default function PostDetailPage() {
     </AppLayout>
   );
 }
-
-    
-
-    
