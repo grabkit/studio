@@ -627,7 +627,7 @@ export default function HomePage() {
           )}
           
           {!isLoading && displayedPosts && filteredPosts.map((post) => (
-              <PostItem key={post.id} post={post} bookmarks={bookmarks} updatePost={updatePost} onDelete={(id) => setDisplayedPosts(posts => posts?.filter(p => p.id !== id) ?? [])} onPin={onPin} />
+              <PostItem key={post.id} post={post} bookmarks={bookmarks} updatePost={updatePost} onDelete={(id) => setDisplayedPosts(posts => posts?.filter(p => p.id !== id) ?? [])} />
             ))
           }
         </div>
