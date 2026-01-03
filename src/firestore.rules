@@ -69,7 +69,7 @@ service cloud.firestore {
       );
     }
     
-    match /{path=**}/comments/{commentId} {
+    match /{document=**}/comments/{commentId} {
       allow read, list: if isSignedIn();
     }
     
@@ -208,9 +208,7 @@ service cloud.firestore {
             && data.content is string && data.content.size() > 0
             && data.id == commentId
             && data.status in ['approved', 'pending_approval']
-            && data.keys().hasOnly(['id', 'postId', 'content', 'authorId', 'timestamp', 'status', 'lastEdited']);
+            && data.keys().hasOnly(['id', 'postId', 'content', 'authorId', 'timestamp', 'status', 'lastEdited', 'postAuthorId']);
     }
   }
 }
-
-    
