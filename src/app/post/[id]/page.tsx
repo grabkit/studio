@@ -368,7 +368,7 @@ function CommentForm({ post, commentsAllowed }: { post: WithId<Post>, commentsAl
 
     const postRef = doc(firestore, "posts", post.id);
     const commentRef = doc(collection(firestore, "posts", post.id, "comments"));
-    const postAuthorRepliesRef = doc(collection(firestore, `users/${post.authorId}/replies`));
+    const postAuthorRepliesRef = doc(firestore, `users/${post.authorId}/replies`, commentRef.id);
     
     const isRestricted = postAuthorProfile?.restrictedUsers?.includes(user.uid);
     const commentStatus = isRestricted ? 'pending_approval' : 'approved';
@@ -390,8 +390,7 @@ function CommentForm({ post, commentsAllowed }: { post: WithId<Post>, commentsAl
         batch.update(postRef, { commentCount: increment(1) });
     }
     
-    // Denormalize/copy the comment to the post author's replies subcollection
-    const replyData = { ...newComment, id: postAuthorRepliesRef.id, timestamp: serverTimestamp() };
+    const replyData = { ...newComment, id: commentRef.id, timestamp: serverTimestamp() };
     batch.set(postAuthorRepliesRef, replyData);
 
 
