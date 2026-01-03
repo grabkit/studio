@@ -1,5 +1,3 @@
-
-
 "use client";
 
 import AppLayout from "@/components/AppLayout";
@@ -7,7 +5,7 @@ import { useFirebase, useMemoFirebase } from "@/firebase";
 import { useRouter } from "next/navigation";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button, buttonVariants } from "@/components/ui/button";
-import { collection, query, where, getDocs, getDoc, doc, updateDoc, arrayUnion, arrayRemove, increment, setDoc, serverTimestamp, deleteField } from "firebase/firestore";
+import { collection, query, where, getDocs, getDoc, doc, updateDoc, arrayUnion, arrayRemove, increment, setDoc, serverTimestamp, deleteField, runTransaction } from "firebase/firestore";
 import { useCollection, type WithId } from "@/firebase/firestore/use-collection";
 import { Menu, Share2, Link as LinkIcon, Plus, BarChart3, Trash2 } from "lucide-react";
 import type { Post, Bookmark, User, Notification } from "@/lib/types";
@@ -36,7 +34,7 @@ import {
 
 
 function BookmarksList({ bookmarks, bookmarksLoading }: { bookmarks: WithId<Bookmark>[] | null, bookmarksLoading: boolean }) {
-    const { firestore } = useFirebase();
+    const { firestore, user } = useFirebase();
     const [bookmarkedPosts, setBookmarkedPosts] = useState<WithId<Post>[]>([]);
     const [isLoading, setIsLoading] = useState(true);
 
@@ -99,19 +97,71 @@ function BookmarksList({ bookmarks, bookmarksLoading }: { bookmarks: WithId<Book
         )
     }
 
-    const updatePostState = (postId: string, updatedData: Partial<Post>) => {
-        setBookmarkedPosts(currentPosts => {
-            if (!currentPosts) return [];
-            return currentPosts.map(p =>
-                p.id === postId ? { ...p, ...updatedData } : p
+    const handleLikeInBookmark = (postId: string, currentPost: WithId<Post>) => {
+        if (!firestore || !user) return;
+
+        const updatedPost = { ...currentPost };
+        const hasLiked = updatedPost.likes?.includes(user.uid);
+        
+        // Optimistic UI update
+        if (hasLiked) {
+            updatedPost.likes = updatedPost.likes.filter(id => id !== user.uid);
+            updatedPost.likeCount = (updatedPost.likeCount || 1) - 1;
+        } else {
+            updatedPost.likes = [...(updatedPost.likes || []), user.uid];
+            updatedPost.likeCount = (updatedPost.likeCount || 0) + 1;
+        }
+        
+        setBookmarkedPosts(currentPosts => 
+            currentPosts.map(p => p.id === postId ? updatedPost : p)
+        );
+
+        // Firestore Transaction
+        const postRef = doc(firestore, 'posts', postId);
+        runTransaction(firestore, async (transaction) => {
+            const postDoc = await transaction.get(postRef);
+            if (!postDoc.exists()) {
+                throw "Post does not exist!";
+            }
+
+            const freshPost = postDoc.data() as Post;
+            const freshLikes = freshPost.likes || [];
+            const userHasLiked = freshLikes.includes(user.uid);
+
+            if (userHasLiked) {
+                transaction.update(postRef, {
+                    likeCount: increment(-1),
+                    likes: arrayRemove(user.uid)
+                });
+            } else {
+                transaction.update(postRef, {
+                    likeCount: increment(1),
+                    likes: arrayUnion(user.uid)
+                });
+            }
+        }).catch(error => {
+            console.error("Like transaction failed: ", error);
+            // Revert optimistic update
+            setBookmarkedPosts(currentPosts => 
+                currentPosts.map(p => p.id === postId ? currentPost : p)
             );
+            toast({
+                variant: 'destructive',
+                title: 'Error',
+                description: 'Could not update like status.'
+            })
         });
-    };
+    }
 
     return (
         <div className="divide-y border-b">
             {bookmarkedPosts.map(post => (
-                <HomePostItem key={post.id} post={post} bookmarks={bookmarks} updatePost={updatePostState} />
+                <HomePostItem 
+                    key={post.id} 
+                    post={post} 
+                    bookmarks={bookmarks} 
+                    onLike={() => handleLikeInBookmark(post.id, post)}
+                />
             ))}
         </div>
     )
@@ -124,7 +174,14 @@ export default function AccountPage() {
   const [posts, setPosts] = useState<WithId<Post>[]>([]);
   const [postsLoading, setPostsLoading] = useState(true);
   
-
+  const updatePostState = useCallback((postId: string, updatedData: Partial<Post>) => {
+    setPosts(currentPosts => {
+        if (!currentPosts) return [];
+        return currentPosts.map(p =>
+            p.id === postId ? { ...p, ...updatedData } : p
+        );
+    });
+    }, []);
 
   useEffect(() => {
     if (!firestore || !authUser) return;
@@ -158,15 +215,6 @@ export default function AccountPage() {
 
     fetchPosts();
 }, [firestore, authUser]);
-
-  const updatePostState = useCallback((postId: string, updatedData: Partial<Post>) => {
-    setPosts(currentPosts => {
-        if (!currentPosts) return [];
-        return currentPosts.map(p =>
-            p.id === postId ? { ...p, ...updatedData } : p
-        );
-    });
-    }, []);
 
   const handleDeletePost = useCallback((postId: string) => {
     setPosts(currentPosts => currentPosts.filter(p => p.id !== postId));
@@ -389,7 +437,15 @@ export default function AccountPage() {
                         </div>
                     )}
                     {posts?.map((post) => (
-                        <HomePostItem key={post.id} post={post} bookmarks={bookmarks} updatePost={updatePostState} onDelete={handleDeletePost} onPin={handlePinPost} showPinStatus={true} />
+                        <HomePostItem 
+                          key={post.id} 
+                          post={post} 
+                          bookmarks={bookmarks} 
+                          onLike={() => updatePostState(post.id, post)}
+                          onDelete={handleDeletePost} 
+                          onPin={handlePinPost} 
+                          showPinStatus={true} 
+                        />
                     ))}
                 </div>
             </TabsContent>
@@ -398,11 +454,9 @@ export default function AccountPage() {
             </TabsContent>
              <TabsContent value="bookmarks" className="mt-0">
                  <BookmarksList bookmarks={bookmarks} bookmarksLoading={bookmarksLoading} />
-            </TabsContent>
+             </TabsContent>
         </Tabs>
 
     </AppLayout>
   );
 }
-
-    

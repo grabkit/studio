@@ -1,10 +1,8 @@
-
-
 "use client";
 
 import { useParams, useRouter } from "next/navigation";
 import { useFirebase, useMemoFirebase, useCollection, type WithId, useDoc } from "@/firebase";
-import { doc, collection, query, where, getDocs, serverTimestamp, setDoc, getDoc, updateDoc, increment, arrayUnion, arrayRemove, deleteField } from "firebase/firestore";
+import { doc, collection, query, where, getDocs, serverTimestamp, setDoc, getDoc, updateDoc, increment, arrayUnion, arrayRemove, deleteField, runTransaction } from "firebase/firestore";
 import type { Post, User, Notification, Conversation } from "@/lib/types";
 import React, { useMemo, useState, useEffect, useCallback } from "react";
 import Link from "next/link";
@@ -379,13 +377,28 @@ export default function UserProfilePage() {
     const handleUpvoteUser = () => {
         if (!currentUser || !user || !userRef || !firestore) return;
 
-        const payload = {
-            upvotes: increment(hasUpvotedUser ? -1 : 1),
-            upvotedBy: hasUpvotedUser ? arrayRemove(currentUser.uid) : arrayUnion(currentUser.uid)
-        };
+        runTransaction(firestore, async (transaction) => {
+            const userDoc = await transaction.get(userRef);
+            if (!userDoc.exists()) {
+                throw "User document does not exist!";
+            }
+            
+            const freshUser = userDoc.data() as User;
+            const currentUpvotedBy = freshUser.upvotedBy || [];
+            const userHasUpvoted = currentUpvotedBy.includes(currentUser.uid);
 
-        updateDoc(userRef, payload)
-        .then(() => {
+            if (userHasUpvoted) {
+                 transaction.update(userRef, {
+                    upvotes: increment(-1),
+                    upvotedBy: arrayRemove(currentUser.uid)
+                });
+            } else {
+                 transaction.update(userRef, {
+                    upvotes: increment(1),
+                    upvotedBy: arrayUnion(currentUser.uid)
+                });
+            }
+        }).then(() => {
              if (!hasUpvotedUser) {
                 const notificationRef = doc(collection(firestore, 'users', user.id, 'notifications'));
                 const notificationData: Omit<Notification, 'id'> = {
@@ -403,7 +416,7 @@ export default function UserProfilePage() {
             const permissionError = new FirestorePermissionError({
                 path: userRef.path,
                 operation: 'update',
-                requestResourceData: payload,
+                requestResourceData: { upvotes: 'increment', upvotedBy: 'arrayUnion/arrayRemove'},
             });
             errorEmitter.emit('permission-error', permissionError);
              toast({
@@ -621,7 +634,13 @@ export default function UserProfilePage() {
                                         </div>
                                     )}
                                     {posts?.map((post) => (
-                                        <HomePostItem key={post.id} post={post} bookmarks={bookmarks} updatePost={updatePostState} showPinStatus={true} />
+                                        <HomePostItem 
+                                          key={post.id} 
+                                          post={post} 
+                                          bookmarks={bookmarks} 
+                                          onLike={() => updatePostState(post.id, post)}
+                                          showPinStatus={true} 
+                                        />
                                     ))}
                                 </div>
                             </TabsContent>
@@ -697,5 +716,3 @@ export default function UserProfilePage() {
         </AppLayout>
     );
 }
-
-    
