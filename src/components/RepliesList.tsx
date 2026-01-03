@@ -3,16 +3,14 @@
 "use client";
 
 import React, { useState, useEffect } from 'react';
-import { useFirebase, useMemoFirebase } from '@/firebase';
-import { collectionGroup, query, where, getDocs, orderBy, limit, doc, getDoc } from 'firebase/firestore';
+import { useFirebase } from '@/firebase';
+import { collection, query, where, getDocs, orderBy, limit, doc, getDoc, collectionGroup } from 'firebase/firestore';
 import type { WithId } from '@/firebase/firestore/use-collection';
-import type { Comment, Post, ReplyItem } from '@/lib/types';
+import type { Comment, Post } from '@/lib/types';
 import { Skeleton } from './ui/skeleton';
 import { Avatar, AvatarFallback } from './ui/avatar';
 import { getInitials, formatTimestamp } from '@/lib/utils';
 import Link from 'next/link';
-import { useDoc } from '@/firebase/firestore/use-doc';
-import { useCollection } from '@/firebase/firestore/use-collection';
 
 
 function ReplySkeleton() {
@@ -42,21 +40,22 @@ function Reply({ comment, post }: { comment: WithId<Comment>, post: WithId<Post>
          <div className="p-4 space-y-3">
              {post && (
                 <div className="text-sm text-muted-foreground pl-10">
-                   You replied to <Link href={`/profile/${post.authorId}`} className="text-primary hover:underline">{formatUserId(post.authorId)}</Link>
+                   Replied to <Link href={`/profile/${post.authorId}`} className="text-primary hover:underline">{formatUserId(post.authorId)}</Link>
                 </div>
              )}
 
             <div className="flex space-x-3">
                 <Avatar className="h-8 w-8">
-                    <AvatarFallback>{getInitials(user?.displayName)}</AvatarFallback>
+                    <AvatarFallback>{getInitials(formatUserId(comment.authorId))}</AvatarFallback>
                 </Avatar>
                 <div className="flex-1">
                     <div className="flex justify-between items-center">
-                        <div className="flex items-center space-x-2">
-                            <span className="font-semibold text-sm hover:underline">
+                        <div className="flex items-center space-x-2 text-xs text-muted-foreground">
+                            <Link href={`/profile/${comment.authorId}`} className="font-semibold text-sm text-foreground hover:underline">
                                 {formatUserId(comment.authorId)}
-                            </span>
-                            <span className="text-xs text-muted-foreground">
+                            </Link>
+                            <span>•</span>
+                            <span>
                             {comment.timestamp
                                 ? formatTimestamp(comment.timestamp.toDate())
                                 : ""}
@@ -87,6 +86,8 @@ function ReplyItemWrapper({ comment }: { comment: WithId<Comment> }) {
     }, [firestore, comment.postId]);
     
     if (!post) {
+        // We show a skeleton, but it could be that the post was deleted.
+        // A more robust solution might handle that case specifically.
         return <ReplySkeleton />;
     }
 
@@ -96,18 +97,56 @@ function ReplyItemWrapper({ comment }: { comment: WithId<Comment> }) {
 
 export function RepliesList({ userId }: { userId: string }) {
     const { firestore } = useFirebase();
-    
-    const commentsQuery = useMemoFirebase(() => {
-        if (!firestore || !userId) return null;
-        return query(
-            collectionGroup(firestore, 'comments'),
-            where('postAuthorId', '==', userId),
-            orderBy('timestamp', 'desc'),
-            limit(50)
-        );
+    const [replies, setReplies] = useState<WithId<Comment>[]>([]);
+    const [isLoading, setIsLoading] = useState(true);
+
+    useEffect(() => {
+        if (!firestore || !userId) return;
+
+        const fetchUserReplies = async () => {
+            setIsLoading(true);
+            try {
+                // Step 1: Get all the post IDs for the user
+                const postsQuery = query(collection(firestore, "posts"), where("authorId", "==", userId));
+                const postsSnapshot = await getDocs(postsQuery);
+                const postIds = postsSnapshot.docs.map(doc => doc.id);
+
+                if (postIds.length === 0) {
+                    setReplies([]);
+                    setIsLoading(false);
+                    return;
+                }
+                
+                // Step 2: Query the 'comments' collection group for comments where postId is in the user's postIds
+                // Firestore 'in' queries are limited to 30 items. We will handle it in batches.
+                const allReplies: WithId<Comment>[] = [];
+                for (let i = 0; i < postIds.length; i += 30) {
+                    const batchIds = postIds.slice(i, i + 30);
+                    const repliesQuery = query(
+                        collectionGroup(firestore, 'comments'),
+                        where('postId', 'in', batchIds),
+                        orderBy('timestamp', 'desc'),
+                        limit(50) // Limit per batch to avoid fetching too many comments at once
+                    );
+                    const repliesSnapshot = await getDocs(repliesQuery);
+                    const batchReplies = repliesSnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as WithId<Comment>));
+                    allReplies.push(...batchReplies);
+                }
+
+                // Sort all collected replies by timestamp
+                allReplies.sort((a, b) => b.timestamp.toMillis() - a.timestamp.toMillis());
+
+                setReplies(allReplies);
+
+            } catch (error) {
+                console.error("Error fetching user replies:", error);
+            } finally {
+                setIsLoading(false);
+            }
+        };
+
+        fetchUserReplies();
     }, [firestore, userId]);
-    
-    const { data: replies, isLoading } = useCollection<Comment>(commentsQuery);
 
 
     if (isLoading) {
@@ -120,7 +159,7 @@ export function RepliesList({ userId }: { userId: string }) {
         )
     }
 
-    if (!replies || replies.length === 0) {
+    if (replies.length === 0) {
         return (
             <div className="text-center py-16">
                 <h3 className="text-xl font-headline text-primary">No Replies Yet</h3>
