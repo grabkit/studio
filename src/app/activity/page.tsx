@@ -9,7 +9,7 @@ import type { Notification } from "@/lib/types";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import Link from "next/link";
-import { Heart, MessageCircle, AlertTriangle, UserUp, Mail } from "lucide-react";
+import { Heart, MessageCircle, AlertTriangle, ArrowUp, Mail } from "lucide-react";
 import { cn, formatTimestamp, getInitials } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import { useEffect } from "react";
@@ -36,7 +36,7 @@ const notificationInfo = {
         color: "text-amber-500"
     },
     upvote: {
-        icon: UserUp,
+        icon: ArrowUp,
         text: "upvoted your profile",
         color: "text-green-500"
     },
@@ -78,7 +78,7 @@ function NotificationItem({ notification }: { notification: WithId<Notification>
                     )}
                 </p>
                 <p className="text-xs text-muted-foreground mt-1">
-                    {formatTimestamp(notification.timestamp.toDate())}
+                    {notification.timestamp.toDate ? formatTimestamp(notification.timestamp.toDate()) : '...'}
                 </p>
             </div>
         </Link>
