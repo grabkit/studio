@@ -1,5 +1,4 @@
 
-
 "use client";
 
 import AppLayout from "@/components/AppLayout";
@@ -224,7 +223,7 @@ function PostAuthorInfo({ authorId, authorProfile: initialAuthorProfile }: { aut
     
     if (!authorProfile) {
         return (
-            <div className="flex items-center space-x-2">
+             <div className="flex items-center space-x-2">
                  <Avatar className="h-10 w-10">
                     <AvatarFallback>?</AvatarFallback>
                 </Avatar>
@@ -234,23 +233,16 @@ function PostAuthorInfo({ authorId, authorProfile: initialAuthorProfile }: { aut
     }
 
     return (
-        <div className="flex space-x-3">
+        <div className="flex items-center space-x-3">
             <Link href={`/profile/${authorProfile.id}`}>
                 <Avatar className="h-10 w-10">
                     <AvatarFallback>{getAvatar(authorProfile)}</AvatarFallback>
                 </Avatar>
             </Link>
-            <div className="flex-1 space-y-2">
-                <div className="flex justify-between items-start">
-                    <div className="flex items-center space-x-2">
-                        <Link href={`/profile/${authorProfile.id}`} className="text-sm font-semibold hover:underline">
-                            {formatUserId(authorProfile.id)}
-                        </Link>
-                         <span className="text-xs text-muted-foreground">
-                            {/* Assuming post timestamp is passed separately or part of another component */}
-                        </span>
-                    </div>
-                </div>
+            <div className="space-y-0">
+                <Link href={`/profile/${authorProfile.id}`} className="text-sm font-semibold hover:underline">
+                    {formatUserId(authorProfile.id)}
+                </Link>
             </div>
         </div>
     );
@@ -429,13 +421,13 @@ export function PostItem({ post, bookmarks, updatePost, onDelete, onPin, showPin
           </div>
         )}
         <div className="flex space-x-3">
-          <div className="w-10 flex-shrink-0">
+          <div className="flex flex-col items-center flex-shrink-0">
              <PostAuthorInfo authorId={post.authorId} authorProfile={authorProfile} />
           </div>
           <div className="flex-1">
-            <div className="flex justify-between items-start -mt-8">
-                <span className="text-xs text-muted-foreground pl-1">
-                    {post.timestamp ? formatTimestamp(post.timestamp.toDate()) : ''}
+            <div className="flex justify-between items-start">
+                <span className="text-xs text-muted-foreground">
+                    {post.timestamp ? `· ${formatTimestamp(post.timestamp.toDate())}` : ''}
                 </span>
                <div className="flex items-center">
                  {isOwner && (
@@ -475,17 +467,19 @@ export function PostItem({ post, bookmarks, updatePost, onDelete, onPin, showPin
                </div>
             </div>
             
-            <Link href={`/post/${post.id}`} className="block">
-                <p className="text-foreground text-sm whitespace-pre-wrap">{post.content}</p>
-            </Link>
+            <div className="space-y-2 mt-1">
+              <Link href={`/post/${post.id}`} className="block">
+                  <p className="text-foreground text-sm whitespace-pre-wrap">{post.content}</p>
+              </Link>
 
 
-             {post.linkMetadata && <LinkPreview metadata={post.linkMetadata} />}
+              {post.linkMetadata && <LinkPreview metadata={post.linkMetadata} />}
 
 
-            {post.type === 'poll' && post.pollOptions && (
-              <PollComponent post={post} user={user} />
-            )}
+              {post.type === 'poll' && post.pollOptions && (
+                <PollComponent post={post} user={user} />
+              )}
+            </div>
 
 
             <div className="flex items-center justify-between pt-2 text-muted-foreground">
@@ -699,3 +693,5 @@ export default function HomePage() {
     </AppLayout>
   );
 }
+
+    
