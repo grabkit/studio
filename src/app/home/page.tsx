@@ -196,7 +196,7 @@ export function PollComponent({ post, user }: { post: WithId<Post>, user: any })
     );
 }
 
-function PostAuthorInfo({ authorId, authorProfile: initialAuthorProfile }: { authorId: string, authorProfile?: WithId<User> | null }) {
+function PostAuthorInfo({ authorId, authorProfile: initialAuthorProfile, timestamp }: { authorId: string, authorProfile?: WithId<User> | null, timestamp: any }) {
     const { firestore } = useFirebase();
 
     const authorRef = useMemoFirebase(() => {
@@ -244,7 +244,7 @@ function PostAuthorInfo({ authorId, authorProfile: initialAuthorProfile }: { aut
                     {formatUserId(authorProfile.id)}
                 </Link>
                  <div className="text-xs text-muted-foreground">
-                    {post.timestamp ? `· ${formatTimestamp(post.timestamp.toDate())}` : ''}
+                    {timestamp ? `· ${formatTimestamp(timestamp.toDate())}` : ''}
                 </div>
             </div>
         </div>
@@ -426,7 +426,11 @@ export function PostItem({ post, bookmarks, updatePost, onDelete, onPin, showPin
         <div className="flex space-x-3">
           <div className="flex-1">
             <div className="flex justify-between items-start">
-                <PostAuthorInfo authorId={post.authorId} authorProfile={authorProfile} />
+              <PostAuthorInfo
+                authorId={post.authorId}
+                authorProfile={authorProfile}
+                timestamp={post.timestamp}
+              />
                <div className="flex items-center">
                  {isOwner && (
                      <Sheet open={isMoreOptionsSheetOpen} onOpenChange={setIsMoreOptionsSheetOpen}>
@@ -691,5 +695,6 @@ export default function HomePage() {
     </AppLayout>
   );
 }
+    
 
     
