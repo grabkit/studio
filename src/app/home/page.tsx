@@ -470,7 +470,7 @@ export function PostItem({ post, bookmarks, updatePost, onDelete, onPin, showPin
             </div>
             
             <div className="pl-[52px]">
-              <Link href={`/post/${post.id}`} className="block mt-2">
+              <Link href={`/post/${post.id}`} className="block">
                   <p className="text-foreground text-sm whitespace-pre-wrap">{post.content}</p>
               </Link>
 
@@ -700,5 +700,7 @@ export default function HomePage() {
 
 
 
+
+    
 
     
