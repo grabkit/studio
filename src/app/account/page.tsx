@@ -399,22 +399,22 @@ export default function AccountPage() {
                     )}
                     <p className="text-sm text-muted-foreground">Posts</p>
                 </div>
-                <div>
+                <Link href={`/profile/${authUser?.uid}/social?tab=upvotes`} className="cursor-pointer hover:bg-secondary/50 rounded-md p-1 -m-1">
                     {isLoading ? (
                         <div className="font-bold text-lg"><Skeleton className="h-6 w-8 mx-auto" /></div>
                     ) : (
                         <div className="font-bold text-lg">{userProfile?.upvotes || 0}</div>
                     )}
                     <p className="text-sm text-muted-foreground">Upvotes</p>
-                </div>
-                <div>
+                </Link>
+                <Link href={`/profile/${authUser?.uid}/social?tab=upvoted`} className="cursor-pointer hover:bg-secondary/50 rounded-md p-1 -m-1">
                     {isLoading ? (
                         <div className="font-bold text-lg"><Skeleton className="h-6 w-8 mx-auto" /></div>
                     ) : (
                         <div className="font-bold text-lg">{userProfile?.upvotedCount || 0}</div>
                     )}
                     <p className="text-sm text-muted-foreground">Upvoted</p>
-                </div>
+                </Link>
             </div>
         </div>
         
@@ -487,4 +487,3 @@ export default function AccountPage() {
     </AppLayout>
   );
 }
-
