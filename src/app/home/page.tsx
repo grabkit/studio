@@ -239,7 +239,7 @@ function PostAuthorInfo({ authorId, authorProfile: initialAuthorProfile, timesta
                     <AvatarFallback>{getAvatar(authorProfile)}</AvatarFallback>
                 </Avatar>
             </Link>
-             <div className="flex items-center space-x-1.5">
+            <div className="flex items-center space-x-1.5">
                 <Link href={`/profile/${authorProfile.id}`} className="text-sm font-semibold hover:underline">
                     {formatUserId(authorProfile.id)}
                 </Link>
@@ -469,20 +469,17 @@ export function PostItem({ post, bookmarks, updatePost, onDelete, onPin, showPin
                </div>
             </div>
             
-            <div className="space-y-2 pl-[52px]">
+            <div className="pl-[52px]">
               <Link href={`/post/${post.id}`} className="block">
                   <p className="text-foreground text-sm whitespace-pre-wrap">{post.content}</p>
               </Link>
 
-
               {post.linkMetadata && <LinkPreview metadata={post.linkMetadata} />}
-
 
               {post.type === 'poll' && post.pollOptions && (
                 <PollComponent post={post} user={user} />
               )}
             </div>
-
 
             <div className="flex items-center justify-between pt-2 text-muted-foreground pl-[52px]">
                 <div className="flex items-center space-x-6">
@@ -700,3 +697,4 @@ export default function HomePage() {
     
 
     
+
