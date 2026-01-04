@@ -39,11 +39,10 @@ function UserItem({ user }: { user: WithId<User> }) {
         <Link href={`/profile/${user.id}`} className="flex items-center justify-between p-4 border-b hover:bg-accent">
             <div className="flex items-center space-x-4">
                 <Avatar>
-                    <AvatarFallback>{getInitials(user.name)}</AvatarFallback>
+                    <AvatarFallback>{getInitials(formatUserId(user.id))}</AvatarFallback>
                 </Avatar>
                 <div>
-                    <p className="font-semibold">{user.name}</p>
-                    <p className="text-sm text-muted-foreground">{formatUserId(user.id)}</p>
+                    <p className="font-semibold">{formatUserId(user.id)}</p>
                 </div>
             </div>
         </Link>
