@@ -1,4 +1,5 @@
 
+
 "use client";
 
 import { useParams, useRouter } from "next/navigation";
@@ -379,25 +380,37 @@ export default function UserProfilePage() {
     const handleUpvoteUser = () => {
         if (!currentUser || !user || !userRef || !firestore) return;
 
+        const currentUserRef = doc(firestore, 'users', currentUser.uid);
+
         runTransaction(firestore, async (transaction) => {
-            const userDoc = await transaction.get(userRef);
-            if (!userDoc.exists()) {
-                throw "User document does not exist!";
+            const targetUserDoc = await transaction.get(userRef);
+            const currentUserDoc = await transaction.get(currentUserRef);
+
+            if (!targetUserDoc.exists() || !currentUserDoc.exists()) {
+                throw "One of the user documents does not exist!";
             }
             
-            const freshUser = userDoc.data() as User;
-            const currentUpvotedBy = freshUser.upvotedBy || [];
+            const freshTargetUser = targetUserDoc.data() as User;
+            const currentUpvotedBy = freshTargetUser.upvotedBy || [];
             const userHasUpvoted = currentUpvotedBy.includes(currentUser.uid);
 
             if (userHasUpvoted) {
-                 transaction.update(userRef, {
+                 // Un-upvote
+                transaction.update(userRef, {
                     upvotes: increment(-1),
                     upvotedBy: arrayRemove(currentUser.uid)
                 });
+                transaction.update(currentUserRef, {
+                    upvotedCount: increment(-1)
+                });
             } else {
+                 // Upvote
                  transaction.update(userRef, {
                     upvotes: increment(1),
                     upvotedBy: arrayUnion(currentUser.uid)
+                });
+                transaction.update(currentUserRef, {
+                    upvotedCount: increment(1)
                 });
             }
         }).then(() => {
@@ -415,10 +428,11 @@ export default function UserProfilePage() {
             }
         })
         .catch(err => {
+            console.error("Upvote transaction failed:", err);
             const permissionError = new FirestorePermissionError({
                 path: userRef.path,
                 operation: 'update',
-                requestResourceData: { upvotes: 'increment', upvotedBy: 'arrayUnion/arrayRemove'},
+                requestResourceData: { upvotes: 'transactional update'},
             });
             errorEmitter.emit('permission-error', permissionError);
              toast({
