@@ -471,7 +471,8 @@ export default function AccountPage() {
                           updatePost={updatePostState}
                           onDelete={handleDeletePost} 
                           onPin={handlePinPost} 
-                          showPinStatus={true} 
+                          showPinStatus={true}
+                          authorProfile={userProfile}
                         />
                     ))}
                 </div>
@@ -487,5 +488,3 @@ export default function AccountPage() {
     </AppLayout>
   );
 }
-
-    

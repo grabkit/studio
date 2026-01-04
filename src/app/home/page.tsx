@@ -3,7 +3,7 @@
 "use client";
 
 import AppLayout from "@/components/AppLayout";
-import { useFirebase, useMemoFirebase, useUser } from "@/firebase";
+import { useFirebase, useMemoFirebase, useUser, useDoc } from "@/firebase";
 import { collection, query, orderBy, limit, doc, updateDoc, arrayUnion, arrayRemove, increment, deleteDoc, setDoc, serverTimestamp, getDoc, runTransaction, getDocs, where } from "firebase/firestore";
 import { useCollection, type WithId } from "@/firebase/firestore/use-collection";
 import { Card, CardContent } from "@/components/ui/card";
@@ -197,7 +197,67 @@ export function PollComponent({ post, user }: { post: WithId<Post>, user: any })
     );
 }
 
-export function PostItem({ post, bookmarks, updatePost, onDelete, onPin, showPinStatus = false }: { post: WithId<Post>, bookmarks: WithId<Bookmark>[] | null, updatePost?: (id: string, data: Partial<Post>) => void, onDelete?: (id: string) => void, onPin?: (id: string, currentStatus: boolean) => void, showPinStatus?: boolean }) {
+function PostAuthorInfo({ authorId, authorProfile: initialAuthorProfile }: { authorId: string, authorProfile?: WithId<User> | null }) {
+    const { firestore } = useFirebase();
+
+    const authorRef = useMemoFirebase(() => {
+        if (initialAuthorProfile) return null; // Don't fetch if profile is passed as prop
+        if (!firestore || !authorId) return null;
+        return doc(firestore, "users", authorId);
+    }, [firestore, authorId, initialAuthorProfile]);
+
+    const { data: fetchedAuthorProfile, isLoading } = useDoc<User>(authorRef);
+
+    const authorProfile = initialAuthorProfile || fetchedAuthorProfile;
+
+    if (isLoading && !initialAuthorProfile) {
+        return (
+            <div className="flex space-x-3">
+                <Skeleton className="h-10 w-10 rounded-full" />
+                <div className="flex-1 space-y-1">
+                    <Skeleton className="h-4 w-[100px]" />
+                    <Skeleton className="h-3 w-[80px]" />
+                </div>
+            </div>
+        );
+    }
+    
+    if (!authorProfile) {
+        return (
+            <div className="flex items-center space-x-2">
+                 <Avatar className="h-10 w-10">
+                    <AvatarFallback>?</AvatarFallback>
+                </Avatar>
+                <span className="text-sm text-muted-foreground italic">Original poster deleted</span>
+            </div>
+        )
+    }
+
+    return (
+        <div className="flex space-x-3">
+            <Link href={`/profile/${authorProfile.id}`}>
+                <Avatar className="h-10 w-10">
+                    <AvatarFallback>{getAvatar(authorProfile)}</AvatarFallback>
+                </Avatar>
+            </Link>
+            <div className="flex-1 space-y-2">
+                <div className="flex justify-between items-start">
+                    <div className="flex items-center space-x-2">
+                        <Link href={`/profile/${authorProfile.id}`} className="text-sm font-semibold hover:underline">
+                            {formatUserId(authorProfile.id)}
+                        </Link>
+                         <span className="text-xs text-muted-foreground">
+                            {/* Assuming post timestamp is passed separately or part of another component */}
+                        </span>
+                    </div>
+                </div>
+            </div>
+        </div>
+    );
+}
+
+
+export function PostItem({ post, bookmarks, updatePost, onDelete, onPin, showPinStatus = false, authorProfile }: { post: WithId<Post>, bookmarks: WithId<Bookmark>[] | null, updatePost?: (id: string, data: Partial<Post>) => void, onDelete?: (id: string) => void, onPin?: (id: string, currentStatus: boolean) => void, showPinStatus?: boolean, authorProfile?: WithId<User> | null }) {
   const { user, firestore } = useFirebase();
   const { toast } = useToast();
   const router = useRouter();
@@ -369,21 +429,14 @@ export function PostItem({ post, bookmarks, updatePost, onDelete, onPin, showPin
           </div>
         )}
         <div className="flex space-x-3">
-          <Link href={`/profile/${post.authorId}`}>
-            <Avatar className="h-10 w-10">
-              <AvatarFallback>{getAvatar(post.authorId)}</AvatarFallback>
-            </Avatar>
-          </Link>
-          <div className="flex-1 space-y-2">
-            <div className="flex justify-between items-start">
-                <div className="flex items-center space-x-2">
-                    <Link href={`/profile/${post.authorId}`} className="text-sm font-semibold hover:underline">
-                        {formatUserId(post.authorId)}
-                    </Link>
-                    <span className="text-xs text-muted-foreground">
-                        {post.timestamp ? formatTimestamp(post.timestamp.toDate()) : ''}
-                    </span>
-                </div>
+          <div className="w-10 flex-shrink-0">
+             <PostAuthorInfo authorId={post.authorId} authorProfile={authorProfile} />
+          </div>
+          <div className="flex-1">
+            <div className="flex justify-between items-start -mt-8">
+                <span className="text-xs text-muted-foreground pl-1">
+                    {post.timestamp ? formatTimestamp(post.timestamp.toDate()) : ''}
+                </span>
                <div className="flex items-center">
                  {isOwner && (
                      <Sheet open={isMoreOptionsSheetOpen} onOpenChange={setIsMoreOptionsSheetOpen}>
@@ -422,7 +475,7 @@ export function PostItem({ post, bookmarks, updatePost, onDelete, onPin, showPin
                </div>
             </div>
             
-            <Link href={`/post/${post.id}`} className="block !mt-0">
+            <Link href={`/post/${post.id}`} className="block">
                 <p className="text-foreground text-sm whitespace-pre-wrap">{post.content}</p>
             </Link>
 
@@ -646,5 +699,3 @@ export default function HomePage() {
     </AppLayout>
   );
 }
-
-    
