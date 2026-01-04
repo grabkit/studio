@@ -26,7 +26,7 @@ service cloud.firestore {
       allow list: if isSignedIn();
       allow create: if request.auth.uid == userId;
       allow update: if isSignedIn() && (
-        (isOwner(userId) && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['name', 'bio', 'website', 'gender', 'blockedUsers', 'mutedUsers', 'restrictedUsers', 'lastReadTimestamps', 'voiceStatusUrl', 'voiceStatusTimestamp', 'upvotedCount'])) ||
+        (isOwner(userId) && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['name', 'bio', 'website', 'gender', 'blockedUsers', 'mutedUsers', 'restrictedUsers', 'lastReadTimestamps', 'voiceStatusUrl', 'voiceStatusTimestamp', 'upvotedCount', 'upvotedTo'])) ||
         (isOwner(userId) && !request.resource.data.keys().hasAll(['voiceStatusUrl', 'voiceStatusTimestamp']) && resource.data.keys().hasAll(['voiceStatusUrl', 'voiceStatusTimestamp'])) ||
         (request.resource.data.diff(resource.data).affectedKeys().hasAll(['upvotes', 'upvotedBy']))
       );

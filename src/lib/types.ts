@@ -55,6 +55,7 @@ export interface User {
     upvotes?: number;
     upvotedBy?: string[];
     upvotedCount?: number;
+    upvotedTo?: string[];
     status?: 'active' | 'suspended' | 'banned';
     blockedUsers?: string[];
     mutedUsers?: string[];
@@ -163,4 +164,3 @@ export interface VideoIceCandidate {
     sdpMLineIndex: number | null;
     usernameFragment: string | null;
 }
-

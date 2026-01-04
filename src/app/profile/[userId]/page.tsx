@@ -390,9 +390,8 @@ export default function UserProfilePage() {
                 throw "One of the user documents does not exist!";
             }
             
-            const freshTargetUser = targetUserDoc.data() as User;
-            const currentUpvotedBy = freshTargetUser.upvotedBy || [];
-            const userHasUpvoted = currentUpvotedBy.includes(currentUser.uid);
+            const targetUser = targetUserDoc.data() as User;
+            const userHasUpvoted = (targetUser.upvotedBy || []).includes(currentUser.uid);
 
             if (userHasUpvoted) {
                  // Un-upvote
@@ -401,7 +400,8 @@ export default function UserProfilePage() {
                     upvotedBy: arrayRemove(currentUser.uid)
                 });
                 transaction.update(currentUserRef, {
-                    upvotedCount: increment(-1)
+                    upvotedCount: increment(-1),
+                    upvotedTo: arrayRemove(user.id)
                 });
             } else {
                  // Upvote
@@ -410,7 +410,8 @@ export default function UserProfilePage() {
                     upvotedBy: arrayUnion(currentUser.uid)
                 });
                 transaction.update(currentUserRef, {
-                    upvotedCount: increment(1)
+                    upvotedCount: increment(1),
+                    upvotedTo: arrayUnion(user.id)
                 });
             }
         }).then(() => {
