@@ -211,7 +211,7 @@ function PostAuthorInfo({ authorId, authorProfile: initialAuthorProfile, timesta
 
     if (isLoading && !initialAuthorProfile) {
         return (
-            <div className="flex items-center space-x-2">
+            <div className="flex items-center space-x-3">
                 <Skeleton className="h-10 w-10 rounded-full" />
                 <div className="space-y-1">
                     <Skeleton className="h-4 w-[100px]" />
@@ -223,7 +223,7 @@ function PostAuthorInfo({ authorId, authorProfile: initialAuthorProfile, timesta
     
     if (!authorProfile) {
         return (
-             <div className="flex items-center space-x-2">
+             <div className="flex items-center space-x-3">
                  <Avatar className="h-10 w-10">
                     <AvatarFallback>?</AvatarFallback>
                 </Avatar>
@@ -239,19 +239,12 @@ function PostAuthorInfo({ authorId, authorProfile: initialAuthorProfile, timesta
                     <AvatarFallback>{getAvatar(authorProfile)}</AvatarFallback>
                 </Avatar>
             </Link>
-            <div className="flex flex-col">
-                <div className="flex items-center space-x-1.5">
-                    <Link href={`/profile/${authorProfile.id}`} className="text-sm font-semibold hover:underline">
-                        {formatUserId(authorProfile.id)}
-                    </Link>
-                    <div className="text-xs text-muted-foreground">
-                        {timestamp ? `· ${formatTimestamp(timestamp.toDate())}` : ''}
-                    </div>
-                </div>
-                 <div className="pr-10">
-                    <Link href={`/post/${authorId}`} className="block">
-                        <p className="text-foreground text-sm whitespace-pre-wrap">{(initialAuthorProfile as any)?.content}</p>
-                    </Link>
+            <div className="flex items-center space-x-1.5">
+                <Link href={`/profile/${authorProfile.id}`} className="text-sm font-semibold hover:underline">
+                    {formatUserId(authorProfile.id)}
+                </Link>
+                <div className="text-xs text-muted-foreground">
+                    {timestamp ? `· ${formatTimestamp(timestamp.toDate())}` : ''}
                 </div>
             </div>
         </div>
@@ -436,7 +429,7 @@ export function PostItem({ post, bookmarks, updatePost, onDelete, onPin, showPin
               <PostAuthorInfo
                   authorId={post.authorId}
                   timestamp={post.timestamp}
-                  authorProfile={{...authorProfile, content: post.content} as any}
+                  authorProfile={authorProfile}
               />
                <div className="flex items-center">
                  {isOwner && (
@@ -477,6 +470,9 @@ export function PostItem({ post, bookmarks, updatePost, onDelete, onPin, showPin
             </div>
             
             <div className="pl-[52px]">
+              <Link href={`/post/${post.id}`} className="block mt-1">
+                  <p className="text-foreground text-sm whitespace-pre-wrap">{post.content}</p>
+              </Link>
 
               {post.linkMetadata && <LinkPreview metadata={post.linkMetadata} />}
 
@@ -709,3 +705,6 @@ export default function HomePage() {
 
     
 
+
+
+    
