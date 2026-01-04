@@ -426,11 +426,24 @@ export function PostItem({ post, bookmarks, updatePost, onDelete, onPin, showPin
         <div className="flex">
           <div className="flex-1">
             <div className="flex justify-between items-start">
-              <PostAuthorInfo
-                  authorId={post.authorId}
-                  timestamp={post.timestamp}
-                  authorProfile={authorProfile}
-              />
+              <div className='flex-1'>
+                  <PostAuthorInfo
+                      authorId={post.authorId}
+                      timestamp={post.timestamp}
+                      authorProfile={authorProfile}
+                  />
+                  <div className="pl-[52px]">
+                    <Link href={`/post/${post.id}`} className="block">
+                        <p className="text-foreground text-sm whitespace-pre-wrap">{post.content}</p>
+                    </Link>
+
+                    {post.linkMetadata && <LinkPreview metadata={post.linkMetadata} />}
+
+                    {post.type === 'poll' && post.pollOptions && (
+                      <PollComponent post={post} user={user} />
+                    )}
+                  </div>
+              </div>
                <div className="flex items-center">
                  {isOwner && (
                      <Sheet open={isMoreOptionsSheetOpen} onOpenChange={setIsMoreOptionsSheetOpen}>
@@ -467,18 +480,6 @@ export function PostItem({ post, bookmarks, updatePost, onDelete, onPin, showPin
                     </Sheet>
                  )}
                </div>
-            </div>
-            
-            <div className="pl-[52px]">
-              <Link href={`/post/${post.id}`} className="block">
-                  <p className="text-foreground text-sm whitespace-pre-wrap">{post.content}</p>
-              </Link>
-
-              {post.linkMetadata && <LinkPreview metadata={post.linkMetadata} />}
-
-              {post.type === 'poll' && post.pollOptions && (
-                <PollComponent post={post} user={user} />
-              )}
             </div>
 
             <div className="flex items-center justify-between pt-2 text-muted-foreground pl-[52px]">
@@ -706,6 +707,8 @@ export default function HomePage() {
     
 
 
+
+    
 
     
 
