@@ -384,7 +384,7 @@ function PostPageComponent() {
                                             />
                                         ))}
                                         {fields.length < 4 && (
-                                            <Button type="button" variant="outline" size="sm" onClick={() => append({option: ""})}>
+                                            <Button type="button" variant="outline" size="sm" onClick={() => append({option: ""})} className="w-full">
                                                 <Plus className="h-4 w-4 mr-2" />
                                                 Add option
                                             </Button>
