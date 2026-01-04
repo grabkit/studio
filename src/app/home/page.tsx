@@ -426,11 +426,13 @@ export function PostItem({ post, bookmarks, updatePost, onDelete, onPin, showPin
         <div className="flex">
           <div className="flex-1">
             <div className="flex justify-between items-start">
-              <PostAuthorInfo
-                authorId={post.authorId}
-                authorProfile={authorProfile}
-                timestamp={post.timestamp}
-              />
+              <div className="pl-[52px] -mt-10">
+                <PostAuthorInfo
+                    authorId={post.authorId}
+                    authorProfile={authorProfile}
+                    timestamp={post.timestamp}
+                />
+              </div>
                <div className="flex items-center">
                  {isOwner && (
                      <Sheet open={isMoreOptionsSheetOpen} onOpenChange={setIsMoreOptionsSheetOpen}>
@@ -697,4 +699,5 @@ export default function HomePage() {
     
 
     
+
 
