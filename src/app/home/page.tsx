@@ -469,7 +469,7 @@ export function PostItem({ post, bookmarks, updatePost, onDelete, onPin, showPin
                </div>
             </div>
             
-            <div className="mt-2 space-y-2 pl-[52px]">
+            <div className="space-y-2 pl-[52px]">
               <Link href={`/post/${post.id}`} className="block">
                   <p className="text-foreground text-sm whitespace-pre-wrap">{post.content}</p>
               </Link>
