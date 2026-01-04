@@ -239,14 +239,12 @@ function PostAuthorInfo({ authorId, authorProfile: initialAuthorProfile, timesta
                     <AvatarFallback>{getAvatar(authorProfile)}</AvatarFallback>
                 </Avatar>
             </Link>
-             <div>
-                <div className="flex items-center space-x-1.5">
-                    <Link href={`/profile/${authorProfile.id}`} className="text-sm font-semibold hover:underline">
-                        {formatUserId(authorProfile.id)}
-                    </Link>
-                    <div className="text-xs text-muted-foreground">
-                        {timestamp ? `· ${formatTimestamp(timestamp.toDate())}` : ''}
-                    </div>
+             <div className="flex items-center space-x-1.5">
+                <Link href={`/profile/${authorProfile.id}`} className="text-sm font-semibold hover:underline">
+                    {formatUserId(authorProfile.id)}
+                </Link>
+                <div className="text-xs text-muted-foreground">
+                    {timestamp ? `· ${formatTimestamp(timestamp.toDate())}` : ''}
                 </div>
             </div>
         </div>
@@ -697,6 +695,8 @@ export default function HomePage() {
     </AppLayout>
   );
 }
+    
+
     
 
     
