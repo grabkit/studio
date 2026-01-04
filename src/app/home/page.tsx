@@ -239,12 +239,19 @@ function PostAuthorInfo({ authorId, authorProfile: initialAuthorProfile, timesta
                     <AvatarFallback>{getAvatar(authorProfile)}</AvatarFallback>
                 </Avatar>
             </Link>
-            <div className="flex items-center space-x-1.5">
-                <Link href={`/profile/${authorProfile.id}`} className="text-sm font-semibold hover:underline">
-                    {formatUserId(authorProfile.id)}
-                </Link>
-                 <div className="text-xs text-muted-foreground">
-                    {timestamp ? `· ${formatTimestamp(timestamp.toDate())}` : ''}
+            <div className="flex flex-col">
+                <div className="flex items-center space-x-1.5">
+                    <Link href={`/profile/${authorProfile.id}`} className="text-sm font-semibold hover:underline">
+                        {formatUserId(authorProfile.id)}
+                    </Link>
+                    <div className="text-xs text-muted-foreground">
+                        {timestamp ? `· ${formatTimestamp(timestamp.toDate())}` : ''}
+                    </div>
+                </div>
+                 <div className="pr-10">
+                    <Link href={`/post/${authorId}`} className="block">
+                        <p className="text-foreground text-sm whitespace-pre-wrap">{(initialAuthorProfile as any)?.content}</p>
+                    </Link>
                 </div>
             </div>
         </div>
@@ -428,8 +435,8 @@ export function PostItem({ post, bookmarks, updatePost, onDelete, onPin, showPin
             <div className="flex justify-between items-start">
               <PostAuthorInfo
                   authorId={post.authorId}
-                  authorProfile={authorProfile}
                   timestamp={post.timestamp}
+                  authorProfile={{...authorProfile, content: post.content} as any}
               />
                <div className="flex items-center">
                  {isOwner && (
@@ -470,9 +477,6 @@ export function PostItem({ post, bookmarks, updatePost, onDelete, onPin, showPin
             </div>
             
             <div className="pl-[52px]">
-              <Link href={`/post/${post.id}`} className="block">
-                  <p className="text-foreground text-sm whitespace-pre-wrap">{post.content}</p>
-              </Link>
 
               {post.linkMetadata && <LinkPreview metadata={post.linkMetadata} />}
 
@@ -704,3 +708,4 @@ export default function HomePage() {
     
 
     
+
