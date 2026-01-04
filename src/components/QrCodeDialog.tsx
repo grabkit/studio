@@ -11,7 +11,7 @@ import {
 import { Button } from "@/components/ui/button";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import Image from 'next/image';
-import { getInitials } from "@/lib/utils";
+import { getAvatar } from "@/lib/utils";
 import type { User } from "@/lib/types";
 
 const formatUserId = (uid: string | undefined) => {
@@ -35,7 +35,7 @@ export function QrCodeDialog({ isOpen, onOpenChange, user }: { isOpen: boolean, 
                 </DialogHeader>
                 <div className="flex flex-col items-center justify-center p-4 space-y-4">
                     <Avatar className="h-16 w-16">
-                        <AvatarFallback className="text-2xl">{getInitials(user.name)}</AvatarFallback>
+                        <AvatarFallback className="text-2xl">{getAvatar(user.id)}</AvatarFallback>
                     </Avatar>
                     <div className="text-center">
                         <p className="font-bold">{user.name}</p>
@@ -73,5 +73,3 @@ export function QrCodeDialog({ isOpen, onOpenChange, user }: { isOpen: boolean, 
         </Dialog>
     )
 }
-
-    

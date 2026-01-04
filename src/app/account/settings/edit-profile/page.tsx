@@ -17,7 +17,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
 import { ArrowLeft, Loader2 } from "lucide-react";
-import { getInitials } from "@/lib/utils";
+import { getAvatar } from "@/lib/utils";
 import { useToast } from "@/hooks/use-toast";
 import { errorEmitter } from "@/firebase/error-emitter";
 import { FirestorePermissionError } from "@/firebase/errors";
@@ -108,7 +108,7 @@ export default function EditProfilePage() {
                             <Avatar className="h-24 w-24">
                                 <AvatarImage src={authUser?.photoURL || undefined} alt={userProfile?.name} />
                                 <AvatarFallback className="text-4xl">
-                                    {getInitials(userProfile?.name)}
+                                    {getAvatar(authUser?.uid)}
                                 </AvatarFallback>
                             </Avatar>
                         </div>

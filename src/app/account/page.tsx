@@ -13,7 +13,7 @@ import type { Post, Bookmark, User, Notification } from "@/lib/types";
 import { Skeleton } from "@/components/ui/skeleton";
 import React, { useMemo, useState, useEffect, useCallback } from "react";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
-import { getInitials, cn } from "@/lib/utils";
+import { getAvatar, cn } from "@/lib/utils";
 
 import { PostItem as HomePostItem, PostSkeleton } from "@/app/home/page";
 import { RepliesList } from "@/components/RepliesList";
@@ -372,7 +372,7 @@ export default function AccountPage() {
                             alt={userProfile?.name || "User"}
                         />
                         <AvatarFallback className="text-3xl font-headline bg-secondary">
-                            {getInitials(userProfile?.name)}
+                            {getAvatar(authUser?.uid)}
                         </AvatarFallback>
                     </Avatar>
                     {hasVoiceStatus && (

@@ -11,7 +11,7 @@ import { Button } from "@/components/ui/button";
 import { ArrowLeft, UserX } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
-import { getInitials } from "@/lib/utils";
+import { getAvatar } from "@/lib/utils";
 import { Skeleton } from "@/components/ui/skeleton";
 import Link from "next/link";
 import { cn } from "@/lib/utils";
@@ -40,7 +40,7 @@ function UserItem({ user }: { user: WithId<User> }) {
         <Link href={`/profile/${user.id}`} className="flex items-center justify-between p-4 border-b hover:bg-accent">
             <div className="flex items-center space-x-4">
                 <Avatar className="h-10 w-10">
-                    <AvatarFallback>{formatUserId(user.id).charAt(0).toUpperCase()}</AvatarFallback>
+                    <AvatarFallback>{getAvatar(user.id)}</AvatarFallback>
                 </Avatar>
                 <div>
                     <p className="font-semibold">{formatUserId(user.id)}</p>

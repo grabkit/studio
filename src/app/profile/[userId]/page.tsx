@@ -17,7 +17,7 @@ import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { ArrowLeft, MessageSquare, ArrowUpRight, ArrowUp, MoreHorizontal, ShieldAlert, Flag, VolumeX, Info, MinusCircle, Link as LinkIcon, QrCode, Calendar, Badge, User as UserIcon, Volume2, BarChart3 } from "lucide-react";
-import { getInitials, cn, formatLastSeen } from "@/lib/utils";
+import { getAvatar, cn, formatLastSeen } from "@/lib/utils";
 import { FirestorePermissionError } from "@/firebase/errors";
 import { errorEmitter } from "@/firebase/error-emitter";
 import { PostItem as HomePostItem, PostSkeleton } from "@/app/home/page";
@@ -577,7 +577,7 @@ export default function UserProfilePage() {
                                             alt={user?.name || "User"}
                                         />
                                         <AvatarFallback className="text-3xl font-headline bg-secondary">
-                                            {getInitials(user?.name)}
+                                            {getAvatar(user?.id)}
                                         </AvatarFallback>
                                     </Avatar>
                                     {hasVoiceStatus && (

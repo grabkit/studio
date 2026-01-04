@@ -5,7 +5,7 @@ import React, { useEffect, useRef } from 'react';
 import { Button } from './ui/button';
 import { Phone, PhoneOff, Mic, MicOff } from 'lucide-react';
 import { Avatar, AvatarFallback } from './ui/avatar';
-import { cn, getInitials } from '@/lib/utils';
+import { cn, getAvatar } from '@/lib/utils';
 import type { CallStatus } from '@/lib/types';
 import { useFirebase } from '@/firebase';
 
@@ -106,7 +106,7 @@ export function CallView({
 
             <div className="text-center pt-20">
                 <Avatar className="h-32 w-32 mx-auto mb-6">
-                    <AvatarFallback className="text-5xl">{getInitials(formatUserId(otherPartyId))}</AvatarFallback>
+                    <AvatarFallback className="text-5xl">{getAvatar(otherPartyId)}</AvatarFallback>
                 </Avatar>
                 <h1 className="text-3xl font-bold">{formatUserId(otherPartyId)}</h1>
                 <p className="text-muted-foreground mt-2">{getStatusText()}</p>

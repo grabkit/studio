@@ -10,7 +10,7 @@ import { useCollection } from '@/firebase/firestore/use-collection';
 import type { Comment, Post } from '@/lib/types';
 import { Skeleton } from './ui/skeleton';
 import { Avatar, AvatarFallback } from './ui/avatar';
-import { getInitials, formatTimestamp } from '@/lib/utils';
+import { getAvatar, formatTimestamp } from '@/lib/utils';
 import Link from 'next/link';
 
 
@@ -47,7 +47,7 @@ function Reply({ comment, post }: { comment: WithId<Comment>, post: WithId<Post>
 
             <div className="flex space-x-3">
                 <Avatar className="h-8 w-8">
-                    <AvatarFallback>{getInitials(formatUserId(comment.authorId))}</AvatarFallback>
+                    <AvatarFallback>{getAvatar(comment.authorId)}</AvatarFallback>
                 </Avatar>
                 <div className="flex-1">
                     <div className="flex justify-between items-center">

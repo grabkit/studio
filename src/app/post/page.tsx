@@ -28,7 +28,7 @@ import { errorEmitter } from "@/firebase/error-emitter";
 import { FirestorePermissionError } from "@/firebase/errors";
 import { Switch } from "@/components/ui/switch";
 import { Label } from "@/components/ui/label";
-import { cn, getInitials } from "@/lib/utils";
+import { cn, getAvatar } from "@/lib/utils";
 import type { LinkMetadata } from "@/lib/types";
 import Image from "next/image";
 
@@ -293,7 +293,7 @@ function PostPageComponent() {
                 <div className="flex items-start space-x-4">
                     <Avatar>
                         <AvatarImage src={user?.photoURL || undefined} />
-                        <AvatarFallback>{getInitials(user?.displayName)}</AvatarFallback>
+                        <AvatarFallback>{getAvatar(user?.uid)}</AvatarFallback>
                     </Avatar>
                      <div className="w-full">
                         <div className="flex justify-between items-center">

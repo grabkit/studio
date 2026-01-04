@@ -19,7 +19,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { Form, FormControl, FormField, FormItem, FormMessage } from '@/components/ui/form';
 import { Skeleton } from '@/components/ui/skeleton';
 import { ArrowLeft, Send, Reply, Forward, Copy, Trash2, X, Heart, MessageCircle, ExternalLink, Phone, Video } from 'lucide-react';
-import { cn, getInitials, formatMessageTimestamp, formatLastSeen, formatTimestamp } from '@/lib/utils';
+import { cn, getAvatar, formatMessageTimestamp, formatLastSeen, formatTimestamp } from '@/lib/utils';
 import type { Conversation, Message, User, Post } from '@/lib/types';
 import { WithId } from '@/firebase/firestore/use-collection';
 import { FirestorePermissionError } from '@/firebase/errors';
@@ -61,7 +61,7 @@ function PostPreviewCard({ postId }: { postId: string }) {
             <div className="p-3">
                 <div className="flex items-center gap-2 mb-2">
                     <Avatar className="h-6 w-6">
-                        <AvatarFallback className="text-xs">{getInitials(post.authorId)}</AvatarFallback>
+                        <AvatarFallback className="text-xs">{getAvatar(post.authorId)}</AvatarFallback>
                     </Avatar>
                     <span className="text-xs font-semibold text-foreground">{formatUserId(post.authorId)}</span>
                 </div>
@@ -220,7 +220,7 @@ function ChatHeader({ peerId, onStartCall, onStartVideoCall }: { peerId: string,
             <div className="flex-1 flex items-center gap-3 ml-2">
                 <Link href={`/profile/${peerId}`}>
                     <Avatar className="h-8 w-8">
-                        <AvatarFallback>{isLoading || !peerUser ? <Skeleton className="h-8 w-8 rounded-full" /> : getInitials(formatUserId(peerId))}</AvatarFallback>
+                        <AvatarFallback>{isLoading || !peerUser ? <Skeleton className="h-8 w-8 rounded-full" /> : getAvatar(peerId)}</AvatarFallback>
                     </Avatar>
                 </Link>
                 <div>

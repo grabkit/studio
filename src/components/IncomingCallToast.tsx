@@ -5,7 +5,7 @@ import { toast } from "@/hooks/use-toast";
 import { Phone, PhoneOff } from "lucide-react";
 import { Button } from "./ui/button";
 import { Avatar, AvatarFallback } from "./ui/avatar";
-import { getInitials } from "@/lib/utils";
+import { getAvatar } from "@/lib/utils";
 
 interface IncomingCallToastProps {
     callerId: string;
@@ -25,7 +25,7 @@ export const showIncomingCallToast = ({ callerId, onAccept, onDecline }: Incomin
              <div className="w-full flex items-center justify-between">
                 <div className="flex items-center gap-3">
                     <Avatar>
-                        <AvatarFallback>{getInitials(formatUserId(callerId))}</AvatarFallback>
+                        <AvatarFallback>{getAvatar(callerId)}</AvatarFallback>
                     </Avatar>
                     <div>
                         <p className="font-semibold">{formatUserId(callerId)}</p>

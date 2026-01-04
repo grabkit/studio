@@ -38,7 +38,7 @@ import { Button, buttonVariants } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { Form, FormControl, FormField, FormItem, FormMessage } from "@/components/ui/form";
 import { Heart, MessageCircle, ArrowUpRight, Trash2, MoreHorizontal, Edit, ArrowLeft, Repeat, Check, AlertTriangle, Slash, Loader2 } from "lucide-react";
-import { cn, formatTimestamp, getInitials, formatCount } from "@/lib/utils";
+import { cn, formatTimestamp, getAvatar, formatCount } from "@/lib/utils";
 import { useToast } from "@/hooks/use-toast";
 import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
@@ -229,7 +229,7 @@ function PostDetailItem({ post, updatePost }: { post: WithId<Post>, updatePost: 
       <CardContent className="p-4">
         <div className="flex space-x-3">
           <Avatar className="h-10 w-10">
-            <AvatarFallback>{getInitials(post.authorId)}</AvatarFallback>
+            <AvatarFallback>{getAvatar(post.authorId)}</AvatarFallback>
           </Avatar>
           <div className="flex-1 space-y-2">
             <div className="flex justify-between items-start">
@@ -455,7 +455,7 @@ function CommentForm({ post, commentsAllowed }: { post: WithId<Post>, commentsAl
             <Form {...form}>
                 <form onSubmit={form.handleSubmit(onSubmit)} className="flex items-center space-x-3">
                 <Avatar className="h-8 w-8">
-                    <AvatarFallback>{getInitials(user?.displayName)}</AvatarFallback>
+                    <AvatarFallback>{getAvatar(user?.uid)}</AvatarFallback>
                 </Avatar>
                 <div className="flex-1">
                 <FormField
@@ -606,7 +606,7 @@ function CommentItem({ comment, postAuthorId }: { comment: WithId<Comment>, post
   return (
     <div className="flex space-x-3 p-4 border-b">
       <Avatar className="h-8 w-8">
-        <AvatarFallback>{getInitials(comment.authorId)}</AvatarFallback>
+        <AvatarFallback>{getAvatar(comment.authorId)}</AvatarFallback>
       </Avatar>
       <div className="flex-1">
         <div className="flex justify-between items-center">

@@ -1,6 +1,7 @@
 import { clsx, type ClassValue } from "clsx"
 import { twMerge } from "tailwind-merge"
 import { formatDistanceToNowStrict, isToday, isYesterday, format, isThisWeek, fromUnixTime } from "date-fns";
+import { defaultAvatars } from "./avatars";
 
 export function cn(...inputs: ClassValue[]) {
   return twMerge(clsx(inputs))
@@ -70,6 +71,30 @@ export const getInitials = (name: string | null | undefined) => {
       .substring(0, 2)
       .toUpperCase();
 };
+
+/**
+ * Deterministically generates an emoji avatar from a user ID.
+ * @param uid The user's unique identifier.
+ * @returns A single emoji string.
+ */
+export const getAvatar = (uid: string | null | undefined): string => {
+    if (!uid) {
+        // Return a default emoji if UID is not available
+        return '👤';
+    }
+
+    // A simple hashing function to convert string to a number
+    const hashCode = (s: string) => s.split('').reduce((a, b) => {
+        a = ((a << 5) - a) + b.charCodeAt(0);
+        return a & a;
+    }, 0);
+
+    const hash = hashCode(uid);
+    const index = Math.abs(hash) % defaultAvatars.length;
+    
+    return defaultAvatars[index];
+};
+
 
 export function formatCount(count: number): string {
     if (count >= 1_000_000) {

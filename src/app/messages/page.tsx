@@ -4,7 +4,7 @@
 import AppLayout from "@/components/AppLayout";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
-import { getInitials, formatMessageTimestamp } from "@/lib/utils";
+import { getAvatar, formatMessageTimestamp } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import { MessageSquare, Mail, Trash2, BellOff, CheckCircle, User as UserIcon, Bell, Mic } from "lucide-react";
 import { useFirebase, useMemoFirebase } from "@/firebase";
@@ -101,7 +101,7 @@ function UpvotedUsers() {
                              <div className="relative">
                                 <Link href={href}>
                                     <Avatar className="h-16 w-16">
-                                        <AvatarFallback>{getInitials(user.name)}</AvatarFallback>
+                                        <AvatarFallback>{getAvatar(user.id)}</AvatarFallback>
                                     </Avatar>
                                 </Link>
                                  {isCurrentUser ? (
@@ -214,7 +214,7 @@ function ConversationItem({ conversation, currentUser, onLongPress }: { conversa
         >
             <div className="flex items-center space-x-3">
                 <Avatar className="h-12 w-12" showStatus={true} isOnline={isOnline}>
-                    <AvatarFallback>{otherUser ? getInitials(otherUser.name) : '?'}</AvatarFallback>
+                    <AvatarFallback>{otherUser ? getAvatar(otherUser.id) : '?'}</AvatarFallback>
                 </Avatar>
                 <div>
                     <div className="flex items-center gap-2">
@@ -260,7 +260,7 @@ function RequestItem({ request, onAccept }: { request: WithId<Conversation>, onA
         <div className="p-4 border-b flex justify-between items-center">
             <div className="flex items-center space-x-3">
                 <Avatar className="h-12 w-12">
-                    <AvatarFallback>{getInitials(name)}</AvatarFallback>
+                    <AvatarFallback>{getAvatar(name)}</AvatarFallback>
                 </Avatar>
                 <div>
                     <p className="font-semibold">{name}</p>
@@ -615,4 +615,3 @@ export default function MessagesPage() {
     
 
     
-

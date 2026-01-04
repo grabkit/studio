@@ -10,7 +10,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import Link from "next/link";
 import { Heart, MessageCircle, AlertTriangle, ArrowUp, Mail } from "lucide-react";
-import { cn, formatTimestamp, getInitials } from "@/lib/utils";
+import { cn, formatTimestamp, getAvatar } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import { useEffect } from "react";
 
@@ -60,7 +60,7 @@ function NotificationItem({ notification }: { notification: WithId<Notification>
         )}>
              <div className="relative">
                 <Avatar className="h-10 w-10">
-                    <AvatarFallback>{getInitials(notification.fromUserId)}</AvatarFallback>
+                    <AvatarFallback>{getAvatar(notification.fromUserId)}</AvatarFallback>
                 </Avatar>
                 <div className="absolute -bottom-1 -right-1 bg-background rounded-full p-0.5">
                      <Icon 

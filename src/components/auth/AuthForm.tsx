@@ -35,10 +35,11 @@ import {
 } from "@/components/ui/alert-dialog";
 import { Loader2, Mail, Lock, User as UserIcon } from "lucide-react";
 import { createUserWithEmailAndPassword, signInWithEmailAndPassword, updateProfile } from "firebase/auth";
-import { cn, getInitials } from "@/lib/utils";
+import { cn, getAvatar } from "@/lib/utils";
 import { Checkbox } from "@/components/ui/checkbox";
 import { doc, serverTimestamp, setDoc } from "firebase/firestore";
 import type { User as UserType } from "@/lib/types";
+import { defaultAvatars } from "@/lib/avatars";
 
 const signUpSchema = z.object({
   name: z.string().min(2, { message: "Name must be at least 2 characters." }),
@@ -132,10 +133,14 @@ export default function AuthForm() {
             await updateProfile(user, { displayName: values.name });
             
             const userDocRef = doc(firestore, "users", user.uid);
+
+            const randomAvatar = defaultAvatars[Math.floor(Math.random() * defaultAvatars.length)];
+            
             const newUser: Omit<UserType, 'upvotes' | 'upvotedBy'> = {
                 id: user.uid,
                 name: values.name,
                 email: values.email,
+                avatar: randomAvatar,
                 createdAt: serverTimestamp(),
                 status: 'active',
                 lastReadTimestamps: {},

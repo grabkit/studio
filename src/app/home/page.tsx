@@ -11,7 +11,7 @@ import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Skeleton } from "@/components/ui/skeleton";
 import type { Post, Bookmark, PollOption, Notification, User, LinkMetadata } from "@/lib/types";
 import { Heart, MessageCircle, Repeat, ArrowUpRight, MoreHorizontal, Edit, Trash2, Bookmark as BookmarkIcon, CheckCircle2, Slash, RefreshCw, Pin } from "lucide-react";
-import { cn, formatTimestamp, getInitials, formatCount } from "@/lib/utils";
+import { cn, formatTimestamp, getAvatar, formatCount } from "@/lib/utils";
 import { useToast } from "@/hooks/use-toast";
 import { FirestorePermissionError } from "@/firebase/errors";
 import { errorEmitter } from "@/firebase/error-emitter";
@@ -371,7 +371,7 @@ export function PostItem({ post, bookmarks, updatePost, onDelete, onPin, showPin
         <div className="flex space-x-3">
           <Link href={`/profile/${post.authorId}`}>
             <Avatar className="h-10 w-10">
-              <AvatarFallback>{getInitials(post.authorId)}</AvatarFallback>
+              <AvatarFallback>{getAvatar(post.authorId)}</AvatarFallback>
             </Avatar>
           </Link>
           <div className="flex-1 space-y-2">

@@ -5,7 +5,7 @@ import React from 'react';
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from "@/components/ui/sheet";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import type { User } from '@/lib/types';
-import { getInitials } from '@/lib/utils';
+import { getAvatar } from '@/lib/utils';
 import { WithId, useFirebase } from '@/firebase';
 import { Button } from './ui/button';
 import { Trash2 } from 'lucide-react';
@@ -53,7 +53,7 @@ export function VoiceStatusPlayer({ user: voiceUser, isOpen, onOpenChange, onDel
                 
                 <div className="relative">
                     <Avatar className="h-28 w-28">
-                        <AvatarFallback className="text-5xl">{getInitials(voiceUser.name)}</AvatarFallback>
+                        <AvatarFallback className="text-5xl">{getAvatar(voiceUser.id)}</AvatarFallback>
                     </Avatar>
                 </div>
 
