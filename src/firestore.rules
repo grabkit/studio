@@ -28,7 +28,8 @@ service cloud.firestore {
       allow update: if isSignedIn() && (
         (isOwner(userId) && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['name', 'bio', 'website', 'gender', 'blockedUsers', 'mutedUsers', 'restrictedUsers', 'lastReadTimestamps', 'voiceStatusUrl', 'voiceStatusTimestamp', 'upvotedCount', 'upvotedTo'])) ||
         (isOwner(userId) && !request.resource.data.keys().hasAll(['voiceStatusUrl', 'voiceStatusTimestamp']) && resource.data.keys().hasAll(['voiceStatusUrl', 'voiceStatusTimestamp'])) ||
-        (request.resource.data.diff(resource.data).affectedKeys().hasAll(['upvotes', 'upvotedBy']))
+        (request.resource.data.diff(resource.data).affectedKeys().hasAll(['upvotes', 'upvotedBy'])) ||
+        (isOwner(userId) && request.resource.data.diff(resource.data).affectedKeys().hasAll(['upvotedCount', 'upvotedTo']))
       );
       allow delete: if false; 
       
