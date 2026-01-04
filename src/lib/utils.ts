@@ -79,13 +79,16 @@ export const getInitials = (name: string | null | undefined) => {
  * @param user The user object, which can be null or undefined.
  * @returns A single emoji string.
  */
-export const getAvatar = (user: Partial<User> | null | undefined): string => {
-    if (user?.avatar) {
+export const getAvatar = (user: Partial<User> | string | null | undefined): string => {
+    // Handle case where user object is passed
+    if (typeof user === 'object' && user?.avatar) {
         return user.avatar;
     }
 
-    if (!user?.id) {
-        // Return a default emoji if UID is not available
+    const uid = typeof user === 'string' ? user : user?.id;
+
+    if (!uid) {
+        // Return a generic default if no UID is available
         return '👤';
     }
 
@@ -95,7 +98,7 @@ export const getAvatar = (user: Partial<User> | null | undefined): string => {
         return a & a;
     }, 0);
 
-    const hash = hashCode(user.id);
+    const hash = hashCode(uid);
     const index = Math.abs(hash) % defaultAvatars.length;
     
     return defaultAvatars[index];
@@ -111,5 +114,3 @@ export function formatCount(count: number): string {
     }
     return count.toString();
 }
-
-    
