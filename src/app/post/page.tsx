@@ -8,7 +8,7 @@ import { useForm, useFieldArray } from "react-hook-form";
 import * as z from "zod";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { collection, serverTimestamp, setDoc, doc, updateDoc, getDoc } from "firebase/firestore";
-import { useFirebase, useUser } from "@/firebase";
+import { useFirebase } from "@/firebase";
 import type { Post } from "@/lib/types";
 
 import {
@@ -118,8 +118,7 @@ function PostPageComponent() {
   const [isFetchingPreview, setIsFetchingPreview] = useState(false);
   const router = useRouter();
   const searchParams = useSearchParams();
-  const { user } = useUser();
-  const { firestore } = useFirebase();
+  const { user, userProfile, firestore } = useFirebase();
 
   const repostContent = searchParams.get('content') || "";
   const postId = searchParams.get('postId');
@@ -293,7 +292,7 @@ function PostPageComponent() {
                 <div className="flex items-start space-x-4">
                     <Avatar>
                         <AvatarImage src={user?.photoURL || undefined} />
-                        <AvatarFallback>{getAvatar(user?.uid)}</AvatarFallback>
+                        <AvatarFallback>{getAvatar(userProfile)}</AvatarFallback>
                     </Avatar>
                      <div className="w-full">
                         <div className="flex justify-between items-center">
