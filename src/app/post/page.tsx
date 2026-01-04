@@ -270,6 +270,20 @@ function PostPageComponent() {
           });
     }
   };
+  
+  const handlePollToggle = () => {
+    const currentIsPoll = form.getValues('isPoll');
+    if (!currentIsPoll) {
+        // Turning poll ON
+        form.setValue('isPoll', true, { shouldValidate: true });
+        append({ option: '' });
+        append({ option: '' });
+    } else {
+        // Turning poll OFF
+        form.setValue('isPoll', false, { shouldValidate: true });
+        remove(); // remove all fields
+    }
+  };
 
 
   return (
@@ -385,7 +399,7 @@ function PostPageComponent() {
                                             <Button type="button" variant="ghost" size="icon" onClick={() => setShowLinkInput(!showLinkInput)} disabled={!!linkMetadata || isEditMode}>
                                                 <LinkIcon className="h-5 w-5 text-muted-foreground" />
                                             </Button>
-                                            <Button type="button" variant="ghost" size="icon" onClick={() => form.setValue('isPoll', !isPoll, { shouldValidate: true })} disabled={isEditMode}>
+                                            <Button type="button" variant="ghost" size="icon" onClick={handlePollToggle} disabled={isEditMode}>
                                                 <ListOrdered className={cn("h-5 w-5 text-muted-foreground", isPoll && "text-primary")} />
                                             </Button>
                                              <FormField
