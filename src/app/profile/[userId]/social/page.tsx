@@ -7,33 +7,36 @@ import Link from "next/link";
 import AppLayout from "@/components/AppLayout";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { ArrowLeft } from "lucide-react";
-
-// Placeholder for the UserList component we will create in the next step
-function UserListPlaceholder({ title }: { title: string }) {
-    return (
-        <div className="text-center py-10">
-            <p className="text-muted-foreground">Loading {title}...</p>
-        </div>
-    );
-}
+import { ArrowLeft, UserX } from "lucide-react";
+import { useFirebase, useDoc, useMemoFirebase } from "@/firebase";
+import { doc } from "firebase/firestore";
+import type { User } from "@/lib/types";
+import UserList from "@/components/UserList";
+import { Skeleton } from "@/components/ui/skeleton";
 
 export default function SocialPage() {
     const router = useRouter();
     const params = useParams();
     const searchParams = useSearchParams();
+    const { firestore } = useFirebase();
 
     const userId = params.userId as string;
     const activeTab = searchParams.get("tab") || "upvotes";
 
+    const userRef = useMemoFirebase(() => {
+        if (!firestore || !userId) return null;
+        return doc(firestore, 'users', userId);
+    }, [firestore, userId]);
+    
+    const { data: user, isLoading: isUserLoading } = useDoc<User>(userRef);
+
     const pageTitle = useMemo(() => {
-        if (!userId) return "Social";
-        // This is a simple example. We can fetch the user's name later.
-        return `blur...${userId.substring(userId.length - 4)}`;
-    }, [userId]);
+        if (isUserLoading) return "Loading...";
+        if (!user) return "User Not Found";
+        return `blur...${user.id.substring(user.id.length - 4)}`;
+    }, [user, isUserLoading]);
 
     if (!userId) {
-        // Handle case where userId is not available
         return (
             <AppLayout showTopBar={false}>
                 <div className="p-4">
@@ -41,6 +44,44 @@ export default function SocialPage() {
                 </div>
             </AppLayout>
         );
+    }
+    
+    if (isUserLoading) {
+        return (
+             <AppLayout showTopBar={false}>
+                <div className="fixed top-0 left-0 right-0 z-10 flex items-center p-2 bg-background border-b h-14 max-w-2xl mx-auto sm:px-4">
+                    <Button variant="ghost" size="icon" onClick={() => router.back()}>
+                        <ArrowLeft />
+                    </Button>
+                    <h2 className="text-lg font-bold mx-auto -translate-x-4"><Skeleton className="h-6 w-32" /></h2>
+                </div>
+                <div className="pt-28">
+                    <div className="flex flex-col items-center justify-center">
+                        <Skeleton className="h-4 w-48" />
+                    </div>
+                </div>
+            </AppLayout>
+        )
+    }
+
+    if (!user) {
+        return (
+             <AppLayout showTopBar={false}>
+                <div className="fixed top-0 left-0 right-0 z-10 flex items-center p-2 bg-background border-b h-14 max-w-2xl mx-auto sm:px-4">
+                    <Button variant="ghost" size="icon" onClick={() => router.back()}>
+                        <ArrowLeft />
+                    </Button>
+                    <h2 className="text-lg font-bold mx-auto -translate-x-4">User Not Found</h2>
+                </div>
+                 <div className="text-center py-16 pt-32">
+                     <div className="inline-block p-4 bg-secondary rounded-full">
+                        <UserX className="h-10 w-10 text-muted-foreground" />
+                    </div>
+                    <h3 className="text-xl font-headline mt-4">User does not exist</h3>
+                    <p className="text-muted-foreground mt-2">This profile may have been deleted or the link is incorrect.</p>
+                </div>
+            </AppLayout>
+        )
     }
 
     return (
@@ -65,10 +106,18 @@ export default function SocialPage() {
                         </TabsList>
                     </div>
                     <TabsContent value="upvotes">
-                        <UserListPlaceholder title="Upvotes" />
+                        <UserList
+                            userIds={user.upvotedBy || []}
+                            emptyTitle="No Upvotes Yet"
+                            emptyDescription="When other users upvote this profile, they will appear here."
+                        />
                     </TabsContent>
                     <TabsContent value="upvoted">
-                        <UserListPlaceholder title="Upvoted Users" />
+                        <UserList
+                            userIds={(user as any).upvotedTo || []}
+                            emptyTitle="No Upvoted Users Yet"
+                            emptyDescription="When this user upvotes others, those profiles will appear here."
+                        />
                     </TabsContent>
                 </Tabs>
             </div>
