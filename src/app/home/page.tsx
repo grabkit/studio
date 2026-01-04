@@ -233,18 +233,20 @@ function PostAuthorInfo({ authorId, authorProfile: initialAuthorProfile, timesta
     }
 
     return (
-        <div className="flex items-center space-x-2">
+        <div className="flex items-center space-x-3">
             <Link href={`/profile/${authorProfile.id}`} className="flex-shrink-0">
                 <Avatar className="h-10 w-10">
                     <AvatarFallback>{getAvatar(authorProfile)}</AvatarFallback>
                 </Avatar>
             </Link>
              <div>
-                <Link href={`/profile/${authorProfile.id}`} className="text-sm font-semibold hover:underline">
-                    {formatUserId(authorProfile.id)}
-                </Link>
-                 <div className="text-xs text-muted-foreground">
-                    {timestamp ? `· ${formatTimestamp(timestamp.toDate())}` : ''}
+                <div className="flex items-center space-x-1.5">
+                    <Link href={`/profile/${authorProfile.id}`} className="text-sm font-semibold hover:underline">
+                        {formatUserId(authorProfile.id)}
+                    </Link>
+                    <div className="text-xs text-muted-foreground">
+                        {timestamp ? `· ${formatTimestamp(timestamp.toDate())}` : ''}
+                    </div>
                 </div>
             </div>
         </div>
@@ -423,7 +425,7 @@ export function PostItem({ post, bookmarks, updatePost, onDelete, onPin, showPin
             <span>Pinned</span>
           </div>
         )}
-        <div className="flex space-x-3">
+        <div className="flex">
           <div className="flex-1">
             <div className="flex justify-between items-start">
               <PostAuthorInfo
@@ -469,7 +471,7 @@ export function PostItem({ post, bookmarks, updatePost, onDelete, onPin, showPin
                </div>
             </div>
             
-            <div className="mt-2 space-y-2 pl-12">
+            <div className="mt-2 space-y-2 pl-[52px]">
               <Link href={`/post/${post.id}`} className="block">
                   <p className="text-foreground text-sm whitespace-pre-wrap">{post.content}</p>
               </Link>
@@ -484,7 +486,7 @@ export function PostItem({ post, bookmarks, updatePost, onDelete, onPin, showPin
             </div>
 
 
-            <div className="flex items-center justify-between pt-2 text-muted-foreground pl-12">
+            <div className="flex items-center justify-between pt-2 text-muted-foreground pl-[52px]">
                 <div className="flex items-center space-x-6">
                   <button onClick={handleLike} className={cn("flex items-center space-x-1", hasLiked && "text-pink-500")}>
                     <Heart className="h-4 w-4" fill={hasLiked ? 'currentColor' : 'none'} />
