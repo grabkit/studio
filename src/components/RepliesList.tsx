@@ -47,7 +47,7 @@ function Reply({ comment, post }: { comment: WithId<Comment>, post: WithId<Post>
 
             <div className="flex space-x-3">
                 <Avatar className="h-8 w-8">
-                    <AvatarFallback>{getAvatar(comment.authorId)}</AvatarFallback>
+                    <AvatarFallback>{getAvatar({id: comment.authorId})}</AvatarFallback>
                 </Avatar>
                 <div className="flex-1">
                     <div className="flex justify-between items-center">
@@ -144,3 +144,5 @@ export function RepliesList({ userId }: { userId: string }) {
         </div>
     );
 }
+
+    

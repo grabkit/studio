@@ -2,6 +2,7 @@ import { clsx, type ClassValue } from "clsx"
 import { twMerge } from "tailwind-merge"
 import { formatDistanceToNowStrict, isToday, isYesterday, format, isThisWeek, fromUnixTime } from "date-fns";
 import { defaultAvatars } from "./avatars";
+import type { User } from "./types";
 
 export function cn(...inputs: ClassValue[]) {
   return twMerge(clsx(inputs))
@@ -73,12 +74,17 @@ export const getInitials = (name: string | null | undefined) => {
 };
 
 /**
- * Deterministically generates an emoji avatar from a user ID.
- * @param uid The user's unique identifier.
+ * Gets a user's avatar. If they have chosen a custom one, it's returned.
+ * Otherwise, a deterministic emoji is generated from their user ID.
+ * @param user The user object, which can be null or undefined.
  * @returns A single emoji string.
  */
-export const getAvatar = (uid: string | null | undefined): string => {
-    if (!uid) {
+export const getAvatar = (user: Partial<User> | null | undefined): string => {
+    if (user?.avatar) {
+        return user.avatar;
+    }
+
+    if (!user?.id) {
         // Return a default emoji if UID is not available
         return '👤';
     }
@@ -89,7 +95,7 @@ export const getAvatar = (uid: string | null | undefined): string => {
         return a & a;
     }, 0);
 
-    const hash = hashCode(uid);
+    const hash = hashCode(user.id);
     const index = Math.abs(hash) % defaultAvatars.length;
     
     return defaultAvatars[index];
@@ -105,3 +111,5 @@ export function formatCount(count: number): string {
     }
     return count.toString();
 }
+
+    

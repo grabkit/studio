@@ -35,7 +35,7 @@ export function QrCodeDialog({ isOpen, onOpenChange, user }: { isOpen: boolean, 
                 </DialogHeader>
                 <div className="flex flex-col items-center justify-center p-4 space-y-4">
                     <Avatar className="h-16 w-16">
-                        <AvatarFallback className="text-2xl">{getAvatar(user.id)}</AvatarFallback>
+                        <AvatarFallback className="text-2xl">{getAvatar(user)}</AvatarFallback>
                     </Avatar>
                     <div className="text-center">
                         <p className="font-bold">{user.name}</p>
@@ -73,3 +73,5 @@ export function QrCodeDialog({ isOpen, onOpenChange, user }: { isOpen: boolean, 
         </Dialog>
     )
 }
+
+    

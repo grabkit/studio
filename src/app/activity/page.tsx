@@ -60,7 +60,7 @@ function NotificationItem({ notification }: { notification: WithId<Notification>
         )}>
              <div className="relative">
                 <Avatar className="h-10 w-10">
-                    <AvatarFallback>{getAvatar(notification.fromUserId)}</AvatarFallback>
+                    <AvatarFallback>{getAvatar({id: notification.fromUserId})}</AvatarFallback>
                 </Avatar>
                 <div className="absolute -bottom-1 -right-1 bg-background rounded-full p-0.5">
                      <Icon 

@@ -101,7 +101,7 @@ function UpvotedUsers() {
                              <div className="relative">
                                 <Link href={href}>
                                     <Avatar className="h-16 w-16">
-                                        <AvatarFallback>{getAvatar(user.id)}</AvatarFallback>
+                                        <AvatarFallback>{getAvatar(user)}</AvatarFallback>
                                     </Avatar>
                                 </Link>
                                  {isCurrentUser ? (
@@ -214,7 +214,7 @@ function ConversationItem({ conversation, currentUser, onLongPress }: { conversa
         >
             <div className="flex items-center space-x-3">
                 <Avatar className="h-12 w-12" showStatus={true} isOnline={isOnline}>
-                    <AvatarFallback>{otherUser ? getAvatar(otherUser.id) : '?'}</AvatarFallback>
+                    <AvatarFallback>{otherUser ? getAvatar(otherUser) : '?'}</AvatarFallback>
                 </Avatar>
                 <div>
                     <div className="flex items-center gap-2">
@@ -260,7 +260,7 @@ function RequestItem({ request, onAccept }: { request: WithId<Conversation>, onA
         <div className="p-4 border-b flex justify-between items-center">
             <div className="flex items-center space-x-3">
                 <Avatar className="h-12 w-12">
-                    <AvatarFallback>{getAvatar(name)}</AvatarFallback>
+                    <AvatarFallback>{getAvatar(requesterUser)}</AvatarFallback>
                 </Avatar>
                 <div>
                     <p className="font-semibold">{name}</p>
@@ -611,7 +611,5 @@ export default function MessagesPage() {
         </AppLayout>
     )
 }
-
-    
 
     

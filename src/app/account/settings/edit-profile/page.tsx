@@ -1,7 +1,7 @@
 
 "use client";
 
-import React from "react";
+import React, { useState } from "react";
 import { useRouter } from "next/navigation";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -16,11 +16,15 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
-import { ArrowLeft, Loader2 } from "lucide-react";
+import { ArrowLeft, Loader2, Pencil } from "lucide-react";
 import { getAvatar } from "@/lib/utils";
 import { useToast } from "@/hooks/use-toast";
 import { errorEmitter } from "@/firebase/error-emitter";
 import { FirestorePermissionError } from "@/firebase/errors";
+import { Sheet, SheetContent, SheetHeader, SheetTitle } from "@/components/ui/sheet";
+import { defaultAvatars } from "@/lib/avatars";
+import { ScrollArea } from "@/components/ui/scroll-area";
+
 
 const profileSchema = z.object({
   name: z.string().min(2, "Name must be at least 2 characters.").max(50),
@@ -32,8 +36,9 @@ const profileSchema = z.object({
 
 export default function EditProfilePage() {
     const router = useRouter();
-    const { user: authUser, userProfile, firestore } = useFirebase();
+    const { user: authUser, userProfile, firestore, setUserProfile } = useFirebase();
     const { toast } = useToast();
+    const [isEmojiSheetOpen, setIsEmojiSheetOpen] = useState(false);
 
     const form = useForm<z.infer<typeof profileSchema>>({
         resolver: zodResolver(profileSchema),
@@ -49,6 +54,38 @@ export default function EditProfilePage() {
         if (!uid) return "blur??????";
         return `blur${uid.substring(uid.length - 6)}`;
     };
+
+    const handleAvatarChange = async (emoji: string) => {
+        if (!authUser || !firestore) return;
+
+        const userDocRef = doc(firestore, "users", authUser.uid);
+        
+        // Optimistic UI update
+        setUserProfile(currentProfile => {
+            if (!currentProfile) return null;
+            return { ...currentProfile, avatar: emoji };
+        });
+        
+        try {
+            await updateDoc(userDocRef, { avatar: emoji });
+            toast({ title: "Avatar Updated!", description: "Your new avatar is now set." });
+        } catch (error) {
+            // Revert on failure
+             setUserProfile(currentProfile => {
+                if (!currentProfile) return null;
+                return { ...currentProfile, avatar: userProfile?.avatar };
+            });
+            const permissionError = new FirestorePermissionError({
+                path: userDocRef.path,
+                operation: 'update',
+                requestResourceData: { avatar: emoji },
+            });
+            errorEmitter.emit('permission-error', permissionError);
+            toast({ variant: 'destructive', title: 'Error', description: 'Could not update your avatar.'});
+        } finally {
+            setIsEmojiSheetOpen(false);
+        }
+    }
 
     const onSubmit = async (values: z.infer<typeof profileSchema>) => {
         if (!authUser || !firestore) {
@@ -105,12 +142,23 @@ export default function EditProfilePage() {
 
                     <div className="pt-20 px-4 space-y-6">
                         <div className="flex justify-center">
-                            <Avatar className="h-24 w-24">
-                                <AvatarImage src={authUser?.photoURL || undefined} alt={userProfile?.name} />
-                                <AvatarFallback className="text-4xl">
-                                    {getAvatar(authUser?.uid)}
-                                </AvatarFallback>
-                            </Avatar>
+                             <div className="relative">
+                                <Avatar className="h-24 w-24">
+                                    <AvatarImage src={authUser?.photoURL || undefined} alt={userProfile?.name} />
+                                    <AvatarFallback className="text-4xl">
+                                        {getAvatar(userProfile)}
+                                    </AvatarFallback>
+                                </Avatar>
+                                <Button 
+                                    type="button" 
+                                    variant="secondary" 
+                                    size="icon" 
+                                    className="absolute -bottom-1 -right-1 rounded-full border-2 border-background"
+                                    onClick={() => setIsEmojiSheetOpen(true)}
+                                >
+                                    <Pencil className="h-4 w-4" />
+                                </Button>
+                            </div>
                         </div>
                         
                         <div className="space-y-4">
@@ -195,6 +243,29 @@ export default function EditProfilePage() {
                     </div>
                 </form>
             </Form>
+             <Sheet open={isEmojiSheetOpen} onOpenChange={setIsEmojiSheetOpen}>
+                <SheetContent side="bottom" className="rounded-t-2xl h-[60dvh] flex flex-col p-4">
+                    <SheetHeader className="text-center">
+                        <SheetTitle>Choose your Avatar</SheetTitle>
+                    </SheetHeader>
+                    <ScrollArea className="flex-grow my-4">
+                        <div className="grid grid-cols-6 gap-2">
+                            {defaultAvatars.map((emoji, index) => (
+                                <Button
+                                    key={index}
+                                    variant="ghost"
+                                    className="text-3xl aspect-square h-auto w-full"
+                                    onClick={() => handleAvatarChange(emoji)}
+                                >
+                                    {emoji}
+                                </Button>
+                            ))}
+                        </div>
+                    </ScrollArea>
+                </SheetContent>
+            </Sheet>
         </AppLayout>
     );
 }
+
+    

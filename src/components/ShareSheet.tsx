@@ -11,7 +11,7 @@ import { useCollection } from '@/firebase/firestore/use-collection';
 import type { Conversation, Post, User, Message } from '@/lib/types';
 import { WithId } from '@/firebase/firestore/use-collection';
 import { Avatar, AvatarFallback } from './ui/avatar';
-import { getInitials, cn } from '@/lib/utils';
+import { getAvatar, cn } from '@/lib/utils';
 import { Skeleton } from './ui/skeleton';
 import { useToast } from '@/hooks/use-toast';
 import { Link as LinkIcon, Share2, Send, Check } from 'lucide-react';
@@ -40,7 +40,7 @@ function ConversationItem({ conversation, onSend, sentStatus }: { conversation: 
         <div className="flex items-center justify-between p-2 rounded-lg hover:bg-secondary">
             <div className="flex items-center space-x-3">
                 <Avatar className="h-10 w-10">
-                    <AvatarFallback>{otherUser ? getInitials(formatUserId(otherUser.id)) : '?'}</AvatarFallback>
+                    <AvatarFallback>{otherUser ? getAvatar(otherUser) : '?'}</AvatarFallback>
                 </Avatar>
                 <div>
                     <div className="font-semibold text-sm">{name}</div>
@@ -199,3 +199,5 @@ export function ShareSheet({ post, isOpen, onOpenChange }: { post: WithId<Post>,
         </Sheet>
     )
 }
+
+    

@@ -133,14 +133,11 @@ export default function AuthForm() {
             await updateProfile(user, { displayName: values.name });
             
             const userDocRef = doc(firestore, "users", user.uid);
-
-            const randomAvatar = defaultAvatars[Math.floor(Math.random() * defaultAvatars.length)];
             
             const newUser: Omit<UserType, 'upvotes' | 'upvotedBy'> = {
                 id: user.uid,
                 name: values.name,
                 email: values.email,
-                avatar: randomAvatar,
                 createdAt: serverTimestamp(),
                 status: 'active',
                 lastReadTimestamps: {},

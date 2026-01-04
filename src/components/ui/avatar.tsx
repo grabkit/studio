@@ -13,11 +13,12 @@ const Avatar = React.forwardRef<
     showStatus?: boolean
   }
 >(({ className, isOnline = false, showStatus = false, ...props }, ref) => (
-  <div className={cn("relative", className)}>
+  <div className="relative inline-block">
     <AvatarPrimitive.Root
       ref={ref}
       className={cn(
-        "flex h-full w-full shrink-0 overflow-hidden rounded-full"
+        "relative flex h-10 w-10 shrink-0 overflow-hidden rounded-full",
+        className
       )}
       {...props}
     />
@@ -56,3 +57,5 @@ const AvatarFallback = React.forwardRef<
 AvatarFallback.displayName = AvatarPrimitive.Fallback.displayName
 
 export { Avatar, AvatarImage, AvatarFallback }
+
+    

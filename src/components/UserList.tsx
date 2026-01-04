@@ -40,7 +40,7 @@ function UserItem({ user }: { user: WithId<User> }) {
         <Link href={`/profile/${user.id}`} className="flex items-center justify-between p-4 border-b hover:bg-accent">
             <div className="flex items-center space-x-4">
                 <Avatar className="h-10 w-10">
-                    <AvatarFallback>{getAvatar(user.id)}</AvatarFallback>
+                    <AvatarFallback>{getAvatar(user)}</AvatarFallback>
                 </Avatar>
                 <div>
                     <p className="font-semibold">{formatUserId(user.id)}</p>
@@ -110,3 +110,5 @@ export default function UserList({ userIds, emptyTitle, emptyDescription }: { us
         </div>
     );
 }
+
+    

@@ -25,7 +25,7 @@ export const showIncomingCallToast = ({ callerId, onAccept, onDecline }: Incomin
              <div className="w-full flex items-center justify-between">
                 <div className="flex items-center gap-3">
                     <Avatar>
-                        <AvatarFallback>{getAvatar(callerId)}</AvatarFallback>
+                        <AvatarFallback>{getAvatar({id: callerId})}</AvatarFallback>
                     </Avatar>
                     <div>
                         <p className="font-semibold">{formatUserId(callerId)}</p>
@@ -46,3 +46,5 @@ export const showIncomingCallToast = ({ callerId, onAccept, onDecline }: Incomin
         </div>
     );
 };
+
+    

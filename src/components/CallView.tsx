@@ -106,7 +106,7 @@ export function CallView({
 
             <div className="text-center pt-20">
                 <Avatar className="h-32 w-32 mx-auto mb-6">
-                    <AvatarFallback className="text-5xl">{getAvatar(otherPartyId)}</AvatarFallback>
+                    <AvatarFallback className="text-5xl">{getAvatar({id: otherPartyId})}</AvatarFallback>
                 </Avatar>
                 <h1 className="text-3xl font-bold">{formatUserId(otherPartyId)}</h1>
                 <p className="text-muted-foreground mt-2">{getStatusText()}</p>
@@ -177,3 +177,5 @@ export function CallView({
         </div>
     );
 }
+
+    

@@ -122,7 +122,7 @@ export function VideoCallView({
             {!isAnswered && (
                 <div className="text-center pt-20 z-10">
                     <Avatar className="h-32 w-32 mx-auto mb-6">
-                        <AvatarFallback className="text-5xl bg-secondary">{getAvatar(otherPartyId)}</AvatarFallback>
+                        <AvatarFallback className="text-5xl bg-secondary">{getAvatar({id: otherPartyId})}</AvatarFallback>
                     </Avatar>
                     <h1 className="text-3xl font-bold">{formatUserId(otherPartyId)}</h1>
                     <p className="text-muted-foreground mt-2">{getStatusText()}</p>
@@ -203,3 +203,5 @@ export function VideoCallView({
         </div>
     );
 }
+
+    

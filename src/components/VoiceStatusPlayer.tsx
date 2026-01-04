@@ -53,7 +53,7 @@ export function VoiceStatusPlayer({ user: voiceUser, isOpen, onOpenChange, onDel
                 
                 <div className="relative">
                     <Avatar className="h-28 w-28">
-                        <AvatarFallback className="text-5xl">{getAvatar(voiceUser.id)}</AvatarFallback>
+                        <AvatarFallback className="text-5xl">{getAvatar(voiceUser)}</AvatarFallback>
                     </Avatar>
                 </div>
 
@@ -74,3 +74,5 @@ export function VoiceStatusPlayer({ user: voiceUser, isOpen, onOpenChange, onDel
         </Sheet>
     )
 }
+
+    

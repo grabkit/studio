@@ -61,7 +61,7 @@ function PostPreviewCard({ postId }: { postId: string }) {
             <div className="p-3">
                 <div className="flex items-center gap-2 mb-2">
                     <Avatar className="h-6 w-6">
-                        <AvatarFallback className="text-xs">{getAvatar(post.authorId)}</AvatarFallback>
+                        <AvatarFallback className="text-xs">{getAvatar({id: post.authorId})}</AvatarFallback>
                     </Avatar>
                     <span className="text-xs font-semibold text-foreground">{formatUserId(post.authorId)}</span>
                 </div>
@@ -220,7 +220,7 @@ function ChatHeader({ peerId, onStartCall, onStartVideoCall }: { peerId: string,
             <div className="flex-1 flex items-center gap-3 ml-2">
                 <Link href={`/profile/${peerId}`}>
                     <Avatar className="h-8 w-8">
-                        <AvatarFallback>{isLoading || !peerUser ? <Skeleton className="h-8 w-8 rounded-full" /> : getAvatar(peerId)}</AvatarFallback>
+                        <AvatarFallback>{isLoading || !peerUser ? <Skeleton className="h-8 w-8 rounded-full" /> : getAvatar(peerUser)}</AvatarFallback>
                     </Avatar>
                 </Link>
                 <div>
@@ -520,3 +520,5 @@ export default function ChatPage() {
         </AppLayout>
     )
 }
+
+    
