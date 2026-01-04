@@ -470,6 +470,10 @@ export default function UserProfilePage() {
                                 <div className="font-bold text-lg"><Skeleton className="h-6 w-8 mx-auto" /></div>
                                 <p className="text-sm text-muted-foreground">Upvotes</p>
                             </div>
+                            <div>
+                                <div className="font-bold text-lg"><Skeleton className="h-6 w-8 mx-auto" /></div>
+                                <p className="text-sm text-muted-foreground">Upvoted</p>
+                            </div>
                         </div>
                     </div>
                     <div className="mb-4 space-y-2">
@@ -591,6 +595,14 @@ export default function UserProfilePage() {
                                     <div className="font-bold text-lg">{user?.upvotes || 0}</div>
                                     )}
                                     <p className="text-sm text-muted-foreground">Upvotes</p>
+                                </div>
+                                 <div>
+                                    {isLoading ? (
+                                    <div className="font-bold text-lg"><Skeleton className="h-6 w-8 mx-auto" /></div>
+                                    ) : (
+                                    <div className="font-bold text-lg">{user?.upvotedCount || 0}</div>
+                                    )}
+                                    <p className="text-sm text-muted-foreground">Upvoted</p>
                                 </div>
                             </div>
                         </div>

@@ -54,6 +54,7 @@ export interface User {
     createdAt?: Timestamp;
     upvotes?: number;
     upvotedBy?: string[];
+    upvotedCount?: number;
     status?: 'active' | 'suspended' | 'banned';
     blockedUsers?: string[];
     mutedUsers?: string[];
@@ -163,4 +164,3 @@ export interface VideoIceCandidate {
     usernameFragment: string | null;
 }
 
-    

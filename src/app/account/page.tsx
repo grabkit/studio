@@ -407,6 +407,14 @@ export default function AccountPage() {
                     )}
                     <p className="text-sm text-muted-foreground">Upvotes</p>
                 </div>
+                <div>
+                    {isLoading ? (
+                        <div className="font-bold text-lg"><Skeleton className="h-6 w-8 mx-auto" /></div>
+                    ) : (
+                        <div className="font-bold text-lg">{userProfile?.upvotedCount || 0}</div>
+                    )}
+                    <p className="text-sm text-muted-foreground">Upvoted</p>
+                </div>
             </div>
         </div>
         
@@ -480,4 +488,3 @@ export default function AccountPage() {
   );
 }
 
-    
