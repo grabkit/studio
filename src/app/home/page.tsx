@@ -239,7 +239,7 @@ function PostAuthorInfo({ authorId, authorProfile: initialAuthorProfile, timesta
                     <AvatarFallback>{getAvatar(authorProfile)}</AvatarFallback>
                 </Avatar>
             </Link>
-            <div className="flex items-start space-x-1.5">
+            <div className="flex items-center space-x-1.5">
                 <Link href={`/profile/${authorProfile.id}`} className="text-sm font-semibold hover:underline">
                     {formatUserId(authorProfile.id)}
                 </Link>
@@ -252,7 +252,7 @@ function PostAuthorInfo({ authorId, authorProfile: initialAuthorProfile, timesta
 }
 
 
-export function PostItem({ post, bookmarks, updatePost, onDelete, onPin, showPinStatus = false, authorProfile }: { post: WithId<Post>, bookmarks: WithId<Bookmark>[] | null, updatePost?: (id: string, data: Partial<Post>) => void, onDelete?: (id: string) => void, onPin?: (id: string, currentStatus: boolean) => void, showPinStatus?: boolean, authorProfile?: WithId<User> | null }) {
+export function PostItem({ post, bookmarks, updatePost, onDelete, onPin, showPinStatus = false, authorProfile: initialAuthorProfile }: { post: WithId<Post>, bookmarks: WithId<Bookmark>[] | null, updatePost?: (id: string, data: Partial<Post>) => void, onDelete?: (id: string) => void, onPin?: (id: string, currentStatus: boolean) => void, showPinStatus?: boolean, authorProfile?: WithId<User> | null }) {
   const { user, firestore } = useFirebase();
   const { toast } = useToast();
   const router = useRouter();
@@ -262,6 +262,15 @@ export function PostItem({ post, bookmarks, updatePost, onDelete, onPin, showPin
   const isOwner = user?.uid === post.authorId;
   const isBookmarked = useMemo(() => bookmarks?.some(b => b.postId === post.id), [bookmarks, post.id]);
   const repliesAllowed = post.commentsAllowed !== false;
+
+    const { data: authorProfile, isLoading: isAuthorLoading } = useDoc<User>(
+        useMemoFirebase(() => {
+            if (initialAuthorProfile || !firestore) return null;
+            return doc(firestore, 'users', post.authorId);
+        }, [firestore, post.authorId, initialAuthorProfile])
+    );
+
+    const finalAuthorProfile = initialAuthorProfile || authorProfile;
 
   const hasLiked = useMemo(() => {
     if (!user) return false;
@@ -423,53 +432,62 @@ export function PostItem({ post, bookmarks, updatePost, onDelete, onPin, showPin
             <span>Pinned</span>
           </div>
         )}
-        <div className="flex">
-          <div className="flex-1">
-            <div className="flex justify-between items-start -mb-1">
-              <PostAuthorInfo
-                  authorId={post.authorId}
-                  timestamp={post.timestamp}
-                  authorProfile={authorProfile}
-              />
-               <div className="flex items-center">
-                 {isOwner && (
-                     <Sheet open={isMoreOptionsSheetOpen} onOpenChange={setIsMoreOptionsSheetOpen}>
-                        <SheetTrigger asChild>
-                            <Button variant="ghost" size="icon" className="h-6 w-6">
-                                <MoreHorizontal className="h-4 w-4" />
-                            </Button>
-                        </SheetTrigger>
-                        <SheetContent side="bottom" className="rounded-t-lg">
-                            <SheetHeader className="text-left">
-                                <SheetTitle>Options for post</SheetTitle>
-                                <SheetDescription>Manage your post.</SheetDescription>
-                            </SheetHeader>
-                            <div className="grid gap-2 py-4">
-                                 <div className="border rounded-2xl">
-                                    <Button variant="ghost" className="justify-between text-base py-6 rounded-2xl w-full" onClick={handleEditPost}>
-                                        <span className="font-semibold">Edit</span>
-                                        <Edit className="h-5 w-5" />
-                                    </Button>
-                                    <div className="border-t"></div>
-                                     <Button variant="ghost" className="justify-between text-base py-6 rounded-2xl w-full" onClick={handlePinPost}>
-                                        <span className="font-semibold">{post.isPinned ? "Unpin Post" : "Pin Post"}</span>
-                                        <Pin className="h-5 w-5" />
-                                    </Button>
-                                 </div>
-                                <div className="border rounded-2xl">
-                                    <Button variant="ghost" className="justify-between text-base py-6 rounded-2xl w-full text-destructive hover:text-destructive" onClick={handleDeletePost}>
-                                        <span className="font-semibold">Delete</span>
-                                        <Trash2 className="h-5 w-5" />
-                                    </Button>
-                                </div>
-                            </div>
-                        </SheetContent>
-                    </Sheet>
-                 )}
-               </div>
+        <div className="flex space-x-3">
+            <div>
+                 <Link href={`/profile/${post.authorId}`} className="flex-shrink-0">
+                    <Avatar className="h-10 w-10">
+                        <AvatarFallback>{isAuthorLoading ? '' : getAvatar(finalAuthorProfile)}</AvatarFallback>
+                    </Avatar>
+                </Link>
             </div>
+            <div className="flex-1">
+                <div className="flex justify-between items-start">
+                    <div className="flex items-center space-x-1.5">
+                        <Link href={`/profile/${post.authorId}`} className="text-sm font-semibold hover:underline">
+                            {formatUserId(post.authorId)}
+                        </Link>
+                        <div className="text-xs text-muted-foreground">
+                            {post.timestamp ? `· ${formatTimestamp(post.timestamp.toDate())}` : ''}
+                        </div>
+                    </div>
+                   <div className="flex items-center">
+                     {isOwner && (
+                         <Sheet open={isMoreOptionsSheetOpen} onOpenChange={setIsMoreOptionsSheetOpen}>
+                            <SheetTrigger asChild>
+                                <Button variant="ghost" size="icon" className="h-6 w-6">
+                                    <MoreHorizontal className="h-4 w-4" />
+                                </Button>
+                            </SheetTrigger>
+                            <SheetContent side="bottom" className="rounded-t-lg">
+                                <SheetHeader className="text-left">
+                                    <SheetTitle>Options for post</SheetTitle>
+                                    <SheetDescription>Manage your post.</SheetDescription>
+                                </SheetHeader>
+                                <div className="grid gap-2 py-4">
+                                     <div className="border rounded-2xl">
+                                        <Button variant="ghost" className="justify-between text-base py-6 rounded-2xl w-full" onClick={handleEditPost}>
+                                            <span className="font-semibold">Edit</span>
+                                            <Edit className="h-5 w-5" />
+                                        </Button>
+                                        <div className="border-t"></div>
+                                         <Button variant="ghost" className="justify-between text-base py-6 rounded-2xl w-full" onClick={handlePinPost}>
+                                            <span className="font-semibold">{post.isPinned ? "Unpin Post" : "Pin Post"}</span>
+                                            <Pin className="h-5 w-5" />
+                                        </Button>
+                                     </div>
+                                    <div className="border rounded-2xl">
+                                        <Button variant="ghost" className="justify-between text-base py-6 rounded-2xl w-full text-destructive hover:text-destructive" onClick={handleDeletePost}>
+                                            <span className="font-semibold">Delete</span>
+                                            <Trash2 className="h-5 w-5" />
+                                        </Button>
+                                    </div>
+                                </div>
+                            </SheetContent>
+                        </Sheet>
+                     )}
+                   </div>
+                </div>
 
-            <div className="pl-[52px]">
                 <Link href={`/post/${post.id}`} className="block">
                     <p className="text-foreground text-sm whitespace-pre-wrap">{post.content}</p>
                 </Link>
@@ -479,38 +497,37 @@ export function PostItem({ post, bookmarks, updatePost, onDelete, onPin, showPin
                 {post.type === 'poll' && post.pollOptions && (
                     <PollComponent post={post} user={user} />
                 )}
-            </div>
 
-            <div className="flex items-center justify-between pt-2 text-muted-foreground pl-[52px]">
-                <div className="flex items-center space-x-6">
-                  <button onClick={handleLike} className={cn("flex items-center space-x-1", hasLiked && "text-pink-500")}>
-                    <Heart className="h-4 w-4" fill={hasLiked ? 'currentColor' : 'none'} />
-                    <span className="text-xs">{post.likeCount > 0 ? formatCount(post.likeCount) : ''}</span>
-                  </button>
-                  <CommentButtonWrapper
-                    href={`/post/${post.id}`}
-                    className={cn(
-                        "flex items-center space-x-1",
-                        repliesAllowed ? "hover:text-primary" : "opacity-50 pointer-events-none"
-                    )}
-                  >
-                    <div className="relative">
-                      <MessageCircle className="h-4 w-4" />
-                      {!repliesAllowed && <Slash className="absolute top-0 left-0 h-4 w-4 stroke-[2.5px]" />}
+                <div className="flex items-center justify-between pt-2 text-muted-foreground">
+                    <div className="flex items-center space-x-6">
+                      <button onClick={handleLike} className={cn("flex items-center space-x-1", hasLiked && "text-pink-500")}>
+                        <Heart className="h-4 w-4" fill={hasLiked ? 'currentColor' : 'none'} />
+                        <span className="text-xs">{post.likeCount > 0 ? formatCount(post.likeCount) : ''}</span>
+                      </button>
+                      <CommentButtonWrapper
+                        href={`/post/${post.id}`}
+                        className={cn(
+                            "flex items-center space-x-1",
+                            repliesAllowed ? "hover:text-primary" : "opacity-50 pointer-events-none"
+                        )}
+                      >
+                        <div className="relative">
+                          <MessageCircle className="h-4 w-4" />
+                          {!repliesAllowed && <Slash className="absolute top-0 left-0 h-4 w-4 stroke-[2.5px]" />}
+                        </div>
+                        <span className="text-xs">{post.commentCount > 0 ? formatCount(post.commentCount) : ''}</span>
+                      </CommentButtonWrapper>
+                      <button onClick={handleRepost} className="flex items-center space-x-1 hover:text-green-500">
+                        <Repeat className={cn("h-4 w-4")} />
+                      </button>
+                      <button onClick={() => setIsShareSheetOpen(true)} className="flex items-center space-x-1 hover:text-primary">
+                        <ArrowUpRight className="h-4 w-4" />
+                      </button>
+                       <button onClick={handleBookmark} className="flex items-center space-x-1 hover:text-foreground">
+                        <BookmarkIcon className={cn("h-4 w-4", isBookmarked && "text-foreground fill-foreground")} />
+                      </button>
                     </div>
-                    <span className="text-xs">{post.commentCount > 0 ? formatCount(post.commentCount) : ''}</span>
-                  </CommentButtonWrapper>
-                  <button onClick={handleRepost} className="flex items-center space-x-1 hover:text-green-500">
-                    <Repeat className={cn("h-4 w-4")} />
-                  </button>
-                  <button onClick={() => setIsShareSheetOpen(true)} className="flex items-center space-x-1 hover:text-primary">
-                    <ArrowUpRight className="h-4 w-4" />
-                  </button>
-                   <button onClick={handleBookmark} className="flex items-center space-x-1 hover:text-foreground">
-                    <BookmarkIcon className={cn("h-4 w-4", isBookmarked && "text-foreground fill-foreground")} />
-                  </button>
                 </div>
-            </div>
           </div>
         </div>
       </CardContent>
@@ -706,6 +723,8 @@ export default function HomePage() {
     
 
 
+
+    
 
     
 
