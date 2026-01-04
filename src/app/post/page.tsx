@@ -372,8 +372,8 @@ function PostPageComponent() {
                                                             <div className="flex items-center gap-2">
                                                                 <Input placeholder={`Option ${index + 1}`} {...field} className="bg-secondary"/>
                                                                 {fields.length > 2 && (
-                                                                    <Button variant="ghost" size="icon" type="button" onClick={() => remove(index)}>
-                                                                        <X className="h-4 w-4 text-muted-foreground" />
+                                                                    <Button variant="ghost" size="icon" type="button" onClick={() => remove(index)} className="rounded-full bg-primary hover:bg-primary/80 text-primary-foreground h-6 w-6">
+                                                                        <X className="h-4 w-4" />
                                                                     </Button>
                                                                 )}
                                                             </div>
