@@ -373,7 +373,7 @@ function PostPageComponent() {
                                                                 <Input placeholder={`Option ${index + 1}`} {...field} className="bg-secondary"/>
                                                                 {fields.length > 2 && (
                                                                     <Button variant="ghost" size="icon" type="button" onClick={() => remove(index)}>
-                                                                        <Trash2 className="h-4 w-4 text-destructive" />
+                                                                        <X className="h-4 w-4 text-muted-foreground" />
                                                                     </Button>
                                                                 )}
                                                             </div>
