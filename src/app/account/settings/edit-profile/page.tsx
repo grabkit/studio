@@ -59,13 +59,16 @@ export default function EditProfilePage() {
         if (!authUser || !firestore) return;
 
         const userDocRef = doc(firestore, "users", authUser.uid);
-        
+        const originalAvatar = userProfile?.avatar;
+
         // Optimistic UI update
         setUserProfile(currentProfile => {
             if (!currentProfile) return null;
             return { ...currentProfile, avatar: emoji };
         });
         
+        setIsEmojiSheetOpen(false);
+
         try {
             await updateDoc(userDocRef, { avatar: emoji });
             toast({ title: "Avatar Updated!", description: "Your new avatar is now set." });
@@ -73,7 +76,7 @@ export default function EditProfilePage() {
             // Revert on failure
              setUserProfile(currentProfile => {
                 if (!currentProfile) return null;
-                return { ...currentProfile, avatar: userProfile?.avatar };
+                return { ...currentProfile, avatar: originalAvatar };
             });
             const permissionError = new FirestorePermissionError({
                 path: userDocRef.path,
@@ -82,8 +85,6 @@ export default function EditProfilePage() {
             });
             errorEmitter.emit('permission-error', permissionError);
             toast({ variant: 'destructive', title: 'Error', description: 'Could not update your avatar.'});
-        } finally {
-            setIsEmojiSheetOpen(false);
         }
     }
 
@@ -98,6 +99,12 @@ export default function EditProfilePage() {
         try {
             // Update profile data in Firestore
             await updateDoc(userDocRef, values);
+            
+            // Also optimistically update the local user profile state
+            setUserProfile(currentProfile => {
+              if (!currentProfile) return null;
+              return { ...currentProfile, ...values };
+            });
 
             toast({ title: "Profile Updated", description: "Your changes have been saved." });
             router.back();
@@ -267,5 +274,3 @@ export default function EditProfilePage() {
         </AppLayout>
     );
 }
-
-    

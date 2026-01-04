@@ -232,6 +232,7 @@ export const FirebaseProvider: React.FC<FirebaseProviderProps> = ({
 
             const isOnlineForDatabase = {
                 isOnline: true,
+
                 lastSeen: dbServerTimestamp(),
             };
             
@@ -281,7 +282,7 @@ export const FirebaseProvider: React.FC<FirebaseProviderProps> = ({
       ...videoCallHandler,
     };
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [firebaseApp, firestore, auth, database, userAuthState, userProfile, isUserProfileLoading, callHandler, videoCallHandler, isVoicePlayerPlaying]);
+  }, [firebaseApp, firestore, auth, database, userAuthState, userProfile, isUserProfileLoading, callHandler, videoCallHandler, isVoicePlayerPlaying, setLoggedInUserProfile]);
 
   // Determine if the call UI should be shown
   const showCallUI = !!callHandler.callStatus && callHandler.callStatus !== 'ended' && callHandler.callStatus !== 'declined' && callHandler.callStatus !== 'missed';
@@ -429,4 +430,3 @@ export function useMemoFirebase<T>(factory: () => T, deps: DependencyList): T | 
   return memoized;
 }
 
-    
