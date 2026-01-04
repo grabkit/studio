@@ -211,9 +211,9 @@ function PostAuthorInfo({ authorId, authorProfile: initialAuthorProfile }: { aut
 
     if (isLoading && !initialAuthorProfile) {
         return (
-            <div className="flex space-x-3">
+            <div className="flex items-center space-x-2">
                 <Skeleton className="h-10 w-10 rounded-full" />
-                <div className="flex-1 space-y-1">
+                <div className="space-y-1">
                     <Skeleton className="h-4 w-[100px]" />
                     <Skeleton className="h-3 w-[80px]" />
                 </div>
@@ -233,18 +233,14 @@ function PostAuthorInfo({ authorId, authorProfile: initialAuthorProfile }: { aut
     }
 
     return (
-        <div className="flex items-center space-x-3">
-            <Link href={`/profile/${authorProfile.id}`}>
-                <Avatar className="h-10 w-10">
-                    <AvatarFallback>{getAvatar(authorProfile)}</AvatarFallback>
-                </Avatar>
-            </Link>
-            <div className="space-y-0">
-                <Link href={`/profile/${authorProfile.id}`} className="text-sm font-semibold hover:underline">
-                    {formatUserId(authorProfile.id)}
-                </Link>
-            </div>
-        </div>
+        <Link href={`/profile/${authorProfile.id}`} className="flex items-center space-x-2">
+            <Avatar className="h-10 w-10">
+                <AvatarFallback>{getAvatar(authorProfile)}</AvatarFallback>
+            </Avatar>
+            <span className="text-sm font-semibold hover:underline">
+                {formatUserId(authorProfile.id)}
+            </span>
+        </Link>
     );
 }
 
@@ -421,15 +417,22 @@ export function PostItem({ post, bookmarks, updatePost, onDelete, onPin, showPin
           </div>
         )}
         <div className="flex space-x-3">
-          <div className="flex flex-col items-center flex-shrink-0">
-             <PostAuthorInfo authorId={post.authorId} authorProfile={authorProfile} />
+          <div className="flex flex-col items-center">
+            <Link href={`/profile/${post.authorId}`}>
+              <Avatar className="h-10 w-10">
+                <AvatarFallback>{getAvatar(authorProfile || post.authorId)}</AvatarFallback>
+              </Avatar>
+            </Link>
           </div>
-          <div className="flex-1">
+          <div className="flex-1 -mt-8">
             <div className="flex justify-between items-start">
-                <span className="text-xs text-muted-foreground">
-                    {post.timestamp ? `· ${formatTimestamp(post.timestamp.toDate())}` : ''}
-                </span>
-               <div className="flex items-center">
+                <div className="flex items-center space-x-2 pt-8">
+                   <PostAuthorInfo authorId={post.authorId} authorProfile={authorProfile} />
+                    <span className="text-xs text-muted-foreground">
+                        {post.timestamp ? `· ${formatTimestamp(post.timestamp.toDate())}` : ''}
+                    </span>
+                </div>
+               <div className="flex items-center pt-8">
                  {isOwner && (
                      <Sheet open={isMoreOptionsSheetOpen} onOpenChange={setIsMoreOptionsSheetOpen}>
                         <SheetTrigger asChild>
@@ -467,7 +470,7 @@ export function PostItem({ post, bookmarks, updatePost, onDelete, onPin, showPin
                </div>
             </div>
             
-            <div className="space-y-2 mt-1">
+            <div className="mt-2 space-y-2">
               <Link href={`/post/${post.id}`} className="block">
                   <p className="text-foreground text-sm whitespace-pre-wrap">{post.content}</p>
               </Link>
