@@ -243,7 +243,7 @@ function PostAuthorInfo({ authorId, authorProfile: initialAuthorProfile, timesta
                 <Link href={`/profile/${authorProfile.id}`} className="text-sm font-semibold hover:underline">
                     {formatUserId(authorProfile.id)}
                 </Link>
-                <div className="text-xs text-muted-foreground">
+                 <div className="text-xs text-muted-foreground">
                     {timestamp ? `· ${formatTimestamp(timestamp.toDate())}` : ''}
                 </div>
             </div>
@@ -426,13 +426,11 @@ export function PostItem({ post, bookmarks, updatePost, onDelete, onPin, showPin
         <div className="flex">
           <div className="flex-1">
             <div className="flex justify-between items-start">
-              <div className="pl-[52px] -mt-10">
-                <PostAuthorInfo
-                    authorId={post.authorId}
-                    authorProfile={authorProfile}
-                    timestamp={post.timestamp}
-                />
-              </div>
+              <PostAuthorInfo
+                  authorId={post.authorId}
+                  authorProfile={authorProfile}
+                  timestamp={post.timestamp}
+              />
                <div className="flex items-center">
                  {isOwner && (
                      <Sheet open={isMoreOptionsSheetOpen} onOpenChange={setIsMoreOptionsSheetOpen}>
@@ -472,7 +470,7 @@ export function PostItem({ post, bookmarks, updatePost, onDelete, onPin, showPin
             </div>
             
             <div className="pl-[52px]">
-              <Link href={`/post/${post.id}`} className="block">
+              <Link href={`/post/${post.id}`} className="block mt-2">
                   <p className="text-foreground text-sm whitespace-pre-wrap">{post.content}</p>
               </Link>
 
@@ -701,3 +699,6 @@ export default function HomePage() {
     
 
 
+
+
+    
