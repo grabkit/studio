@@ -14,6 +14,8 @@ import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { getInitials } from "@/lib/utils";
 import { Skeleton } from "@/components/ui/skeleton";
 import Link from "next/link";
+import { cn } from "@/lib/utils";
+
 
 function UserListSkeleton() {
     return (
@@ -22,7 +24,6 @@ function UserListSkeleton() {
                 <Skeleton className="h-10 w-10 rounded-full" />
                 <div className="space-y-2">
                     <Skeleton className="h-4 w-24" />
-                    <Skeleton className="h-3 w-32" />
                 </div>
             </div>
         </div>
@@ -38,7 +39,7 @@ function UserItem({ user }: { user: WithId<User> }) {
     return (
         <Link href={`/profile/${user.id}`} className="flex items-center justify-between p-4 border-b hover:bg-accent">
             <div className="flex items-center space-x-4">
-                <Avatar>
+                <Avatar className="h-10 w-10">
                     <AvatarFallback>{getInitials(formatUserId(user.id))}</AvatarFallback>
                 </Avatar>
                 <div>
@@ -81,11 +82,11 @@ export default function UserList({ userIds, emptyTitle, emptyDescription }: { us
 
     if (isLoading) {
         return (
-            <>
+            <div className="divide-y">
                 <UserListSkeleton />
                 <UserListSkeleton />
                 <UserListSkeleton />
-            </>
+            </div>
         )
     }
 
