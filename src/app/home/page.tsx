@@ -233,14 +233,21 @@ function PostAuthorInfo({ authorId, authorProfile: initialAuthorProfile }: { aut
     }
 
     return (
-        <Link href={`/profile/${authorProfile.id}`} className="flex items-center space-x-2">
-            <Avatar className="h-10 w-10">
-                <AvatarFallback>{getAvatar(authorProfile)}</AvatarFallback>
-            </Avatar>
-            <span className="text-sm font-semibold hover:underline">
-                {formatUserId(authorProfile.id)}
-            </span>
-        </Link>
+        <div className="flex items-center space-x-2">
+            <Link href={`/profile/${authorProfile.id}`} className="flex-shrink-0">
+                <Avatar className="h-10 w-10">
+                    <AvatarFallback>{getAvatar(authorProfile)}</AvatarFallback>
+                </Avatar>
+            </Link>
+             <div>
+                <Link href={`/profile/${authorProfile.id}`} className="text-sm font-semibold hover:underline">
+                    {formatUserId(authorProfile.id)}
+                </Link>
+                 <div className="text-xs text-muted-foreground">
+                    {post.timestamp ? `· ${formatTimestamp(post.timestamp.toDate())}` : ''}
+                </div>
+            </div>
+        </div>
     );
 }
 
@@ -411,28 +418,16 @@ export function PostItem({ post, bookmarks, updatePost, onDelete, onPin, showPin
     <Card className="w-full shadow-none border-x-0 border-t-0 rounded-none">
       <CardContent className="p-4">
         {showPinStatus && post.isPinned && (
-          <div className="flex items-center gap-2 text-xs text-muted-foreground mb-2 pl-10">
+          <div className="flex items-center gap-2 text-xs text-muted-foreground mb-2 pl-12">
             <Pin className="h-3 w-3" />
             <span>Pinned</span>
           </div>
         )}
         <div className="flex space-x-3">
-          <div className="flex flex-col items-center">
-            <Link href={`/profile/${post.authorId}`}>
-              <Avatar className="h-10 w-10">
-                <AvatarFallback>{getAvatar(authorProfile || post.authorId)}</AvatarFallback>
-              </Avatar>
-            </Link>
-          </div>
-          <div className="flex-1 -mt-8">
+          <div className="flex-1">
             <div className="flex justify-between items-start">
-                <div className="flex items-center space-x-2 pt-8">
-                   <PostAuthorInfo authorId={post.authorId} authorProfile={authorProfile} />
-                    <span className="text-xs text-muted-foreground">
-                        {post.timestamp ? `· ${formatTimestamp(post.timestamp.toDate())}` : ''}
-                    </span>
-                </div>
-               <div className="flex items-center pt-8">
+                <PostAuthorInfo authorId={post.authorId} authorProfile={authorProfile} />
+               <div className="flex items-center">
                  {isOwner && (
                      <Sheet open={isMoreOptionsSheetOpen} onOpenChange={setIsMoreOptionsSheetOpen}>
                         <SheetTrigger asChild>
@@ -470,7 +465,7 @@ export function PostItem({ post, bookmarks, updatePost, onDelete, onPin, showPin
                </div>
             </div>
             
-            <div className="mt-2 space-y-2">
+            <div className="mt-2 space-y-2 pl-12">
               <Link href={`/post/${post.id}`} className="block">
                   <p className="text-foreground text-sm whitespace-pre-wrap">{post.content}</p>
               </Link>
@@ -485,7 +480,7 @@ export function PostItem({ post, bookmarks, updatePost, onDelete, onPin, showPin
             </div>
 
 
-            <div className="flex items-center justify-between pt-2 text-muted-foreground">
+            <div className="flex items-center justify-between pt-2 text-muted-foreground pl-12">
                 <div className="flex items-center space-x-6">
                   <button onClick={handleLike} className={cn("flex items-center space-x-1", hasLiked && "text-pink-500")}>
                     <Heart className="h-4 w-4" fill={hasLiked ? 'currentColor' : 'none'} />
