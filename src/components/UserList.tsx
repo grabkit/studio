@@ -40,7 +40,7 @@ function UserItem({ user }: { user: WithId<User> }) {
         <Link href={`/profile/${user.id}`} className="flex items-center justify-between p-4 border-b hover:bg-accent">
             <div className="flex items-center space-x-4">
                 <Avatar className="h-10 w-10">
-                    <AvatarFallback>{getInitials(formatUserId(user.id))}</AvatarFallback>
+                    <AvatarFallback>{formatUserId(user.id).charAt(0).toUpperCase()}</AvatarFallback>
                 </Avatar>
                 <div>
                     <p className="font-semibold">{formatUserId(user.id)}</p>
