@@ -299,7 +299,7 @@ export default function AuthForm() {
                 <div>
                     <div className="mb-2">
                         {"Don't have an account? "}
-                        <Button variant="link" onClick={() => { setAuthMode("signup"); form.reset(); }} className="p-0 h-auto">
+                        <Button variant="link" onClick={() => { setAuthMode("signup"); form.reset(); }} className="p-0 h-auto font-bold">
                             Sign Up
                         </Button>
                     </div>
@@ -337,7 +337,7 @@ function ForgotPasswordDialog({form, handlePasswordReset}: {form: UseFormReturn<
   return (
     <AlertDialog open={isOpen} onOpenChange={setIsOpen}>
       <AlertDialogTrigger asChild>
-        <Button variant="link" className="p-0 h-auto">Forgot Password</Button>
+        <Button variant="link" className="p-0 h-auto font-bold">Forgot Password</Button>
       </AlertDialogTrigger>
       <AlertDialogContent>
         <AlertDialogHeader>
@@ -374,7 +374,3 @@ function ForgotPasswordDialog({form, handlePasswordReset}: {form: UseFormReturn<
     </AlertDialog>
   );
 }
-
-    
-
-    
