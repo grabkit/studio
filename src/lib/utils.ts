@@ -75,6 +75,17 @@ export function formatMessageTimestamp(date: Date): string {
     }).format(date);
 }
 
+export function formatDateSeparator(date: Date): string {
+    if (isToday(date)) {
+        return "Today";
+    }
+    if (isYesterday(date)) {
+        return "Yesterday";
+    }
+    return format(date, "MMMM d, yyyy");
+}
+
+
 export function formatLastSeen(timestamp: number | null): string {
     if (timestamp === null) return "Last seen recently";
     const date = fromUnixTime(timestamp / 1000);

@@ -11,6 +11,8 @@ import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
 import React, { useMemo, useEffect, useRef, useState } from 'react';
+import { isSameDay } from 'date-fns';
+
 
 import AppLayout from '@/components/AppLayout';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
@@ -19,7 +21,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { Form, FormControl, FormField, FormItem, FormMessage } from '@/components/ui/form';
 import { Skeleton } from '@/components/ui/skeleton';
 import { ArrowLeft, Send, Reply, Forward, Copy, Trash2, X, Heart, MessageCircle, ExternalLink, Phone, Video } from 'lucide-react';
-import { cn, getAvatar, formatMessageTimestamp, formatLastSeen, formatTimestamp, formatUserId } from '@/lib/utils';
+import { cn, getAvatar, formatMessageTimestamp, formatLastSeen, formatTimestamp, formatUserId, formatDateSeparator } from '@/lib/utils';
 import type { Conversation, Message, User, Post } from '@/lib/types';
 import { WithId } from '@/firebase/firestore/use-collection';
 import { FirestorePermissionError } from '@/firebase/errors';
@@ -286,12 +288,34 @@ function ChatMessages({ conversationId, conversation, onSetReply, onForward, rep
         )
     }
 
+    const messagesWithSeparators = messages?.reduce((acc: (WithId<Message> | { type: 'separator', date: Date })[], message, index) => {
+        const currentDate = message.timestamp?.toDate();
+        const prevMessage = messages[index - 1];
+        const prevDate = prevMessage?.timestamp?.toDate();
+        
+        if (currentDate && (!prevDate || !isSameDay(currentDate, prevDate))) {
+            acc.push({ type: 'separator', date: currentDate });
+        }
+        acc.push(message);
+        return acc;
+    }, []);
+
     return (
         <div className="p-4">
             <div className="space-y-4">
-                {messages?.map(message => (
-                    <MessageBubble key={message.id} message={message} isOwnMessage={message.senderId === user?.uid} conversationId={conversationId} onSetReply={onSetReply} onForward={onForward} />
-                ))}
+                {messagesWithSeparators?.map((item, index) => {
+                    if (item.type === 'separator') {
+                        return (
+                            <div key={`sep-${index}`} className="flex justify-center my-4">
+                                <div className="text-xs text-muted-foreground bg-secondary px-2 py-1 rounded-full">
+                                    {formatDateSeparator(item.date)}
+                                </div>
+                            </div>
+                        )
+                    }
+                    const message = item as WithId<Message>;
+                    return <MessageBubble key={message.id} message={message} isOwnMessage={message.senderId === user?.uid} conversationId={conversationId} onSetReply={onSetReply} onForward={onForward} />
+                })}
             </div>
              <div ref={messagesEndRef} />
              {seenStatus && (
