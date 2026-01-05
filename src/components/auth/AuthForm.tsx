@@ -314,12 +314,12 @@ export default function AuthForm() {
                     </div>
                 </div>
             ) : (
-                <>
+                <div className="mb-2">
                     {"Already have an account? "}
-                    <Button variant="link" onClick={() => { setAuthMode("login"); form.reset(); }} className="p-0 h-auto">
+                    <Button variant="link" onClick={() => { setAuthMode("login"); form.reset(); }} className="p-0 h-auto font-bold">
                         Login
                     </Button>
-                </>
+                </div>
             )}
         </div>
     </div>
