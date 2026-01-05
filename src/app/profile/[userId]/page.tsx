@@ -670,6 +670,10 @@ export default function UserProfilePage() {
                         </div>
                     </Tabs>
                     <SheetContent side="bottom" className="rounded-t-2xl">
+                        <SheetHeader className="sr-only">
+                           <SheetTitle>Options for {formatUserId(user.id)}</SheetTitle>
+                           <SheetDescription>Manage your interaction with this user.</SheetDescription>
+                        </SheetHeader>
                          <div className="grid gap-2 py-4">
                              <div className="border rounded-2xl">
                                  <Button variant="ghost" className="justify-between text-base py-6 rounded-2xl w-full" onClick={handleMuteUser}>
