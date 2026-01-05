@@ -16,18 +16,24 @@ const hashCode = (s: string) => s.split('').reduce((a, b) => {
 }, 0);
 
 export function formatUserId(uid: string | undefined): string {
-  if (!uid) return "Anonymous_User";
+  if (!uid) return "Anonymous-User-0000";
 
   const hash = Math.abs(hashCode(uid));
   
   const adjIndex = hash % adjectives.length;
   const nounIndex = (hash >> 8) % nouns.length;
-  const number = (hash >> 16) % 1000;
+  const number = (hash >> 16) % 10000; // 4-digit number
 
   const adjective = adjectives[adjIndex];
   const noun = nouns[nounIndex];
 
-  return `${adjective}${noun}_${number}`;
+  // Combine and trim to a max length to keep UI consistent
+  let combined = `${adjective}${noun}`;
+  if (combined.length > 12) {
+    combined = combined.substring(0, 12);
+  }
+
+  return `${combined}-${String(number).padStart(4, '0')}`;
 }
 
 
