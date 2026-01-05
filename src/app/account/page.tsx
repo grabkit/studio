@@ -359,10 +359,10 @@ export default function AccountPage() {
         </div>
       </div>
       <div className="px-4">
-        <div className="flex items-start space-x-5 mb-2">
-            <div className="flex-shrink-0 text-center">
+        <div className="flex items-center justify-between space-x-5 mb-4">
+            <div className="flex-shrink-0">
                 <div className="relative inline-block">
-                    <Avatar className="h-20 w-20 md:h-24 md:w-24 mx-auto">
+                    <Avatar className="h-20 w-20 md:h-24 md:w-24">
                         <AvatarImage
                             src={authUser?.photoURL || undefined}
                             alt={userProfile?.name || "User"}
@@ -383,10 +383,8 @@ export default function AccountPage() {
                         </div>
                     )}
                 </div>
-
-                <p className="font-semibold font-headline mt-2">{formatUserId(authUser?.uid)}</p>
             </div>
-            <div className="flex-1 flex justify-around text-center pt-6">
+            <div className="flex-1 flex justify-around text-center">
                 <div>
                     {isLoading ? (
                         <div className="font-bold text-lg"><Skeleton className="h-6 w-8 mx-auto" /></div>
@@ -414,8 +412,9 @@ export default function AccountPage() {
             </div>
         </div>
         
-        {/* User Name and Bio */}
-        <div className="mb-4 space-y-2">
+        {/* User Name, Bio, and Website */}
+        <div className="mb-4 space-y-1">
+            <p className="font-semibold font-headline">{formatUserId(authUser?.uid)}</p>
             {userProfile?.bio && <p className="text-sm">{userProfile.bio}</p>}
             {userProfile?.website && (
                 <a href={userProfile.website} target="_blank" rel="noopener noreferrer" className="flex items-center gap-2 text-sm text-blue-500 hover:underline">
@@ -484,5 +483,7 @@ export default function AccountPage() {
     </AppLayout>
   );
 }
+
+    
 
     
