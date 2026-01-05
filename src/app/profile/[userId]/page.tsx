@@ -32,7 +32,7 @@ function AboutProfileSheet({ user, isOpen, onOpenChange }: { user: WithId<User>,
 
     return (
         <Sheet open={isOpen} onOpenChange={onOpenChange}>
-            <SheetContent side="bottom" className="rounded-t-lg">
+            <SheetContent side="bottom" className="rounded-t-2xl">
                 <SheetHeader className="text-left mb-4">
                     <SheetTitle>About this account</SheetTitle>
                 </SheetHeader>
@@ -669,7 +669,7 @@ export default function UserProfilePage() {
                             </TabsContent>
                         </div>
                     </Tabs>
-                    <SheetContent side="bottom" className="rounded-t-lg">
+                    <SheetContent side="bottom" className="rounded-t-2xl">
                         <SheetHeader className="text-left">
                             <SheetTitle>Options for {formatUserId(user?.id)}</SheetTitle>
                             <SheetDescription>

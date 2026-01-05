@@ -397,7 +397,7 @@ export function PostItem({ post, bookmarks, updatePost, onDelete, onPin, showPin
                                     <MoreHorizontal className="h-4 w-4" />
                                 </Button>
                             </SheetTrigger>
-                            <SheetContent side="bottom" className="rounded-t-lg">
+                            <SheetContent side="bottom" className="rounded-t-2xl">
                                 <SheetHeader className="text-left">
                                     <SheetTitle>Options for post</SheetTitle>
                                     <SheetDescription>Manage your post.</SheetDescription>

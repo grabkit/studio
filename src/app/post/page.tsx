@@ -284,7 +284,7 @@ function PostPageComponent() {
 
   return (
     <Sheet open={isOpen} onOpenChange={setIsOpen}>
-      <SheetContent side="bottom" className="h-screen flex flex-col p-0">
+      <SheetContent side="bottom" className="h-screen flex flex-col p-0 rounded-t-2xl">
         <div className="z-10 flex items-center gap-2 p-2 border-b bg-background sticky top-0 h-14">
           <SheetClose asChild>
             <Button variant="ghost" size="icon">

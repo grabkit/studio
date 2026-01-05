@@ -583,7 +583,7 @@ export default function MessagesPage() {
             </div>
             
             <Sheet open={isSheetOpen} onOpenChange={setIsSheetOpen}>
-                <SheetContent side="bottom" className="rounded-t-lg">
+                <SheetContent side="bottom" className="rounded-t-2xl">
                     <SheetHeader className="text-left mb-4">
                         <SheetTitle>Chat Options</SheetTitle>
                     </SheetHeader>

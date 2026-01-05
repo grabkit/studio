@@ -629,7 +629,7 @@ function CommentItem({ comment, postAuthorId }: { comment: WithId<Comment>, post
                             <MoreHorizontal className="h-4 w-4" />
                         </Button>
                     </SheetTrigger>
-                    <SheetContent side="bottom" className="rounded-t-lg">
+                    <SheetContent side="bottom" className="rounded-t-2xl">
                         <SheetHeader className="text-left">
                             <SheetTitle>Options for reply</SheetTitle>
                             <SheetDescription>Manage your reply.</SheetDescription>
