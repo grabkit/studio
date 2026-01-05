@@ -331,7 +331,11 @@ export default function UserProfilePage() {
                  handleCopyLink();
             }
         } catch (error: any) {
-             if (error.name === 'AbortError') return;
+             if (error.name === 'AbortError' || error.name === 'NotAllowedError') {
+                // User cancelled the share action or permission was denied.
+                // Do nothing, fail silently.
+                return;
+             }
             
             console.error("Error sharing profile:", error);
             toast({
@@ -670,7 +674,7 @@ export default function UserProfilePage() {
                         </div>
                     </Tabs>
                     <SheetContent side="bottom" className="rounded-t-2xl">
-                        <SheetHeader className="sr-only">
+                        <SheetHeader className="text-left sr-only">
                            <SheetTitle>Options for {formatUserId(user.id)}</SheetTitle>
                            <SheetDescription>Manage your interaction with this user.</SheetDescription>
                         </SheetHeader>
@@ -734,6 +738,8 @@ export default function UserProfilePage() {
         </AppLayout>
     );
 }
+
+    
 
     
 

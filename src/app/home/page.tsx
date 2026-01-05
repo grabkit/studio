@@ -398,7 +398,7 @@ export function PostItem({ post, bookmarks, updatePost, onDelete, onPin, showPin
                                 </Button>
                             </SheetTrigger>
                             <SheetContent side="bottom" className="rounded-t-2xl">
-                                <SheetHeader className="text-left">
+                                <SheetHeader className="text-left sr-only">
                                     <SheetTitle>Options for post</SheetTitle>
                                     <SheetDescription>Manage your post.</SheetDescription>
                                 </SheetHeader>
@@ -648,5 +648,7 @@ export default function HomePage() {
     </AppLayout>
   );
 }
+
+    
 
     
