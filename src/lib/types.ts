@@ -51,7 +51,6 @@ export interface User {
     name: string;
     email: string;
     avatar?: string;
-    anonymousId?: string;
     createdAt?: Timestamp;
     upvotes?: number;
     upvotedBy?: string[];
@@ -165,5 +164,3 @@ export interface VideoIceCandidate {
     sdpMLineIndex: number | null;
     usernameFragment: string | null;
 }
-
-    

@@ -134,7 +134,7 @@ export default function AuthForm() {
             
             const userDocRef = doc(firestore, "users", user.uid);
             
-            const newUser: Omit<UserType, 'upvotes' | 'upvotedBy'> = {
+            const newUser: Omit<UserType, 'upvotes' | 'upvotedBy' > = {
                 id: user.uid,
                 name: values.name,
                 email: values.email,
@@ -371,5 +371,3 @@ function ForgotPasswordDialog({form, handlePasswordReset}: {form: UseFormReturn<
     </AlertDialog>
   );
 }
-
-    

@@ -3,9 +3,31 @@ import { twMerge } from "tailwind-merge"
 import { formatDistanceToNowStrict, isToday, isYesterday, format, isThisWeek, fromUnixTime } from "date-fns";
 import { defaultAvatars } from "./avatars";
 import type { User } from "./types";
+import { adjectives, nouns } from './names';
+
 
 export function cn(...inputs: ClassValue[]) {
   return twMerge(clsx(inputs))
+}
+
+const hashCode = (s: string) => s.split('').reduce((a, b) => {
+    a = ((a << 5) - a) + b.charCodeAt(0);
+    return a & a;
+}, 0);
+
+export function formatUserId(uid: string | undefined): string {
+  if (!uid) return "Anonymous_User";
+
+  const hash = Math.abs(hashCode(uid));
+  
+  const adjIndex = hash % adjectives.length;
+  const nounIndex = (hash >> 8) % nouns.length;
+  const number = (hash >> 16) % 1000;
+
+  const adjective = adjectives[adjIndex];
+  const noun = nouns[nounIndex];
+
+  return `${adjective}${noun}_${number}`;
 }
 
 
@@ -93,11 +115,6 @@ export const getAvatar = (user: Partial<User> | string | null | undefined): stri
     }
 
     // A simple hashing function to convert string to a number
-    const hashCode = (s: string) => s.split('').reduce((a, b) => {
-        a = ((a << 5) - a) + b.charCodeAt(0);
-        return a & a;
-    }, 0);
-
     const hash = hashCode(uid);
     const index = Math.abs(hash) % defaultAvatars.length;
     
