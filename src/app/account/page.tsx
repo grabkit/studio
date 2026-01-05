@@ -82,98 +82,10 @@ function BookmarksList({ bookmarks, bookmarksLoading }: { bookmarks: WithId<Book
 
     }, [firestore, bookmarks, bookmarksLoading]);
 
-    const handleLikeInBookmark = (postId: string) => {
-        if (!user || !firestore) return;
-        
-        const originalPost = bookmarkedPosts.find(p => p.id === postId);
-        if (!originalPost) return;
-
-        const hasLiked = originalPost.likes?.includes(user.uid);
-
-        // Optimistic UI update
-        const updatedPost = { ...originalPost };
-        if (hasLiked) {
-            updatedPost.likes = updatedPost.likes.filter(id => id !== user.uid);
-            updatedPost.likeCount = (updatedPost.likeCount || 1) - 1;
-        } else {
-            updatedPost.likes = [...(updatedPost.likes || []), user.uid];
-            updatedPost.likeCount = (updatedPost.likeCount || 0) + 1;
-        }
-        
+    const handleLikeInBookmark = (postId: string, updatedData: Partial<Post>) => {
         setBookmarkedPosts(currentPosts => 
-            currentPosts.map(p => p.id === postId ? updatedPost : p)
+            currentPosts.map(p => p.id === postId ? { ...p, ...updatedData } : p)
         );
-
-        // Firestore Transaction
-        const postRef = doc(firestore, 'posts', postId);
-        runTransaction(firestore, async (transaction) => {
-            const postDoc = await transaction.get(postRef);
-            if (!postDoc.exists()) {
-                throw "Post does not exist!";
-            }
-
-            const freshPost = postDoc.data() as Post;
-            const currentLikes = freshPost.likes || [];
-            const userHasLiked = currentLikes.includes(user.uid);
-            
-            if (userHasLiked) {
-                // Unlike
-                transaction.update(postRef, {
-                    likeCount: increment(-1),
-                    likes: arrayRemove(user.uid),
-                });
-            } else {
-                // Like
-                 transaction.update(postRef, {
-                    likeCount: increment(1),
-                    likes: arrayUnion(user.uid),
-                });
-            }
-            return { didLike: !userHasLiked };
-        }).then(({ didLike }) => {
-            const postAuthorId = originalPost.authorId;
-            // Only create/delete notification if it's not the user's own post
-            if (postAuthorId !== user.uid) {
-                const notificationId = `like_${postId}_${user.uid}`;
-                const notificationRef = doc(firestore, 'users', postAuthorId, 'notifications', notificationId);
-
-                if (didLike) {
-                    const notificationData: Omit<Notification, 'id'> = {
-                        type: 'like',
-                        postId: postId,
-                        fromUserId: user.uid,
-                        timestamp: serverTimestamp(),
-                        read: false,
-                        activityContent: originalPost.content.substring(0, 100),
-                    };
-                    setDoc(notificationRef, { ...notificationData, id: notificationRef.id }).catch(serverError => {
-                        console.error("Failed to create like notification:", serverError);
-                    });
-                } else {
-                    // It was an unlike action, so delete the notification
-                    deleteDoc(notificationRef).catch(serverError => {
-                        console.error("Failed to delete like notification:", serverError);
-                    });
-                }
-            }
-        }).catch(error => {
-            console.error("Like transaction failed: ", error);
-            // Revert optimistic update
-            setBookmarkedPosts(currentPosts => 
-                currentPosts.map(p => p.id === postId ? originalPost : p)
-            );
-            const permissionError = new FirestorePermissionError({
-                path: postRef.path,
-                operation: 'update',
-                requestResourceData: { likeCount: 'increment/decrement', likes: 'arrayUnion/arrayRemove' },
-            });
-            errorEmitter.emit('permission-error', permissionError);
-            toast({
-                variant: 'destructive',
-                title: 'Error',
-                description: 'Could not update like status.'
-            })
-        });
     }
 
     if (isLoading) {

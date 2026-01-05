@@ -108,6 +108,7 @@ function PostDetailItem({ post, updatePost }: { post: WithId<Post>, updatePost: 
   const { toast } = useToast();
   const router = useRouter();
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
+  const [isLiking, setIsLiking] = useState(false);
 
   const isOwner = user?.uid === post.authorId;
   const repliesAllowed = post.commentsAllowed !== false;
@@ -115,11 +116,14 @@ function PostDetailItem({ post, updatePost }: { post: WithId<Post>, updatePost: 
   const hasLiked = post.likes?.includes(user?.uid || '');
 
   const handleLike = async () => {
-    if (!user || !firestore) {
+    if (!user || !firestore || isLiking) {
+      if (!user || !firestore) {
         toast({ variant: "destructive", title: "You must be logged in to like a post." });
-        return;
+      }
+      return;
     }
 
+    setIsLiking(true);
     const postRef = doc(firestore, 'posts', post.id);
 
     // Optimistic UI update
@@ -189,6 +193,8 @@ function PostDetailItem({ post, updatePost }: { post: WithId<Post>, updatePost: 
             requestResourceData: { likeCount: 'increment/decrement', likes: 'arrayUnion/arrayRemove' },
         });
         errorEmitter.emit('permission-error', permissionError);
+    } finally {
+      setIsLiking(false);
     }
   };
 
@@ -315,6 +321,7 @@ function PostDetailItem({ post, updatePost }: { post: WithId<Post>, updatePost: 
             <div className="flex items-center justify-around pt-2 text-muted-foreground">
                 <button
                     onClick={handleLike}
+                    disabled={isLiking}
                     className={cn("flex items-center space-x-1", hasLiked && "text-pink-500")}
                 >
                     <Heart

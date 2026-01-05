@@ -199,6 +199,7 @@ function InnerPostItem({ post, bookmarks, updatePost, onDelete, onPin, showPinSt
   const [isShareSheetOpen, setIsShareSheetOpen] = useState(false);
   const [isMoreOptionsSheetOpen, setIsMoreOptionsSheetOpen] = useState(false);
   const [isRepostSheetOpen, setIsRepostSheetOpen] = useState(false);
+  const [isLiking, setIsLiking] = useState(false);
   
   const isOwner = user?.uid === post.authorId;
   const isBookmarked = useMemo(() => bookmarks?.some(b => b.postId === post.id), [bookmarks, post.id]);
@@ -220,15 +221,18 @@ function InnerPostItem({ post, bookmarks, updatePost, onDelete, onPin, showPinSt
 
 
   const handleLike = async () => {
-    if (!user || !firestore || !updatePost) {
-        toast({
-            variant: "destructive",
-            title: "Authentication Error",
-            description: "You must be logged in to like a post.",
-        });
+    if (!user || !firestore || !updatePost || isLiking) {
+        if (!user || !firestore) {
+            toast({
+                variant: "destructive",
+                title: "Authentication Error",
+                description: "You must be logged in to like a post.",
+            });
+        }
         return;
     }
     
+    setIsLiking(true);
     const postRef = doc(firestore, 'posts', post.id);
     const originalPostState = { ...post };
 
@@ -302,6 +306,8 @@ function InnerPostItem({ post, bookmarks, updatePost, onDelete, onPin, showPinSt
             requestResourceData: { likeCount: 'increment/decrement', likes: 'arrayUnion/arrayRemove' },
         });
         errorEmitter.emit('permission-error', permissionError);
+    } finally {
+        setIsLiking(false);
     }
   };
 
@@ -459,7 +465,7 @@ function InnerPostItem({ post, bookmarks, updatePost, onDelete, onPin, showPinSt
 
             <div className="flex items-center justify-between pt-2 text-muted-foreground">
                 <div className="flex items-center space-x-6">
-                  <button onClick={handleLike} className={cn("flex items-center space-x-1", hasLiked && "text-pink-500")}>
+                  <button onClick={handleLike} disabled={isLiking} className={cn("flex items-center space-x-1", hasLiked && "text-pink-500")}>
                     <Heart className="h-4 w-4" fill={hasLiked ? 'currentColor' : 'none'} />
                     <span className="text-xs">{post.likeCount > 0 ? formatCount(post.likeCount) : ''}</span>
                   </button>
