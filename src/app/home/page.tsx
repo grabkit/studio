@@ -266,6 +266,22 @@ export function PostItem({ post, bookmarks, updatePost, onDelete, onPin, showPin
                 likeCount: updatedLikeCount,
                 likes: updatedLikes,
             });
+            return { didLike: !userHasLiked };
+        }).then(({ didLike }) => {
+            if (didLike && post.authorId !== user.uid) {
+                const notificationRef = doc(collection(firestore, 'users', post.authorId, 'notifications'));
+                const notificationData: Omit<Notification, 'id'> = {
+                    type: 'like',
+                    postId: post.id,
+                    fromUserId: user.uid,
+                    timestamp: serverTimestamp(),
+                    read: false,
+                    activityContent: post.content.substring(0, 100),
+                };
+                setDoc(notificationRef, { ...notificationData, id: notificationRef.id }).catch(serverError => {
+                    console.error("Failed to create like notification:", serverError);
+                });
+            }
         });
 
     } catch (e: any) {
@@ -595,6 +611,7 @@ export default function HomePage() {
   const filteredPosts = useMemo(() => {
     if (!initialPosts || !user) return [];
     const mutedUsers = userProfile?.mutedUsers || [];
+    // Filter out muted users AND the current user's own posts
     return initialPosts.filter(post => !mutedUsers.includes(post.authorId) && post.authorId !== user.uid);
   }, [initialPosts, userProfile, user]);
 

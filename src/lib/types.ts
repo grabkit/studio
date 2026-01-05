@@ -80,7 +80,7 @@ export interface UserPost extends Post {
 
 export interface Notification {
     id: string;
-    type: 'comment' | 'comment_approval' | 'upvote' | 'message_request';
+    type: 'comment' | 'comment_approval' | 'upvote' | 'message_request' | 'like';
     postId?: string;
     activityContent?: string;
     fromUserId: string;

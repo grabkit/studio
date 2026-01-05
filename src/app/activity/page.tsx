@@ -16,6 +16,11 @@ import { Button } from "@/components/ui/button";
 import { useEffect } from "react";
 
 const notificationInfo = {
+    like: {
+        icon: Heart,
+        text: "liked your post",
+        color: "text-pink-500"
+    },
     comment: {
         icon: MessageCircle,
         text: "replied to your post", // This will be a fallback
@@ -40,13 +45,13 @@ const notificationInfo = {
 
 
 function NotificationItem({ notification }: { notification: WithId<Notification> }) {
-    const info = notificationInfo[notification.type] || notificationInfo.comment;
+    const info = notificationInfo[notification.type as keyof typeof notificationInfo] || notificationInfo.comment;
     const Icon = info.icon;
     
     const isProfileActivity = notification.type === 'upvote' || notification.type === 'message_request';
     const linkHref = isProfileActivity ? `/profile/${notification.fromUserId}` : `/post/${notification.postId}`;
 
-    const isFilledIcon = notification.type === 'message_request' || notification.type === 'comment';
+    const isFilledIcon = notification.type === 'message_request' || notification.type === 'comment' || notification.type === 'like';
 
 
     return (
@@ -70,7 +75,12 @@ function NotificationItem({ notification }: { notification: WithId<Notification>
                     <span className="font-bold">{formatUserId(notification.fromUserId)}</span>
                     {' '}
                      {notification.type === 'comment' ? (
-                        <span className="text-muted-foreground italic">"{notification.activityContent}"</span>
+                        <>
+                        {info.text}
+                        {notification.activityContent && (
+                           <span className="text-muted-foreground italic"> "{notification.activityContent}"</span>
+                        )}
+                       </>
                     ) : (
                        <>
                         {info.text}
