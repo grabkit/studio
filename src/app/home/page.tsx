@@ -593,10 +593,10 @@ export default function HomePage() {
   const isLoading = postsLoading || bookmarksLoading;
 
   const filteredPosts = useMemo(() => {
-    if (!initialPosts) return [];
+    if (!initialPosts || !user) return [];
     const mutedUsers = userProfile?.mutedUsers || [];
-    return initialPosts.filter(post => !mutedUsers.includes(post.authorId));
-  }, [initialPosts, userProfile]);
+    return initialPosts.filter(post => !mutedUsers.includes(post.authorId) && post.authorId !== user.uid);
+  }, [initialPosts, userProfile, user]);
 
   const handleDeletePostOptimistic = (postId: string) => {
     setData(currentPosts => currentPosts?.filter(p => p.id !== postId) ?? []);
