@@ -48,9 +48,9 @@ service cloud.firestore {
     
     match /users/{userId}/notifications/{notificationId} {
       allow get, list: if isOwner(userId);
-      allow create: if isSignedIn(); 
+      allow create: if isSignedIn();
       allow update: if isOwner(userId) && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['read']);
-      allow delete: if false;
+      allow delete: if isOwner(userId) || isOwner(resource.data.fromUserId);
     }
 
     match /posts/{postId} {
@@ -197,5 +197,3 @@ service cloud.firestore {
     }
   }
 }
-
-    
