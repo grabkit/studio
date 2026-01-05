@@ -184,7 +184,7 @@ export default function AuthForm() {
   };
 
   return (
-    <div className="w-full space-y-6 px-4">
+    <div className="w-full space-y-6">
         <div className="text-center">
              <Image src="https://blogger.googleusercontent.com/img/b/R29vZ2xl/AVvXsEh5r85BhL7rCkS72xpX_5xkFZ9y_fVMFXYp_zLN9eEAnEA_C61c1jCJFaG86d1W6_mtsla64B191MOWYEFhJAa-lyMikD80WyfBVKiQxyc71spJx3Oy2FgvfotsVVnNIXGRXunpHYYvGFoQ7V-URilBXwJzIV9zQLSO_PN9raerNaTAb0VuCYo9EBqiyVts/s320/New%20Project%2020%20%5BEFC25EE%5D.png" alt="Blur Logo" width={80} height={26} className="mx-auto" />
             <h1 className="text-2xl font-headline mt-4">
@@ -196,7 +196,7 @@ export default function AuthForm() {
         </div>
 
       <Form {...form}>
-        <form onSubmit={form.handleSubmit(handleSubmit)} className="space-y-4">
+        <form onSubmit={form.handleSubmit(handleSubmit)} className="space-y-4 px-4">
           {authMode === "signup" && (
             <FormField
               control={form.control}
@@ -276,7 +276,7 @@ export default function AuthForm() {
             />
           )}
 
-          <Button type="submit" className="w-full rounded-full" disabled={loading}>
+          <Button type="submit" className="w-full" disabled={loading}>
             {loading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
             {authMode === "login" ? "Login" : "Sign Up"}
           </Button>
@@ -296,14 +296,17 @@ export default function AuthForm() {
 
         <div className="text-center text-sm">
             {authMode === "login" ? (
-                <>
-                    {"Don't have an account? "}
-                    <Button variant="link" onClick={() => { setAuthMode("signup"); form.reset(); }} className="p-0 h-auto">
-                        Sign Up
-                    </Button>
-                     {" · "}
-                     <ForgotPasswordDialog form={forgotPasswordForm} handlePasswordReset={handlePasswordReset} />
-                </>
+                <div>
+                    <div className="mb-2">
+                        {"Don't have an account? "}
+                        <Button variant="link" onClick={() => { setAuthMode("signup"); form.reset(); }} className="p-0 h-auto">
+                            Sign Up
+                        </Button>
+                    </div>
+                    <div>
+                        <ForgotPasswordDialog form={forgotPasswordForm} handlePasswordReset={handlePasswordReset} />
+                    </div>
+                </div>
             ) : (
                 <>
                     {"Already have an account? "}
