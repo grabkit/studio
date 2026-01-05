@@ -1,5 +1,4 @@
 
-
 "use client";
 
 import { useMemo } from "react";
@@ -51,7 +50,7 @@ export default function SocialPage() {
     if (isUserLoading) {
         return (
              <AppLayout showTopBar={false}>
-                <div className="fixed top-0 left-0 right-0 z-10 flex items-center p-2 bg-background border-b h-14 max-w-2xl mx-auto sm:px-4">
+                <div className="fixed top-0 left-0 right-0 z-10 flex items-center p-2 bg-background h-14 max-w-2xl mx-auto sm:px-4">
                     <Button variant="ghost" size="icon" onClick={() => router.back()}>
                         <ArrowLeft />
                     </Button>
@@ -69,7 +68,7 @@ export default function SocialPage() {
     if (!user) {
         return (
              <AppLayout showTopBar={false}>
-                <div className="fixed top-0 left-0 right-0 z-10 flex items-center p-2 bg-background border-b h-14 max-w-2xl mx-auto sm:px-4">
+                <div className="fixed top-0 left-0 right-0 z-10 flex items-center p-2 bg-background h-14 max-w-2xl mx-auto sm:px-4">
                     <Button variant="ghost" size="icon" onClick={() => router.back()}>
                         <ArrowLeft />
                     </Button>
@@ -88,7 +87,7 @@ export default function SocialPage() {
 
     return (
         <AppLayout showTopBar={false}>
-            <div className="fixed top-0 left-0 right-0 z-10 flex items-center p-2 bg-background border-b h-14 max-w-2xl mx-auto sm:px-4">
+            <div className="fixed top-0 left-0 right-0 z-10 flex items-center p-2 bg-background h-14 max-w-2xl mx-auto sm:px-4">
                 <Button variant="ghost" size="icon" onClick={() => router.back()}>
                     <ArrowLeft />
                 </Button>
@@ -126,5 +125,3 @@ export default function SocialPage() {
         </AppLayout>
     );
 }
-
-    

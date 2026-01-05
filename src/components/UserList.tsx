@@ -1,5 +1,4 @@
 
-
 "use client";
 
 import { useFirebase } from "@/firebase";
@@ -78,7 +77,7 @@ export default function UserList({ userIds, emptyTitle, emptyDescription }: { us
 
     if (isLoading) {
         return (
-            <div>
+            <div className="divide-y">
                 <UserListSkeleton />
                 <UserListSkeleton />
                 <UserListSkeleton />
@@ -99,12 +98,10 @@ export default function UserList({ userIds, emptyTitle, emptyDescription }: { us
     }
 
     return (
-        <div>
+        <div className="divide-y">
             {users.map(user => (
                 <UserItem key={user.id} user={user} />
             ))}
         </div>
     );
 }
-
-    
