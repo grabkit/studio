@@ -298,7 +298,7 @@
             },
             "type": {
                 "type": "string",
-                "enum": ["comment", "comment_approval", "upvote", "message_request"],
+                "enum": ["comment", "comment_approval", "upvote", "message_request", "like", "repost"],
                 "description": "The type of activity."
             },
             "postId": {

@@ -6,7 +6,7 @@ import React from 'react';
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetDescription } from "@/components/ui/sheet";
 import { Button } from "@/components/ui/button";
 import { Repeat, MessageSquareQuote } from "lucide-react";
-import type { Post } from '@/lib/types';
+import type { Post, Notification } from '@/lib/types';
 import { WithId } from '@/firebase/firestore/use-collection';
 import { useFirebase } from '@/firebase';
 import { useRouter } from 'next/navigation';
@@ -59,6 +59,19 @@ export function RepostSheet({ post, isOpen, onOpenChange }: RepostSheetProps) {
             });
 
             toast({ title: "Reposted!" });
+
+            // Create notification for original post author
+            if (post.authorId !== user.uid) {
+                const notificationRef = doc(collection(firestore, 'users', post.authorId, 'notifications'));
+                const notificationData: Omit<Notification, 'id' | 'timestamp'> = {
+                    type: 'repost',
+                    postId: post.id,
+                    fromUserId: user.uid,
+                    activityContent: post.content.substring(0, 100),
+                    read: false,
+                };
+                await setDoc(notificationRef, { ...notificationData, id: notificationRef.id, timestamp: serverTimestamp() });
+            }
 
         } catch (error) {
              console.error("Repost transaction failed:", error);
