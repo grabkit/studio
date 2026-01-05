@@ -70,6 +70,7 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
+import { QuotedPostCard } from "@/components/QuotedPostCard";
 
 
 function LinkPreview({ metadata }: { metadata: LinkMetadata }) {
@@ -283,6 +284,12 @@ function PostDetailItem({ post, updatePost }: { post: WithId<Post>, updatePost: 
 
             <p className="text-foreground text-base whitespace-pre-wrap">{post.content}</p>
 
+            {post.type === 'quote' && post.quotedPost && (
+              <div className="mt-2">
+                <QuotedPostCard post={post.quotedPost} />
+              </div>
+            )}
+            
             {post.linkMetadata && <LinkPreview metadata={post.linkMetadata} />}
             
             {post.type === 'poll' && post.pollOptions && (

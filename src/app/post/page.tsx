@@ -34,6 +34,7 @@ import { Label } from "@/components/ui/label";
 import { cn, getAvatar, formatUserId, formatTimestamp } from "@/lib/utils";
 import type { LinkMetadata } from "@/lib/types";
 import Image from "next/image";
+import { QuotedPostCard } from "@/components/QuotedPostCard";
 
 const pollOptionSchema = z.object({
   option: z.string().min(1, "Option cannot be empty.").max(100, "Option is too long."),
@@ -88,24 +89,6 @@ const postSchema = z.discriminatedUnion("isPoll", [
     path: ["content"],
 });
 
-
-function QuotedPostPreview({ post, onRemove }: { post: QuotedPost, onRemove: () => void }) {
-    return (
-        <div className="mt-2 border rounded-xl p-3 relative">
-             <Button variant="ghost" size="icon" className="absolute top-1 right-1 h-7 w-7 bg-black/50 hover:bg-black/70 text-white hover:text-white rounded-full z-10" onClick={onRemove}>
-                <X className="h-4 w-4" />
-            </Button>
-             <div className="flex items-center space-x-2 mb-2">
-                <Avatar className="h-5 w-5">
-                    <AvatarFallback className="text-xs">{post.authorAvatar}</AvatarFallback>
-                </Avatar>
-                <span className="text-sm font-semibold">{post.authorName}</span>
-                 <span className="text-xs text-muted-foreground">· {formatTimestamp(post.timestamp.toDate())}</span>
-            </div>
-            <p className="text-sm text-muted-foreground line-clamp-4">{post.content}</p>
-        </div>
-    )
-}
 
 function LinkPreview({ metadata, onRemove }: { metadata: LinkMetadata, onRemove: () => void }) {
     const getDomainName = (url: string) => {
@@ -393,7 +376,12 @@ function PostPageComponent() {
                                 />
 
                                 {quotedPost && (
-                                     <QuotedPostPreview post={quotedPost} onRemove={() => form.setValue("quotedPost", undefined)} />
+                                     <div className="relative">
+                                         <Button variant="ghost" size="icon" className="absolute top-1 right-1 h-7 w-7 bg-black/50 hover:bg-black/70 text-white hover:text-white rounded-full z-10" onClick={() => form.setValue("quotedPost", undefined)}>
+                                            <X className="h-4 w-4" />
+                                        </Button>
+                                        <QuotedPostCard post={quotedPost} />
+                                     </div>
                                 )}
 
                                 {linkMetadata ? (

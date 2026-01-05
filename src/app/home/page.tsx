@@ -9,7 +9,7 @@ import { useCollection, type WithId } from "@/firebase/firestore/use-collection"
 import { Card, CardContent } from "@/components/ui/card";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Skeleton } from "@/components/ui/skeleton";
-import type { Post, Bookmark, PollOption, Notification, User, LinkMetadata } from "@/lib/types";
+import type { Post, Bookmark, PollOption, Notification, User, LinkMetadata, QuotedPost } from "@/lib/types";
 import { Heart, MessageCircle, Repeat, ArrowUpRight, MoreHorizontal, Edit, Trash2, Bookmark as BookmarkIcon, CheckCircle2, Slash, RefreshCw, Pin } from "lucide-react";
 import { cn, formatTimestamp, getAvatar, formatCount, formatUserId } from "@/lib/utils";
 import { useToast } from "@/hooks/use-toast";
@@ -32,8 +32,8 @@ import { Button, buttonVariants } from "@/components/ui/button";
 import { useRouter } from "next/navigation";
 import { usePresence } from "@/hooks/usePresence";
 import { ShareSheet } from "@/components/ShareSheet";
-import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetDescription, SheetTrigger, SheetClose } from "@/components/ui/sheet";
 import { RepostSheet } from "@/components/RepostSheet";
+import { QuotedPostCard } from "@/components/QuotedPostCard";
 
 
 function LinkPreview({ metadata }: { metadata: LinkMetadata }) {
@@ -453,6 +453,12 @@ export function PostItem({ post, bookmarks, updatePost, onDelete, onPin, showPin
                     <p className="text-foreground text-sm whitespace-pre-wrap">{post.content}</p>
                 </Link>
 
+                {post.type === 'quote' && post.quotedPost && (
+                    <div className="mt-2">
+                        <QuotedPostCard post={post.quotedPost} />
+                    </div>
+                )}
+                
                 {post.linkMetadata && <LinkPreview metadata={post.linkMetadata} />}
 
                 {post.type === 'poll' && post.pollOptions && (
@@ -619,7 +625,7 @@ export default function HomePage() {
     if (!initialPosts || !user) return initialPosts || [];
     const mutedUsers = userProfile?.mutedUsers || [];
     // Filter out muted users AND the current user's own posts
-    return initialPosts.filter(post => !mutedUsers.includes(post.authorId) && post.authorId !== user.uid);
+    return initialPosts.filter(post => !mutedUsers.includes(post.authorId));
   }, [initialPosts, userProfile, user]);
 
   const handleDeletePostOptimistic = (postId: string) => {
@@ -676,5 +682,6 @@ export default function HomePage() {
     
 
     
+
 
 
