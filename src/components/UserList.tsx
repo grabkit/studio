@@ -20,7 +20,7 @@ import { cn } from "@/lib/utils";
 
 function UserListSkeleton() {
     return (
-        <div className="flex items-center justify-between p-4 border-b">
+        <div className="flex items-center justify-between p-4">
             <div className="flex items-center space-x-4">
                 <Skeleton className="h-10 w-10 rounded-full" />
                 <div className="space-y-2">
@@ -33,7 +33,7 @@ function UserListSkeleton() {
 
 function UserItem({ user }: { user: WithId<User> }) {
     return (
-        <Link href={`/profile/${user.id}`} className="flex items-center justify-between p-4 border-b hover:bg-accent">
+        <Link href={`/profile/${user.id}`} className="flex items-center justify-between p-4 hover:bg-accent">
             <div className="flex items-center space-x-4">
                 <Avatar className="h-10 w-10">
                     <AvatarFallback>{getAvatar(user)}</AvatarFallback>
@@ -78,7 +78,7 @@ export default function UserList({ userIds, emptyTitle, emptyDescription }: { us
 
     if (isLoading) {
         return (
-            <div className="divide-y">
+            <div>
                 <UserListSkeleton />
                 <UserListSkeleton />
                 <UserListSkeleton />
@@ -99,7 +99,7 @@ export default function UserList({ userIds, emptyTitle, emptyDescription }: { us
     }
 
     return (
-        <div className="divide-y">
+        <div>
             {users.map(user => (
                 <UserItem key={user.id} user={user} />
             ))}
