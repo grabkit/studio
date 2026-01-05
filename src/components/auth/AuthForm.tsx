@@ -1,5 +1,4 @@
 
-
 "use client";
 
 import { useState } from "react";
@@ -186,6 +185,14 @@ export default function AuthForm() {
   return (
     <div className="w-full space-y-6">
         <div className="text-center">
+             <div className="flex justify-center mb-4">
+                 <Image
+                    src="https://blogger.googleusercontent.com/img/b/R29vZ2xl/AVvXsEh5r85BhL7rCkS72xpX_5xkFZ9y_fVMFXYp_zLN9eEAnEA_C61c1jCJFaG86d1W6_mtsla64B191MOWYEFhJAa-lyMikD80WyfBVKiQxyc71spJx3Oy2FgvfotsVVnNIXGRXunpHYYvGFoQ7V-URilBXwJzIV9zQLSO_PN9raerNaTAb0VuCYo9EBqiyVts/s320/New%20Project%2020%20%5BEFC25EE%5D.png"
+                    alt="Blur Logo"
+                    width={80}
+                    height={26}
+                />
+            </div>
             <h1 className="text-2xl font-headline mt-4">
                 {authMode === "login" ? "Welcome Back" : "Create an Account"}
             </h1>
@@ -336,7 +343,7 @@ function ForgotPasswordDialog({form, handlePasswordReset}: {form: UseFormReturn<
   return (
     <AlertDialog open={isOpen} onOpenChange={setIsOpen}>
       <AlertDialogTrigger asChild>
-        <Button variant="link" className="p-0 h-auto font-bold">Forgot Password</Button>
+        <Button variant="link" className="p-0 h-auto font-bold">Forgot Password?</Button>
       </AlertDialogTrigger>
       <AlertDialogContent>
         <AlertDialogHeader>
@@ -373,3 +380,5 @@ function ForgotPasswordDialog({form, handlePasswordReset}: {form: UseFormReturn<
     </AlertDialog>
   );
 }
+
+    
