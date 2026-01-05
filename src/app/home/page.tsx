@@ -34,6 +34,7 @@ import { usePresence } from "@/hooks/usePresence";
 import { ShareSheet } from "@/components/ShareSheet";
 import { RepostSheet } from "@/components/RepostSheet";
 import { QuotedPostCard } from "@/components/QuotedPostCard";
+import { Sheet, SheetContent, SheetDescription, SheetHeader, SheetTitle, SheetTrigger } from "@/components/ui/sheet";
 
 
 function LinkPreview({ metadata }: { metadata: LinkMetadata }) {
@@ -624,8 +625,8 @@ export default function HomePage() {
   const filteredPosts = useMemo(() => {
     if (!initialPosts || !user) return initialPosts || [];
     const mutedUsers = userProfile?.mutedUsers || [];
-    // Filter out muted users AND the current user's own posts
-    return initialPosts.filter(post => !mutedUsers.includes(post.authorId));
+    // Filter out muted users' posts
+    return initialPosts.filter(post => !mutedUsers.includes(post.authorId) && post.authorId !== user.uid);
   }, [initialPosts, userProfile, user]);
 
   const handleDeletePostOptimistic = (postId: string) => {
@@ -682,6 +683,7 @@ export default function HomePage() {
     
 
     
+
 
 
 
