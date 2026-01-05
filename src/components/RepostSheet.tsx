@@ -11,7 +11,7 @@ import { WithId } from '@/firebase/firestore/use-collection';
 import { useFirebase } from '@/firebase';
 import { useRouter } from 'next/navigation';
 import { useToast } from '@/hooks/use-toast';
-import { doc, setDoc, serverTimestamp, collection, runTransaction, increment } from 'firestore';
+import { doc, setDoc, serverTimestamp, collection, runTransaction, increment } from 'firebase/firestore';
 import { FirestorePermissionError } from '@/firebase/errors';
 import { errorEmitter } from '@/firebase/error-emitter';
 
