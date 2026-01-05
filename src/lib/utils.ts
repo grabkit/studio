@@ -71,7 +71,6 @@ export function formatMessageTimestamp(date: Date): string {
     return new Intl.DateTimeFormat(undefined, {
       hour: 'numeric',
       minute: '2-digit',
-      hour12: true,
     }).format(date);
 }
 
@@ -89,7 +88,14 @@ export function formatDateSeparator(date: Date): string {
 export function formatLastSeen(timestamp: number | null): string {
     if (timestamp === null) return "Last seen recently";
     const date = fromUnixTime(timestamp / 1000);
-    return `Last seen ${formatDistanceToNowStrict(date, { addSuffix: true })}`;
+
+    if (isToday(date)) {
+        return `Last seen today at ${format(date, "p")}`;
+    }
+    if (isYesterday(date)) {
+        return `Last seen yesterday at ${format(date, "p")}`;
+    }
+    return `Last seen on ${format(date, "P")} at ${format(date, "p")}`;
 }
 
 
