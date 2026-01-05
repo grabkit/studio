@@ -25,7 +25,6 @@ function MutedUserSkeleton() {
                 <Skeleton className="h-10 w-10 rounded-full" />
                 <div className="space-y-2">
                     <Skeleton className="h-4 w-24" />
-                    <Skeleton className="h-3 w-32" />
                 </div>
             </div>
             <Skeleton className="h-9 w-24 rounded-md" />
@@ -42,8 +41,7 @@ function MutedUserItem({ user, onUnmute }: { user: WithId<User>, onUnmute: (user
                     <AvatarFallback>{getAvatar(user.id)}</AvatarFallback>
                 </Avatar>
                 <div>
-                    <p className="font-semibold">{user.name}</p>
-                    <p className="text-sm text-muted-foreground">{formatUserId(user.id)}</p>
+                    <p className="font-semibold">{formatUserId(user.id)}</p>
                 </div>
             </div>
             <Button variant="outline" size="sm" onClick={() => onUnmute(user.id)}>Unmute</Button>
@@ -147,5 +145,3 @@ export default function MutedUsersPage() {
         </AppLayout>
     );
 }
-
-    

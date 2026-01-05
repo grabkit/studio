@@ -42,8 +42,7 @@ function BlockedUserItem({ user, onUnblock }: { user: WithId<User>, onUnblock: (
                     <AvatarFallback>{getAvatar(user.id)}</AvatarFallback>
                 </Avatar>
                 <div>
-                    <p className="font-semibold">{user.name}</p>
-                    <p className="text-sm text-muted-foreground">{formatUserId(user.id)}</p>
+                    <p className="font-semibold">{formatUserId(user.id)}</p>
                 </div>
             </div>
             <Button variant="outline" size="sm" onClick={() => onUnblock(user.id)}>Unblock</Button>
@@ -149,5 +148,3 @@ setIsLoading(false);
         </AppLayout>
     );
 }
-
-    

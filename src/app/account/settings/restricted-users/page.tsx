@@ -1,4 +1,5 @@
 
+
 "use client";
 
 import { useFirebase } from "@/firebase";
@@ -11,7 +12,7 @@ import { Button } from "@/components/ui/button";
 import { ArrowLeft, MinusCircle } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
-import { getAvatar } from "@/lib/utils";
+import { getAvatar, formatUserId } from "@/lib/utils";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useToast } from "@/hooks/use-toast";
 import { FirestorePermissionError } from "@/firebase/errors";
@@ -24,7 +25,6 @@ function RestrictedUserSkeleton() {
                 <Skeleton className="h-10 w-10 rounded-full" />
                 <div className="space-y-2">
                     <Skeleton className="h-4 w-24" />
-                    <Skeleton className="h-3 w-32" />
                 </div>
             </div>
             <Skeleton className="h-9 w-24 rounded-md" />
@@ -34,11 +34,6 @@ function RestrictedUserSkeleton() {
 
 function RestrictedUserItem({ user, onUnrestrict }: { user: WithId<User>, onUnrestrict: (userId: string) => void }) {
     
-    const formatUserId = (uid: string | undefined) => {
-        if (!uid) return "blur??????";
-        return `blur${uid.substring(uid.length - 6)}`;
-    };
-
     return (
         <div className="flex items-center justify-between p-4 border-b">
             <div className="flex items-center space-x-4">
@@ -46,8 +41,7 @@ function RestrictedUserItem({ user, onUnrestrict }: { user: WithId<User>, onUnre
                     <AvatarFallback>{getAvatar(user.id)}</AvatarFallback>
                 </Avatar>
                 <div>
-                    <p className="font-semibold">{user.name}</p>
-                    <p className="text-sm text-muted-foreground">{formatUserId(user.id)}</p>
+                    <p className="font-semibold">{formatUserId(user.id)}</p>
                 </div>
             </div>
             <Button variant="outline" size="sm" onClick={() => onUnrestrict(user.id)}>Unrestrict</Button>
