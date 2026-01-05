@@ -10,7 +10,7 @@ import * as z from "zod";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { collection, serverTimestamp, setDoc, doc, updateDoc, getDoc } from "firebase/firestore";
 import { useFirebase, useDoc, useMemoFirebase } from "@/firebase";
-import type { Post, QuotedPost } from "@/lib/types";
+import type { Post, QuotedPost, Notification } from "@/lib/types";
 import { WithId } from "@/firebase/firestore/use-collection";
 
 
@@ -296,6 +296,20 @@ function PostPageComponent() {
 
         setDoc(newPostRef, newPostData)
           .then(() => {
+            // Handle quote post notification
+            if (type === 'quote' && values.quotedPost && values.quotedPost.authorId !== user.uid) {
+                const notificationRef = doc(collection(firestore, 'users', values.quotedPost.authorId, 'notifications'));
+                const notificationData: Omit<Notification, 'id' | 'timestamp'> = {
+                    type: 'quote',
+                    postId: values.quotedPost.id,
+                    fromUserId: user.uid,
+                    activityContent: values.content?.substring(0, 100),
+                    read: false,
+                };
+                setDoc(notificationRef, { ...notificationData, id: notificationRef.id, timestamp: serverTimestamp() }).catch(serverError => {
+                    console.error("Failed to create quote notification:", serverError);
+                });
+            }
             form.reset();
             setIsOpen(false);
           })
@@ -493,5 +507,3 @@ export default function PostPage() {
     </Suspense>
   );
 }
-
-    

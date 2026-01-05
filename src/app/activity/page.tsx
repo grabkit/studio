@@ -10,7 +10,7 @@ import type { Notification } from "@/lib/types";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import Link from "next/link";
-import { Heart, MessageCircle, AlertTriangle, ArrowUp, Mail, Repeat } from "lucide-react";
+import { Heart, MessageCircle, AlertTriangle, ArrowUp, Mail, Repeat, MessageSquareQuote } from "lucide-react";
 import { cn, formatTimestamp, getAvatar, formatUserId } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import { useEffect } from "react";
@@ -45,6 +45,11 @@ const notificationInfo = {
         icon: Repeat,
         text: "reposted your post",
         color: "text-green-500"
+    },
+    quote: {
+        icon: MessageSquareQuote,
+        text: "quoted your post",
+        color: "text-blue-500"
     }
 }
 
@@ -56,7 +61,7 @@ function NotificationItem({ notification }: { notification: WithId<Notification>
     const isProfileActivity = notification.type === 'upvote' || notification.type === 'message_request';
     const linkHref = isProfileActivity ? `/profile/${notification.fromUserId}` : `/post/${notification.postId}`;
 
-    const isFilledIcon = ['like', 'comment', 'message_request', 'repost'].includes(notification.type);
+    const isFilledIcon = ['like', 'comment', 'message_request', 'repost', 'quote'].includes(notification.type);
 
 
     return (
@@ -177,5 +182,3 @@ export default function ActivityPage() {
         </AppLayout>
     )
 }
-
-    
