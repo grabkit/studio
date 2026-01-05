@@ -234,7 +234,8 @@ function InnerPostItem({ post, bookmarks, updatePost, onDelete, onPin, showPinSt
     
     setIsLiking(true);
     const postRef = doc(firestore, 'posts', post.id);
-    const originalPostState = { ...post };
+    const originalLikes = post.likes;
+    const originalLikeCount = post.likeCount;
 
     // Optimistic UI update
     const newLikes = hasLiked
@@ -297,7 +298,7 @@ function InnerPostItem({ post, bookmarks, updatePost, onDelete, onPin, showPinSt
 
     } catch (e: any) {
         // Revert optimistic update on error
-        updatePost(post.id, { likes: originalPostState.likes, likeCount: originalPostState.likeCount });
+        updatePost(post.id, { likes: originalLikes, likeCount: originalLikeCount });
         
         console.error("Like transaction failed: ", e);
         const permissionError = new FirestorePermissionError({
