@@ -1,4 +1,3 @@
-
 "use client";
 
 import { useState } from "react";
@@ -282,7 +281,7 @@ export default function AuthForm() {
             />
           )}
 
-          <Button type="submit" className="w-full rounded-full" disabled={loading}>
+          <Button type="submit" className="w-full rounded-full font-bold" disabled={loading}>
             {loading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
             {authMode === "login" ? "Login" : "Sign Up"}
           </Button>
@@ -380,5 +379,3 @@ function ForgotPasswordDialog({form, handlePasswordReset}: {form: UseFormReturn<
     </AlertDialog>
   );
 }
-
-    
