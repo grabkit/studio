@@ -506,7 +506,7 @@ export default function UserProfilePage() {
                 <div className="text-center py-20">
                     <h2 className="text-2xl font-headline text-primary">User not found</h2>
                     <p className="text-muted-foreground mt-2">
-                        This user may not exist.
+                        This user may have been deleted.
                     </p>
                 </div>
             </AppLayout>
@@ -670,12 +670,6 @@ export default function UserProfilePage() {
                         </div>
                     </Tabs>
                     <SheetContent side="bottom" className="rounded-t-2xl">
-                        <SheetHeader className="text-left">
-                            <SheetTitle>Options for {formatUserId(user?.id)}</SheetTitle>
-                            <SheetDescription>
-                                Manage your interaction with this user.
-                            </SheetDescription>
-                        </SheetHeader>
                          <div className="grid gap-2 py-4">
                              <div className="border rounded-2xl">
                                  <Button variant="ghost" className="justify-between text-base py-6 rounded-2xl w-full" onClick={handleMuteUser}>
