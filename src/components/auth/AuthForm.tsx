@@ -1,3 +1,4 @@
+
 "use client";
 
 import { useState } from "react";
@@ -342,7 +343,7 @@ function ForgotPasswordDialog({form, handlePasswordReset}: {form: UseFormReturn<
   return (
     <AlertDialog open={isOpen} onOpenChange={setIsOpen}>
       <AlertDialogTrigger asChild>
-        <Button variant="link" className="p-0 h-auto font-bold">Forgot Password?</Button>
+        <Button variant="link" className="p-0 h-auto">Forgot Password?</Button>
       </AlertDialogTrigger>
       <AlertDialogContent>
         <AlertDialogHeader>
