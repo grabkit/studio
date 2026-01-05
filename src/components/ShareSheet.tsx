@@ -11,18 +11,13 @@ import { useCollection } from '@/firebase/firestore/use-collection';
 import type { Conversation, Post, User, Message } from '@/lib/types';
 import { WithId } from '@/firebase/firestore/use-collection';
 import { Avatar, AvatarFallback } from './ui/avatar';
-import { getAvatar, cn } from '@/lib/utils';
+import { getAvatar, cn, formatUserId } from '@/lib/utils';
 import { Skeleton } from './ui/skeleton';
 import { useToast } from '@/hooks/use-toast';
 import { Link as LinkIcon, Share2, Send, Check } from 'lucide-react';
 import { ScrollArea } from './ui/scroll-area';
 import { FirestorePermissionError } from '@/firebase/errors';
 import { errorEmitter } from '@/firebase/error-emitter';
-
-const formatUserId = (uid: string | undefined) => {
-    if (!uid) return "blur??????";
-    return `blur${uid.substring(uid.length - 6)}`;
-};
 
 function ConversationItem({ conversation, onSend, sentStatus }: { conversation: WithId<Conversation>, onSend: (conversation: WithId<Conversation>) => void, sentStatus: boolean }) {
     const { user: currentUser, firestore } = useFirebase();

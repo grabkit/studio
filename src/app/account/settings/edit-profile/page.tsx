@@ -1,4 +1,5 @@
 
+
 "use client";
 
 import React, { useState } from "react";
@@ -17,7 +18,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
 import { ArrowLeft, Loader2, Pencil } from "lucide-react";
-import { getAvatar } from "@/lib/utils";
+import { getAvatar, formatUserId } from "@/lib/utils";
 import { useToast } from "@/hooks/use-toast";
 import { errorEmitter } from "@/firebase/error-emitter";
 import { FirestorePermissionError } from "@/firebase/errors";
@@ -49,11 +50,6 @@ export default function EditProfilePage() {
             gender: userProfile?.gender || "",
         },
     });
-
-    const formatUserId = (uid: string | undefined) => {
-        if (!uid) return "blur??????";
-        return `blur${uid.substring(uid.length - 6)}`;
-    };
 
     const handleAvatarChange = async (emoji: string) => {
         if (!authUser || !firestore) return;
@@ -274,3 +270,5 @@ export default function EditProfilePage() {
         </AppLayout>
     );
 }
+
+    

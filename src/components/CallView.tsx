@@ -1,18 +1,14 @@
 
+
 'use client';
 
 import React, { useEffect, useRef } from 'react';
 import { Button } from './ui/button';
 import { Phone, PhoneOff, Mic, MicOff } from 'lucide-react';
 import { Avatar, AvatarFallback } from './ui/avatar';
-import { cn, getAvatar } from '@/lib/utils';
+import { cn, getAvatar, formatUserId } from '@/lib/utils';
 import type { CallStatus } from '@/lib/types';
 import { useFirebase } from '@/firebase';
-
-const formatUserId = (uid: string | undefined) => {
-    if (!uid) return "blur??????";
-    return `blur${uid.substring(uid.length - 6)}`;
-};
 
 const formatDuration = (seconds: number) => {
     const minutes = Math.floor(seconds / 60);

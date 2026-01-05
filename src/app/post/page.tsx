@@ -1,4 +1,5 @@
 
+
 "use client";
 
 import * as React from "react";
@@ -28,7 +29,7 @@ import { errorEmitter } from "@/firebase/error-emitter";
 import { FirestorePermissionError } from "@/firebase/errors";
 import { Switch } from "@/components/ui/switch";
 import { Label } from "@/components/ui/label";
-import { cn, getAvatar } from "@/lib/utils";
+import { cn, getAvatar, formatUserId } from "@/lib/utils";
 import type { LinkMetadata } from "@/lib/types";
 import Image from "next/image";
 
@@ -105,11 +106,6 @@ function LinkPreview({ metadata, onRemove }: { metadata: LinkMetadata, onRemove:
             </div>
         </div>
     )
-}
-
-const formatUserId = (uid: string | undefined) => {
-    if (!uid) return "blur??????";
-    return `blur${uid.substring(uid.length - 6)}`;
 }
 
 function PostPageComponent() {
@@ -442,3 +438,5 @@ export default function PostPage() {
     </Suspense>
   );
 }
+
+    

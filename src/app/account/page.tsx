@@ -1,4 +1,5 @@
 
+
 "use client";
 
 import AppLayout from "@/components/AppLayout";
@@ -13,7 +14,7 @@ import type { Post, Bookmark, User, Notification } from "@/lib/types";
 import { Skeleton } from "@/components/ui/skeleton";
 import React, { useMemo, useState, useEffect, useCallback } from "react";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
-import { getAvatar, cn } from "@/lib/utils";
+import { getAvatar, cn, formatUserId } from "@/lib/utils";
 
 import { PostItem as HomePostItem, PostSkeleton } from "@/app/home/page";
 import { RepliesList } from "@/components/RepliesList";
@@ -296,11 +297,6 @@ export default function AccountPage() {
   const { data: bookmarks, isLoading: bookmarksLoading } = useCollection<Bookmark>(bookmarksQuery);
   
 
-  const formatUserId = (uid: string | undefined) => {
-    if (!uid) return "blur??????";
-    return `blur${uid.substring(uid.length - 6)}`;
-  };
-  
   const handleShareProfile = async () => {
     const shareData = {
       title: `Check out ${formatUserId(authUser?.uid)} on Blur`,
@@ -488,3 +484,5 @@ export default function AccountPage() {
     </AppLayout>
   );
 }
+
+    

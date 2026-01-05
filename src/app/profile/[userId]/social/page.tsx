@@ -1,4 +1,5 @@
 
+
 "use client";
 
 import { useMemo } from "react";
@@ -13,6 +14,7 @@ import { doc } from "firebase/firestore";
 import type { User } from "@/lib/types";
 import UserList from "@/components/UserList";
 import { Skeleton } from "@/components/ui/skeleton";
+import { formatUserId } from "@/lib/utils";
 
 export default function SocialPage() {
     const router = useRouter();
@@ -33,7 +35,7 @@ export default function SocialPage() {
     const pageTitle = useMemo(() => {
         if (isUserLoading) return "Loading...";
         if (!user) return "User Not Found";
-        return `blur...${user.id.substring(user.id.length - 4)}`;
+        return formatUserId(user.id);
     }, [user, isUserLoading]);
 
     if (!userId) {
@@ -124,3 +126,5 @@ export default function SocialPage() {
         </AppLayout>
     );
 }
+
+    

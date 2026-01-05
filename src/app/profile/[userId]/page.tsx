@@ -17,7 +17,7 @@ import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { ArrowLeft, MessageSquare, ArrowUpRight, ArrowUp, MoreHorizontal, ShieldAlert, Flag, VolumeX, Info, MinusCircle, Link as LinkIcon, QrCode, Calendar, Badge, User as UserIcon, Volume2, BarChart3 } from "lucide-react";
-import { getAvatar, cn, formatLastSeen } from "@/lib/utils";
+import { getAvatar, cn, formatLastSeen, formatUserId } from "@/lib/utils";
 import { FirestorePermissionError } from "@/firebase/errors";
 import { errorEmitter } from "@/firebase/error-emitter";
 import { PostItem as HomePostItem, PostSkeleton } from "@/app/home/page";
@@ -29,10 +29,6 @@ import { QrCodeDialog } from "@/components/QrCodeDialog";
 
 
 function AboutProfileSheet({ user, isOpen, onOpenChange }: { user: WithId<User>, isOpen: boolean, onOpenChange: (open: boolean) => void }) {
-    const formatUserId = (uid: string | undefined) => {
-        if (!uid) return "blur??????";
-        return `blur${uid.substring(uid.length - 6)}`;
-    };
 
     return (
         <Sheet open={isOpen} onOpenChange={onOpenChange}>
@@ -170,11 +166,6 @@ export default function UserProfilePage() {
 
     const { data: bookmarks, isLoading: bookmarksLoading } = useCollection<Bookmark>(bookmarksQuery);
 
-
-    const formatUserId = (uid: string | undefined) => {
-        if (!uid) return "blur??????";
-        return `blur${uid.substring(uid.length - 6)}`;
-    };
     
     const isBlocked = useMemo(() => {
         return currentUserProfile?.blockedUsers?.includes(userId) ?? false;
@@ -745,3 +736,5 @@ export default function UserProfilePage() {
         </AppLayout>
     );
 }
+
+    

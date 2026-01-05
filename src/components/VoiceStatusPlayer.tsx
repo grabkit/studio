@@ -1,11 +1,12 @@
 
+
 'use client';
 
 import React from 'react';
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from "@/components/ui/sheet";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import type { User } from '@/lib/types';
-import { getAvatar } from '@/lib/utils';
+import { getAvatar, formatUserId } from '@/lib/utils';
 import { WithId, useFirebase } from '@/firebase';
 import { Button } from './ui/button';
 import { Trash2 } from 'lucide-react';
@@ -22,11 +23,6 @@ import {
 import { cn } from '@/lib/utils';
 import { buttonVariants } from './ui/button';
 
-
-const formatUserId = (uid: string | undefined) => {
-    if (!uid) return "blur??????";
-    return `blur${uid.substring(uid.length - 6)}`;
-};
 
 export function VoiceStatusPlayer({ user: voiceUser, isOpen, onOpenChange, onDelete, isVoicePlayerPlaying }: { user: WithId<User>, isOpen: boolean, onOpenChange: (open: boolean) => void, onDelete: () => Promise<void>, isVoicePlayerPlaying: boolean }) {
     const { user: currentUser } = useFirebase();

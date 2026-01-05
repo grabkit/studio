@@ -10,7 +10,7 @@ import { useCollection } from '@/firebase/firestore/use-collection';
 import type { Comment, Post } from '@/lib/types';
 import { Skeleton } from './ui/skeleton';
 import { Avatar, AvatarFallback } from './ui/avatar';
-import { getAvatar, formatTimestamp } from '@/lib/utils';
+import { getAvatar, formatTimestamp, formatUserId } from '@/lib/utils';
 import Link from 'next/link';
 
 
@@ -28,11 +28,6 @@ function ReplySkeleton() {
         </div>
     )
 }
-
-const formatUserId = (uid: string | undefined) => {
-    if (!uid) return "blur??????";
-    return `blur${uid.substring(uid.length - 6)}`;
-};
 
 function Reply({ comment, post }: { comment: WithId<Comment>, post: WithId<Post> | null }) {
     const { user } = useFirebase();

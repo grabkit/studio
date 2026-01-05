@@ -19,7 +19,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { Form, FormControl, FormField, FormItem, FormMessage } from '@/components/ui/form';
 import { Skeleton } from '@/components/ui/skeleton';
 import { ArrowLeft, Send, Reply, Forward, Copy, Trash2, X, Heart, MessageCircle, ExternalLink, Phone, Video } from 'lucide-react';
-import { cn, getAvatar, formatMessageTimestamp, formatLastSeen, formatTimestamp } from '@/lib/utils';
+import { cn, getAvatar, formatMessageTimestamp, formatLastSeen, formatTimestamp, formatUserId } from '@/lib/utils';
 import type { Conversation, Message, User, Post } from '@/lib/types';
 import { WithId } from '@/firebase/firestore/use-collection';
 import { FirestorePermissionError } from '@/firebase/errors';
@@ -33,11 +33,6 @@ import { ForwardSheet } from '@/components/ForwardSheet';
 const messageFormSchema = z.object({
   text: z.string().min(1, "Message cannot be empty").max(1000),
 });
-
-const formatUserId = (uid: string | undefined) => {
-    if (!uid) return "blur??????";
-    return `blur${uid.substring(uid.length - 6)}`;
-};
 
 function PostPreviewCard({ postId }: { postId: string }) {
     const { firestore } = useFirebase();

@@ -1,10 +1,11 @@
 
+
 "use client";
 
 import AppLayout from "@/components/AppLayout";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
-import { getAvatar, formatMessageTimestamp } from "@/lib/utils";
+import { getAvatar, formatMessageTimestamp, formatUserId } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import { MessageSquare, Mail, Trash2, BellOff, CheckCircle, User as UserIcon, Bell, Mic } from "lucide-react";
 import { useFirebase, useMemoFirebase } from "@/firebase";
@@ -23,11 +24,6 @@ import { FirestorePermissionError } from "@/firebase/errors";
 import { errorEmitter } from "@/firebase/error-emitter";
 import { usePresence } from "@/hooks/usePresence";
 import { ScrollArea } from "@/components/ui/scroll-area";
-
-const formatUserId = (uid: string | undefined) => {
-    if (!uid) return "blur??????";
-    return `blur${uid.substring(uid.length - 6)}`;
-};
 
 function UpvotedUserSkeleton() {
     return (

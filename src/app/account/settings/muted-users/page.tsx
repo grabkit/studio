@@ -1,4 +1,5 @@
 
+
 "use client";
 
 import { useFirebase, useMemoFirebase } from "@/firebase";
@@ -11,7 +12,7 @@ import { Button } from "@/components/ui/button";
 import { ArrowLeft, VolumeX } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
-import { getAvatar } from "@/lib/utils";
+import { getAvatar, formatUserId } from "@/lib/utils";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useToast } from "@/hooks/use-toast";
 import { FirestorePermissionError } from "@/firebase/errors";
@@ -34,11 +35,6 @@ function MutedUserSkeleton() {
 
 function MutedUserItem({ user, onUnmute }: { user: WithId<User>, onUnmute: (userId: string) => void }) {
     
-    const formatUserId = (uid: string | undefined) => {
-        if (!uid) return "blur??????";
-        return `blur${uid.substring(uid.length - 6)}`;
-    };
-
     return (
         <div className="flex items-center justify-between p-4 border-b">
             <div className="flex items-center space-x-4">
@@ -151,3 +147,5 @@ export default function MutedUsersPage() {
         </AppLayout>
     );
 }
+
+    

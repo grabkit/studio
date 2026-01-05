@@ -38,7 +38,7 @@ import { Button, buttonVariants } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { Form, FormControl, FormField, FormItem, FormMessage } from "@/components/ui/form";
 import { Heart, MessageCircle, ArrowUpRight, Trash2, MoreHorizontal, Edit, ArrowLeft, Repeat, Check, AlertTriangle, Slash, Loader2 } from "lucide-react";
-import { cn, formatTimestamp, getAvatar, formatCount } from "@/lib/utils";
+import { cn, formatTimestamp, getAvatar, formatCount, formatUserId } from "@/lib/utils";
 import { useToast } from "@/hooks/use-toast";
 import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
@@ -71,11 +71,6 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 
-
-const formatUserId = (uid: string | undefined) => {
-  if (!uid) return "blur??????";
-  return `blur${uid.substring(uid.length - 6)}`;
-};
 
 function LinkPreview({ metadata }: { metadata: LinkMetadata }) {
     const getDomainName = (url: string) => {
@@ -842,3 +837,5 @@ export default function PostDetailPage() {
     </AppLayout>
   );
 }
+
+    

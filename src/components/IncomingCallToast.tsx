@@ -1,23 +1,18 @@
 
+
 'use client';
 
 import { toast } from "@/hooks/use-toast";
 import { Phone, PhoneOff } from "lucide-react";
 import { Button } from "./ui/button";
 import { Avatar, AvatarFallback } from "./ui/avatar";
-import { getAvatar } from "@/lib/utils";
+import { getAvatar, formatUserId } from "@/lib/utils";
 
 interface IncomingCallToastProps {
     callerId: string;
     onAccept: () => void;
     onDecline: () => void;
 }
-
-const formatUserId = (uid: string | undefined) => {
-    if (!uid) return "blur??????";
-    return `blur${uid.substring(uid.length - 6)}`;
-};
-
 
 export const showIncomingCallToast = ({ callerId, onAccept, onDecline }: IncomingCallToastProps) => {
     return (

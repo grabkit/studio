@@ -1,4 +1,5 @@
 
+
 "use client";
 
 import { useFirebase } from "@/firebase";
@@ -11,7 +12,7 @@ import { Button } from "@/components/ui/button";
 import { ArrowLeft, UserX } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
-import { getAvatar } from "@/lib/utils";
+import { getAvatar, formatUserId } from "@/lib/utils";
 import { Skeleton } from "@/components/ui/skeleton";
 import Link from "next/link";
 import { cn } from "@/lib/utils";
@@ -31,11 +32,6 @@ function UserListSkeleton() {
 }
 
 function UserItem({ user }: { user: WithId<User> }) {
-    const formatUserId = (uid: string | undefined) => {
-        if (!uid) return "blur??????";
-        return `blur${uid.substring(uid.length - 6)}`;
-    };
-
     return (
         <Link href={`/profile/${user.id}`} className="flex items-center justify-between p-4 border-b hover:bg-accent">
             <div className="flex items-center space-x-4">

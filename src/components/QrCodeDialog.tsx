@@ -1,4 +1,5 @@
 
+
 "use client";
 
 import {
@@ -11,13 +12,8 @@ import {
 import { Button } from "@/components/ui/button";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import Image from 'next/image';
-import { getAvatar } from "@/lib/utils";
+import { getAvatar, formatUserId } from "@/lib/utils";
 import type { User } from "@/lib/types";
-
-const formatUserId = (uid: string | undefined) => {
-    if (!uid) return "blur??????";
-    return `blur${uid.substring(uid.length - 6)}`;
-};
 
 export function QrCodeDialog({ isOpen, onOpenChange, user }: { isOpen: boolean, onOpenChange: (isOpen: boolean) => void, user: User }) {
     if (!user) return null;

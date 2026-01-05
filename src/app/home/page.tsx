@@ -1,4 +1,5 @@
 
+
 "use client";
 
 import AppLayout from "@/components/AppLayout";
@@ -10,7 +11,7 @@ import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Skeleton } from "@/components/ui/skeleton";
 import type { Post, Bookmark, PollOption, Notification, User, LinkMetadata } from "@/lib/types";
 import { Heart, MessageCircle, Repeat, ArrowUpRight, MoreHorizontal, Edit, Trash2, Bookmark as BookmarkIcon, CheckCircle2, Slash, RefreshCw, Pin } from "lucide-react";
-import { cn, formatTimestamp, getAvatar, formatCount } from "@/lib/utils";
+import { cn, formatTimestamp, getAvatar, formatCount, formatUserId } from "@/lib/utils";
 import { useToast } from "@/hooks/use-toast";
 import { FirestorePermissionError } from "@/firebase/errors";
 import { errorEmitter } from "@/firebase/error-emitter";
@@ -32,12 +33,6 @@ import { useRouter } from "next/navigation";
 import { usePresence } from "@/hooks/usePresence";
 import { ShareSheet } from "@/components/ShareSheet";
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetDescription, SheetTrigger, SheetClose } from "@/components/ui/sheet";
-
-
-const formatUserId = (uid: string | undefined) => {
-  if (!uid) return "blur??????";
-  return `blur${uid.substring(uid.length - 6)}`;
-};
 
 
 function LinkPreview({ metadata }: { metadata: LinkMetadata }) {
@@ -195,62 +190,6 @@ export function PollComponent({ post, user }: { post: WithId<Post>, user: any })
         </div>
     );
 }
-
-function PostAuthorInfo({ authorId, authorProfile: initialAuthorProfile, timestamp }: { authorId: string, authorProfile?: WithId<User> | null, timestamp: any }) {
-    const { firestore } = useFirebase();
-
-    const authorRef = useMemoFirebase(() => {
-        if (initialAuthorProfile) return null; // Don't fetch if profile is passed as prop
-        if (!firestore || !authorId) return null;
-        return doc(firestore, "users", authorId);
-    }, [firestore, authorId, initialAuthorProfile]);
-
-    const { data: fetchedAuthorProfile, isLoading } = useDoc<User>(authorRef);
-
-    const authorProfile = initialAuthorProfile || fetchedAuthorProfile;
-
-    if (isLoading && !initialAuthorProfile) {
-        return (
-            <div className="flex items-start space-x-3">
-                <Skeleton className="h-10 w-10 rounded-full" />
-                <div className="space-y-1">
-                    <Skeleton className="h-4 w-[100px]" />
-                    <Skeleton className="h-3 w-[80px]" />
-                </div>
-            </div>
-        );
-    }
-    
-    if (!authorProfile) {
-        return (
-             <div className="flex items-start space-x-3">
-                 <Avatar className="h-10 w-10">
-                    <AvatarFallback>?</AvatarFallback>
-                </Avatar>
-                <span className="text-sm text-muted-foreground italic">Original poster deleted</span>
-            </div>
-        )
-    }
-
-    return (
-        <div className="flex items-start space-x-3">
-            <Link href={`/profile/${authorProfile.id}`} className="flex-shrink-0">
-                <Avatar className="h-10 w-10">
-                    <AvatarFallback>{getAvatar(authorProfile)}</AvatarFallback>
-                </Avatar>
-            </Link>
-            <div className="flex items-center space-x-1.5">
-                <Link href={`/profile/${authorProfile.id}`} className="text-sm font-semibold hover:underline">
-                    {formatUserId(authorProfile.id)}
-                </Link>
-                <div className="text-xs text-muted-foreground">
-                    {timestamp ? `· ${formatTimestamp(timestamp.toDate())}` : ''}
-                </div>
-            </div>
-        </div>
-    );
-}
-
 
 export function PostItem({ post, bookmarks, updatePost, onDelete, onPin, showPinStatus = false, authorProfile: initialAuthorProfile }: { post: WithId<Post>, bookmarks: WithId<Bookmark>[] | null, updatePost?: (id: string, data: Partial<Post>) => void, onDelete?: (id: string) => void, onPin?: (id: string, currentStatus: boolean) => void, showPinStatus?: boolean, authorProfile?: WithId<User> | null }) {
   const { user, firestore } = useFirebase();
@@ -442,7 +381,7 @@ export function PostItem({ post, bookmarks, updatePost, onDelete, onPin, showPin
             </div>
             <div className="flex-1">
                 <div className="flex justify-between items-start">
-                    <div className="flex items-center space-x-1.5">
+                    <div className="flex items-center space-x-1.5 -mb-1">
                         <Link href={`/profile/${post.authorId}`} className="text-sm font-semibold hover:underline">
                             {formatUserId(post.authorId)}
                         </Link>
@@ -709,25 +648,5 @@ export default function HomePage() {
     </AppLayout>
   );
 }
-    
-
-    
-
-    
-
-
-
-
-    
-
-    
-
-
-
-    
-
-    
-
-    
 
     

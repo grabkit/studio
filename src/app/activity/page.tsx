@@ -1,4 +1,5 @@
 
+
 "use client";
 
 import AppLayout from "@/components/AppLayout";
@@ -10,14 +11,9 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import Link from "next/link";
 import { Heart, MessageCircle, AlertTriangle, ArrowUp, Mail } from "lucide-react";
-import { cn, formatTimestamp, getAvatar } from "@/lib/utils";
+import { cn, formatTimestamp, getAvatar, formatUserId } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import { useEffect } from "react";
-
-const formatUserId = (uid: string | undefined) => {
-  if (!uid) return "blur??????";
-  return `blur${uid.substring(uid.length - 6)}`;
-};
 
 const notificationInfo = {
     comment: {
