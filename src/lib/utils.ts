@@ -129,6 +129,9 @@ export const getAvatar = (user: Partial<User> | string | null | undefined): stri
 
 
 export function formatCount(count: number): string {
+    if (!count) {
+        return "";
+    }
     if (count >= 1_000_000) {
         return (count / 1_000_000).toFixed(1).replace(/\.0$/, '') + 'M';
     }
