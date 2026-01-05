@@ -246,41 +246,46 @@ export function PostItem({ post, bookmarks, updatePost, onDelete, onPin, showPin
             }
 
             const freshPost = postDoc.data() as Post;
-            const currentLikes = freshPost.likes || [];
-            const userHasLiked = currentLikes.includes(user.uid);
-
-            let updatedLikes;
-            let updatedLikeCount;
+            const userHasLiked = (freshPost.likes || []).includes(user.uid);
 
             if (userHasLiked) {
                 // Unlike
-                updatedLikeCount = (freshPost.likeCount || 1) - 1;
-                updatedLikes = currentLikes.filter(uid => uid !== user.uid);
+                transaction.update(postRef, {
+                    likeCount: increment(-1),
+                    likes: arrayRemove(user.uid),
+                });
             } else {
                 // Like
-                updatedLikeCount = (freshPost.likeCount || 0) + 1;
-                updatedLikes = [...currentLikes, user.uid];
+                transaction.update(postRef, {
+                    likeCount: increment(1),
+                    likes: arrayUnion(user.uid),
+                });
             }
-            
-            transaction.update(postRef, {
-                likeCount: updatedLikeCount,
-                likes: updatedLikes,
-            });
             return { didLike: !userHasLiked };
         }).then(({ didLike }) => {
-            if (didLike && post.authorId !== user.uid) {
-                const notificationRef = doc(collection(firestore, 'users', post.authorId, 'notifications'));
-                const notificationData: Omit<Notification, 'id'> = {
-                    type: 'like',
-                    postId: post.id,
-                    fromUserId: user.uid,
-                    timestamp: serverTimestamp(),
-                    read: false,
-                    activityContent: post.content.substring(0, 100),
-                };
-                setDoc(notificationRef, { ...notificationData, id: notificationRef.id }).catch(serverError => {
-                    console.error("Failed to create like notification:", serverError);
-                });
+            // Only create/delete notification if it's not the user's own post
+            if (post.authorId !== user.uid) {
+                const notificationId = `like_${post.id}_${user.uid}`;
+                const notificationRef = doc(firestore, 'users', post.authorId, 'notifications', notificationId);
+
+                if (didLike) {
+                    const notificationData: Omit<Notification, 'id'> = {
+                        type: 'like',
+                        postId: post.id,
+                        fromUserId: user.uid,
+                        timestamp: serverTimestamp(),
+                        read: false,
+                        activityContent: post.content.substring(0, 100),
+                    };
+                    setDoc(notificationRef, { ...notificationData, id: notificationRef.id }).catch(serverError => {
+                        console.error("Failed to create like notification:", serverError);
+                    });
+                } else {
+                    // It was an unlike action, so delete the notification
+                    deleteDoc(notificationRef).catch(serverError => {
+                        console.error("Failed to delete like notification:", serverError);
+                    });
+                }
             }
         });
 
@@ -609,7 +614,7 @@ export default function HomePage() {
   const isLoading = postsLoading || bookmarksLoading;
 
   const filteredPosts = useMemo(() => {
-    if (!initialPosts || !user) return [];
+    if (!initialPosts || !user) return initialPosts || [];
     const mutedUsers = userProfile?.mutedUsers || [];
     // Filter out muted users AND the current user's own posts
     return initialPosts.filter(post => !mutedUsers.includes(post.authorId) && post.authorId !== user.uid);
@@ -669,3 +674,4 @@ export default function HomePage() {
     
 
     
+

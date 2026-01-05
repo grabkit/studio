@@ -137,25 +137,45 @@ function PostDetailItem({ post, updatePost }: { post: WithId<Post>, updatePost: 
             }
 
             const freshPost = postDoc.data() as Post;
-            const currentLikes = freshPost.likes || [];
-            const userHasLiked = currentLikes.includes(user.uid);
-            let updatedLikes;
-            let updatedLikeCount;
+            const userHasLiked = (freshPost.likes || []).includes(user.uid);
 
             if (userHasLiked) {
                 // Unlike
-                updatedLikeCount = (freshPost.likeCount || 1) - 1;
-                updatedLikes = currentLikes.filter(uid => uid !== user.uid);
+                transaction.update(postRef, {
+                    likeCount: increment(-1),
+                    likes: arrayRemove(user.uid),
+                });
             } else {
                 // Like
-                updatedLikeCount = (freshPost.likeCount || 0) + 1;
-                updatedLikes = [...currentLikes, user.uid];
+                transaction.update(postRef, {
+                    likeCount: increment(1),
+                    likes: arrayUnion(user.uid),
+                });
             }
-            
-            transaction.update(postRef, {
-                likeCount: updatedLikeCount,
-                likes: updatedLikes,
-            });
+            return { didLike: !userHasLiked };
+        }).then(({ didLike }) => {
+            if (post.authorId !== user.uid) {
+                const notificationId = `like_${post.id}_${user.uid}`;
+                const notificationRef = doc(firestore, 'users', post.authorId, 'notifications', notificationId);
+
+                if (didLike) {
+                    const notificationData: Omit<Notification, 'id'> = {
+                        type: 'like',
+                        postId: post.id,
+                        fromUserId: user.uid,
+                        timestamp: serverTimestamp(),
+                        read: false,
+                        activityContent: post.content.substring(0, 100),
+                    };
+                    setDoc(notificationRef, { ...notificationData, id: notificationRef.id }).catch(serverError => {
+                        console.error("Failed to create like notification:", serverError);
+                    });
+                } else {
+                    deleteDoc(notificationRef).catch(serverError => {
+                        console.error("Failed to delete like notification:", serverError);
+                    });
+                }
+            }
         });
     } catch (e: any) {
         // Revert optimistic update on error
@@ -839,3 +859,4 @@ export default function PostDetailPage() {
 }
 
     
+
