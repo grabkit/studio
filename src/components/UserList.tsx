@@ -77,7 +77,7 @@ export default function UserList({ userIds, emptyTitle, emptyDescription }: { us
 
     if (isLoading) {
         return (
-            <div className="divide-y">
+            <div>
                 <UserListSkeleton />
                 <UserListSkeleton />
                 <UserListSkeleton />
@@ -98,7 +98,7 @@ export default function UserList({ userIds, emptyTitle, emptyDescription }: { us
     }
 
     return (
-        <div className="divide-y">
+        <div>
             {users.map(user => (
                 <UserItem key={user.id} user={user} />
             ))}
