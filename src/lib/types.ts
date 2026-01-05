@@ -23,6 +23,7 @@ export interface QuotedPost {
     authorName: string; // e.g., formatUserId(authorId)
     authorAvatar: string; // e.g., getAvatar(author)
     content: string;
+    timestamp: Timestamp;
 }
 
 export interface Post {

@@ -1,4 +1,5 @@
 
+
 "use client";
 
 import React from 'react';
@@ -30,11 +31,6 @@ export function RepostSheet({ post, isOpen, onOpenChange }: RepostSheetProps) {
     }
     
     const handleQuotePost = () => {
-        // TODO: Implement quote post logic
-        // This will navigate to the post creation page with the quoted post data
-        console.log("Quote Post Clicked for post:", post.id);
-        const encodedContent = encodeURIComponent(post.content);
-        // We will pass more data in the future
         router.push(`/post?quotePostId=${post.id}`);
         onOpenChange(false);
     }

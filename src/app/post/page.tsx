@@ -9,8 +9,10 @@ import { useForm, useFieldArray } from "react-hook-form";
 import * as z from "zod";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { collection, serverTimestamp, setDoc, doc, updateDoc, getDoc } from "firebase/firestore";
-import { useFirebase } from "@/firebase";
-import type { Post } from "@/lib/types";
+import { useFirebase, useDoc, useMemoFirebase } from "@/firebase";
+import type { Post, QuotedPost } from "@/lib/types";
+import { WithId } from "@/firebase/firestore/use-collection";
+
 
 import {
   Sheet,
@@ -29,7 +31,7 @@ import { errorEmitter } from "@/firebase/error-emitter";
 import { FirestorePermissionError } from "@/firebase/errors";
 import { Switch } from "@/components/ui/switch";
 import { Label } from "@/components/ui/label";
-import { cn, getAvatar, formatUserId } from "@/lib/utils";
+import { cn, getAvatar, formatUserId, formatTimestamp } from "@/lib/utils";
 import type { LinkMetadata } from "@/lib/types";
 import Image from "next/image";
 
@@ -45,11 +47,22 @@ const linkMetadataSchema = z.object({
     faviconUrl: z.string().url().optional(),
 }).optional();
 
+const quotedPostSchema = z.object({
+    id: z.string(),
+    authorId: z.string(),
+    authorName: z.string(),
+    authorAvatar: z.string(),
+    content: z.string(),
+    timestamp: z.any(),
+}).optional();
+
+
 // Base schema for common fields
 const baseSchema = z.object({
   content: z.string().max(560, "Post is too long.").optional(),
   commentsAllowed: z.boolean().default(true),
   linkMetadata: linkMetadataSchema,
+  quotedPost: quotedPostSchema,
 });
 
 // Schema for a standard text post
@@ -70,11 +83,29 @@ const pollPostSchema = baseSchema.extend({
 const postSchema = z.discriminatedUnion("isPoll", [
   textPostSchema,
   pollPostSchema,
-]).refine(data => !!data.content || !!data.linkMetadata, {
+]).refine(data => !!data.content || !!data.linkMetadata || !!data.quotedPost, {
     message: "Post content cannot be empty.",
     path: ["content"],
 });
 
+
+function QuotedPostPreview({ post, onRemove }: { post: QuotedPost, onRemove: () => void }) {
+    return (
+        <div className="mt-2 border rounded-xl p-3 relative">
+             <Button variant="ghost" size="icon" className="absolute top-1 right-1 h-7 w-7 bg-black/50 hover:bg-black/70 text-white hover:text-white rounded-full z-10" onClick={onRemove}>
+                <X className="h-4 w-4" />
+            </Button>
+             <div className="flex items-center space-x-2 mb-2">
+                <Avatar className="h-5 w-5">
+                    <AvatarFallback className="text-xs">{post.authorAvatar}</AvatarFallback>
+                </Avatar>
+                <span className="text-sm font-semibold">{post.authorName}</span>
+                 <span className="text-xs text-muted-foreground">· {formatTimestamp(post.timestamp.toDate())}</span>
+            </div>
+            <p className="text-sm text-muted-foreground line-clamp-4">{post.content}</p>
+        </div>
+    )
+}
 
 function LinkPreview({ metadata, onRemove }: { metadata: LinkMetadata, onRemove: () => void }) {
     const getDomainName = (url: string) => {
@@ -116,14 +147,21 @@ function PostPageComponent() {
   const searchParams = useSearchParams();
   const { user, userProfile, firestore } = useFirebase();
 
-  const repostContent = searchParams.get('content') || "";
   const postId = searchParams.get('postId');
+  const quotePostId = searchParams.get('quotePostId');
   const isEditMode = !!postId;
+
+  const quotePostRef = useMemoFirebase(() => {
+    if (!quotePostId || !firestore) return null;
+    return doc(firestore, 'posts', quotePostId);
+  }, [quotePostId, firestore]);
+  
+  const { data: quotePostData, isLoading: isQuotePostLoading } = useDoc<Post>(quotePostRef);
 
   const form = useForm<z.infer<typeof postSchema>>({
     resolver: zodResolver(postSchema),
     defaultValues: {
-      content: repostContent ? decodeURIComponent(repostContent) : "",
+      content: "",
       commentsAllowed: true,
       isPoll: false,
     },
@@ -141,13 +179,12 @@ function PostPageComponent() {
         const postSnap = await getDoc(postRef);
         if (postSnap.exists()) {
           const postData = postSnap.data() as Post;
-          // Populate the form with existing post data
           form.reset({
             content: postData.content,
             commentsAllowed: postData.commentsAllowed,
             isPoll: postData.type === 'poll',
-            // Note: poll options editing is not supported in this version
-            // but we set the flag correctly.
+            quotedPost: postData.quotedPost,
+            linkMetadata: postData.linkMetadata,
           });
         }
       };
@@ -155,9 +192,24 @@ function PostPageComponent() {
     }
   }, [isEditMode, postId, firestore, form]);
 
+  useEffect(() => {
+      if (quotePostData) {
+          const quotedPostForForm: QuotedPost = {
+              id: quotePostData.id,
+              authorId: quotePostData.authorId,
+              content: quotePostData.content,
+              authorName: formatUserId(quotePostData.authorId),
+              authorAvatar: getAvatar(quotePostData.authorId),
+              timestamp: quotePostData.timestamp,
+          }
+          form.setValue('quotedPost', quotedPostForForm, { shouldValidate: true });
+      }
+  }, [quotePostData, form]);
+
 
   const isPoll = form.watch("isPoll");
   const linkMetadata = form.watch("linkMetadata");
+  const quotedPost = form.watch("quotedPost");
 
 
   React.useEffect(() => {
@@ -207,9 +259,11 @@ function PostPageComponent() {
     if (isEditMode && postId) {
       // Logic for updating an existing post
       const postRef = doc(firestore, `posts`, postId);
-      const updatedData = {
+      const updatedData: Partial<Post> = {
         content: values.content,
         commentsAllowed: values.commentsAllowed,
+        linkMetadata: values.linkMetadata,
+        quotedPost: values.quotedPost,
       };
       updateDoc(postRef, updatedData)
         .then(() => {
@@ -229,6 +283,13 @@ function PostPageComponent() {
         // Logic for creating a new post
         const newPostRef = doc(collection(firestore, `posts`));
         
+        let type: Post['type'] = 'text';
+        if (values.isPoll) {
+            type = 'poll';
+        } else if (values.quotedPost) {
+            type = 'quote';
+        }
+
         const newPostData: any = {
           id: newPostRef.id,
           authorId: user.uid,
@@ -237,10 +298,12 @@ function PostPageComponent() {
           likes: [],
           likeCount: 0,
           commentCount: 0,
+          repostCount: 0,
           commentsAllowed: values.commentsAllowed,
           isPinned: false,
-          type: values.isPoll ? 'poll' : 'text',
+          type: type,
           ...(values.linkMetadata && { linkMetadata: values.linkMetadata }),
+          ...(values.quotedPost && { quotedPost: values.quotedPost }),
         };
 
         if (values.isPoll) {
@@ -328,6 +391,10 @@ function PostPageComponent() {
                                         </FormItem>
                                     )}
                                 />
+
+                                {quotedPost && (
+                                     <QuotedPostPreview post={quotedPost} onRemove={() => form.setValue("quotedPost", undefined)} />
+                                )}
 
                                 {linkMetadata ? (
                                     <LinkPreview metadata={linkMetadata} onRemove={() => form.setValue("linkMetadata", undefined)} />
