@@ -121,11 +121,38 @@
       },
       "required": ["option", "votes"]
     },
+    "QuotedPost": {
+      "title": "Quoted Post",
+      "type": "object",
+      "description": "Represents a denormalized, lightweight snapshot of a post that is being quoted.",
+      "properties": {
+        "id": { "type": "string" },
+        "authorId": { "type": "string" },
+        "authorName": { "type": "string" },
+        "authorAvatar": { "type": "string" },
+        "content": { "type": "string" },
+        "timestamp": { "type": "string", "format": "date-time" }
+      },
+      "required": ["id", "authorId", "authorName", "authorAvatar", "content", "timestamp"]
+    },
+    "LinkMetadata": {
+      "title": "Link Metadata",
+      "type": "object",
+      "description": "Represents the metadata of a URL for a link preview.",
+      "properties": {
+        "url": { "type": "string", "format": "uri" },
+        "title": { "type": "string" },
+        "description": { "type": "string" },
+        "imageUrl": { "type": "string", "format": "uri" },
+        "faviconUrl": { "type": "string", "format": "uri" }
+      },
+      "required": ["url"]
+    },
     "Post": {
       "$schema": "http://json-schema.org/draft-07/schema#",
       "title": "Post",
       "type": "object",
-      "description": "Represents a user-generated text post, which can optionally be a poll.",
+      "description": "Represents a user-generated post, which can be a simple text, a poll, a repost, or a quote post.",
       "properties": {
         "id": {
           "type": "string",
@@ -142,53 +169,49 @@
         },
         "content": {
           "type": "string",
-          "description": "The text content of the post."
+          "description": "The text content of the post (for text and quote posts)."
         },
         "likes": {
           "type": "array",
           "description": "An array of user IDs that have liked the post.",
-          "items": {
-            "type": "string"
-          }
+          "items": { "type": "string" }
         },
-        "likeCount": {
-          "type": "number",
-          "description": "The total number of likes for the post."
-        },
-        "commentCount": {
-          "type": "number",
-          "description": "The total number of comments on the post."
-        },
-        "commentsAllowed": {
-          "type": "boolean",
-          "description": "Indicates if comments are allowed on this post."
-        },
+        "likeCount": { "type": "number" },
+        "repostCount": { "type": "number" },
+        "commentCount": { "type": "number" },
+        "commentsAllowed": { "type": "boolean" },
         "type": {
           "type": "string",
-          "enum": ["text", "poll"],
+          "enum": ["text", "poll", "repost", "quote"],
           "description": "The type of the post."
         },
         "pollOptions": {
           "type": "array",
-          "description": "An array of poll options, if the post is a poll.",
-          "items": {
-            "$ref": "#/backend/entities/PollOption"
-          }
+          "items": { "$ref": "#/backend/entities/PollOption" }
         },
         "voters": {
           "type": "object",
-          "description": "A map of user IDs to the index of the option they voted for, to prevent multiple votes."
+          "description": "A map of user IDs to the index of the option they voted for."
         },
-        "isPinned": {
-          "type": "boolean",
-          "description": "Indicates if the post is pinned to the top of the user's profile."
+        "isPinned": { "type": "boolean" },
+        "repostOf": {
+            "type": "string",
+            "description": "The ID of the original post, if this is a simple repost."
+        },
+        "quotedPost": {
+            "$ref": "#/backend/entities/QuotedPost",
+            "description": "Denormalized data of the quoted post, if this is a quote post."
+        },
+        "linkMetadata": {
+            "$ref": "#/backend/entities/LinkMetadata",
+            "description": "Metadata for a URL to show a link preview."
         }
       },
       "required": [
         "id",
         "authorId",
-        "content",
-        "timestamp"
+        "timestamp",
+        "type"
       ]
     },
     "Comment": {
@@ -659,3 +682,4 @@
     "reasoning": "The Firestore structure is designed for a public, social-media-style application. User profiles are stored in a `/users` collection, while all posts are stored in a single top-level `/posts` collection. This global `posts` collection allows any user to easily query and view all public posts. Security rules are configured to enforce that while all authenticated user can read posts, only the original author (`authorId` must match `request.auth.uid`) can write, update, or delete their own posts. Comments are stored in a subcollection under each post for clear organization. User-specific data like bookmarks and notifications are stored in subcollections under the respective user's document for security and scalability. Messaging is handled through a top-level `conversations` collection, with messages stored in a subcollection. This allows for efficient querying of conversations a user is part of, while keeping the actual message data separate. A `reports` collection is added for moderation purposes, allowing users to report content or other users. A `calls` collection with `callerCandidates` and `answerCandidates` subcollections is added to facilitate WebRTC voice call signaling. A separate `videoCalls` collection with its own candidate subcollections is added for the new video call functionality to keep it isolated from the existing voice call feature."
   }
 }
+

@@ -55,12 +55,13 @@ service cloud.firestore {
 
     match /posts/{postId} {
       allow get, list: if isSignedIn();
-      allow create: if isSignedIn() && (isNewTextPost() || isNewPollPost());
+      allow create: if isSignedIn() && (isNewTextPost() || isNewPollPost() || isNewRepost() || isNewQuotePost());
       allow delete: if isSignedIn() && isOwner(resource.data.authorId);
       allow update: if isSignedIn() && (
           (isOwner(resource.data.authorId) && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['content', 'commentsAllowed', 'isPinned'])) ||
           (request.resource.data.diff(resource.data).affectedKeys().hasAll(['likes', 'likeCount'])) ||
           (request.resource.data.diff(resource.data).affectedKeys().hasOnly(['commentCount'])) ||
+          (request.resource.data.diff(resource.data).affectedKeys().hasOnly(['repostCount'])) ||
           (request.resource.data.diff(resource.data).affectedKeys().hasAll(['pollOptions', 'voters']) && !resource.data.voters.keys().hasAny([request.auth.uid]))
       );
 
@@ -155,18 +156,37 @@ service cloud.firestore {
            )
         && data.keys().hasOnly(allowedKeys);
     }
+    
+    function isNewRepost() {
+        let data = request.resource.data;
+        return data.type == 'repost'
+            && data.authorId == request.auth.uid
+            && data.repostOf is string
+            && data.keys().hasOnly(['id', 'authorId', 'type', 'repostOf', 'timestamp', 'likes', 'likeCount', 'commentCount', 'repostCount', 'commentsAllowed']);
+    }
+
+    function isNewQuotePost() {
+        let data = request.resource.data;
+        return data.type == 'quote'
+            && data.authorId == request.auth.uid
+            && data.content is string
+            && data.quotedPost is map
+            && data.quotedPost.keys().hasAll(['id', 'authorId', 'content']);
+    }
+
 
     function isNewTextPost() {
       let data = request.resource.data;
-      return data.type == 'text'
+      return (data.type == 'text' || !data.keys().has('type')) // for backwards compatibility
         && data.authorId == request.auth.uid
         && (data.content is string && data.content.size() > 0 && data.content.size() <= 560 || data.keys().has('linkMetadata'))
         && data.commentCount == 0
         && data.commentsAllowed is bool
         && data.isPinned == false
         && data.likeCount == 0
+        && data.repostCount == 0
         && data.likes is list && data.likes.size() == 0
-        && !data.keys().hasAny(['pollOptions', 'voters']);
+        && !data.keys().hasAny(['pollOptions', 'voters', 'repostOf', 'quotedPost']);
     }
 
     function isNewPollPost() {
@@ -178,10 +198,12 @@ service cloud.firestore {
         && data.commentsAllowed is bool
         && data.isPinned == false
         && data.likeCount == 0
+        && data.repostCount == 0
         && data.likes is list && data.likes.size() == 0
         && data.pollOptions is list && data.pollOptions.size() >= 2 && data.pollOptions.size() <= 4
         && data.pollOptions[0].votes == 0
-        && data.voters is map && data.voters.size() == 0;
+        && data.voters is map && data.voters.size() == 0
+        && !data.keys().hasAny(['repostOf', 'quotedPost']);
     }
 
 
