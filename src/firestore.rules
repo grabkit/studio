@@ -100,7 +100,7 @@ service cloud.firestore {
       allow get: if isSignedIn();
       allow list: if isSignedIn();
       allow create: if isSignedIn() && request.resource.data.callerId == request.auth.uid;
-      allow update: if isCallParticipant(callId);
+      allow update: if isCallParticipant(callId) && (request.resource.data.diff(resource.data).affectedKeys().hasOnly(['status', 'answer']));
       allow delete: if isCallParticipant(callId);
       
       match /callerCandidates/{candidateId} {
@@ -118,7 +118,7 @@ service cloud.firestore {
       allow get: if isSignedIn();
       allow list: if isSignedIn();
       allow create: if isSignedIn() && request.resource.data.callerId == request.auth.uid;
-      allow update: if isVideoCallParticipant(videoCallId);
+      allow update: if isVideoCallParticipant(videoCallId) && (request.resource.data.diff(resource.data).affectedKeys().hasOnly(['status', 'answer']));
       allow delete: if isVideoCallParticipant(videoCallId);
       
       match /callerCandidates/{candidateId} {

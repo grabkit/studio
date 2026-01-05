@@ -17,10 +17,20 @@ import { VoiceStatusPlayer } from '@/components/VoiceStatusPlayer';
 import { useToast } from '@/hooks/use-toast';
 import { FirestorePermissionError } from './errors';
 import { errorEmitter } from './error-emitter';
+import { Sheet, SheetContent, SheetHeader, SheetTitle } from '@/components/ui/sheet';
+import { Button } from '@/components/ui/button';
+import { Phone, Video, PhoneOff } from 'lucide-react';
+import { formatUserId, getAvatar } from '@/lib/utils';
+import { Avatar, AvatarFallback } from '@/components/ui/avatar';
+
 
 interface CallHandlerResult extends ReturnType<typeof useCallHandler> {}
 interface VideoCallHandlerResult extends ReturnType<typeof useVideoCallHandler> {}
 
+type MissedCallInfo = {
+  calleeId: string;
+  type: 'voice' | 'video';
+};
 
 interface FirebaseProviderProps {
   children: React.ReactNode;
@@ -56,6 +66,8 @@ export interface FirebaseContextState extends CallHandlerResult, VideoCallHandle
   showVoiceStatusPlayer: (user: WithId<UserProfile>) => void;
   isVoicePlayerPlaying: boolean;
   handleDeleteVoiceStatus: () => Promise<void>;
+  missedCallInfo: MissedCallInfo | null;
+  setMissedCallInfo: React.Dispatch<React.SetStateAction<MissedCallInfo | null>>;
 }
 
 // Return type for useFirebase()
@@ -74,6 +86,8 @@ export interface FirebaseServicesAndUser extends CallHandlerResult, VideoCallHan
   showVoiceStatusPlayer: (user: WithId<UserProfile>) => void;
   isVoicePlayerPlaying: boolean;
   handleDeleteVoiceStatus: () => Promise<void>;
+  missedCallInfo: MissedCallInfo | null;
+  setMissedCallInfo: React.Dispatch<React.SetStateAction<MissedCallInfo | null>>;
 }
 
 // Return type for useUser() - specific to user auth state
@@ -103,8 +117,10 @@ export const FirebaseProvider: React.FC<FirebaseProviderProps> = ({
     userError: null,
   });
   
-  const callHandler = useCallHandler(firestore, userAuthState.user);
-  const videoCallHandler = useVideoCallHandler(firestore, userAuthState.user);
+  const [missedCallInfo, setMissedCallInfo] = useState<MissedCallInfo | null>(null);
+
+  const callHandler = useCallHandler(firestore, userAuthState.user, setMissedCallInfo);
+  const videoCallHandler = useVideoCallHandler(firestore, userAuthState.user, setMissedCallInfo);
   
   const [activeUserProfile, setActiveUserProfile] = useState<WithId<UserProfile> | null>(null);
   const [voiceStatusUser, setVoiceStatusUser] = useState<WithId<UserProfile> | null>(null);
@@ -280,13 +296,27 @@ export const FirebaseProvider: React.FC<FirebaseProviderProps> = ({
       handleDeleteVoiceStatus,
       ...callHandler,
       ...videoCallHandler,
+      missedCallInfo,
+      setMissedCallInfo,
     };
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [firebaseApp, firestore, auth, database, userAuthState, userProfile, isUserProfileLoading, callHandler, videoCallHandler, isVoicePlayerPlaying, setLoggedInUserProfile]);
+  }, [firebaseApp, firestore, auth, database, userAuthState, userProfile, isUserProfileLoading, callHandler, videoCallHandler, isVoicePlayerPlaying, setLoggedInUserProfile, missedCallInfo]);
 
   // Determine if the call UI should be shown
   const showCallUI = !!callHandler.callStatus && callHandler.callStatus !== 'ended' && callHandler.callStatus !== 'declined' && callHandler.callStatus !== 'missed';
   const showVideoCallUI = !!videoCallHandler.videoCallStatus && videoCallHandler.videoCallStatus !== 'ended' && videoCallHandler.videoCallStatus !== 'declined' && videoCallHandler.videoCallStatus !== 'missed';
+  
+  const handleCallAgain = () => {
+    if (!missedCallInfo) return;
+    const { calleeId, type } = missedCallInfo;
+    setMissedCallInfo(null);
+    if (type === 'voice') {
+      callHandler.startCall(calleeId);
+    } else {
+      videoCallHandler.startVideoCall(calleeId);
+    }
+  };
+
 
   return (
     <FirebaseContext.Provider value={contextValue}>
@@ -306,6 +336,29 @@ export const FirebaseProvider: React.FC<FirebaseProviderProps> = ({
           }}
           isVoicePlayerPlaying={isVoicePlayerPlaying}
         />
+      )}
+      {missedCallInfo && (
+         <Sheet open={!!missedCallInfo} onOpenChange={(open) => !open && setMissedCallInfo(null)}>
+            <SheetContent side="bottom" className="rounded-t-2xl h-auto flex flex-col items-center justify-center gap-6 pb-10">
+                 <SheetHeader>
+                     <SheetTitle className="text-center">Call Not Answered</SheetTitle>
+                 </SheetHeader>
+                 <Avatar className="h-24 w-24">
+                     <AvatarFallback className="text-4xl">{getAvatar(missedCallInfo.calleeId)}</AvatarFallback>
+                 </Avatar>
+                 <p className="text-muted-foreground">{formatUserId(missedCallInfo.calleeId)} did not answer.</p>
+                 <div className="w-full max-w-xs grid grid-cols-2 gap-4">
+                     <Button variant="outline" size="lg" onClick={() => setMissedCallInfo(null)}>
+                        <PhoneOff className="h-5 w-5 mr-2" />
+                        Cancel
+                    </Button>
+                     <Button size="lg" onClick={handleCallAgain}>
+                        {missedCallInfo.type === 'voice' ? <Phone className="h-5 w-5 mr-2" /> : <Video className="h-5 w-5 mr-2" />}
+                         Call Again
+                    </Button>
+                 </div>
+             </SheetContent>
+         </Sheet>
       )}
       {showVideoCallUI ? (
         <VideoCallView
@@ -398,6 +451,8 @@ export const useFirebase = (): FirebaseServicesAndUser => {
     isVideoMuted: context.isVideoMuted,
     isVideoEnabled: context.isVideoEnabled,
     videoCallDuration: context.videoCallDuration,
+    missedCallInfo: context.missedCallInfo,
+    setMissedCallInfo: context.setMissedCallInfo,
   };
 };
 
@@ -429,4 +484,3 @@ export function useMemoFirebase<T>(factory: () => T, deps: DependencyList): T | 
   
   return memoized;
 }
-

@@ -14,16 +14,21 @@ import {
   query,
   where,
   addDoc,
-  writeBatch,
-  getDocs,
-  deleteDoc,
-  getDoc,
 } from 'firebase/firestore';
-import type { Call, CallStatus, IceCandidate } from '@/lib/types';
+import type { Call, CallStatus } from '@/lib/types';
 import Peer from 'simple-peer';
 import { useToast } from './use-toast';
 
-export function useCallHandler(firestore: Firestore | null, user: User | null) {
+type MissedCallInfo = {
+  calleeId: string;
+  type: 'voice' | 'video';
+};
+
+export function useCallHandler(
+    firestore: Firestore | null, 
+    user: User | null,
+    setMissedCallInfo: React.Dispatch<React.SetStateAction<MissedCallInfo | null>>
+) {
   const { toast } = useToast();
   
   const [activeCall, setActiveCall] = useState<Call | null>(null);
@@ -35,6 +40,7 @@ export function useCallHandler(firestore: Firestore | null, user: User | null) {
   
   const peerRef = useRef<Peer.Instance | null>(null);
   const timerRef = useRef<NodeJS.Timeout | null>(null);
+  const ringTimeoutRef = useRef<NodeJS.Timeout | null>(null);
 
 
   const cleanupCall = useCallback(() => {
@@ -49,6 +55,10 @@ export function useCallHandler(firestore: Firestore | null, user: User | null) {
     if (timerRef.current) {
         clearInterval(timerRef.current);
         timerRef.current = null;
+    }
+     if (ringTimeoutRef.current) {
+      clearTimeout(ringTimeoutRef.current);
+      ringTimeoutRef.current = null;
     }
     setLocalStream(null);
     setRemoteStream(null);
@@ -75,6 +85,11 @@ export function useCallHandler(firestore: Firestore | null, user: User | null) {
 
   const answerCall = useCallback(async () => {
     if (!firestore || !user || !activeCall || activeCall.status !== 'ringing' || !activeCall.offer) return;
+
+     if (ringTimeoutRef.current) {
+      clearTimeout(ringTimeoutRef.current);
+      ringTimeoutRef.current = null;
+    }
     
     try {
         const stream = await navigator.mediaDevices.getUserMedia({ video: false, audio: true });
@@ -172,6 +187,12 @@ export function useCallHandler(firestore: Firestore | null, user: User | null) {
                 await setDoc(callDocRef, newCallData);
                 setActiveCall({ id: callDocRef.id, ...newCallData } as Call);
                 setCallStatus('offering');
+
+                ringTimeoutRef.current = setTimeout(async () => {
+                    await updateDoc(callDocRef, { status: 'missed' });
+                    setMissedCallInfo({ calleeId, type: 'voice' });
+                    cleanupCall();
+                }, 60000);
             } else if (data.candidate) {
                 await addDoc(callerCandidatesCol, data);
             }
@@ -185,12 +206,16 @@ export function useCallHandler(firestore: Firestore | null, user: User | null) {
             setRemoteStream(remoteStream);
         });
 
-        onSnapshot(callDocRef, (docSnap) => {
+        const unsubscribe = onSnapshot(callDocRef, (docSnap) => {
              const updatedCall = docSnap.data() as Call;
              if (updatedCall?.answer && peerRef.current && !peerRef.current.destroyed) {
                  if(!peerRef.current.destroyed) peerRef.current.signal(updatedCall.answer);
              }
              if (updatedCall?.status && updatedCall.status !== callStatus) {
+                if (ringTimeoutRef.current && (updatedCall.status === 'answered' || updatedCall.status === 'declined' || updatedCall.status === 'ended')) {
+                    clearTimeout(ringTimeoutRef.current);
+                    ringTimeoutRef.current = null;
+                }
                 if (updatedCall.status === 'answered') {
                     setActiveCall(prev => prev ? { ...prev, status: 'answered' } : null);
                 }
@@ -199,6 +224,7 @@ export function useCallHandler(firestore: Firestore | null, user: User | null) {
              if (updatedCall?.status === 'ended' || updatedCall?.status === 'declined' || updatedCall?.status === 'missed') {
                  toast({ title: `Call ${updatedCall.status}` });
                  cleanupCall();
+                 unsubscribe();
              }
         });
         
@@ -231,7 +257,7 @@ export function useCallHandler(firestore: Firestore | null, user: User | null) {
             description: "Please ensure you have microphone permissions enabled."
         });
     }
-  }, [firestore, user, toast, cleanupCall, callStatus]);
+  }, [firestore, user, toast, cleanupCall, callStatus, setMissedCallInfo]);
 
   const hangUp = useCallback(async () => {
     if (!firestore || !activeCall) return;
