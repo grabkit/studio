@@ -4,7 +4,7 @@
 
 import AppLayout from "@/components/AppLayout";
 import { useFirebase, useMemoFirebase, useUser, useDoc } from "@/firebase";
-import { collection, query, orderBy, limit, doc, updateDoc, arrayUnion, arrayRemove, increment, deleteDoc, setDoc, serverTimestamp, getDoc, runTransaction, getDocs, where } from "firebase/firestore";
+import { collection, query, orderBy, limit, doc, updateDoc, arrayUnion, arrayRemove, increment, deleteDoc, setDoc, serverTimestamp, getDoc, runTransaction, getDocs, where } from "firestore";
 import { useCollection, type WithId } from "@/firebase/firestore/use-collection";
 import { Card, CardContent } from "@/components/ui/card";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
@@ -193,7 +193,7 @@ export function PollComponent({ post, user }: { post: WithId<Post>, user: any })
     );
 }
 
-export function PostItem({ post, bookmarks, updatePost, onDelete, onPin, showPinStatus = false, authorProfile: initialAuthorProfile }: { post: WithId<Post>, bookmarks: WithId<Bookmark>[] | null, updatePost?: (id: string, data: Partial<Post>) => void, onDelete?: (id: string) => void, onPin?: (id: string, currentStatus: boolean) => void, showPinStatus?: boolean, authorProfile?: WithId<User> | null }) {
+function InnerPostItem({ post, bookmarks, updatePost, onDelete, onPin, showPinStatus = false, authorProfile: initialAuthorProfile, isRepost = false }: { post: WithId<Post>, bookmarks: WithId<Bookmark>[] | null, updatePost?: (id: string, data: Partial<Post>) => void, onDelete?: (id: string) => void, onPin?: (id: string, currentStatus: boolean) => void, showPinStatus?: boolean, authorProfile?: WithId<User> | null, isRepost?: boolean }) {
   const { user, firestore } = useFirebase();
   const { toast } = useToast();
   const router = useRouter();
@@ -386,124 +386,161 @@ export function PostItem({ post, bookmarks, updatePost, onDelete, onPin, showPin
 
   return (
     <>
-    <Card className="w-full shadow-none border-x-0 border-t-0 rounded-none">
-      <CardContent className="p-4">
-        {showPinStatus && post.isPinned && (
-          <div className="flex items-center gap-2 text-xs text-muted-foreground mb-2 pl-12">
-            <Pin className="h-3 w-3" />
-            <span>Pinned</span>
-          </div>
-        )}
-        <div className="flex space-x-3">
-            <div>
-                 <Link href={`/profile/${post.authorId}`} className="flex-shrink-0">
-                    <Avatar className="h-10 w-10">
-                        <AvatarFallback>{isAuthorLoading ? '' : getAvatar(finalAuthorProfile)}</AvatarFallback>
-                    </Avatar>
-                </Link>
-            </div>
-            <div className="flex-1">
-                <div className="flex justify-between items-start">
-                    <div className="flex items-center space-x-1.5 -mb-1">
-                        <Link href={`/profile/${post.authorId}`} className="text-sm font-semibold hover:underline">
-                            {formatUserId(post.authorId)}
-                        </Link>
-                        <div className="text-xs text-muted-foreground">
-                            {post.timestamp ? `· ${formatTimestamp(post.timestamp.toDate())}` : ''}
-                        </div>
-                    </div>
-                   <div className="flex items-center">
-                     {isOwner && (
-                         <Sheet open={isMoreOptionsSheetOpen} onOpenChange={setIsMoreOptionsSheetOpen}>
-                            <SheetTrigger asChild>
-                                <Button variant="ghost" size="icon" className="h-6 w-6">
-                                    <MoreHorizontal className="h-4 w-4" />
-                                </Button>
-                            </SheetTrigger>
-                            <SheetContent side="bottom" className="rounded-t-2xl">
-                                <SheetHeader className="sr-only">
-                                    <SheetTitle>Options for post</SheetTitle>
-                                    <SheetDescription>Manage your post.</SheetDescription>
-                                </SheetHeader>
-                                <div className="grid gap-2 py-4">
-                                     <div className="border rounded-2xl">
-                                        <Button variant="ghost" className="justify-between text-base py-6 rounded-2xl w-full" onClick={handleEditPost}>
-                                            <span className="font-semibold">Edit</span>
-                                            <Edit className="h-5 w-5" />
-                                        </Button>
-                                        <div className="border-t"></div>
-                                         <Button variant="ghost" className="justify-between text-base py-6 rounded-2xl w-full" onClick={handlePinPost}>
-                                            <span className="font-semibold">{post.isPinned ? "Unpin Post" : "Pin Post"}</span>
-                                            <Pin className="h-5 w-5" />
-                                        </Button>
-                                     </div>
-                                    <div className="border rounded-2xl">
-                                        <Button variant="ghost" className="justify-between text-base py-6 rounded-2xl w-full text-destructive hover:text-destructive" onClick={handleDeletePost}>
-                                            <span className="font-semibold">Delete</span>
-                                            <Trash2 className="h-5 w-5" />
-                                        </Button>
-                                    </div>
-                                </div>
-                            </SheetContent>
-                        </Sheet>
-                     )}
-                   </div>
-                </div>
-
-                <Link href={`/post/${post.id}`} className="block">
-                    <p className="text-foreground text-sm whitespace-pre-wrap">{post.content}</p>
-                </Link>
-
-                {post.type === 'quote' && post.quotedPost && (
-                    <div className="mt-2">
-                        <QuotedPostCard post={post.quotedPost} />
-                    </div>
-                )}
-                
-                {post.linkMetadata && <LinkPreview metadata={post.linkMetadata} />}
-
-                {post.type === 'poll' && post.pollOptions && (
-                    <PollComponent post={post} user={user} />
-                )}
-
-                <div className="flex items-center justify-between pt-2 text-muted-foreground">
-                    <div className="flex items-center space-x-6">
-                      <button onClick={handleLike} className={cn("flex items-center space-x-1", hasLiked && "text-pink-500")}>
-                        <Heart className="h-4 w-4" fill={hasLiked ? 'currentColor' : 'none'} />
-                        <span className="text-xs">{post.likeCount > 0 ? formatCount(post.likeCount) : ''}</span>
-                      </button>
-                      <CommentButtonWrapper
-                        href={`/post/${post.id}`}
-                        className={cn(
-                            "flex items-center space-x-1",
-                            repliesAllowed ? "hover:text-primary" : "opacity-50 pointer-events-none"
-                        )}
-                      >
-                        <div className="relative">
-                          <MessageCircle className="h-4 w-4" />
-                          {!repliesAllowed && <Slash className="absolute top-0 left-0 h-4 w-4 stroke-[2.5px]" />}
-                        </div>
-                        <span className="text-xs">{post.commentCount > 0 ? formatCount(post.commentCount) : ''}</span>
-                      </CommentButtonWrapper>
-                      <button onClick={handleRepost} className="flex items-center space-x-1 hover:text-green-500">
-                        <Repeat className={cn("h-4 w-4")} />
-                      </button>
-                      <button onClick={() => setIsShareSheetOpen(true)} className="flex items-center space-x-1 hover:text-primary">
-                        <ArrowUpRight className="h-4 w-4" />
-                      </button>
-                       <button onClick={handleBookmark} className="flex items-center space-x-1 hover:text-foreground">
-                        <BookmarkIcon className={cn("h-4 w-4", isBookmarked && "text-foreground fill-foreground")} />
-                      </button>
-                    </div>
-                </div>
-          </div>
+    <div className="flex space-x-3">
+        <div>
+             <Link href={`/profile/${post.authorId}`} className="flex-shrink-0">
+                <Avatar className="h-10 w-10">
+                    <AvatarFallback>{isAuthorLoading ? '' : getAvatar(finalAuthorProfile)}</AvatarFallback>
+                </Avatar>
+            </Link>
         </div>
-      </CardContent>
-    </Card>
+        <div className="flex-1">
+            <div className="flex justify-between items-start">
+                <div className="flex items-center space-x-1.5 -mb-1">
+                    <Link href={`/profile/${post.authorId}`} className="text-sm font-semibold hover:underline">
+                        {formatUserId(post.authorId)}
+                    </Link>
+                    <div className="text-xs text-muted-foreground">
+                        {post.timestamp ? `· ${formatTimestamp(post.timestamp.toDate())}` : ''}
+                    </div>
+                </div>
+               <div className="flex items-center">
+                 {!isRepost && isOwner && (
+                     <Sheet open={isMoreOptionsSheetOpen} onOpenChange={setIsMoreOptionsSheetOpen}>
+                        <SheetTrigger asChild>
+                            <Button variant="ghost" size="icon" className="h-6 w-6">
+                                <MoreHorizontal className="h-4 w-4" />
+                            </Button>
+                        </SheetTrigger>
+                        <SheetContent side="bottom" className="rounded-t-2xl">
+                            <SheetHeader className="sr-only">
+                                <SheetTitle>Options for post</SheetTitle>
+                                <SheetDescription>Manage your post.</SheetDescription>
+                            </SheetHeader>
+                            <div className="grid gap-2 py-4">
+                                 <div className="border rounded-2xl">
+                                    <Button variant="ghost" className="justify-between text-base py-6 rounded-2xl w-full" onClick={handleEditPost}>
+                                        <span className="font-semibold">Edit</span>
+                                        <Edit className="h-5 w-5" />
+                                    </Button>
+                                    <div className="border-t"></div>
+                                     <Button variant="ghost" className="justify-between text-base py-6 rounded-2xl w-full" onClick={handlePinPost}>
+                                        <span className="font-semibold">{post.isPinned ? "Unpin Post" : "Pin Post"}</span>
+                                        <Pin className="h-5 w-5" />
+                                    </Button>
+                                 </div>
+                                <div className="border rounded-2xl">
+                                    <Button variant="ghost" className="justify-between text-base py-6 rounded-2xl w-full text-destructive hover:text-destructive" onClick={handleDeletePost}>
+                                        <span className="font-semibold">Delete</span>
+                                        <Trash2 className="h-5 w-5" />
+                                    </Button>
+                                </div>
+                            </div>
+                        </SheetContent>
+                    </Sheet>
+                 )}
+               </div>
+            </div>
+
+            <Link href={`/post/${post.id}`} className="block">
+                <p className="text-foreground text-sm whitespace-pre-wrap">{post.content}</p>
+            </Link>
+
+            {post.type === 'quote' && post.quotedPost && (
+                <div className="mt-2">
+                    <QuotedPostCard post={post.quotedPost} />
+                </div>
+            )}
+            
+            {post.linkMetadata && <LinkPreview metadata={post.linkMetadata} />}
+
+            {post.type === 'poll' && post.pollOptions && (
+                <PollComponent post={post} user={user} />
+            )}
+
+            <div className="flex items-center justify-between pt-2 text-muted-foreground">
+                <div className="flex items-center space-x-6">
+                  <button onClick={handleLike} className={cn("flex items-center space-x-1", hasLiked && "text-pink-500")}>
+                    <Heart className="h-4 w-4" fill={hasLiked ? 'currentColor' : 'none'} />
+                    <span className="text-xs">{post.likeCount > 0 ? formatCount(post.likeCount) : ''}</span>
+                  </button>
+                  <CommentButtonWrapper
+                    href={`/post/${post.id}`}
+                    className={cn(
+                        "flex items-center space-x-1",
+                        repliesAllowed ? "hover:text-primary" : "opacity-50 pointer-events-none"
+                    )}
+                  >
+                    <div className="relative">
+                      <MessageCircle className="h-4 w-4" />
+                      {!repliesAllowed && <Slash className="absolute top-0 left-0 h-4 w-4 stroke-[2.5px]" />}
+                    </div>
+                    <span className="text-xs">{post.commentCount > 0 ? formatCount(post.commentCount) : ''}</span>
+                  </CommentButtonWrapper>
+                  <button onClick={handleRepost} className="flex items-center space-x-1 hover:text-green-500">
+                    <Repeat className={cn("h-4 w-4")} />
+                    <span className="text-xs">{post.repostCount > 0 ? formatCount(post.repostCount) : ''}</span>
+                  </button>
+                  <button onClick={() => setIsShareSheetOpen(true)} className="flex items-center space-x-1 hover:text-primary">
+                    <ArrowUpRight className="h-4 w-4" />
+                  </button>
+                   <button onClick={handleBookmark} className="flex items-center space-x-1 hover:text-foreground">
+                    <BookmarkIcon className={cn("h-4 w-4", isBookmarked && "text-foreground fill-foreground")} />
+                  </button>
+                </div>
+            </div>
+      </div>
+    </div>
     <ShareSheet post={post} isOpen={isShareSheetOpen} onOpenChange={setIsShareSheetOpen} />
     <RepostSheet post={post} isOpen={isRepostSheetOpen} onOpenChange={setIsRepostSheetOpen} />
     </>
   );
+}
+
+export function PostItem({ post, ...props }: { post: WithId<Post>, bookmarks: WithId<Bookmark>[] | null, updatePost?: (id: string, data: Partial<Post>) => void, onDelete?: (id: string) => void, onPin?: (id: string, currentStatus: boolean) => void, showPinStatus?: boolean, authorProfile?: WithId<User> | null }) {
+    const { firestore } = useFirebase();
+
+    const originalPostRef = useMemoFirebase(() => {
+        if (!firestore || post.type !== 'repost' || !post.repostOf) return null;
+        return doc(firestore, 'posts', post.repostOf);
+    }, [firestore, post.type, post.repostOf]);
+
+    const { data: originalPost, isLoading: isOriginalPostLoading } = useDoc<Post>(originalPostRef);
+
+    if (post.type === 'repost') {
+        if (isOriginalPostLoading) {
+            return <PostSkeleton />;
+        }
+        if (!originalPost) {
+            // Original post might be deleted, so don't render anything
+            return null;
+        }
+        return (
+            <Card className="w-full shadow-none border-x-0 border-t-0 rounded-none">
+                <CardContent className="p-4">
+                    <div className="flex items-center gap-2 text-xs text-muted-foreground mb-2 pl-12">
+                        <Repeat className="h-3 w-3" />
+                        <span>Reposted by {formatUserId(post.authorId)}</span>
+                    </div>
+                    <InnerPostItem post={originalPost} {...props} isRepost={true} />
+                </CardContent>
+            </Card>
+        );
+    }
+
+    return (
+        <Card className="w-full shadow-none border-x-0 border-t-0 rounded-none">
+            <CardContent className="p-4">
+                {props.showPinStatus && post.isPinned && (
+                    <div className="flex items-center gap-2 text-xs text-muted-foreground mb-2 pl-12">
+                        <Pin className="h-3 w-3" />
+                        <span>Pinned</span>
+                    </div>
+                )}
+                <InnerPostItem post={post} {...props} />
+            </CardContent>
+        </Card>
+    );
 }
 
 export function PostSkeleton() {
@@ -625,7 +662,7 @@ export default function HomePage() {
   const filteredPosts = useMemo(() => {
     if (!initialPosts || !user) return initialPosts || [];
     const mutedUsers = userProfile?.mutedUsers || [];
-    // Filter out muted users' posts
+    // Filter out muted users' posts and user's own posts
     return initialPosts.filter(post => !mutedUsers.includes(post.authorId) && post.authorId !== user.uid);
   }, [initialPosts, userProfile, user]);
 
@@ -679,11 +716,3 @@ export default function HomePage() {
     </AppLayout>
   );
 }
-
-    
-
-    
-
-
-
-

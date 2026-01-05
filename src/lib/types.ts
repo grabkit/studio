@@ -1,6 +1,6 @@
 
 
-import { type Timestamp } from "firebase/firestore";
+import { type Timestamp } from "firestore";
 
 export interface LinkMetadata {
     url: string;
@@ -50,6 +50,7 @@ export interface Post {
 
     // Repost/Quote specific fields
     repostOf?: string; // ID of the original post, for simple reposts
+    repostAuthorId?: string; // ID of the user who reposted
     quotedPost?: QuotedPost; // Denormalized data for a quoted post
 }
 

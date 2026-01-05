@@ -11,6 +11,9 @@ import { WithId } from '@/firebase/firestore/use-collection';
 import { useFirebase } from '@/firebase';
 import { useRouter } from 'next/navigation';
 import { useToast } from '@/hooks/use-toast';
+import { doc, setDoc, serverTimestamp, collection, runTransaction, increment } from 'firestore';
+import { FirestorePermissionError } from '@/firebase/errors';
+import { errorEmitter } from '@/firebase/error-emitter';
 
 interface RepostSheetProps {
     post: WithId<Post>;
@@ -23,11 +26,50 @@ export function RepostSheet({ post, isOpen, onOpenChange }: RepostSheetProps) {
     const router = useRouter();
     const { toast } = useToast();
 
-    const handleSimpleRepost = () => {
-        // TODO: Implement simple repost logic
-        console.log("Simple Repost Clicked for post:", post.id);
-        toast({ title: "Coming Soon!", description: "Repost functionality will be implemented soon." });
+    const handleSimpleRepost = async () => {
+        if (!user || !firestore) {
+            toast({ variant: "destructive", title: "You must be logged in to repost." });
+            return;
+        }
         onOpenChange(false);
+
+        const newPostRef = doc(collection(firestore, 'posts'));
+        const originalPostRef = doc(firestore, 'posts', post.id);
+
+        const newPostData: Partial<Post> = {
+            id: newPostRef.id,
+            authorId: user.uid,
+            type: 'repost',
+            repostOf: post.id,
+            timestamp: serverTimestamp(),
+            // These are non-interactive fields for a repost wrapper
+            likes: [],
+            likeCount: 0,
+            commentCount: 0,
+            repostCount: 0,
+            commentsAllowed: false,
+        };
+
+        try {
+             await runTransaction(firestore, async (transaction) => {
+                // Increment repostCount on original post
+                transaction.update(originalPostRef, { repostCount: increment(1) });
+                // Create the new repost document
+                transaction.set(newPostRef, newPostData);
+            });
+
+            toast({ title: "Reposted!" });
+
+        } catch (error) {
+             console.error("Repost transaction failed:", error);
+            const permissionError = new FirestorePermissionError({
+                path: newPostRef.path,
+                operation: 'create',
+                requestResourceData: newPostData,
+            });
+            errorEmitter.emit('permission-error', permissionError);
+            toast({ variant: 'destructive', title: 'Error', description: 'Could not repost.'})
+        }
     }
     
     const handleQuotePost = () => {
