@@ -15,6 +15,16 @@ export interface PollOption {
     votes: number;
 }
 
+// Represents the essential data of a post being quoted.
+// Stored denormalized within a quote post.
+export interface QuotedPost {
+    id: string;
+    authorId: string;
+    authorName: string; // e.g., formatUserId(authorId)
+    authorAvatar: string; // e.g., getAvatar(author)
+    content: string;
+}
+
 export interface Post {
     id: string;
     timestamp: Timestamp;
@@ -22,17 +32,24 @@ export interface Post {
     content: string;
     likes: string[];
     likeCount: number;
+    repostCount?: number;
     commentCount: number;
     commentsAllowed?: boolean;
     isPinned?: boolean;
 
+    // Type of post
+    type?: 'text' | 'poll' | 'repost' | 'quote';
+
     // Poll specific fields
-    type?: 'text' | 'poll';
     pollOptions?: PollOption[];
     voters?: Record<string, number>; // maps userId to option index
 
     // Link specific fields
     linkMetadata?: LinkMetadata;
+
+    // Repost/Quote specific fields
+    repostOf?: string; // ID of the original post, for simple reposts
+    quotedPost?: QuotedPost; // Denormalized data for a quoted post
 }
 
 export interface Comment {

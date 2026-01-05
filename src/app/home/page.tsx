@@ -33,6 +33,7 @@ import { useRouter } from "next/navigation";
 import { usePresence } from "@/hooks/usePresence";
 import { ShareSheet } from "@/components/ShareSheet";
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetDescription, SheetTrigger, SheetClose } from "@/components/ui/sheet";
+import { RepostSheet } from "@/components/RepostSheet";
 
 
 function LinkPreview({ metadata }: { metadata: LinkMetadata }) {
@@ -197,6 +198,7 @@ export function PostItem({ post, bookmarks, updatePost, onDelete, onPin, showPin
   const router = useRouter();
   const [isShareSheetOpen, setIsShareSheetOpen] = useState(false);
   const [isMoreOptionsSheetOpen, setIsMoreOptionsSheetOpen] = useState(false);
+  const [isRepostSheetOpen, setIsRepostSheetOpen] = useState(false);
   
   const isOwner = user?.uid === post.authorId;
   const isBookmarked = useMemo(() => bookmarks?.some(b => b.postId === post.id), [bookmarks, post.id]);
@@ -340,8 +342,7 @@ export function PostItem({ post, bookmarks, updatePost, onDelete, onPin, showPin
 
 
   const handleRepost = () => {
-    const encodedContent = encodeURIComponent(post.content);
-    router.push(`/post?content=${encodedContent}`);
+    setIsRepostSheetOpen(true);
   };
 
   const handleBookmark = () => {
@@ -419,7 +420,7 @@ export function PostItem({ post, bookmarks, updatePost, onDelete, onPin, showPin
                                 </Button>
                             </SheetTrigger>
                             <SheetContent side="bottom" className="rounded-t-2xl">
-                                <SheetHeader className="text-left sr-only">
+                                <SheetHeader className="sr-only">
                                     <SheetTitle>Options for post</SheetTitle>
                                     <SheetDescription>Manage your post.</SheetDescription>
                                 </SheetHeader>
@@ -493,6 +494,7 @@ export function PostItem({ post, bookmarks, updatePost, onDelete, onPin, showPin
       </CardContent>
     </Card>
     <ShareSheet post={post} isOpen={isShareSheetOpen} onOpenChange={setIsShareSheetOpen} />
+    <RepostSheet post={post} isOpen={isRepostSheetOpen} onOpenChange={setIsRepostSheetOpen} />
     </>
   );
 }
@@ -674,4 +676,5 @@ export default function HomePage() {
     
 
     
+
 
