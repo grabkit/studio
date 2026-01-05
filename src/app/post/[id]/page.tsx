@@ -307,7 +307,7 @@ function PostDetailItem({ post, updatePost }: { post: WithId<Post>, updatePost: 
                     <span>Replies</span>
                 </div>
                  <div className="flex items-center space-x-2">
-                    <span className="font-bold text-foreground">0</span>
+                    <span className="font-bold text-foreground">{formatCount(post.repostCount)}</span>
                     <span>Reposts</span>
                 </div>
             </div>
@@ -866,4 +866,3 @@ export default function PostDetailPage() {
 }
 
     
-

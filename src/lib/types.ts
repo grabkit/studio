@@ -33,7 +33,7 @@ export interface Post {
     content: string;
     likes: string[];
     likeCount: number;
-    repostCount?: number;
+    repostCount: number;
     commentCount: number;
     commentsAllowed?: boolean;
     isPinned?: boolean;
@@ -50,7 +50,6 @@ export interface Post {
 
     // Repost/Quote specific fields
     repostOf?: string; // ID of the original post, for simple reposts
-    repostAuthorId?: string; // ID of the user who reposted
     quotedPost?: QuotedPost; // Denormalized data for a quoted post
 }
 
