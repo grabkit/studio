@@ -89,6 +89,7 @@ function UpvotedUsers() {
                         const isCurrentUser = user.id === currentUser?.uid;
                         const href = isCurrentUser ? '/account' : `/profile/${user.id}`;
                         const name = isCurrentUser ? 'Your Profile' : formatUserId(user.id);
+                        const displayName = name.length > 12 ? `${name.substring(0, 12)}...` : name;
                         
                         const hasVoiceStatus = user?.voiceStatusUrl && user?.voiceStatusTimestamp && (Date.now() - user.voiceStatusTimestamp.toMillis() < 24 * 60 * 60 * 1000);
 
@@ -127,7 +128,7 @@ function UpvotedUsers() {
                                 )}
                             </div>
                             <Link href={href}>
-                                <p className="text-xs font-semibold truncate w-full text-center mt-2">{name}</p>
+                                <p className="text-xs font-semibold w-full text-center mt-2">{displayName}</p>
                             </Link>
                         </div>
                         )
