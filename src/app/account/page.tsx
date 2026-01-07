@@ -1,5 +1,4 @@
 
-
 "use client";
 
 import AppLayout from "@/components/AppLayout";
@@ -352,7 +351,7 @@ export default function AccountPage() {
                     </Link>
                 </Button>
                 <div className="flex items-center space-x-2">
-                    <Link href="/account/settings" legacyBehavior>
+                    <Link href="/account/settings">
                       <Button variant="ghost" size="icon">
                           <Menu className="h-6 w-6" />
                       </Button>
@@ -489,4 +488,5 @@ export default function AccountPage() {
     
 
     
+
 
