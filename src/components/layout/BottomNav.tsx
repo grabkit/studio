@@ -7,7 +7,7 @@ import { Home, HomeIcon, Plus, Heart as HeartIcon, Send, User } from "lucide-rea
 import { cn } from "@/lib/utils";
 import { useFirebase, useMemoFirebase } from "@/firebase";
 import { collection, query, where, limit } from "firebase/firestore";
-import type { Notification, Conversation } from "@/lib/types";
+import type { Notification, Conversation, NotificationSettings } from "@/lib/types";
 import { useCollection } from "@/firebase/firestore/use-collection";
 import { useMemo } from "react";
 
@@ -19,16 +19,28 @@ const navItems = [
   { href: "/account", label: "Account", icon: User, activeIcon: User },
 ];
 
+
+const notificationInfo: Record<Notification['type'], { settingKey: keyof NotificationSettings }> = {
+    like: { settingKey: 'likes' },
+    comment: { settingKey: 'comments' },
+    comment_approval: { settingKey: 'comments' },
+    upvote: { settingKey: 'upvotes' },
+    message_request: { settingKey: 'messageRequests' },
+    repost: { settingKey: 'reposts' },
+    quote: { settingKey: 'reposts' }
+};
+
+
 export default function BottomNav() {
   const pathname = usePathname();
-  const { firestore, user } = useFirebase();
+  const { firestore, user, userProfile } = useFirebase();
 
   const unreadNotifsQuery = useMemoFirebase(() => {
     if (!firestore || !user) return null;
     return query(
         collection(firestore, 'users', user.uid, 'notifications'),
-        where('read', '==', false),
-        limit(1)
+        where('read', '==', false)
+        // We fetch all unread and filter on the client, as querying based on settings is complex.
     );
   }, [firestore, user]);
 
@@ -44,7 +56,32 @@ export default function BottomNav() {
   const { data: conversations } = useCollection<Conversation>(conversationsQuery);
 
 
-  const hasUnreadActivity = useMemo(() => (unreadNotifications?.length ?? 0) > 0, [unreadNotifications]);
+  const hasUnreadActivity = useMemo(() => {
+    if (!unreadNotifications || unreadNotifications.length === 0) return false;
+
+    const settings = userProfile?.notificationSettings || {
+        push: true,
+        likes: true,
+        comments: true,
+        reposts: true,
+        upvotes: true,
+        messageRequests: true,
+    };
+    
+    // If push notifications are globally off, no indicator should be shown.
+    if (!settings.push) return false;
+
+    // Check if there is at least one unread notification that the user has NOT disabled.
+    return unreadNotifications.some(notification => {
+        const info = notificationInfo[notification.type];
+        if (info && info.settingKey) {
+            // Setting is explicitly checked. Show dot if setting is true or undefined.
+            return settings[info.settingKey] !== false;
+        }
+        // For notifications without a specific setting, always count them as "active".
+        return true; 
+    });
+  }, [unreadNotifications, userProfile]);
   
   const hasUnreadMessagesOrRequests = useMemo(() => {
     if (!conversations || !user) return false;
