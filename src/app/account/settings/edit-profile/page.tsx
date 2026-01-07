@@ -155,8 +155,7 @@ export default function EditProfilePage() {
                                 <Button 
                                     type="button" 
                                     variant="secondary" 
-                                    size="icon" 
-                                    className="absolute -bottom-1 -right-1 rounded-full border-2 border-background"
+                                    className="absolute -bottom-1 -right-1 rounded-full border-2 border-background h-8 w-8 p-0"
                                     onClick={() => setIsEmojiSheetOpen(true)}
                                 >
                                     <Pencil className="h-4 w-4" />
@@ -272,3 +271,4 @@ export default function EditProfilePage() {
 }
 
     
+
