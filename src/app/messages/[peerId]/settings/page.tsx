@@ -5,11 +5,11 @@ import { useMemo, useState } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import AppLayout from '@/components/AppLayout';
 import { useFirebase, useMemoFirebase } from '@/firebase';
-import { doc, updateDoc, arrayRemove, arrayUnion } from 'firebase/firestore';
+import { doc, updateDoc, arrayRemove, arrayUnion, collection, getDocs, writeBatch } from 'firebase/firestore';
 import { useDoc } from '@/firebase/firestore/use-doc';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
-import { ArrowLeft, BellOff, ShieldAlert, MicOff, VideoOff, ChevronRight, PhoneCall, User as UserIcon, Bell } from 'lucide-react';
+import { ArrowLeft, BellOff, ShieldAlert, MicOff, VideoOff, ChevronRight, PhoneCall, User as UserIcon, Bell, Trash2, Flag } from 'lucide-react';
 import { getAvatar, formatUserId } from '@/lib/utils';
 import type { Conversation, User } from '@/lib/types';
 import { useToast } from '@/hooks/use-toast';
@@ -30,6 +30,7 @@ import { Label } from '@/components/ui/label';
 import { Switch } from '@/components/ui/switch';
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from '@/components/ui/sheet';
 import Link from 'next/link';
+import { ReportDialog } from '@/components/ReportDialog';
 
 function SettingsPageSkeleton() {
     return (
@@ -56,6 +57,7 @@ export default function ChatSettingsPage() {
     const peerId = params.peerId as string;
 
     const [isBlockConfirmOpen, setIsBlockConfirmOpen] = useState(false);
+    const [isClearConfirmOpen, setIsClearConfirmOpen] = useState(false);
     const [isCallControlsSheetOpen, setIsCallControlsSheetOpen] = useState(false);
     
     const conversationId = useMemo(() => {
@@ -164,6 +166,43 @@ export default function ChatSettingsPage() {
         }
     };
 
+    const handleClearChat = async () => {
+        if (!firestore || !conversationId) return;
+
+        const messagesRef = collection(firestore, 'conversations', conversationId, 'messages');
+        const conversationDocRef = doc(firestore, 'conversations', conversationId);
+        
+        try {
+            const querySnapshot = await getDocs(messagesRef);
+            if (querySnapshot.empty) {
+                toast({ title: "Chat is already empty." });
+                return;
+            }
+            const batch = writeBatch(firestore);
+            querySnapshot.forEach(doc => {
+                batch.delete(doc.ref);
+            });
+            // Also clear the last message preview
+            batch.update(conversationDocRef, { lastMessage: "" });
+            
+            await batch.commit();
+
+            toast({ title: "Chat Cleared", description: "All messages have been deleted from this conversation." });
+
+        } catch (error) {
+            console.error("Error clearing chat:", error);
+            const permissionError = new FirestorePermissionError({
+                path: messagesRef.path,
+                operation: 'delete',
+                requestResourceData: { note: "Batch delete operation on subcollection" },
+            });
+            errorEmitter.emit('permission-error', permissionError);
+            toast({ variant: 'destructive', title: "Error", description: "Could not clear the chat history." });
+        } finally {
+            setIsClearConfirmOpen(false);
+        }
+    }
+
 
     if (isPeerUserLoading || isConversationLoading) {
         return (
@@ -239,10 +278,27 @@ export default function ChatSettingsPage() {
                             </div>
                         </SheetContent>
                     </Sheet>
+                    
+                     <Link href={`/profile/${peerId}`}>
+                        <Button variant="ghost" className="w-full justify-start text-base h-12">
+                            <UserIcon className="mr-3" />
+                            View Profile
+                        </Button>
+                    </Link>
 
                     <Button variant="ghost" className="w-full justify-start text-base h-12 text-destructive hover:text-destructive" onClick={() => setIsBlockConfirmOpen(true)}>
                         <ShieldAlert className="mr-3" />
                          {isBlocked ? 'Unblock User' : 'Block User'}
+                    </Button>
+                     <ReportDialog reportedUserId={peerUser.id} reportedUserName={formatUserId(peerUser.id)}>
+                        <Button variant="ghost" className="w-full justify-start text-base h-12 text-destructive hover:text-destructive">
+                            <Flag className="mr-3" />
+                            Report
+                        </Button>
+                    </ReportDialog>
+                    <Button variant="ghost" className="w-full justify-start text-base h-12" onClick={() => setIsClearConfirmOpen(true)}>
+                        <Trash2 className="mr-3" />
+                        Clear Chat
                     </Button>
                 </div>
             </div>
@@ -261,6 +317,21 @@ export default function ChatSettingsPage() {
                     <AlertDialogFooter>
                         <AlertDialogCancel>Cancel</AlertDialogCancel>
                         <AlertDialogAction onClick={handleBlock}>{isBlocked ? 'Unblock' : 'Block'}</AlertDialogAction>
+                    </AlertDialogFooter>
+                </AlertDialogContent>
+            </AlertDialog>
+            
+            <AlertDialog open={isClearConfirmOpen} onOpenChange={setIsClearConfirmOpen}>
+                <AlertDialogContent>
+                    <AlertDialogHeader>
+                        <AlertDialogTitle>Clear this chat?</AlertDialogTitle>
+                        <AlertDialogDescription>
+                           This will permanently delete all messages in this conversation on your device. This action cannot be undone.
+                        </AlertDialogDescription>
+                    </AlertDialogHeader>
+                    <AlertDialogFooter>
+                        <AlertDialogCancel>Cancel</AlertDialogCancel>
+                        <AlertDialogAction onClick={handleClearChat}>Clear Chat</AlertDialogAction>
                     </AlertDialogFooter>
                 </AlertDialogContent>
             </AlertDialog>
