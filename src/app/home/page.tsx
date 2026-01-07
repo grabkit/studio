@@ -522,7 +522,7 @@ export function PostItem({ post, ...props }: { post: WithId<Post>, bookmarks: Wi
             return null;
         }
         return (
-            <Card className="w-full shadow-none border-x-0 border-t-0 rounded-none">
+            <Card className="w-full shadow-none border-x-0 border-t-0 rounded-xl">
                 <CardContent className="p-4">
                     <div className="flex items-center gap-2 text-xs text-muted-foreground mb-2 pl-12">
                         <Repeat className="h-3 w-3" />
@@ -535,7 +535,7 @@ export function PostItem({ post, ...props }: { post: WithId<Post>, bookmarks: Wi
     }
 
     return (
-        <Card className="w-full shadow-none border-x-0 border-t-0 rounded-none">
+        <Card className="w-full shadow-none border-x-0 border-t-0 rounded-xl">
             <CardContent className="p-4">
                 {props.showPinStatus && post.isPinned && (
                     <div className="flex items-center gap-2 text-xs text-muted-foreground mb-2 pl-12">
