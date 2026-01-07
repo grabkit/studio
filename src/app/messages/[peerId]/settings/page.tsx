@@ -69,49 +69,45 @@ function SharedContent() {
         return query(collection(firestore, 'conversations', conversationId, 'messages'));
     }, [firestore, conversationId]);
 
-    const { data: messages } = useCollection<Message>(messagesQuery);
+    const { data: messages, isLoading: messagesLoading } = useCollection<Message>(messagesQuery);
     
     useEffect(() => {
-        if (!firestore || !messages) {
-            setIsLoading(messages === undefined);
-            return;
-        }
+        const fetchSharedContent = async () => {
+            if (!firestore || !messages) {
+                setIsLoading(messagesLoading);
+                return;
+            }
 
-        const postIds = messages.map(m => m.postId).filter((id): id is string => !!id);
-        
-        if (postIds.length === 0) {
-            setPosts([]);
-            setIsLoading(false);
-            return;
-        }
-
-        const fetchPosts = async () => {
-            setIsLoading(true);
-            const postsCollection = collection(firestore, 'posts');
-            const postsQuery = query(postsCollection, where(documentId(), 'in', postIds));
-            const snapshot = await getDocs(postsQuery);
-            const fetchedPosts = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as WithId<Post>));
-            setPosts(fetchedPosts);
+            const postIds = messages.map(m => m.postId).filter((id): id is string => !!id);
+            
+            if (postIds.length > 0) {
+                const postsCollection = collection(firestore, 'posts');
+                const postsQuery = query(postsCollection, where(documentId(), 'in', postIds));
+                const snapshot = await getDocs(postsQuery);
+                const fetchedPosts = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as WithId<Post>));
+                setPosts(fetchedPosts);
+            } else {
+                setPosts([]);
+            }
             setIsLoading(false);
         };
 
-        fetchPosts();
+        fetchSharedContent();
 
-    }, [firestore, messages]);
+    }, [firestore, messages, messagesLoading]);
 
     const { links, polls } = useMemo(() => {
-        const links: WithId<Post>[] = [];
         const polls: WithId<Post>[] = [];
         posts.forEach(post => {
-            if (post.linkMetadata) {
-                links.push(post);
-            }
             if (post.type === 'poll') {
                 polls.push(post);
             }
         });
-        return { links, polls };
-    }, [posts]);
+        
+        const linksFromMessages = messages?.filter(m => !!m.linkMetadata) || [];
+
+        return { links: linksFromMessages, polls };
+    }, [posts, messages]);
 
      const bookmarksQuery = useMemoFirebase(() => {
         if (!firestore || !currentUser) return null;
@@ -136,8 +132,8 @@ function SharedContent() {
                 {!isLoading && links.length === 0 && (
                     <p className="text-center text-muted-foreground py-8">No links shared in this conversation yet.</p>
                 )}
-                {!isLoading && links.map(post => (
-                   post.linkMetadata ? <LinkPreviewCard key={post.id} metadata={post.linkMetadata} /> : null
+                {!isLoading && links.map(message => (
+                   message.linkMetadata ? <LinkPreviewCard key={message.id} metadata={message.linkMetadata} /> : null
                 ))}
             </TabsContent>
             <TabsContent value="polls" className="mt-0">
