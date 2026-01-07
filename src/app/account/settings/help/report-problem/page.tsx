@@ -13,6 +13,12 @@ import { Textarea } from "@/components/ui/textarea";
 import { useToast } from "@/hooks/use-toast";
 import { useState } from "react";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { useFirebase } from "@/firebase";
+import { collection, doc, serverTimestamp, setDoc } from "firebase/firestore";
+import { errorEmitter } from "@/firebase/error-emitter";
+import { FirestorePermissionError } from "@/firebase/errors";
+import type { ProblemReport } from "@/lib/types";
+
 
 const reportProblemSchema = z.object({
   category: z.string().min(1, "Please select a category."),
@@ -22,6 +28,7 @@ const reportProblemSchema = z.object({
 export default function ReportProblemPage() {
     const router = useRouter();
     const { toast } = useToast();
+    const { firestore, user } = useFirebase();
     const [isSubmitting, setIsSubmitting] = useState(false);
 
     const form = useForm<z.infer<typeof reportProblemSchema>>({
@@ -32,18 +39,45 @@ export default function ReportProblemPage() {
         },
     });
 
-    const onSubmit = (values: z.infer<typeof reportProblemSchema>) => {
+    const onSubmit = async (values: z.infer<typeof reportProblemSchema>) => {
+        if (!firestore || !user) {
+            toast({ variant: "destructive", title: "Authentication Error", description: "You must be logged in to submit a report." });
+            return;
+        }
         setIsSubmitting(true);
-        // Simulate an API call
-        setTimeout(() => {
-            console.log("Problem Report:", values);
+        
+        const reportRef = doc(collection(firestore, "problemReports"));
+        const reportData: ProblemReport = {
+            id: reportRef.id,
+            reporterUserId: user.uid,
+            category: values.category,
+            description: values.description,
+            timestamp: serverTimestamp(),
+        };
+
+        try {
+            await setDoc(reportRef, reportData);
             toast({
                 title: "Report Submitted",
                 description: "Thank you for your feedback. We'll look into it.",
             });
-            setIsSubmitting(false);
             router.back();
-        }, 1500);
+        } catch (error) {
+            console.error("Failed to submit problem report:", error);
+            const permissionError = new FirestorePermissionError({
+                path: reportRef.path,
+                operation: 'create',
+                requestResourceData: reportData,
+            });
+            errorEmitter.emit('permission-error', permissionError);
+             toast({
+                variant: "destructive",
+                title: "Submission Failed",
+                description: "There was an error submitting your report. Please try again.",
+            });
+        } finally {
+            setIsSubmitting(false);
+        }
     };
 
     return (

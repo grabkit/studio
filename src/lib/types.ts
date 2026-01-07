@@ -146,6 +146,14 @@ export interface ReplyItem extends Comment {
     postContent: string;
 }
 
+export interface ProblemReport {
+    id: string;
+    reporterUserId: string;
+    category: string;
+    description: string;
+    timestamp: any;
+}
+
 export interface Report {
     id: string;
     reporterUserId: string;
