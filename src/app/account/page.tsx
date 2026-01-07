@@ -1,4 +1,5 @@
 
+
 "use client";
 
 import AppLayout from "@/components/AppLayout";
@@ -327,7 +328,7 @@ export default function AccountPage() {
 
   return (
     <AppLayout showTopBar={false}>
-        <div className="flex items-center justify-between h-14 px-4 sticky top-0 z-20 bg-background">
+        <div className="fixed top-0 left-0 right-0 z-20 flex items-center justify-between h-14 px-4 bg-background">
             <Link href="/post" className={cn(buttonVariants({ variant: "ghost", size: "icon" }))}>
                 <Plus className="h-6 w-6" />
             </Link>
@@ -343,7 +344,7 @@ export default function AccountPage() {
         onTouchStart={handleTouchStart}
         onTouchMove={handleTouchMove}
         onTouchEnd={handleTouchEnd}
-        className="relative h-full overflow-y-auto"
+        className="relative h-full overflow-y-auto pt-14"
       >
          <div 
           className="absolute top-0 left-0 right-0 flex justify-center items-center h-12 text-muted-foreground transition-opacity duration-300 z-10 pointer-events-none"
@@ -410,6 +411,8 @@ export default function AccountPage() {
                 </div>
                 
                 <div className="mb-4 space-y-1">
+                    <p className="font-semibold font-headline">{userProfile?.name}</p>
+                    <p className="text-sm text-muted-foreground">{formatUserId(authUser?.uid)}</p>
                     {userProfile?.bio && <p className="text-sm">{userProfile.bio}</p>}
                     {userProfile?.website && (
                         <a href={userProfile.website} target="_blank" rel="noopener noreferrer" className="flex items-center gap-2 text-sm text-blue-500 hover:underline">
@@ -432,7 +435,7 @@ export default function AccountPage() {
             </div>
 
                 <Tabs defaultValue="posts" className="w-full">
-                    <div className="sticky top-0 bg-background z-10">
+                    <div className="sticky top-14 bg-background z-10">
                     <TabsList variant="underline" className="grid w-full grid-cols-3">
                         <TabsTrigger value="posts" variant="underline" className="font-semibold">Posts</TabsTrigger>
                         <TabsTrigger value="replies" variant="underline" className="font-semibold">Replies</TabsTrigger>
