@@ -79,7 +79,7 @@ function PostPreviewCard({ postId }: { postId: string }) {
 }
 
 
-function MessageBubble({ message, isOwnMessage, conversationId, onSetReply, onForward }: { message: WithId<Message>, isOwnMessage: boolean, conversationId: string, onSetReply: (message: WithId<Message>) => void, onForward: (message: WithId<Message>) => void }) {
+function MessageBubble({ message, isOwnMessage, conversation, onSetReply, onForward }: { message: WithId<Message>, isOwnMessage: boolean, conversation: Conversation | null, onSetReply: (message: WithId<Message>) => void, onForward: (message: WithId<Message>) => void }) {
     const { toast } = useToast();
     const { firestore } = useFirebase();
     const router = useRouter();
@@ -90,9 +90,9 @@ function MessageBubble({ message, isOwnMessage, conversationId, onSetReply, onFo
     }
 
     const handleUnsend = () => {
-        if (!firestore || !isOwnMessage) return;
+        if (!firestore || !isOwnMessage || !conversation) return;
 
-        const messageRef = doc(firestore, 'conversations', conversationId, 'messages', message.id);
+        const messageRef = doc(firestore, 'conversations', conversation.id, 'messages', message.id);
         deleteDoc(messageRef).catch(serverError => {
             const permissionError = new FirestorePermissionError({
                 path: messageRef.path,
@@ -114,6 +114,8 @@ function MessageBubble({ message, isOwnMessage, conversationId, onSetReply, onFo
     }
     
     const isPostShare = !!message.postId;
+    const themeColor = conversation?.themeColor || 'hsl(var(--primary))';
+
 
     return (
         <div className={cn("flex items-end gap-2 group", isOwnMessage ? "justify-end" : "justify-start")}>
@@ -123,11 +125,15 @@ function MessageBubble({ message, isOwnMessage, conversationId, onSetReply, onFo
             )}>
                  <DropdownMenu>
                     <DropdownMenuTrigger asChild>
-                         <div className={cn(
+                         <div
+                          className={cn(
                             "max-w-fit rounded-2xl px-3 py-2 cursor-pointer",
-                            isOwnMessage ? "bg-primary text-primary-foreground rounded-br-none" : "bg-secondary rounded-bl-none",
-                             isPostShare && "p-2 bg-transparent"
-                        )}>
+                            !isOwnMessage && "bg-secondary rounded-bl-none",
+                            isOwnMessage && "text-primary-foreground rounded-br-none",
+                            isPostShare && "p-2 bg-transparent"
+                          )}
+                           style={{ backgroundColor: isOwnMessage && !isPostShare ? themeColor : undefined }}
+                        >
                             
                             {message.isForwarded && (
                                 <div className="flex items-center gap-1 text-xs opacity-70 mb-1">
@@ -216,23 +222,19 @@ function ChatHeader({ peerId, peerUser, onStartCall, onStartVideoCall, conversat
             <Button variant="ghost" size="icon" onClick={() => router.back()}>
                 <ArrowLeft />
             </Button>
-            <div className="flex-1 flex items-center gap-3 ml-2">
-                 <Link href={`/profile/${peerId}`} className="cursor-pointer">
-                    <Avatar className="h-8 w-8">
-                        <AvatarFallback>{isLoading ? <Skeleton className="h-8 w-8 rounded-full" /> : getAvatar(peerUser)}</AvatarFallback>
-                    </Avatar>
-                </Link>
-                <Link href={`/messages/${peerId}/settings`} className="cursor-pointer">
-                    <div>
-                        <h2 className="text-base font-bold leading-tight">
-                            {isLoading ? <Skeleton className="h-5 w-24" /> : formatUserId(peerId)}
-                        </h2>
-                        <p className="text-xs text-muted-foreground leading-tight">
-                            {isOnline ? "Online" : formatLastSeen(lastSeen)}
-                        </p>
-                    </div>
-                </Link>
-            </div>
+            <Link href={`/profile/${peerId}`} className="flex-1 flex items-center gap-3 ml-2 cursor-pointer">
+                 <Avatar className="h-8 w-8">
+                    <AvatarFallback>{isLoading ? <Skeleton className="h-8 w-8 rounded-full" /> : getAvatar(peerUser)}</AvatarFallback>
+                </Avatar>
+                <div>
+                    <h2 className="text-base font-bold leading-tight">
+                        {isLoading ? <Skeleton className="h-5 w-24" /> : formatUserId(peerId)}
+                    </h2>
+                    <p className="text-xs text-muted-foreground leading-tight">
+                        {isOnline ? "Online" : formatLastSeen(lastSeen)}
+                    </p>
+                </div>
+            </Link>
             <Button variant="ghost" size="icon" onClick={onStartVideoCall} disabled={isVideoDisabledByPeer}>
                 <Video />
             </Button>
@@ -319,7 +321,7 @@ function ChatMessages({ conversationId, conversation, onSetReply, onForward, rep
                         )
                     }
                     const message = item as WithId<Message>;
-                    return <MessageBubble key={message.id} message={message} isOwnMessage={message.senderId === user?.uid} conversationId={conversationId} onSetReply={onSetReply} onForward={onForward} />
+                    return <MessageBubble key={message.id} message={message} isOwnMessage={message.senderId === user?.uid} conversation={conversation} onSetReply={onSetReply} onForward={onForward} />
                 })}
             </div>
              <div ref={messagesEndRef} />
@@ -340,6 +342,9 @@ function MessageInput({ conversationId, conversation, replyingTo, onCancelReply 
         resolver: zodResolver(messageFormSchema),
         defaultValues: { text: "" },
     });
+
+    const themeColor = conversation?.themeColor || 'hsl(var(--primary))';
+
 
     const onSubmit = (values: z.infer<typeof messageFormSchema>) => {
         if (!firestore || !user || !conversationId || !conversation) return;
@@ -437,7 +442,13 @@ function MessageInput({ conversationId, conversation, replyingTo, onCancelReply 
                             </FormItem>
                             )}
                         />
-                        <Button type="submit" size="icon" disabled={form.formState.isSubmitting} className="bg-primary hover:bg-primary/90 rounded-full">
+                        <Button
+                            type="submit"
+                            size="icon"
+                            disabled={form.formState.isSubmitting}
+                            className="rounded-full"
+                            style={{ backgroundColor: themeColor }}
+                        >
                             <Send className="h-5 w-5" />
                         </Button>
                     </form>

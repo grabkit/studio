@@ -371,6 +371,10 @@
             "type": "array",
             "description": "An array of user IDs who have disabled video calls for this conversation.",
             "items": { "type": "string" }
+        },
+        "themeColor": {
+            "type": "string",
+            "description": "The HSL color string for the chat theme."
         }
       },
       "required": ["id", "participantIds", "lastUpdated", "status", "requesterId"]
