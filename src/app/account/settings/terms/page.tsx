@@ -73,6 +73,11 @@ export default function TermsOfServicePage() {
                 <p>
                     We reserve the right to modify these Terms at any time. We will provide notice of changes by posting the new Terms on this page. By continuing to access or use our Service after those revisions become effective, you agree to be bound by the revised terms.
                 </p>
+
+                <h4 className="font-semibold">Contact Us</h4>
+                <p>
+                    If you have any questions about these Terms of Service, you can contact us at [మీ కాంటాక్ట్ ఇమెయిల్/విధానాన్ని ఇక్కడ చేర్చండి].
+                </p>
             </div>
         </AppLayout>
     )

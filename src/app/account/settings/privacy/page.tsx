@@ -85,7 +85,7 @@ export default function PrivacyPolicyPage() {
 
                 <h4 className="font-semibold">Contact Us</h4>
                 <p>
-                    If you have any questions about this Privacy Policy, you can contact us through the "Help" section in the app settings.
+                    If you have any questions about this Privacy Policy, you can contact us at [మీ కాంటాక్ట్ ఇమెయిల్/విధానాన్ని ఇక్కడ చేర్చండి].
                 </p>
             </div>
         </AppLayout>
