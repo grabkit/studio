@@ -9,10 +9,9 @@ import { doc, updateDoc, arrayRemove, arrayUnion } from 'firebase/firestore';
 import { useDoc } from '@/firebase/firestore/use-doc';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
-import { ArrowLeft, Bell, BellOff, ShieldAlert, Trash2, MicOff, VideoOff } from 'lucide-react';
+import { ArrowLeft, BellOff, ShieldAlert, MicOff, VideoOff, ChevronRight, PhoneCall } from 'lucide-react';
 import { getAvatar, formatUserId } from '@/lib/utils';
 import type { Conversation, User } from '@/lib/types';
-import { WithId } from '@/firebase/firestore/use-collection';
 import { useToast } from '@/hooks/use-toast';
 import {
   AlertDialog,
@@ -29,6 +28,7 @@ import { FirestorePermissionError } from '@/firebase/errors';
 import { errorEmitter } from '@/firebase/error-emitter';
 import { Label } from '@/components/ui/label';
 import { Switch } from '@/components/ui/switch';
+import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from '@/components/ui/sheet';
 
 function SettingsPageSkeleton() {
     return (
@@ -55,6 +55,7 @@ export default function ChatSettingsPage() {
     const peerId = params.peerId as string;
 
     const [isBlockConfirmOpen, setIsBlockConfirmOpen] = useState(false);
+    const [isCallControlsSheetOpen, setIsCallControlsSheetOpen] = useState(false);
     
     const conversationId = useMemo(() => {
         if (!currentUser || !peerId) return null;
@@ -71,7 +72,7 @@ export default function ChatSettingsPage() {
         return doc(firestore, 'users', peerId);
     }, [firestore, peerId]);
 
-    const { data: conversation, isLoading: isConversationLoading } = useDoc<Conversation>(conversationRef);
+    const { data: conversation, isLoading: isConversationLoading, setData: setConversation } = useDoc<Conversation>(conversationRef);
     const { data: peerUser, isLoading: isPeerUserLoading } = useDoc<User>(peerUserRef);
 
     const isMuted = useMemo(() => conversation?.mutedBy?.includes(currentUser?.uid || ''), [conversation, currentUser]);
@@ -83,21 +84,24 @@ export default function ChatSettingsPage() {
     const handleToggleMute = async () => {
         if (!firestore || !currentUser || !conversation) return;
         const convoRef = doc(firestore, 'conversations', conversation.id);
-        const updatePayload = {
-            mutedBy: isMuted ? arrayRemove(currentUser.uid) : arrayUnion(currentUser.uid)
-        };
+        const newMutedBy = isMuted
+            ? conversation.mutedBy?.filter(id => id !== currentUser.uid)
+            : [...(conversation.mutedBy || []), currentUser.uid];
+
+        setConversation(current => current ? { ...current, mutedBy: newMutedBy } : null);
 
         try {
-            await updateDoc(convoRef, updatePayload);
+            await updateDoc(convoRef, { mutedBy: newMutedBy });
             toast({ title: isMuted ? 'Conversation unmuted' : 'Conversation muted' });
         } catch(error) {
              const permissionError = new FirestorePermissionError({
                 path: convoRef.path,
                 operation: 'update',
-                requestResourceData: updatePayload
+                requestResourceData: { mutedBy: newMutedBy }
             });
             errorEmitter.emit('permission-error', permissionError);
-            toast({ variant: 'destructive', title: 'Error', description: `Could not ${isMuted ? 'unmute' : 'mute'} conversation.`})
+            toast({ variant: 'destructive', title: 'Error', description: `Could not ${isMuted ? 'unmute' : 'mute'} conversation.`});
+            setConversation(current => current ? { ...current, mutedBy: conversation.mutedBy } : null);
         }
     };
     
@@ -106,23 +110,27 @@ export default function ChatSettingsPage() {
         const convoRef = doc(firestore, 'conversations', conversation.id);
         
         const field = type === 'voice' ? 'voiceCallsDisabledBy' : 'videoCallsDisabledBy';
-        const isDisabled = type === 'voice' ? isVoiceDisabled : isVideoDisabled;
+        const currentDisabledList = conversation[field] || [];
+        const isDisabled = currentDisabledList.includes(currentUser.uid);
         
-        const updatePayload = {
-            [field]: isDisabled ? arrayRemove(currentUser.uid) : arrayUnion(currentUser.uid)
-        };
+        const newDisabledList = isDisabled
+            ? currentDisabledList.filter(id => id !== currentUser.uid)
+            : [...currentDisabledList, currentUser.uid];
+        
+        setConversation(current => current ? { ...current, [field]: newDisabledList } : null);
 
         try {
-            await updateDoc(convoRef, updatePayload);
+            await updateDoc(convoRef, { [field]: newDisabledList });
             toast({ title: isDisabled ? `${type.charAt(0).toUpperCase() + type.slice(1)} calls enabled` : `${type.charAt(0).toUpperCase() + type.slice(1)} calls disabled` });
         } catch(error) {
              const permissionError = new FirestorePermissionError({
                 path: convoRef.path,
                 operation: 'update',
-                requestResourceData: updatePayload
+                requestResourceData: { [field]: newDisabledList }
             });
             errorEmitter.emit('permission-error', permissionError);
-            toast({ variant: 'destructive', title: 'Error', description: `Could not update call settings.`})
+            toast({ variant: 'destructive', title: 'Error', description: `Could not update call settings.`});
+             setConversation(current => current ? { ...current, [field]: currentDisabledList } : null);
         }
     };
 
@@ -136,14 +144,12 @@ export default function ChatSettingsPage() {
             ? originalBlockedUsers.filter(id => id !== peerId)
             : [...originalBlockedUsers, peerId];
         
-        // Optimistic UI Update
         setCurrentUserProfile(current => current ? { ...current, blockedUsers: newBlockedUsers } : null);
 
         try {
             await updateDoc(currentUserDocRef, { blockedUsers: newBlockedUsers });
             toast({ title: isBlocked ? 'User unblocked' : 'User blocked' });
         } catch (error) {
-            // Revert on failure
             setCurrentUserProfile(current => current ? { ...current, blockedUsers: originalBlockedUsers } : null);
             const permissionError = new FirestorePermissionError({
                 path: currentUserDocRef.path,
@@ -193,29 +199,49 @@ export default function ChatSettingsPage() {
                     <p className="text-muted-foreground">{peerUser.bio || "No bio yet."}</p>
                 </div>
                 
-                 <div className="mt-8 divide-y border-y">
-                     <div className="flex items-center justify-between p-3">
+                 <div className="mt-8 divide-y border-y rounded-lg overflow-hidden">
+                     <div className="flex items-center justify-between p-3 bg-card">
                         <Label htmlFor="mute-notifications" className="flex items-center gap-3 text-base font-normal">
                              <BellOff /> Mute Notifications
                         </Label>
                         <Switch id="mute-notifications" checked={isMuted} onCheckedChange={handleToggleMute} />
                     </div>
-                     <div className="flex items-center justify-between p-3">
-                        <Label htmlFor="disable-voice" className="flex items-center gap-3 text-base font-normal">
-                             <MicOff /> Disable Voice Calls
-                        </Label>
-                        <Switch id="disable-voice" checked={isVoiceDisabled} onCheckedChange={() => handleToggleCall('voice')} />
-                    </div>
-                     <div className="flex items-center justify-between p-3">
-                        <Label htmlFor="disable-video" className="flex items-center gap-3 text-base font-normal">
-                             <VideoOff /> Disable Video Calls
-                        </Label>
-                        <Switch id="disable-video" checked={isVideoDisabled} onCheckedChange={() => handleToggleCall('video')} />
-                    </div>
-                </div>
+                 </div>
+
+                 <Sheet open={isCallControlsSheetOpen} onOpenChange={setIsCallControlsSheetOpen}>
+                    <SheetTrigger asChild>
+                        <div className="mt-4 border-y divide-y rounded-lg overflow-hidden cursor-pointer hover:bg-secondary">
+                             <div className="flex items-center justify-between p-3">
+                                <div className="flex items-center gap-3 text-base font-normal">
+                                     <PhoneCall /> Call Controls
+                                </div>
+                                <ChevronRight className="h-5 w-5 text-muted-foreground" />
+                            </div>
+                        </div>
+                    </SheetTrigger>
+                    <SheetContent side="bottom" className="rounded-t-2xl">
+                         <SheetHeader>
+                            <SheetTitle>Call Controls</SheetTitle>
+                        </SheetHeader>
+                         <div className="mt-4 divide-y border-y rounded-lg overflow-hidden">
+                             <div className="flex items-center justify-between p-3">
+                                <Label htmlFor="disable-voice" className="flex items-center gap-3 text-base font-normal">
+                                     <MicOff /> Disable Voice Calls
+                                </Label>
+                                <Switch id="disable-voice" checked={isVoiceDisabled} onCheckedChange={() => handleToggleCall('voice')} />
+                            </div>
+                             <div className="flex items-center justify-between p-3">
+                                <Label htmlFor="disable-video" className="flex items-center gap-3 text-base font-normal">
+                                     <VideoOff /> Disable Video Calls
+                                </Label>
+                                <Switch id="disable-video" checked={isVideoDisabled} onCheckedChange={() => handleToggleCall('video')} />
+                            </div>
+                        </div>
+                    </SheetContent>
+                </Sheet>
 
 
-                <div className="mt-4 space-y-2">
+                <div className="mt-4 border rounded-lg overflow-hidden">
                     <Button variant="ghost" className="w-full justify-start text-base h-12 text-destructive hover:text-destructive" onClick={() => setIsBlockConfirmOpen(true)}>
                         <ShieldAlert className="mr-3" />
                          {isBlocked ? 'Unblock User' : 'Block User'}
@@ -223,7 +249,6 @@ export default function ChatSettingsPage() {
                 </div>
             </div>
 
-             {/* Confirmation Dialogs */}
             <AlertDialog open={isBlockConfirmOpen} onOpenChange={setIsBlockConfirmOpen}>
                 <AlertDialogContent>
                     <AlertDialogHeader>
