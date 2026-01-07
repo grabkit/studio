@@ -215,14 +215,19 @@ function ChatHeader({ peerId, peerUser, onStartCall, onStartVideoCall, conversat
     }, [conversation, peerId]);
     
     return (
-        <div className="fixed top-0 left-0 right-0 z-10 flex items-center p-2 bg-background/80 backdrop-blur-sm border-b h-14 max-w-2xl mx-auto sm:px-4">
-            <Button variant="ghost" size="icon" onClick={() => router.back()}>
+        <div 
+            className="fixed top-0 left-0 right-0 z-10 flex items-center p-2 bg-background/80 backdrop-blur-sm border-b h-14 max-w-2xl mx-auto sm:px-4 cursor-pointer"
+            onClick={() => router.push(`/messages/${peerId}/settings`)}
+        >
+            <Button variant="ghost" size="icon" onClick={(e) => { e.stopPropagation(); router.back(); }}>
                 <ArrowLeft />
             </Button>
-            <Link href={`/profile/${peerId}`} className="flex-1 flex items-center gap-3 ml-2 cursor-pointer">
-                 <Avatar className="h-8 w-8">
-                    <AvatarFallback>{isLoading ? <Skeleton className="h-8 w-8 rounded-full" /> : getAvatar(peerUser)}</AvatarFallback>
-                </Avatar>
+            <div className="flex-1 flex items-center gap-3 ml-2" onClick={(e) => e.stopPropagation()}>
+                <Link href={`/profile/${peerId}`}>
+                    <Avatar className="h-8 w-8">
+                        <AvatarFallback>{isLoading ? <Skeleton className="h-8 w-8 rounded-full" /> : getAvatar(peerUser)}</AvatarFallback>
+                    </Avatar>
+                </Link>
                 <div>
                     <h2 className="text-base font-bold leading-tight">
                         {isLoading ? <Skeleton className="h-5 w-24" /> : formatUserId(peerId)}
@@ -231,11 +236,11 @@ function ChatHeader({ peerId, peerUser, onStartCall, onStartVideoCall, conversat
                         {isOnline ? "Online" : formatLastSeen(lastSeen)}
                     </p>
                 </div>
-            </Link>
-            <Button variant="ghost" size="icon" onClick={onStartVideoCall} disabled={isVideoDisabledByPeer}>
+            </div>
+            <Button variant="ghost" size="icon" onClick={(e) => { e.stopPropagation(); onStartVideoCall(); }} disabled={isVideoDisabledByPeer}>
                 <Video />
             </Button>
-            <Button variant="ghost" size="icon" onClick={onStartCall} disabled={isVoiceDisabledByPeer}>
+            <Button variant="ghost" size="icon" onClick={(e) => { e.stopPropagation(); onStartCall(); }} disabled={isVoiceDisabledByPeer}>
                 <Phone />
             </Button>
         </div>
