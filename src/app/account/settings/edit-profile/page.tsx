@@ -28,7 +28,6 @@ import { ScrollArea } from "@/components/ui/scroll-area";
 
 
 const profileSchema = z.object({
-  name: z.string().min(2, "Name must be at least 2 characters.").max(50),
   bio: z.string().max(160, "Bio cannot be longer than 160 characters.").optional(),
   website: z.string().url("Please enter a valid URL.").or(z.literal("")).optional(),
   gender: z.enum(["male", "female", "other", "prefer_not_to_say", ""]),
@@ -44,7 +43,6 @@ export default function EditProfilePage() {
     const form = useForm<z.infer<typeof profileSchema>>({
         resolver: zodResolver(profileSchema),
         defaultValues: {
-            name: userProfile?.name || "",
             bio: userProfile?.bio || "",
             website: userProfile?.website || "",
             gender: userProfile?.gender || "",
@@ -164,19 +162,10 @@ export default function EditProfilePage() {
                         </div>
                         
                         <div className="space-y-4">
-                             <FormField
-                                control={form.control}
-                                name="name"
-                                render={({ field }) => (
-                                    <FormItem>
-                                    <FormLabel>Name</FormLabel>
-                                    <FormControl>
-                                        <Input {...field} />
-                                    </FormControl>
-                                    <FormMessage />
-                                    </FormItem>
-                                )}
-                            />
+                            <FormItem>
+                               <FormLabel>Name</FormLabel>
+                               <Input value={userProfile?.name || ''} disabled />
+                           </FormItem>
 
                              <FormItem>
                                 <FormLabel>Email</FormLabel>
@@ -271,4 +260,5 @@ export default function EditProfilePage() {
 }
 
     
+
 
