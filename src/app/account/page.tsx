@@ -345,17 +345,17 @@ export default function AccountPage() {
 
         <div style={{ paddingTop: `${pullPosition}px` }} className="transition-all duration-300">
             <div className="flex items-center justify-between h-14 px-4">
-                 <Button variant="ghost" size="icon" asChild>
-                    <Link href="/post">
+                <Link href="/post">
+                    <Button variant="ghost" size="icon">
                         <Plus className="h-6 w-6" />
-                    </Link>
-                </Button>
-                <div className="flex items-center space-x-2">
-                    <Button variant="ghost" size="icon" asChild>
-                      <Link href="/account/settings">
-                        <Menu className="h-6 w-6" />
-                      </Link>
                     </Button>
+                </Link>
+                <div className="flex items-center space-x-2">
+                    <Link href="/account/settings">
+                      <Button variant="ghost" size="icon">
+                        <Menu className="h-6 w-6" />
+                      </Button>
+                    </Link>
                 </div>
             </div>
             <div className="px-4">
@@ -412,7 +412,6 @@ export default function AccountPage() {
                     </div>
                 </div>
                 
-                {/* User Name, Bio, and Website */}
                 <div className="mb-4 space-y-1">
                     <p className="font-semibold font-headline">{userProfile?.name}</p>
                     {userProfile?.bio && <p className="text-sm">{userProfile.bio}</p>}
@@ -491,6 +490,8 @@ export default function AccountPage() {
 
 
 
+
+    
 
     
 
