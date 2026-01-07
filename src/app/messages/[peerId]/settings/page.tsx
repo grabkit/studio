@@ -9,7 +9,7 @@ import { doc, updateDoc, arrayRemove, arrayUnion, collection, getDocs, writeBatc
 import { useDoc } from '@/firebase/firestore/use-doc';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
-import { ArrowLeft, BellOff, ShieldAlert, MicOff, VideoOff, ChevronRight, PhoneCall, User as UserIcon, Bell, Flag, MessageCircleX } from 'lucide-react';
+import { ArrowLeft, BellOff, ShieldAlert, MicOff, VideoOff, ChevronRight, PhoneCall, User as UserIcon, Bell, Flag, MessageCircleX, Palette } from 'lucide-react';
 import { getAvatar, formatUserId } from '@/lib/utils';
 import type { Conversation, User } from '@/lib/types';
 import { useToast } from '@/hooks/use-toast';
@@ -239,16 +239,20 @@ export default function ChatSettingsPage() {
                     <p className="text-muted-foreground">{peerUser.bio || "No bio yet."}</p>
                 </Link>
                 
-                 <div className="mt-8">
+                 <div className="mt-8 space-y-0">
+                    <Button variant="ghost" className="w-full justify-start text-base h-12">
+                        <Palette className="mr-3" />
+                        Chat Theme
+                    </Button>
                      <Button variant="ghost" className="w-full justify-start text-base h-12" onClick={() => setIsClearConfirmOpen(true)}>
                         <MessageCircleX className="mr-3" />
                         Clear Chat
                     </Button>
                     <div className="flex items-center justify-between hover:bg-secondary rounded-md">
-                        <Button variant="ghost" className="w-full justify-start text-base h-12">
+                        <Label htmlFor="mute-notifications" className="flex items-center w-full h-12 px-4 text-base font-normal cursor-pointer">
                             <BellOff className="mr-3" />
                              Mute Notifications
-                        </Button>
+                        </Label>
                         <Switch id="mute-notifications" checked={isMuted} onCheckedChange={handleToggleMute} className="mr-3"/>
                     </div>
                  
