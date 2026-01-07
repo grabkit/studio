@@ -25,12 +25,12 @@ import type { Conversation, Message, User, Post, LinkMetadata } from '@/lib/type
 import { WithId } from '@/firebase/firestore/use-collection';
 import { FirestorePermissionError } from '@/firebase/errors';
 import { errorEmitter } from '@/firebase/error-emitter';
-import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
 import { useToast } from '@/hooks/use-toast';
 import { usePresence } from '@/hooks/usePresence';
 import Link from 'next/link';
 import { ForwardSheet } from '@/components/ForwardSheet';
 import { LinkPreviewCard } from '@/components/LinkPreviewCard';
+import { Sheet, SheetContent, SheetTrigger, SheetHeader, SheetTitle } from '@/components/ui/sheet';
 
 
 const messageFormSchema = z.object({
@@ -88,17 +88,19 @@ function MessageBubble({ message, isOwnMessage, conversation, onSetReply, onForw
     const { toast } = useToast();
     const { firestore } = useFirebase();
     const router = useRouter();
+    const [isSheetOpen, setIsSheetOpen] = useState(false);
 
     const handleCopy = () => {
         if (message.text) {
             navigator.clipboard.writeText(message.text);
             toast({ title: "Copied to clipboard" });
         }
+        setIsSheetOpen(false);
     }
 
     const handleUnsend = () => {
         if (!firestore || !isOwnMessage || !conversation) return;
-
+        setIsSheetOpen(false);
         const messageRef = doc(firestore, 'conversations', conversation.id, 'messages', message.id);
         deleteDoc(messageRef).catch(serverError => {
             const permissionError = new FirestorePermissionError({
@@ -118,25 +120,37 @@ function MessageBubble({ message, isOwnMessage, conversation, onSetReply, onForw
         if (message.postId) {
             router.push(`/post/${message.postId}`);
         }
+        setIsSheetOpen(false);
     }
     
     const handleOpenLink = () => {
         if (message.linkMetadata?.url) {
             window.open(message.linkMetadata.url, '_blank', 'noopener,noreferrer');
         }
+        setIsSheetOpen(false);
+    }
+
+    const handleReply = () => {
+        onSetReply(message);
+        setIsSheetOpen(false);
+    }
+
+    const handleForward = () => {
+        onForward(message);
+        setIsSheetOpen(false);
     }
 
     const isPostShare = !!message.postId;
     const isLinkShare = !!message.linkMetadata;
 
     return (
-        <div className={cn("flex items-end gap-2 group", isOwnMessage ? "justify-end" : "justify-start")}>
-             <div className={cn(
-                "flex items-center max-w-[70%]",
-                isOwnMessage ? "flex-row-reverse" : "flex-row"
-            )}>
-                 <DropdownMenu>
-                    <DropdownMenuTrigger asChild>
+        <Sheet open={isSheetOpen} onOpenChange={setIsSheetOpen}>
+            <div className={cn("flex items-end gap-2 group", isOwnMessage ? "justify-end" : "justify-start")}>
+                 <div className={cn(
+                    "flex items-center max-w-[70%]",
+                    isOwnMessage ? "flex-row-reverse" : "flex-row"
+                )}>
+                    <SheetTrigger asChild>
                          <div
                           className={cn(
                             "max-w-fit rounded-2xl px-3 py-2 cursor-pointer",
@@ -183,46 +197,59 @@ function MessageBubble({ message, isOwnMessage, conversation, onSetReply, onForw
                                 </p>
                             )}
                         </div>
-                    </DropdownMenuTrigger>
-                     <DropdownMenuContent align={isOwnMessage ? "end" : "start"} className="w-56">
+                    </SheetTrigger>
+                </div>
+            </div>
+             <SheetContent side="bottom" className="rounded-t-2xl">
+                <SheetHeader className="sr-only">
+                    <SheetTitle>Message Options</SheetTitle>
+                </SheetHeader>
+                <div className="grid gap-2 py-4">
+                    <div className="border rounded-2xl">
                         {isPostShare && (
-                            <DropdownMenuItem onClick={handleOpenPost}>
-                                <ExternalLink className="mr-2 h-4 w-4" />
+                            <Button variant="ghost" className="justify-start text-base py-6 rounded-2xl w-full gap-3" onClick={handleOpenPost}>
+                                <ExternalLink />
                                 <span>Open Post</span>
-                            </DropdownMenuItem>
+                            </Button>
                         )}
                         {isLinkShare && (
-                            <DropdownMenuItem onClick={handleOpenLink}>
-                                <ExternalLink className="mr-2 h-4 w-4" />
+                            <Button variant="ghost" className="justify-start text-base py-6 rounded-2xl w-full gap-3" onClick={handleOpenLink}>
+                                <ExternalLink />
                                 <span>Open Link</span>
-                            </DropdownMenuItem>
+                            </Button>
                         )}
                         {!isLinkShare && (
-                             <DropdownMenuItem onClick={() => onSetReply(message)}>
-                                <Reply className="mr-2 h-4 w-4" />
+                             <Button variant="ghost" className="justify-start text-base py-6 rounded-2xl w-full gap-3" onClick={handleReply}>
+                                <Reply />
                                 <span>Reply</span>
-                            </DropdownMenuItem>
+                            </Button>
                         )}
-                        <DropdownMenuItem onClick={() => onForward(message)}>
-                            <Forward className="mr-2 h-4 w-4" />
+                         <div className="border-t"></div>
+                        <Button variant="ghost" className="justify-start text-base py-6 rounded-2xl w-full gap-3" onClick={handleForward}>
+                            <Forward />
                             <span>Forward</span>
-                        </DropdownMenuItem>
-                        {!isPostShare && !isLinkShare && (
-                            <DropdownMenuItem onClick={handleCopy}>
-                                <Copy className="mr-2 h-4 w-4" />
-                                <span>Copy</span>
-                            </DropdownMenuItem>
+                        </Button>
+                         {!isPostShare && !isLinkShare && (
+                             <>
+                                <div className="border-t"></div>
+                                <Button variant="ghost" className="justify-start text-base py-6 rounded-2xl w-full gap-3" onClick={handleCopy}>
+                                    <Copy />
+                                    <span>Copy</span>
+                                </Button>
+                             </>
                         )}
-                        {isOwnMessage && (
-                            <DropdownMenuItem className="text-destructive" onClick={handleUnsend}>
-                                <Trash2 className="mr-2 h-4 w-4" />
+                    </div>
+                     {isOwnMessage && (
+                        <div className="border rounded-2xl">
+                            <Button variant="ghost" className="justify-start text-base py-6 rounded-2xl w-full text-destructive hover:text-destructive gap-3" onClick={handleUnsend}>
+                                <Trash2 />
                                 <span>Unsend</span>
-                            </DropdownMenuItem>
-                        )}
-                    </DropdownMenuContent>
-                </DropdownMenu>
-            </div>
-        </div>
+                            </Button>
+                        </div>
+                    )}
+                </div>
+            </SheetContent>
+        </Sheet>
     )
 }
 
@@ -644,6 +671,8 @@ export default function ChatPage() {
         </AppLayout>
     )
 }
+    
+
     
 
     
