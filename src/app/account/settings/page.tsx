@@ -12,20 +12,26 @@ import { signOut } from "firebase/auth";
 import { useToast } from "@/hooks/use-toast";
 import { ref, serverTimestamp, set } from "firebase/database";
 
-const settingsItems = [
-    { href: "/account/settings/account-status", label: "Account status", icon: User },
-    { href: "#", label: "Follow and invite", icon: UserPlus },
-    { href: "/account/settings/notifications", label: "Notifications", icon: Bell },
-    { href: "/account/settings/restricted-users", label: "Restricted accounts", icon: MinusCircle },
-    { href: "/account/settings/blocked-users", label: "Blocked users", icon: UserX },
-    { href: "/account/settings/muted-users", label: "Muted accounts", icon: VolumeX },
-    { href: "/account/settings/help", label: "Help", icon: HelpCircle },
-    { href: "/account/settings/about", label: "About", icon: Info },
-]
+const settingsItems = {
+    "Your Account": [
+        { href: "/account/settings/account-status", label: "Account status", icon: User },
+        { href: "/account/settings/follow-invite", label: "Follow and invite friends", icon: UserPlus },
+    ],
+    "How you interact": [
+        { href: "/account/settings/notifications", label: "Notifications", icon: Bell },
+        { href: "/account/settings/restricted-users", label: "Restricted accounts", icon: MinusCircle },
+        { href: "/account/settings/blocked-users", label: "Blocked users", icon: UserX },
+        { href: "/account/settings/muted-users", label: "Muted accounts", icon: VolumeX },
+    ],
+    "Support & About": [
+        { href: "/account/settings/help", label: "Help", icon: HelpCircle },
+        { href: "/account/settings/about", label: "About", icon: Info },
+    ],
+};
 
 function SettingsItem({ href, label, icon: Icon }: { href: string, label: string, icon: React.ElementType }) {
     return (
-        <Link href={href} className="flex items-center justify-between p-4 border-b transition-colors hover:bg-accent cursor-pointer">
+        <Link href={href} className="flex items-center justify-between p-4 transition-colors hover:bg-accent cursor-pointer">
             <div className="flex items-center space-x-4">
                 <Icon className="h-5 w-5 text-muted-foreground" />
                 <span className="text-base">{label}</span>
@@ -44,7 +50,6 @@ export default function SettingsPage() {
     const handleLogout = async () => {
         if (!auth || !auth.currentUser || !database) return;
 
-        // Manually set user offline before signing out
         const userStatusDatabaseRef = ref(database, '/status/' + auth.currentUser.uid);
         const isOfflineForDatabase = {
             isOnline: false,
@@ -79,13 +84,18 @@ export default function SettingsPage() {
             </div>
 
             <div className="pt-14">
-                <div className="divide-y">
-                    {settingsItems.map(item => (
-                        <SettingsItem key={item.href} {...item} />
-                    ))}
-                </div>
+                {Object.entries(settingsItems).map(([category, items]) => (
+                    <div key={category} className="my-4">
+                        <h3 className="px-4 py-2 text-sm font-semibold text-muted-foreground">{category}</h3>
+                        <div className="border-y divide-y">
+                           {items.map(item => (
+                                <SettingsItem key={item.href} {...item} />
+                            ))}
+                        </div>
+                    </div>
+                ))}
                  <div className="p-4 mt-4">
-                     <Button variant="outline" className="w-full text-destructive" onClick={handleLogout}>
+                     <Button variant="outline" className="w-full text-destructive hover:text-destructive hover:bg-destructive/10" onClick={handleLogout}>
                         <LogOut className="mr-2 h-4 w-4" />
                         Log Out
                     </Button>
