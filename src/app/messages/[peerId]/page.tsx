@@ -7,8 +7,8 @@ import { collection, query, orderBy, doc, setDoc, serverTimestamp, updateDoc, wr
 import { useCollection } from '@/firebase/firestore/use-collection';
 import { useDoc } from '@/firebase/firestore/use-doc';
 import { useForm } from 'react-hook-form';
-import { zodResolver } from '@hookform/resolvers/zod';
-import * as z from 'zod';
+import { zodResolver } from "@hookform/resolvers/zod";
+import * as z from "zod";
 import React, { useMemo, useEffect, useRef, useState } from 'react';
 import { isSameDay } from 'date-fns';
 
@@ -216,19 +216,23 @@ function ChatHeader({ peerId, peerUser, onStartCall, onStartVideoCall, conversat
             <Button variant="ghost" size="icon" onClick={() => router.back()}>
                 <ArrowLeft />
             </Button>
-            <Link href={`/messages/${peerId}/settings`} className="flex-1 flex items-center gap-3 ml-2 cursor-pointer">
-                <Avatar className="h-8 w-8">
-                    <AvatarFallback>{isLoading ? <Skeleton className="h-8 w-8 rounded-full" /> : getAvatar(peerUser)}</AvatarFallback>
-                </Avatar>
-                <div>
-                     <h2 className="text-base font-bold leading-tight">
-                        {isLoading ? <Skeleton className="h-5 w-24" /> : formatUserId(peerId)}
-                    </h2>
-                    <p className="text-xs text-muted-foreground leading-tight">
-                        {isOnline ? "Online" : formatLastSeen(lastSeen)}
-                    </p>
-                </div>
-            </Link>
+            <div className="flex-1 flex items-center gap-3 ml-2">
+                 <Link href={`/profile/${peerId}`} className="cursor-pointer">
+                    <Avatar className="h-8 w-8">
+                        <AvatarFallback>{isLoading ? <Skeleton className="h-8 w-8 rounded-full" /> : getAvatar(peerUser)}</AvatarFallback>
+                    </Avatar>
+                </Link>
+                <Link href={`/messages/${peerId}/settings`} className="cursor-pointer">
+                    <div>
+                        <h2 className="text-base font-bold leading-tight">
+                            {isLoading ? <Skeleton className="h-5 w-24" /> : formatUserId(peerId)}
+                        </h2>
+                        <p className="text-xs text-muted-foreground leading-tight">
+                            {isOnline ? "Online" : formatLastSeen(lastSeen)}
+                        </p>
+                    </div>
+                </Link>
+            </div>
             <Button variant="ghost" size="icon" onClick={onStartVideoCall} disabled={isVideoDisabledByPeer}>
                 <Video />
             </Button>

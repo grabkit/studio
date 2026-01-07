@@ -29,6 +29,7 @@ import { errorEmitter } from '@/firebase/error-emitter';
 import { Label } from '@/components/ui/label';
 import { Switch } from '@/components/ui/switch';
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from '@/components/ui/sheet';
+import Link from 'next/link';
 
 function SettingsPageSkeleton() {
     return (
@@ -191,13 +192,13 @@ export default function ChatSettingsPage() {
                 <h2 className="text-lg font-bold mx-auto -translate-x-4">Conversation Info</h2>
             </div>
             <div className="pt-20 px-4 flex flex-col h-full">
-                <div className="flex flex-col items-center text-center">
+                <Link href={`/profile/${peerId}`} className="flex flex-col items-center text-center">
                     <Avatar className="h-24 w-24 mb-4">
                         <AvatarFallback className="text-4xl">{getAvatar(peerUser)}</AvatarFallback>
                     </Avatar>
                     <h2 className="text-2xl font-bold font-headline">{formatUserId(peerUser.id)}</h2>
                     <p className="text-muted-foreground">{peerUser.bio || "No bio yet."}</p>
-                </div>
+                </Link>
                 
                  <div className="mt-8 divide-y border-y rounded-lg overflow-hidden">
                      <div className="flex items-center justify-between p-3 bg-card">
