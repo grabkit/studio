@@ -3,7 +3,7 @@
 
 import { useParams, useRouter } from 'next/navigation';
 import { useFirebase, useMemoFirebase } from '@/firebase';
-import { collection, query, orderBy, doc, setDoc, serverTimestamp, updateDoc, writeBatch, increment, deleteDoc, getDoc, where } from 'firebase/firestore';
+import { collection, query, orderBy, doc, setDoc, serverTimestamp, updateDoc, writeBatch, increment, deleteDoc, getDoc, where } from 'firestore';
 import { useCollection } from '@/firebase/firestore/use-collection';
 import { useDoc } from '@/firebase/firestore/use-doc';
 import { useForm } from 'react-hook-form';
@@ -19,7 +19,7 @@ import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
 import { Form, FormControl, FormField, FormItem, FormMessage } from '@/components/ui/form';
 import { Skeleton } from '@/components/ui/skeleton';
-import { ArrowLeft, Send, Reply, Forward, Copy, Trash2, X, Heart, MessageCircle, ExternalLink, Phone, Video, ShieldAlert, BellOff, Bell } from 'lucide-react';
+import { ArrowLeft, Send, Reply, Forward, Copy, Trash2, X, Heart, MessageCircle, ExternalLink, Phone, Video } from 'lucide-react';
 import { cn, getAvatar, formatMessageTimestamp, formatLastSeen, formatTimestamp, formatUserId, formatDateSeparator } from '@/lib/utils';
 import type { Conversation, Message, User, Post } from '@/lib/types';
 import { WithId } from '@/firebase/firestore/use-collection';
@@ -30,17 +30,6 @@ import { useToast } from '@/hooks/use-toast';
 import { usePresence } from '@/hooks/usePresence';
 import Link from 'next/link';
 import { ForwardSheet } from '@/components/ForwardSheet';
-import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from '@/components/ui/sheet';
-import {
-  AlertDialog,
-  AlertDialogAction,
-  AlertDialogCancel,
-  AlertDialogContent,
-  AlertDialogDescription,
-  AlertDialogFooter,
-  AlertDialogHeader,
-  AlertDialogTitle,
-} from "@/components/ui/alert-dialog";
 
 
 const messageFormSchema = z.object({
@@ -207,7 +196,7 @@ function MessageBubble({ message, isOwnMessage, conversationId, onSetReply, onFo
     )
 }
 
-function ChatHeader({ peerId, peerUser, onStartCall, onStartVideoCall, onOpenSettings }: { peerId: string, peerUser: WithId<User> | null, onStartCall: () => void, onStartVideoCall: () => void, onOpenSettings: () => void }) {
+function ChatHeader({ peerId, peerUser, onStartCall, onStartVideoCall }: { peerId: string, peerUser: WithId<User> | null, onStartCall: () => void, onStartVideoCall: () => void }) {
     const router = useRouter();
     const { isOnline, lastSeen } = usePresence(peerId);
 
@@ -218,7 +207,7 @@ function ChatHeader({ peerId, peerUser, onStartCall, onStartVideoCall, onOpenSet
             <Button variant="ghost" size="icon" onClick={() => router.back()}>
                 <ArrowLeft />
             </Button>
-            <div className="flex-1 flex items-center gap-3 ml-2 cursor-pointer" onClick={onOpenSettings}>
+            <Link href={`/messages/${peerId}/settings`} className="flex-1 flex items-center gap-3 ml-2 cursor-pointer">
                 <Avatar className="h-8 w-8">
                     <AvatarFallback>{isLoading ? <Skeleton className="h-8 w-8 rounded-full" /> : getAvatar(peerUser)}</AvatarFallback>
                 </Avatar>
@@ -230,7 +219,7 @@ function ChatHeader({ peerId, peerUser, onStartCall, onStartVideoCall, onOpenSet
                         {isOnline ? "Online" : formatLastSeen(lastSeen)}
                     </p>
                 </div>
-            </div>
+            </Link>
             <Button variant="ghost" size="icon" onClick={onStartVideoCall}>
                 <Video />
             </Button>
@@ -241,125 +230,6 @@ function ChatHeader({ peerId, peerUser, onStartCall, onStartVideoCall, onOpenSet
     )
 }
 
-function ChatSettingsSheet({ isOpen, onOpenChange, conversation, peerUser }: { isOpen: boolean, onOpenChange: (open: boolean) => void, conversation: WithId<Conversation> | null, peerUser: WithId<User> | null }) {
-    const { firestore, user } = useFirebase();
-    const router = useRouter();
-    const { toast } = useToast();
-
-    const [isMuteConfirmOpen, setIsMuteConfirmOpen] = useState(false);
-    const [isBlockConfirmOpen, setIsBlockConfirmOpen] = useState(false);
-    const [isDeleteConfirmOpen, setIsDeleteConfirmOpen] = useState(false);
-    
-    const isMuted = useMemo(() => conversation?.mutedBy?.includes(user?.uid || ''), [conversation, user]);
-
-    const handleToggleMute = async () => {
-        if (!firestore || !user || !conversation) return;
-        const convoRef = doc(firestore, 'conversations', conversation.id);
-        await updateDoc(convoRef, {
-            mutedBy: isMuted ? [] : [user.uid]
-        });
-        toast({ title: isMuted ? 'Conversation unmuted' : 'Conversation muted' });
-        onOpenChange(false);
-    };
-
-    const handleBlock = () => {
-        onOpenChange(false);
-        // Implement block functionality
-        toast({ title: 'User blocked' });
-    }
-
-    const handleDeleteChat = async () => {
-        if (!firestore || !conversation) return;
-        const convoRef = doc(firestore, 'conversations', conversation.id);
-        // This is a soft delete for the current user. A real implementation might need more complex logic.
-        // For now, we just navigate away and could potentially hide it from the user's list.
-        // A full implementation would be needed in `messages/page.tsx`
-        toast({ title: 'Chat Deleted' });
-        router.push('/messages');
-        onOpenChange(false);
-    };
-
-    if (!peerUser) return null;
-
-    return (
-        <Sheet open={isOpen} onOpenChange={onOpenChange}>
-            <SheetContent side="bottom" className="rounded-t-2xl h-[90dvh] flex flex-col p-0">
-                <SheetHeader className="p-4 border-b text-center relative">
-                    <SheetTitle>Conversation Info</SheetTitle>
-                    <Button variant="ghost" size="icon" className="absolute top-2 left-2" onClick={() => onOpenChange(false)}>
-                        <X className="h-5 w-5" />
-                    </Button>
-                </SheetHeader>
-                <div className="flex-grow overflow-y-auto p-6">
-                    <div className="flex flex-col items-center text-center">
-                        <Avatar className="h-24 w-24 mb-4">
-                            <AvatarFallback className="text-4xl">{getAvatar(peerUser)}</AvatarFallback>
-                        </Avatar>
-                        <h2 className="text-2xl font-bold font-headline">{formatUserId(peerUser.id)}</h2>
-                        <p className="text-muted-foreground">{peerUser.bio || "No bio yet."}</p>
-                    </div>
-
-                    <div className="mt-8 space-y-2">
-                        <Button variant="ghost" className="w-full justify-start text-base h-12" onClick={() => setIsMuteConfirmOpen(true)}>
-                            {isMuted ? <Bell className="mr-3"/> : <BellOff className="mr-3" />}
-                            {isMuted ? 'Unmute Notifications' : 'Mute Notifications'}
-                        </Button>
-                        <Button variant="ghost" className="w-full justify-start text-base h-12" onClick={() => setIsBlockConfirmOpen(true)}>
-                            <ShieldAlert className="mr-3" /> Block User
-                        </Button>
-                        <Button variant="ghost" className="w-full justify-start text-base h-12 text-destructive hover:text-destructive" onClick={() => setIsDeleteConfirmOpen(true)}>
-                            <Trash2 className="mr-3" /> Delete Chat
-                        </Button>
-                    </div>
-                </div>
-            </SheetContent>
-
-            {/* Confirmation Dialogs */}
-            <AlertDialog open={isMuteConfirmOpen} onOpenChange={setIsMuteConfirmOpen}>
-                <AlertDialogContent>
-                    <AlertDialogHeader>
-                        <AlertDialogTitle>{isMuted ? 'Unmute' : 'Mute'} Conversation?</AlertDialogTitle>
-                        <AlertDialogDescription>
-                            You will {isMuted ? 'start receiving' : 'no longer receive'} notifications for messages from this chat.
-                        </AlertDialogDescription>
-                    </AlertDialogHeader>
-                    <AlertDialogFooter>
-                        <AlertDialogCancel>Cancel</AlertDialogCancel>
-                        <AlertDialogAction onClick={handleToggleMute}>Confirm</AlertDialogAction>
-                    </AlertDialogFooter>
-                </AlertDialogContent>
-            </AlertDialog>
-            <AlertDialog open={isBlockConfirmOpen} onOpenChange={setIsBlockConfirmOpen}>
-                <AlertDialogContent>
-                    <AlertDialogHeader>
-                        <AlertDialogTitle>Block {formatUserId(peerUser.id)}?</AlertDialogTitle>
-                        <AlertDialogDescription>
-                            Blocked users will not be able to call you or send you messages. They will not be notified that you've blocked them.
-                        </AlertDialogDescription>
-                    </AlertDialogHeader>
-                    <AlertDialogFooter>
-                        <AlertDialogCancel>Cancel</AlertDialogCancel>
-                        <AlertDialogAction onClick={handleBlock}>Block</AlertDialogAction>
-                    </AlertDialogFooter>
-                </AlertDialogContent>
-            </AlertDialog>
-             <AlertDialog open={isDeleteConfirmOpen} onOpenChange={setIsDeleteConfirmOpen}>
-                <AlertDialogContent>
-                    <AlertDialogHeader>
-                        <AlertDialogTitle>Delete Chat?</AlertDialogTitle>
-                        <AlertDialogDescription>
-                            This will permanently delete the chat history on your device. This action cannot be undone.
-                        </AlertDialogDescription>
-                    </AlertDialogHeader>
-                    <AlertDialogFooter>
-                        <AlertDialogCancel>Cancel</AlertDialogCancel>
-                        <AlertDialogAction onClick={handleDeleteChat} className="bg-destructive text-destructive-foreground hover:bg-destructive/90">Delete</AlertDialogAction>
-                    </AlertDialogFooter>
-                </AlertDialogContent>
-            </AlertDialog>
-        </Sheet>
-    );
-}
 
 function ChatMessages({ conversationId, conversation, onSetReply, onForward, replyingTo }: { conversationId: string, conversation: WithId<Conversation> | null, onSetReply: (message: WithId<Message>) => void, onForward: (message: WithId<Message>) => void, replyingTo: WithId<Message> | null }) {
     const { firestore, user } = useFirebase();
@@ -573,7 +443,6 @@ export default function ChatPage() {
     const [replyingTo, setReplyingTo] = useState<WithId<Message> | null>(null);
     const [forwardingMessage, setForwardingMessage] = useState<WithId<Message> | null>(null);
     const [isForwardSheetOpen, setIsForwardSheetOpen] = useState(false);
-    const [isSettingsSheetOpen, setIsSettingsSheetOpen] = useState(false);
 
     const handleSetReply = (message: WithId<Message>) => {
         setReplyingTo(message);
@@ -637,7 +506,7 @@ export default function ChatPage() {
     if (!user || isConversationLoading || isPeerUserLoading) {
       return (
         <AppLayout showTopBar={false} showBottomNav={false}>
-          <ChatHeader peerId={peerId} peerUser={peerUser} onStartCall={handleStartCall} onStartVideoCall={handleStartVideoCall} onOpenSettings={() => setIsSettingsSheetOpen(true)} />
+          <ChatHeader peerId={peerId} peerUser={peerUser} onStartCall={handleStartCall} onStartVideoCall={handleStartVideoCall} />
           <div className="pt-14">
             <div className="space-y-4 p-4">
                 <Skeleton className="h-10 w-3/5" />
@@ -652,7 +521,7 @@ export default function ChatPage() {
 
     return (
         <AppLayout showTopBar={false} showBottomNav={false}>
-            <ChatHeader peerId={peerId} peerUser={peerUser} onStartCall={handleStartCall} onStartVideoCall={handleStartVideoCall} onOpenSettings={() => setIsSettingsSheetOpen(true)} />
+            <ChatHeader peerId={peerId} peerUser={peerUser} onStartCall={handleStartCall} onStartVideoCall={handleStartVideoCall} />
 
             <div className="pt-14">
                 {conversationId && <ChatMessages conversationId={conversationId} conversation={conversation} onSetReply={handleSetReply} onForward={handleForward} replyingTo={replyingTo} />}
@@ -664,13 +533,6 @@ export default function ChatPage() {
                 isOpen={isForwardSheetOpen}
                 onOpenChange={setIsForwardSheetOpen}
                 message={forwardingMessage}
-            />
-
-            <ChatSettingsSheet
-                isOpen={isSettingsSheetOpen}
-                onOpenChange={setIsSettingsSheetOpen}
-                conversation={conversation}
-                peerUser={peerUser}
             />
         </AppLayout>
     )
