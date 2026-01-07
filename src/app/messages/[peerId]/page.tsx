@@ -222,12 +222,14 @@ function ChatHeader({ peerId, peerUser, onStartCall, onStartVideoCall, conversat
             <Button variant="ghost" size="icon" onClick={(e) => { e.stopPropagation(); router.back(); }}>
                 <ArrowLeft />
             </Button>
-            <div className="flex-1 flex items-center gap-3 ml-2" onClick={(e) => e.stopPropagation()}>
-                <Link href={`/profile/${peerId}`}>
-                    <Avatar className="h-8 w-8">
-                        <AvatarFallback>{isLoading ? <Skeleton className="h-8 w-8 rounded-full" /> : getAvatar(peerUser)}</AvatarFallback>
-                    </Avatar>
-                </Link>
+            <div className="flex-1 flex items-center gap-3 ml-2">
+                <div onClick={(e) => e.stopPropagation()}>
+                    <Link href={`/profile/${peerId}`}>
+                        <Avatar className="h-8 w-8">
+                            <AvatarFallback>{isLoading ? <Skeleton className="h-8 w-8 rounded-full" /> : getAvatar(peerUser)}</AvatarFallback>
+                        </Avatar>
+                    </Link>
+                </div>
                 <div>
                     <h2 className="text-base font-bold leading-tight">
                         {isLoading ? <Skeleton className="h-5 w-24" /> : formatUserId(peerId)}
