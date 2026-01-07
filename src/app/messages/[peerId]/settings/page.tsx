@@ -9,7 +9,7 @@ import { doc, updateDoc, arrayRemove, arrayUnion, collection, getDocs, writeBatc
 import { useDoc } from '@/firebase/firestore/use-doc';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
-import { ArrowLeft, BellOff, ShieldAlert, MicOff, VideoOff, ChevronRight, PhoneCall, User as UserIcon, Bell, Flag, MessageCircleX } from 'lucide-react';
+import { ArrowLeft, BellOff, ShieldAlert, MicOff, VideoOff, ChevronRight, PhoneCall, User as UserIcon, Bell, Flag, MessageCircleX, Palette } from 'lucide-react';
 import { getAvatar, formatUserId } from '@/lib/utils';
 import type { Conversation, User } from '@/lib/types';
 import { useToast } from '@/hooks/use-toast';
@@ -240,13 +240,17 @@ export default function ChatSettingsPage() {
                 </Link>
                 
                  <div className="mt-8">
+                     <Button variant="ghost" className="w-full justify-start text-base h-12">
+                        <Palette className="mr-3 h-5 w-5" />
+                        Chat Theme
+                    </Button>
                      <Button variant="ghost" className="w-full justify-start text-base h-12" onClick={() => setIsClearConfirmOpen(true)}>
-                        <MessageCircleX className="mr-3" />
+                        <MessageCircleX className="mr-3 h-5 w-5" />
                         Clear Chat
                     </Button>
-                    <div className="flex items-center justify-between hover:bg-secondary rounded-md">
-                        <Label htmlFor="mute-notifications" className="flex items-center w-full h-12 px-4 text-base font-normal cursor-pointer">
-                            <BellOff className="mr-3" />
+                    <div className="flex items-center justify-between hover:bg-secondary rounded-md h-12 px-4">
+                        <Label htmlFor="mute-notifications" className="flex items-center text-base font-normal cursor-pointer">
+                            <BellOff className="mr-3 h-5 w-5" />
                              Mute Notifications
                         </Label>
                         <Switch id="mute-notifications" checked={isMuted} onCheckedChange={handleToggleMute} className="mr-3"/>
@@ -256,7 +260,7 @@ export default function ChatSettingsPage() {
                         <SheetTrigger asChild>
                            <Button variant="ghost" className="w-full justify-between text-base h-12">
                                 <div className="flex items-center">
-                                    <PhoneCall className="mr-3" />
+                                    <PhoneCall className="mr-3 h-5 w-5" />
                                     Call Controls
                                 </div>
                                 <ChevronRight className="h-5 w-5 text-muted-foreground" />
@@ -285,18 +289,18 @@ export default function ChatSettingsPage() {
                     
                     <Button asChild variant="ghost" className="w-full justify-start text-base h-12">
                         <Link href={`/profile/${peerId}`}>
-                            <UserIcon className="mr-3" />
+                            <UserIcon className="mr-3 h-5 w-5" />
                             View Profile
                         </Link>
                     </Button>
 
                     <Button variant="ghost" className="w-full justify-start text-base h-12 text-destructive hover:text-destructive" onClick={() => setIsBlockConfirmOpen(true)}>
-                        <ShieldAlert className="mr-3" />
+                        <ShieldAlert className="mr-3 h-5 w-5" />
                          {isBlocked ? 'Unblock User' : 'Block User'}
                     </Button>
                      <ReportDialog reportedUserId={peerUser.id} reportedUserName={formatUserId(peerUser.id)}>
                         <Button variant="ghost" className="w-full justify-start text-base h-12 text-destructive hover:text-destructive">
-                            <Flag className="mr-3" />
+                            <Flag className="mr-3 h-5 w-5" />
                             Report
                         </Button>
                     </ReportDialog>
