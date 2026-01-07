@@ -19,30 +19,12 @@ export default function HelpPage() {
                 <h2 className="text-lg font-bold mx-auto -translate-x-4">Help Center</h2>
             </div>
             <div className="pt-14 p-4 space-y-4">
-                <Link href="#" className="block p-4 border rounded-lg hover:bg-accent">
-                    <div className="flex items-center space-x-4">
-                        <MessageSquareQuote className="h-8 w-8 text-primary"/>
-                        <div>
-                            <h3 className="font-semibold">FAQs</h3>
-                            <p className="text-sm text-muted-foreground">Find answers to common questions.</p>
-                        </div>
-                    </div>
-                </Link>
-                 <Link href="#" className="block p-4 border rounded-lg hover:bg-accent">
+                 <Link href="/account/settings/community-guidelines" className="block p-4 border rounded-lg hover:bg-accent">
                     <div className="flex items-center space-x-4">
                         <BookOpen className="h-8 w-8 text-primary"/>
                         <div>
                             <h3 className="font-semibold">Community Guidelines</h3>
                             <p className="text-sm text-muted-foreground">Learn about our rules and policies.</p>
-                        </div>
-                    </div>
-                </Link>
-                 <Link href="#" className="block p-4 border rounded-lg hover:bg-accent">
-                    <div className="flex items-center space-x-4">
-                        <ShieldCheck className="h-8 w-8 text-primary"/>
-                        <div>
-                            <h3 className="font-semibold">Safety & Security</h3>
-                            <p className="text-sm text-muted-foreground">Tips for staying safe on the platform.</p>
                         </div>
                     </div>
                 </Link>
