@@ -1,4 +1,5 @@
 
+
 "use client";
 
 import { useMemo, useState, useEffect } from 'react';
@@ -35,6 +36,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { WithId } from '@/firebase/firestore/use-collection';
 import { PostItem as HomePostItem, PostSkeleton } from "@/app/home/page";
 import { LinkPreviewCard } from '@/components/LinkPreviewCard';
+import { ScrollArea } from '@/components/ui/scroll-area';
 
 
 function SettingsPageSkeleton() {
@@ -118,11 +120,13 @@ function SharedContent() {
 
     return (
         <Tabs defaultValue="links">
-            <TabsList variant="underline" className="grid grid-cols-2">
-                <TabsTrigger value="links" variant="underline"><LinkIcon /></TabsTrigger>
-                <TabsTrigger value="polls" variant="underline"><BarChart3 /></TabsTrigger>
-            </TabsList>
-            <TabsContent value="links" className="mt-4 space-y-3">
+            <div className="sticky top-14 bg-background z-10 border-b">
+                <TabsList variant="underline" className="grid grid-cols-2">
+                    <TabsTrigger value="links" variant="underline"><LinkIcon /></TabsTrigger>
+                    <TabsTrigger value="polls" variant="underline"><BarChart3 /></TabsTrigger>
+                </TabsList>
+            </div>
+            <TabsContent value="links" className="mt-4 space-y-3 px-4">
                 {isLoading && (
                     <>
                         <Skeleton className="h-28 w-full rounded-lg" />
@@ -334,22 +338,24 @@ export default function ChatSettingsPage() {
 
     return (
         <AppLayout showTopBar={false}>
-            <div className="fixed top-0 left-0 right-0 z-10 flex items-center p-2 bg-background h-14 max-w-2xl mx-auto sm:px-4">
+            <div className="fixed top-0 left-0 right-0 z-10 flex items-center p-2 bg-background/80 backdrop-blur-sm h-14 max-w-2xl mx-auto sm:px-4">
                 <Button variant="ghost" size="icon" onClick={() => router.back()}>
                     <ArrowLeft />
                 </Button>
                 <h2 className="text-lg font-bold mx-auto -translate-x-4">Conversation Info</h2>
             </div>
-            <div className="pt-20 px-4 flex flex-col h-full">
-                <Link href={`/profile/${peerId}`} className="flex flex-col items-center text-center">
-                    <Avatar className="h-24 w-24 mb-4">
-                        <AvatarFallback className="text-4xl">{getAvatar(peerUser)}</AvatarFallback>
-                    </Avatar>
-                    <h2 className="text-2xl font-bold font-headline">{formatUserId(peerUser.id)}</h2>
-                    <p className="text-muted-foreground">{peerUser.bio || "No bio yet."}</p>
-                </Link>
+            <ScrollArea className="h-full pt-14">
+                <div className="px-4 pt-6 flex flex-col items-center text-center">
+                    <Link href={`/profile/${peerId}`}>
+                        <Avatar className="h-24 w-24 mb-4">
+                            <AvatarFallback className="text-4xl">{getAvatar(peerUser)}</AvatarFallback>
+                        </Avatar>
+                        <h2 className="text-2xl font-bold font-headline">{formatUserId(peerUser.id)}</h2>
+                        <p className="text-muted-foreground">{peerUser.bio || "No bio yet."}</p>
+                    </Link>
+                </div>
                 
-                 <div className="mt-8">
+                 <div className="mt-8 mx-4">
                      <Button asChild variant="ghost" className="w-full justify-start text-base h-12 px-4 gap-3">
                         <Link href={`/profile/${peerId}`}>
                             <UserIcon className="h-5 w-5" />
@@ -411,10 +417,10 @@ export default function ChatSettingsPage() {
                          {isBlocked ? 'Unblock User' : 'Block User'}
                     </Button>
                 </div>
-                 <div className="my-4 mt-auto">
+                 <div className="my-4">
                     <SharedContent />
                 </div>
-            </div>
+            </ScrollArea>
 
             <AlertDialog open={isBlockConfirmOpen} onOpenChange={setIsBlockConfirmOpen}>
                 <AlertDialogContent>
