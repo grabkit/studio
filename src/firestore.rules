@@ -91,7 +91,11 @@ service cloud.firestore {
       allow delete: if isSignedIn() && isOwner(resource.data.senderId);
     }
     
-     match /reports/{reportId} {
+    match /problemReports/{reportId} {
+      allow create: if isSignedIn();
+    }
+
+    match /reports/{reportId} {
       allow read, list, update, delete: if false;
       allow create: if isSignedIn() && isValidNewReport(reportId);
     }
