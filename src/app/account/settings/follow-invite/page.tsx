@@ -29,7 +29,11 @@ export default function FollowInvitePage() {
                     description: "Invitation link copied to clipboard.",
                 });
             }
-        } catch (error) {
+        } catch (error: any) {
+            // Silently ignore AbortError which occurs when the user cancels the share sheet
+            if (error.name === 'AbortError') {
+                return;
+            }
             console.error("Error sharing:", error);
             toast({
                 variant: "destructive",
