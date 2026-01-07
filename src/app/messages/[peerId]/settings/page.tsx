@@ -9,7 +9,7 @@ import { doc, updateDoc, arrayRemove, arrayUnion, collection, getDocs, writeBatc
 import { useDoc } from '@/firebase/firestore/use-doc';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
-import { ArrowLeft, BellOff, ShieldAlert, MicOff, VideoOff, ChevronRight, PhoneCall, User as UserIcon, Bell, Flag, MessageCircleX, Palette } from 'lucide-react';
+import { ArrowLeft, BellOff, ShieldAlert, MicOff, VideoOff, ChevronRight, PhoneCall, User as UserIcon, Bell, Flag, MessageCircleX } from 'lucide-react';
 import { getAvatar, formatUserId } from '@/lib/utils';
 import type { Conversation, User } from '@/lib/types';
 import { useToast } from '@/hooks/use-toast';
@@ -240,10 +240,6 @@ export default function ChatSettingsPage() {
                 </Link>
                 
                  <div className="mt-8">
-                     <Button variant="ghost" className="w-full justify-start text-base h-12">
-                        <Palette className="mr-3 h-5 w-5" />
-                        Chat Theme
-                    </Button>
                      <Button variant="ghost" className="w-full justify-start text-base h-12" onClick={() => setIsClearConfirmOpen(true)}>
                         <MessageCircleX className="mr-3 h-5 w-5" />
                         Clear Chat
@@ -253,7 +249,7 @@ export default function ChatSettingsPage() {
                             <BellOff className="mr-3 h-5 w-5" />
                              Mute Notifications
                         </Label>
-                        <Switch id="mute-notifications" checked={isMuted} onCheckedChange={handleToggleMute} className="mr-3"/>
+                        <Switch id="mute-notifications" checked={isMuted} onCheckedChange={handleToggleMute} />
                     </div>
                  
                      <Sheet open={isCallControlsSheetOpen} onOpenChange={setIsCallControlsSheetOpen}>
