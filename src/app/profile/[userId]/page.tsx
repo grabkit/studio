@@ -504,7 +504,7 @@ export default function UserProfilePage() {
     if (userLoading || (currentUser && userId === currentUser.uid)) {
         return (
             <AppLayout showTopBar={false}>
-                 <div className="flex items-center justify-between h-14 px-4">
+                 <div className="fixed top-0 left-0 right-0 z-20 flex items-center justify-between h-14 px-4 bg-background">
                     <Button variant="ghost" size="icon" onClick={() => router.back()}>
                         <ArrowLeft className="h-6 w-6" />
                     </Button>
@@ -513,30 +513,32 @@ export default function UserProfilePage() {
                     </h2>
                      <Skeleton className="h-10 w-10" />
                 </div>
-                <div className="px-4">
-                    <div className="flex items-start space-x-5 mb-2">
-                        <div className="flex-shrink-0 text-center">
-                            <Skeleton className="h-20 w-20 md:h-24 md:w-24 rounded-full" />
-                            <Skeleton className="h-5 w-24 mt-2 mx-auto" />
+                <div className="pt-14">
+                    <div className="px-4 pt-4">
+                        <div className="flex items-start space-x-5 mb-2">
+                            <div className="flex-shrink-0 text-center">
+                                <Skeleton className="h-20 w-20 md:h-24 md:w-24 rounded-full" />
+                                <Skeleton className="h-5 w-24 mt-2 mx-auto" />
+                            </div>
+                            <div className="flex-1 flex justify-around text-center pt-6">
+                                <div>
+                                    <div className="font-bold text-lg"><Skeleton className="h-6 w-8 mx-auto" /></div>
+                                    <p className="text-sm text-muted-foreground">Posts</p>
+                                </div>
+                                <div>
+                                    <div className="font-bold text-lg"><Skeleton className="h-6 w-8 mx-auto" /></div>
+                                    <p className="text-sm text-muted-foreground">Upvotes</p>
+                                </div>
+                                <div>
+                                    <div className="font-bold text-lg"><Skeleton className="h-6 w-8 mx-auto" /></div>
+                                    <p className="text-sm text-muted-foreground">Upvoted</p>
+                                </div>
+                            </div>
                         </div>
-                        <div className="flex-1 flex justify-around text-center pt-6">
-                            <div>
-                                <div className="font-bold text-lg"><Skeleton className="h-6 w-8 mx-auto" /></div>
-                                <p className="text-sm text-muted-foreground">Posts</p>
-                            </div>
-                            <div>
-                                <div className="font-bold text-lg"><Skeleton className="h-6 w-8 mx-auto" /></div>
-                                <p className="text-sm text-muted-foreground">Upvotes</p>
-                            </div>
-                            <div>
-                                <div className="font-bold text-lg"><Skeleton className="h-6 w-8 mx-auto" /></div>
-                                <p className="text-sm text-muted-foreground">Upvoted</p>
-                            </div>
+                        <div className="mb-4 space-y-2">
+                            <Skeleton className="h-4 w-full" />
+                            <Skeleton className="h-4 w-2/3" />
                         </div>
-                    </div>
-                    <div className="mb-4 space-y-2">
-                        <Skeleton className="h-4 w-full" />
-                        <Skeleton className="h-4 w-2/3" />
                     </div>
                     <div className="divide-y border-b">
                         <PostSkeleton />
@@ -549,13 +551,13 @@ export default function UserProfilePage() {
     if (!user) {
         return (
              <AppLayout showTopBar={false}>
-                <div className="flex items-center justify-between h-14 px-4">
+                <div className="fixed top-0 left-0 right-0 z-20 flex items-center justify-between h-14 px-4 bg-background">
                     <Button variant="ghost" size="icon" onClick={() => router.back()}>
                         <ArrowLeft className="h-6 w-6" />
                     </Button>
                      <div className="w-10"></div>
                 </div>
-                <div className="text-center py-20">
+                <div className="text-center py-20 pt-32">
                     <h2 className="text-2xl font-headline text-primary">User not found</h2>
                     <p className="text-muted-foreground mt-2">
                         This user may have been deleted.
@@ -594,39 +596,39 @@ export default function UserProfilePage() {
 
     return (
         <AppLayout showTopBar={false}>
-            <div
-                ref={containerRef}
-                onTouchStart={handleTouchStart}
-                onTouchMove={handleTouchMove}
-                onTouchEnd={handleTouchEnd}
-                className="relative h-full overflow-y-auto"
-            >
-                <div 
-                    className="absolute top-0 left-0 right-0 flex justify-center items-center h-12 text-muted-foreground transition-opacity duration-300 z-20"
-                    style={{ opacity: isRefreshing ? 1 : pullPosition / 70 }}
-                >
-                    <div style={{ transform: `rotate(${isRefreshing ? 0 : pullPosition * 3}deg)` }}>
-                        <RefreshCw className={cn('h-5 w-5', isRefreshing && 'animate-spin')} />
-                    </div>
+             <Sheet open={isMoreOptionsSheetOpen} onOpenChange={setIsMoreOptionsSheetOpen}>
+                <div className="fixed top-0 left-0 right-0 z-20 flex items-center justify-between h-14 px-4 bg-background">
+                    <Button variant="ghost" size="icon" onClick={() => router.back()}>
+                        <ArrowLeft className="h-6 w-6" />
+                    </Button>
+                    <h2 className="text-lg font-semibold font-headline">
+                        {formatUserId(user.id)}
+                    </h2>
+                    <SheetTrigger asChild>
+                        <Button variant="ghost" size="icon" className="justify-self-end">
+                            <MoreHorizontal className="h-6 w-6" />
+                        </Button>
+                    </SheetTrigger>
                 </div>
 
-                <div style={{ paddingTop: `${pullPosition}px` }} className="transition-all duration-300">
-                    <Sheet open={isMoreOptionsSheetOpen} onOpenChange={setIsMoreOptionsSheetOpen}>
-                        <div className="flex items-center justify-between h-14 px-4">
-                            <Button variant="ghost" size="icon" onClick={() => router.back()}>
-                                <ArrowLeft className="h-6 w-6" />
-                            </Button>
-                            <h2 className="text-lg font-semibold font-headline">
-                            {formatUserId(user.id)}
-                            </h2>
-                            <SheetTrigger asChild>
-                                <Button variant="ghost" size="icon" className="justify-self-end">
-                                    <MoreHorizontal className="h-6 w-6" />
-                                </Button>
-                            </SheetTrigger>
+                <div
+                    ref={containerRef}
+                    onTouchStart={handleTouchStart}
+                    onTouchMove={handleTouchMove}
+                    onTouchEnd={handleTouchEnd}
+                    className="relative h-full overflow-y-auto pt-14"
+                >
+                    <div 
+                        className="absolute top-0 left-0 right-0 flex justify-center items-center h-12 text-muted-foreground transition-opacity duration-300 z-10 pointer-events-none"
+                        style={{ opacity: isRefreshing ? 1 : pullPosition / 70 }}
+                    >
+                        <div style={{ transform: `rotate(${isRefreshing ? 0 : pullPosition * 3}deg)` }}>
+                            <RefreshCw className={cn('h-5 w-5', isRefreshing && 'animate-spin')} />
                         </div>
+                    </div>
 
-                        <div className="px-4">
+                    <div style={{ transform: `translateY(${pullPosition}px)` }} className="transition-transform duration-300 bg-background">
+                        <div className="px-4 pt-4">
                             <div className="flex items-center justify-between space-x-5 mb-4">
                                 <div className="flex-shrink-0">
                                     <div className="relative inline-block">
@@ -700,7 +702,7 @@ export default function UserProfilePage() {
                             </div>
                         </div>
                         <Tabs defaultValue="posts" className="w-full">
-                            <div className="sticky top-0 bg-background z-10">
+                            <div className="sticky top-14 bg-background z-10">
                                 <TabsList variant="underline" className="grid w-full grid-cols-2">
                                     <TabsTrigger value="posts" variant="profile" className="font-semibold">Posts</TabsTrigger>
                                     <TabsTrigger value="replies" variant="profile" className="font-semibold">Replies</TabsTrigger>
@@ -737,75 +739,69 @@ export default function UserProfilePage() {
                                 </TabsContent>
                             </div>
                         </Tabs>
-                        <SheetContent side="bottom" className="rounded-t-2xl">
-                            <SheetHeader className="text-left sr-only">
-                            <SheetTitle>Options for {formatUserId(user.id)}</SheetTitle>
-                            <SheetDescription>Manage your interaction with this user.</SheetDescription>
-                            </SheetHeader>
-                            <div className="grid gap-2 py-4">
-                                <div className="border rounded-2xl">
-                                    <Button variant="ghost" className="justify-between text-base py-6 rounded-2xl w-full" onClick={handleMuteUser}>
-                                        <span>{isMuted ? "Unmute" : "Mute"}</span>
-                                        {isMuted ? <Volume2 className="h-5 w-5" /> : <VolumeX className="h-5 w-5" />}
-                                    </Button>
-                                    <div className="border-t"></div>
-                                    <Button variant="ghost" className="justify-between text-base py-6 rounded-2xl w-full" onClick={handleRestrictUser}>
-                                        <span>{isRestricted ? "Unrestrict" : "Restrict"}</span>
-                                        <MinusCircle className="h-5 w-5" />
-                                    </Button>
-                                </div>
-                                <div className="border rounded-2xl">
-                                    <Button variant="ghost" className="justify-between text-base py-6 rounded-2xl w-full" onClick={handleOpenAbout}>
-                                        <span>About this profile</span>
-                                        <Info className="h-5 w-5" />
-                                    </Button>
-                                </div>
-                                <div className="border rounded-2xl">
-                                    <Button variant="ghost" className="justify-between text-base py-6 rounded-2xl w-full" onClick={handleShare}>
-                                        <span>Share via...</span>
-                                        <ArrowUpRight className="h-5 w-5" />
-                                    </Button>
-                                    <div className="border-t"></div>
-                                    <Button variant="ghost" className="justify-between text-base py-6 rounded-2xl w-full" onClick={handleCopyLink}>
-                                        <span>Copy Link</span>
-                                        <LinkIcon className="h-5 w-5" />
-                                    </Button>
-                                    <div className="border-t"></div>
-                                    <Button variant="ghost" className="justify-between text-base py-6 rounded-2xl w-full" onClick={handleOpenQrCode}>
-                                        <span>QR Code</span>
-                                        <QrCode className="h-5 w-5" />
-                                    </Button>
-                                </div>
-                                <div className="border rounded-2xl">
-                                    <ReportDialog reportedUserId={user.id} reportedUserName={formatUserId(user.id)}>
-                                        <Button variant="ghost" className="justify-between text-base py-6 rounded-2xl w-full text-destructive hover:text-destructive">
-                                            <span>Report</span>
-                                            <Flag className="h-5 w-5" />
-                                        </Button>
-                                    </ReportDialog>
-                                    <div className="border-t"></div>
-                                    <Button variant="ghost" className="justify-between text-base py-6 rounded-2xl w-full text-destructive hover:text-destructive" onClick={handleBlockUser}>
-                                        <span>{isBlocked ? "Unblock" : "Block"}</span>
-                                        <ShieldAlert className="h-5 w-5" />
-                                    </Button>
-                                </div>
-                            </div>
-                        </SheetContent>
-                    </Sheet>
-                    {user && <AboutProfileSheet user={user} isOpen={isAboutSheetOpen} onOpenChange={setIsAboutSheetOpen} />}
-                    <QrCodeDialog
-                        isOpen={isQrDialogOpen}
-                        onOpenChange={setIsQrDialogOpen}
-                        user={user}
-                    />
+                    </div>
                 </div>
-            </div>
+                <SheetContent side="bottom" className="rounded-t-2xl">
+                    <SheetHeader className="text-left sr-only">
+                    <SheetTitle>Options for {formatUserId(user.id)}</SheetTitle>
+                    <SheetDescription>Manage your interaction with this user.</SheetDescription>
+                    </SheetHeader>
+                    <div className="grid gap-2 py-4">
+                        <div className="border rounded-2xl">
+                            <Button variant="ghost" className="justify-between text-base py-6 rounded-2xl w-full" onClick={handleMuteUser}>
+                                <span>{isMuted ? "Unmute" : "Mute"}</span>
+                                {isMuted ? <Volume2 className="h-5 w-5" /> : <VolumeX className="h-5 w-5" />}
+                            </Button>
+                            <div className="border-t"></div>
+                            <Button variant="ghost" className="justify-between text-base py-6 rounded-2xl w-full" onClick={handleRestrictUser}>
+                                <span>{isRestricted ? "Unrestrict" : "Restrict"}</span>
+                                <MinusCircle className="h-5 w-5" />
+                            </Button>
+                        </div>
+                        <div className="border rounded-2xl">
+                            <Button variant="ghost" className="justify-between text-base py-6 rounded-2xl w-full" onClick={handleOpenAbout}>
+                                <span>About this profile</span>
+                                <Info className="h-5 w-5" />
+                            </Button>
+                        </div>
+                        <div className="border rounded-2xl">
+                            <Button variant="ghost" className="justify-between text-base py-6 rounded-2xl w-full" onClick={handleShare}>
+                                <span>Share via...</span>
+                                <ArrowUpRight className="h-5 w-5" />
+                            </Button>
+                            <div className="border-t"></div>
+                            <Button variant="ghost" className="justify-between text-base py-6 rounded-2xl w-full" onClick={handleCopyLink}>
+                                <span>Copy Link</span>
+                                <LinkIcon className="h-5 w-5" />
+                            </Button>
+                            <div className="border-t"></div>
+                            <Button variant="ghost" className="justify-between text-base py-6 rounded-2xl w-full" onClick={handleOpenQrCode}>
+                                <span>QR Code</span>
+                                <QrCode className="h-5 w-5" />
+                            </Button>
+                        </div>
+                        <div className="border rounded-2xl">
+                            <ReportDialog reportedUserId={user.id} reportedUserName={formatUserId(user.id)}>
+                                <Button variant="ghost" className="justify-between text-base py-6 rounded-2xl w-full text-destructive hover:text-destructive">
+                                    <span>Report</span>
+                                    <Flag className="h-5 w-5" />
+                                </Button>
+                            </ReportDialog>
+                            <div className="border-t"></div>
+                            <Button variant="ghost" className="justify-between text-base py-6 rounded-2xl w-full text-destructive hover:text-destructive" onClick={handleBlockUser}>
+                                <span>{isBlocked ? "Unblock" : "Block"}</span>
+                                <ShieldAlert className="h-5 w-5" />
+                            </Button>
+                        </div>
+                    </div>
+                </SheetContent>
+            </Sheet>
+            {user && <AboutProfileSheet user={user} isOpen={isAboutSheetOpen} onOpenChange={setIsAboutSheetOpen} />}
+            <QrCodeDialog
+                isOpen={isQrDialogOpen}
+                onOpenChange={setIsQrDialogOpen}
+                user={user}
+            />
         </AppLayout>
     );
 }
-
-    
-
-    
-
-    
