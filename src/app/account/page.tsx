@@ -352,11 +352,11 @@ export default function AccountPage() {
                     </Link>
                 </Button>
                 <div className="flex items-center space-x-2">
-                    <Button variant="ghost" size="icon" asChild>
-                        <Link href="/account/settings">
-                            <Menu className="h-6 w-6" />
-                        </Link>
-                    </Button>
+                    <Link href="/account/settings" legacyBehavior>
+                      <Button variant="ghost" size="icon">
+                          <Menu className="h-6 w-6" />
+                      </Button>
+                    </Link>
                 </div>
             </div>
             <div className="px-4">
@@ -489,3 +489,4 @@ export default function AccountPage() {
     
 
     
+
