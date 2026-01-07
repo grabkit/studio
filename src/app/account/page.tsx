@@ -409,7 +409,6 @@ export default function AccountPage() {
                 </div>
                 
                 <div className="mb-4 space-y-1">
-                    <p className="font-semibold font-headline">{userProfile?.name}</p>
                     {userProfile?.bio && <p className="text-sm">{userProfile.bio}</p>}
                     {userProfile?.website && (
                         <a href={userProfile.website} target="_blank" rel="noopener noreferrer" className="flex items-center gap-2 text-sm text-blue-500 hover:underline">
@@ -479,18 +478,3 @@ export default function AccountPage() {
     </AppLayout>
   );
 }
-
-    
-
-    
-
-
-
-
-    
-
-    
-
-    
-
-    
