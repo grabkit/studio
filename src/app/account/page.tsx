@@ -345,17 +345,17 @@ export default function AccountPage() {
 
         <div style={{ paddingTop: `${pullPosition}px` }} className="transition-all duration-300">
             <div className="flex items-center justify-between h-14 px-4">
-                <Link href="/post">
-                    <Button variant="ghost" size="icon">
+                <Button variant="ghost" size="icon" asChild>
+                    <Link href="/post">
                         <Plus className="h-6 w-6" />
-                    </Button>
-                </Link>
-                <div className="flex items-center space-x-2">
-                    <Link href="/account/settings">
-                      <Button variant="ghost" size="icon">
-                        <Menu className="h-6 w-6" />
-                      </Button>
                     </Link>
+                </Button>
+                <div className="flex items-center space-x-2">
+                    <Button variant="ghost" size="icon" asChild>
+                      <Link href="/account/settings">
+                        <Menu className="h-6 w-6" />
+                      </Link>
+                    </Button>
                 </div>
             </div>
             <div className="px-4">
@@ -490,6 +490,8 @@ export default function AccountPage() {
 
 
 
+
+    
 
     
 
