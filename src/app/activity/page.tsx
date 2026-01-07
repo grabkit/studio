@@ -6,52 +6,59 @@ import AppLayout from "@/components/AppLayout";
 import { useFirebase, useMemoFirebase, useUser } from "@/firebase";
 import { collection, query, orderBy, limit, doc, updateDoc, writeBatch, getDocs } from "firebase/firestore";
 import { useCollection, type WithId } from "@/firebase/firestore/use-collection";
-import type { Notification } from "@/lib/types";
+import type { Notification, NotificationSettings } from "@/lib/types";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import Link from "next/link";
 import { Heart, MessageCircle, AlertTriangle, ArrowUp, Mail, Repeat, MessageSquareQuote, RefreshCw } from "lucide-react";
 import { cn, formatTimestamp, getAvatar, formatUserId } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
-import React, { useEffect, useState, useRef, useCallback, type TouchEvent } from "react";
+import React, { useEffect, useState, useRef, useCallback, type TouchEvent, useMemo } from "react";
 
 const notificationInfo = {
     like: {
         icon: Heart,
         text: "liked your post",
-        color: "text-pink-500"
+        color: "text-pink-500",
+        settingKey: 'likes',
     },
     comment: {
         icon: MessageCircle,
-        text: "replied to your post", // This will be a fallback
-        color: "text-blue-500"
+        text: "replied to your post", 
+        color: "text-blue-500",
+        settingKey: 'comments',
     },
     comment_approval: {
         icon: AlertTriangle,
         text: "reply needs your approval",
-        color: "text-amber-500"
+        color: "text-amber-500",
+        settingKey: 'comments', // assuming this falls under comments
     },
     upvote: {
         icon: ArrowUp,
         text: "upvoted your profile",
-        color: "text-green-500"
+        color: "text-green-500",
+        settingKey: 'upvotes',
     },
     message_request: {
         icon: Mail,
         text: "wants to send you a message",
-        color: "text-purple-500"
+        color: "text-purple-500",
+        settingKey: 'messageRequests',
     },
     repost: {
         icon: Repeat,
         text: "reposted your post",
-        color: "text-green-500"
+        color: "text-green-500",
+        settingKey: 'reposts',
     },
     quote: {
         icon: MessageSquareQuote,
         text: "quoted your post",
-        color: "text-blue-500"
+        color: "text-blue-500",
+        settingKey: 'reposts', // assuming this falls under reposts
     }
-}
+} as const;
 
 
 function NotificationItem({ notification }: { notification: WithId<Notification> }) {
@@ -122,7 +129,7 @@ function ActivitySkeleton() {
 
 
 export default function ActivityPage() {
-    const { firestore, user } = useFirebase();
+    const { firestore, user, userProfile } = useFirebase();
 
     const [isRefreshing, setIsRefreshing] = useState(false);
     const [pullPosition, setPullPosition] = useState(0);
@@ -169,6 +176,33 @@ export default function ActivityPage() {
             console.error("Error fetching notifications:", error);
         }
     };
+    
+    const settings = useMemo(() => {
+        return userProfile?.notificationSettings || {
+            push: true,
+            likes: true,
+            comments: true,
+            reposts: true,
+            upvotes: true,
+            messageRequests: true,
+        };
+    }, [userProfile]);
+
+    const filteredNotifications = useMemo(() => {
+        if (!notifications) return [];
+        if (!settings.push) return []; // If push notifications are off, show nothing.
+        
+        return notifications.filter(notification => {
+             const type = notification.type;
+             const info = notificationInfo[type];
+             if (info && info.settingKey) {
+                 return settings[info.settingKey as keyof NotificationSettings] !== false; // Show if setting is true or undefined
+             }
+             return true; // Show notifications that don't have a specific setting (e.g. comment_approval)
+        });
+
+    }, [notifications, settings]);
+
 
     const handleRefresh = async () => {
         if (isRefreshing) return;
@@ -241,13 +275,13 @@ export default function ActivityPage() {
                                 <ActivitySkeleton />
                             </>
                         )}
-                        {!isLoading && notifications?.length === 0 && (
+                        {!isLoading && filteredNotifications?.length === 0 && (
                             <div className="text-center py-20">
                                 <h2 className="text-2xl font-headline text-primary">No Activity Yet</h2>
                                 <p className="text-muted-foreground mt-2">Likes and comments on your posts will appear here.</p>
                             </div>
                         )}
-                        {notifications?.map(notification => (
+                        {filteredNotifications?.map(notification => (
                             <NotificationItem key={notification.id} notification={notification} />
                         ))}
                     </div>

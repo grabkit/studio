@@ -96,6 +96,18 @@
             "type": "string",
             "format": "date-time",
             "description": "Timestamp indicating when the voice status was created."
+        },
+        "notificationSettings": {
+            "type": "object",
+            "description": "User preferences for receiving notifications.",
+            "properties": {
+                "push": { "type": "boolean" },
+                "likes": { "type": "boolean" },
+                "comments": { "type": "boolean" },
+                "reposts": { "type": "boolean" },
+                "upvotes": { "type": "boolean" },
+                "messageRequests": { "type": "boolean" }
+            }
         }
       },
       "required": [
@@ -130,9 +142,23 @@
         "authorId": { "type": "string" },
         "authorName": { "type": "string" },
         "authorAvatar": { "type": "string" },
-        "content": { "type": "string" }
+        "content": { "type": "string" },
+        "timestamp": { "type": "string", "format": "date-time" }
       },
-      "required": ["id", "authorId", "authorName", "authorAvatar", "content"]
+      "required": ["id", "authorId", "authorName", "authorAvatar", "content", "timestamp"]
+    },
+    "LinkMetadata": {
+      "title": "Link Metadata",
+      "type": "object",
+      "description": "Represents the metadata of a URL for a link preview.",
+      "properties": {
+        "url": { "type": "string", "format": "uri" },
+        "title": { "type": "string" },
+        "description": { "type": "string" },
+        "imageUrl": { "type": "string", "format": "uri" },
+        "faviconUrl": { "type": "string", "format": "uri" }
+      },
+      "required": ["url"]
     },
     "Post": {
       "$schema": "http://json-schema.org/draft-07/schema#",
@@ -187,6 +213,10 @@
         "quotedPost": {
             "$ref": "#/backend/entities/QuotedPost",
             "description": "Denormalized data of the quoted post, if this is a quote post."
+        },
+        "linkMetadata": {
+            "$ref": "#/backend/entities/LinkMetadata",
+            "description": "Metadata for a URL to show a link preview."
         }
       },
       "required": [
@@ -255,7 +285,7 @@
       "properties": {
         "postId": {
           "type": "string",
-          "description": "The ID of the bookmarked post."
+          "description": "The bookmarked post."
         },
         "timestamp": {
           "type": "string",
@@ -280,7 +310,7 @@
             },
             "type": {
                 "type": "string",
-                "enum": ["comment", "comment_approval", "upvote", "message_request"],
+                "enum": ["comment", "comment_approval", "upvote", "message_request", "like", "repost", "quote"],
                 "description": "The type of activity."
             },
             "postId": {

@@ -3,19 +3,22 @@
 
 import AppLayout from "@/components/AppLayout";
 import { Button } from "@/components/ui/button";
-import { ArrowLeft } from "lucide-react";
+import { ArrowLeft, Loader2 } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { Switch } from "@/components/ui/switch";
 import { Label } from "@/components/ui/label";
-import React, { useState } from "react";
+import React, { useState, useEffect, useMemo } from "react";
+import { useFirebase } from "@/firebase";
+import { doc, updateDoc } from "firebase/firestore";
+import type { NotificationSettings } from "@/lib/types";
+import { useToast } from "@/hooks/use-toast";
+import { Skeleton } from "@/components/ui/skeleton";
+import { FirestorePermissionError } from "@/firebase/errors";
+import { errorEmitter } from "@/firebase/error-emitter";
 
-interface NotificationSettings {
-    push: boolean;
-    likes: boolean;
-    comments: boolean;
-}
+type SettingsKeys = keyof NotificationSettings;
 
-function NotificationSettingItem({ id, label, description, isChecked, onToggle }: { id: keyof NotificationSettings, label: string, description: string, isChecked: boolean, onToggle: (id: keyof NotificationSettings, checked: boolean) => void }) {
+function NotificationSettingItem({ id, label, description, isChecked, onToggle, disabled }: { id: SettingsKeys, label: string, description: string, isChecked: boolean, onToggle: (id: SettingsKeys, checked: boolean) => void, disabled: boolean }) {
     return (
         <div className="flex items-center justify-between p-4 border-b">
             <div className="flex-1 pr-4">
@@ -26,7 +29,24 @@ function NotificationSettingItem({ id, label, description, isChecked, onToggle }
                 id={id} 
                 checked={isChecked}
                 onCheckedChange={(checked) => onToggle(id, checked)}
+                disabled={disabled}
             />
+        </div>
+    )
+}
+
+function SettingsSkeleton() {
+    return (
+        <div className="divide-y">
+            {[...Array(5)].map((_, i) => (
+                 <div key={i} className="flex items-center justify-between p-4 border-b">
+                    <div className="flex-1 pr-4 space-y-2">
+                       <Skeleton className="h-5 w-32" />
+                       <Skeleton className="h-4 w-48" />
+                    </div>
+                    <Skeleton className="h-6 w-11 rounded-full" />
+                </div>
+            ))}
         </div>
     )
 }
@@ -34,20 +54,69 @@ function NotificationSettingItem({ id, label, description, isChecked, onToggle }
 
 export default function NotificationsSettingsPage() {
     const router = useRouter();
-    const [settings, setSettings] = useState<NotificationSettings>({
-        push: true,
-        likes: true,
-        comments: false,
-    });
+    const { user, userProfile, firestore, setUserProfile } = useFirebase();
+    const { toast } = useToast();
 
-    const handleToggle = (id: keyof NotificationSettings, checked: boolean) => {
-        setSettings(prevSettings => ({
-            ...prevSettings,
-            [id]: checked
-        }));
-        // Here you would typically save the setting to a user's profile in Firestore
-        console.log(`Setting ${id} changed to ${checked}`);
+    const [isUpdating, setIsUpdating] = useState<SettingsKeys | null>(null);
+
+    const settings = useMemo(() => {
+        return userProfile?.notificationSettings || {
+            push: true,
+            likes: true,
+            comments: true,
+            reposts: true,
+            upvotes: true,
+            messageRequests: true,
+        };
+    }, [userProfile]);
+
+    const handleToggle = async (id: SettingsKeys, checked: boolean) => {
+        if (!user || !firestore) return;
+        setIsUpdating(id);
+
+        const userDocRef = doc(firestore, 'users', user.uid);
+        const newSettings = { ...settings, [id]: checked };
+
+        try {
+            await updateDoc(userDocRef, {
+                notificationSettings: newSettings
+            });
+            // Optimistically update local state
+            setUserProfile(currentProfile => {
+              if (!currentProfile) return null;
+              return { ...currentProfile, notificationSettings: newSettings };
+            });
+
+        } catch (error) {
+            console.error(`Failed to update setting ${id}:`, error);
+            const permissionError = new FirestorePermissionError({
+                path: userDocRef.path,
+                operation: 'update',
+                requestResourceData: { notificationSettings: newSettings },
+            });
+            errorEmitter.emit('permission-error', permissionError);
+            toast({ variant: 'destructive', title: 'Error', description: 'Could not save your setting.' });
+        } finally {
+            setIsUpdating(null);
+        }
     };
+    
+    if (!userProfile) {
+        return (
+             <AppLayout showTopBar={false}>
+                 <div className="fixed top-0 left-0 right-0 z-10 flex items-center p-2 bg-background border-b h-14 max-w-2xl mx-auto sm:px-4">
+                    <Button variant="ghost" size="icon" onClick={() => router.back()}>
+                        <ArrowLeft />
+                    </Button>
+                    <h2 className="text-lg font-bold mx-auto -translate-x-4">Notifications</h2>
+                </div>
+                <div className="pt-14">
+                    <SettingsSkeleton />
+                </div>
+            </AppLayout>
+        )
+    }
+
 
     return (
         <AppLayout showTopBar={false}>
@@ -65,6 +134,7 @@ export default function NotificationsSettingsPage() {
                         description="Receive notifications on your device."
                         isChecked={settings.push}
                         onToggle={handleToggle}
+                        disabled={!!isUpdating}
                     />
                      <NotificationSettingItem 
                         id="likes"
@@ -72,6 +142,7 @@ export default function NotificationsSettingsPage() {
                         description="Notify me when someone likes my post."
                         isChecked={settings.likes}
                         onToggle={handleToggle}
+                        disabled={!!isUpdating || !settings.push}
                     />
                      <NotificationSettingItem 
                         id="comments"
@@ -79,6 +150,31 @@ export default function NotificationsSettingsPage() {
                         description="Notify me when someone replies to my post."
                         isChecked={settings.comments}
                         onToggle={handleToggle}
+                        disabled={!!isUpdating || !settings.push}
+                    />
+                    <NotificationSettingItem 
+                        id="reposts"
+                        label="Reposts and Quotes"
+                        description="Notify me on reposts or quotes of your posts."
+                        isChecked={settings.reposts}
+                        onToggle={handleToggle}
+                        disabled={!!isUpdating || !settings.push}
+                    />
+                    <NotificationSettingItem 
+                        id="upvotes"
+                        label="Profile Upvotes"
+                        description="Notify me when someone upvotes your profile."
+                        isChecked={settings.upvotes}
+                        onToggle={handleToggle}
+                        disabled={!!isUpdating || !settings.push}
+                    />
+                     <NotificationSettingItem 
+                        id="messageRequests"
+                        label="Message Requests"
+                        description="Notify me when you get a new message request."
+                        isChecked={settings.messageRequests}
+                        onToggle={handleToggle}
+                        disabled={!!isUpdating || !settings.push}
                     />
                 </div>
             </div>

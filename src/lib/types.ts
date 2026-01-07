@@ -64,6 +64,15 @@ export interface Comment {
     lastEdited?: Timestamp;
 }
 
+export interface NotificationSettings {
+    push: boolean;
+    likes: boolean;
+    comments: boolean;
+    reposts: boolean;
+    upvotes: boolean;
+    messageRequests: boolean;
+}
+
 export interface User {
     id: string;
     name: string;
@@ -84,6 +93,7 @@ export interface User {
     gender?: 'male' | 'female' | 'other' | 'prefer_not_to_say' | '';
     voiceStatusUrl?: string;
     voiceStatusTimestamp?: Timestamp;
+    notificationSettings?: NotificationSettings;
 }
 
 export interface Bookmark {
