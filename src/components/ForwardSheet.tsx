@@ -11,7 +11,7 @@ import { useCollection } from '@/firebase/firestore/use-collection';
 import type { Conversation, Post, User, Message } from '@/lib/types';
 import { WithId } from '@/firebase/firestore/use-collection';
 import { Avatar, AvatarFallback } from './ui/avatar';
-import { getAvatar, cn } from '@/lib/utils';
+import { getAvatar, cn, formatUserId } from '@/lib/utils';
 import { Skeleton } from './ui/skeleton';
 import { useToast } from '@/hooks/use-toast';
 import { Send, Check } from 'lucide-react';
@@ -19,10 +19,6 @@ import { ScrollArea } from './ui/scroll-area';
 import { FirestorePermissionError } from '@/firebase/errors';
 import { errorEmitter } from '@/firebase/error-emitter';
 
-const formatUserId = (uid: string | undefined) => {
-    if (!uid) return "blur??????";
-    return `blur${uid.substring(uid.length - 6)}`;
-};
 
 function ConversationItem({ conversation, onSend, sentStatus }: { conversation: WithId<Conversation>, onSend: (conversation: WithId<Conversation>) => void, sentStatus: boolean }) {
     const { user: currentUser, firestore } = useFirebase();
@@ -86,17 +82,24 @@ export function ForwardSheet({ message, isOpen, onOpenChange }: { message: WithI
         const conversationRef = doc(firestore, 'conversations', conversation.id);
         
         const isPostShare = !!message.postId;
+        const isLinkShare = !!message.linkMetadata;
 
         const newMessage: Partial<Message> = {
             senderId: user.uid,
             isForwarded: true,
         };
 
+        let lastMessageText: string;
+
         if (isPostShare) {
             newMessage.postId = message.postId;
-            newMessage.text = message.text;
+            lastMessageText = "Forwarded a post";
+        } else if (isLinkShare) {
+            newMessage.linkMetadata = message.linkMetadata;
+            lastMessageText = "Forwarded a link";
         } else {
             newMessage.text = message.text;
+            lastMessageText = message.text;
         }
 
         const batch = writeBatch(firestore);
@@ -104,7 +107,7 @@ export function ForwardSheet({ message, isOpen, onOpenChange }: { message: WithI
         batch.set(messageRef, { ...newMessage, timestamp: serverTimestamp() });
         
         const updatePayload: any = {
-            lastMessage: isPostShare ? "Shared a post" : message.text,
+            lastMessage: lastMessageText,
             lastUpdated: serverTimestamp(),
             [`unreadCounts.${peerId}`]: increment(1),
         };

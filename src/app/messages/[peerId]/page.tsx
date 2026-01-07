@@ -1,4 +1,5 @@
 
+
 "use client";
 
 import { useParams, useRouter } from 'next/navigation';
@@ -19,9 +20,9 @@ import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
 import { Form, FormControl, FormField, FormItem, FormMessage } from '@/components/ui/form';
 import { Skeleton } from '@/components/ui/skeleton';
-import { ArrowLeft, Send, Reply, Forward, Copy, Trash2, X, Heart, MessageCircle, ExternalLink, Phone, Video } from 'lucide-react';
+import { ArrowLeft, Send, Reply, Forward, Copy, Trash2, X, Heart, MessageCircle, ExternalLink, Phone, Video, Loader2 } from 'lucide-react';
 import { cn, getAvatar, formatMessageTimestamp, formatLastSeen, formatTimestamp, formatUserId, formatDateSeparator } from '@/lib/utils';
-import type { Conversation, Message, User, Post } from '@/lib/types';
+import type { Conversation, Message, User, Post, LinkMetadata } from '@/lib/types';
 import { WithId } from '@/firebase/firestore/use-collection';
 import { FirestorePermissionError } from '@/firebase/errors';
 import { errorEmitter } from '@/firebase/error-emitter';
@@ -30,10 +31,15 @@ import { useToast } from '@/hooks/use-toast';
 import { usePresence } from '@/hooks/usePresence';
 import Link from 'next/link';
 import { ForwardSheet } from '@/components/ForwardSheet';
+import { LinkPreviewCard } from '@/components/LinkPreviewCard';
 
 
 const messageFormSchema = z.object({
-  text: z.string().min(1, "Message cannot be empty").max(1000),
+  text: z.string().max(1000).optional(),
+  linkMetadata: z.custom<LinkMetadata>().optional(),
+}).refine(data => !!data.text || !!data.linkMetadata, {
+    message: "Message cannot be empty",
+    path: ["text"],
 });
 
 function PostPreviewCard({ postId }: { postId: string }) {
@@ -85,8 +91,10 @@ function MessageBubble({ message, isOwnMessage, conversation, onSetReply, onForw
     const router = useRouter();
 
     const handleCopy = () => {
-        navigator.clipboard.writeText(message.text);
-        toast({ title: "Copied to clipboard" });
+        if (message.text) {
+            navigator.clipboard.writeText(message.text);
+            toast({ title: "Copied to clipboard" });
+        }
     }
 
     const handleUnsend = () => {
@@ -114,6 +122,7 @@ function MessageBubble({ message, isOwnMessage, conversation, onSetReply, onForw
     }
     
     const isPostShare = !!message.postId;
+    const isLinkShare = !!message.linkMetadata;
 
     return (
         <div className={cn("flex items-end gap-2 group", isOwnMessage ? "justify-end" : "justify-start")}>
@@ -128,7 +137,7 @@ function MessageBubble({ message, isOwnMessage, conversation, onSetReply, onForw
                             "max-w-fit rounded-2xl px-3 py-2 cursor-pointer",
                             !isOwnMessage && "bg-secondary rounded-bl-none",
                             isOwnMessage && "bg-primary text-primary-foreground rounded-br-none",
-                            isPostShare && "p-2 bg-transparent"
+                            (isPostShare || isLinkShare) && "p-2 bg-transparent"
                           )}
                         >
                             
@@ -143,6 +152,8 @@ function MessageBubble({ message, isOwnMessage, conversation, onSetReply, onForw
                                 <div>
                                     <PostPreviewCard postId={message.postId} />
                                 </div>
+                            ) : isLinkShare && message.linkMetadata ? (
+                                <LinkPreviewCard metadata={message.linkMetadata} />
                             ) : (
                                 <div>
                                     {message.replyToMessageText && (
@@ -158,7 +169,7 @@ function MessageBubble({ message, isOwnMessage, conversation, onSetReply, onForw
                                     <p className="text-sm whitespace-pre-wrap">{message.text}</p>
                                 </div>
                             )}
-                             {message.timestamp?.toDate && !isPostShare && (
+                             {message.timestamp?.toDate && !isPostShare && !isLinkShare && (
                                 <p className={cn("text-xs mt-1 text-right", isOwnMessage ? "text-primary-foreground/70" : "text-muted-foreground")}>
                                     {formatMessageTimestamp(message.timestamp.toDate())}
                                 </p>
@@ -172,15 +183,17 @@ function MessageBubble({ message, isOwnMessage, conversation, onSetReply, onForw
                                 <span>Open Post</span>
                             </DropdownMenuItem>
                         )}
-                        <DropdownMenuItem onClick={() => onSetReply(message)}>
-                            <Reply className="mr-2 h-4 w-4" />
-                            <span>Reply</span>
-                        </DropdownMenuItem>
+                        {!isLinkShare && (
+                             <DropdownMenuItem onClick={() => onSetReply(message)}>
+                                <Reply className="mr-2 h-4 w-4" />
+                                <span>Reply</span>
+                            </DropdownMenuItem>
+                        )}
                         <DropdownMenuItem onClick={() => onForward(message)}>
                             <Forward className="mr-2 h-4 w-4" />
                             <span>Forward</span>
                         </DropdownMenuItem>
-                        {!isPostShare && (
+                        {!isPostShare && !isLinkShare && (
                             <DropdownMenuItem onClick={handleCopy}>
                                 <Copy className="mr-2 h-4 w-4" />
                                 <span>Copy</span>
@@ -223,12 +236,10 @@ function ChatHeader({ peerId, peerUser, onStartCall, onStartVideoCall, conversat
                 <ArrowLeft />
             </Button>
             <div className="flex-1 flex items-center gap-3 ml-2">
-                <div onClick={(e) => e.stopPropagation()}>
-                    <Link href={`/profile/${peerId}`}>
-                        <Avatar className="h-8 w-8">
-                            <AvatarFallback>{isLoading ? <Skeleton className="h-8 w-8 rounded-full" /> : getAvatar(peerUser)}</AvatarFallback>
-                        </Avatar>
-                    </Link>
+                <div onClick={(e) => { e.stopPropagation(); router.push(`/profile/${peerId}`); }}>
+                    <Avatar className="h-8 w-8">
+                        <AvatarFallback>{isLoading ? <Skeleton className="h-8 w-8 rounded-full" /> : getAvatar(peerUser)}</AvatarFallback>
+                    </Avatar>
                 </div>
                 <div>
                     <h2 className="text-base font-bold leading-tight">
@@ -342,40 +353,79 @@ function ChatMessages({ conversationId, conversation, onSetReply, onForward, rep
 
 function MessageInput({ conversationId, conversation, replyingTo, onCancelReply }: { conversationId: string, conversation: WithId<Conversation> | null, replyingTo: WithId<Message> | null, onCancelReply: () => void }) {
     const { firestore, user } = useFirebase();
+    const { toast } = useToast();
+    const [isFetchingPreview, setIsFetchingPreview] = useState(false);
+
     const form = useForm<z.infer<typeof messageFormSchema>>({
         resolver: zodResolver(messageFormSchema),
         defaultValues: { text: "" },
     });
 
+    const linkMetadata = form.watch("linkMetadata");
+    
+    const fetchPreview = async (url: string) => {
+        setIsFetchingPreview(true);
+        // In a real app, you would call your AI flow here.
+        // For now, we'll simulate a delay and use mock data.
+        setTimeout(() => {
+            const mockData: LinkMetadata = {
+                url: url,
+                title: "This is a fetched link title for messages",
+                description: "This is a longer description for the link that has been fetched from the website to show a rich preview.",
+                imageUrl: `https://picsum.photos/seed/${Math.random()}/1200/630`,
+            };
+            form.setValue("linkMetadata", mockData, { shouldValidate: true });
+            setIsFetchingPreview(false);
+        }, 1500);
+    };
+
+    const handlePaste = async (event: React.ClipboardEvent<HTMLTextAreaElement>) => {
+        if (linkMetadata) return;
+
+        const pastedText = event.clipboardData.getData('text');
+        try {
+            const url = new URL(pastedText);
+            form.setValue("text", pastedText); // Also set the text value
+            event.preventDefault();
+            await fetchPreview(url.href);
+        } catch (error) {
+            // Not a valid URL, do nothing
+        }
+    };
+
+
     const onSubmit = (values: z.infer<typeof messageFormSchema>) => {
         if (!firestore || !user || !conversationId || !conversation) return;
 
-        form.reset();
-        onCancelReply();
-        
         const peerId = conversation.participantIds.find(id => id !== user.uid);
         if (!peerId) return;
 
         const messageRef = doc(collection(firestore, 'conversations', conversationId, 'messages'));
         const conversationRef = doc(firestore, 'conversations', conversationId);
 
-        const newMessage: Omit<Message, 'timestamp' | 'id'> & { id?: string, replyToMessageId?: string, replyToMessageText?: string } = {
+        const newMessage: Omit<Message, 'timestamp' | 'id'> = {
             id: messageRef.id,
             senderId: user.uid,
-            text: values.text,
+            text: values.text || '',
+            linkMetadata: values.linkMetadata,
         };
 
         if (replyingTo) {
-            newMessage.replyToMessageId = replyingTo.id;
-            newMessage.replyToMessageText = replyingTo.text;
+            (newMessage as any).replyToMessageId = replyingTo.id;
+            (newMessage as any).replyToMessageText = replyingTo.text;
         }
         
+        let lastMessageText = "Sent a link";
+        if(values.text) {
+            lastMessageText = values.text;
+        }
+
         const batch = writeBatch(firestore);
         
         batch.set(messageRef, { ...newMessage, timestamp: serverTimestamp() });
         
         const updatePayload: any = {
-            lastMessage: values.text,
+            lastMessage: lastMessageText,
             lastUpdated: serverTimestamp(),
             [`unreadCounts.${peerId}`]: increment(1)
         };
@@ -390,6 +440,9 @@ function MessageInput({ conversationId, conversation, replyingTo, onCancelReply 
             });
             errorEmitter.emit('permission-error', permissionError);
         });
+
+        form.reset();
+        onCancelReply();
     }
     
     if (conversation && conversation.status !== 'accepted') {
@@ -417,6 +470,21 @@ function MessageInput({ conversationId, conversation, replyingTo, onCancelReply 
                     </div>
                 </div>
             )}
+             {isFetchingPreview && (
+                <div className="p-2 border-b flex items-center justify-center">
+                    <Loader2 className="h-4 w-4 animate-spin text-muted-foreground mr-2" />
+                    <span className="text-sm text-muted-foreground">Fetching link preview...</span>
+                </div>
+            )}
+            {linkMetadata && (
+                <div className="p-2 border-b relative">
+                    <p className="text-xs text-muted-foreground mb-1">Link attached:</p>
+                    <LinkPreviewCard metadata={linkMetadata} />
+                    <Button variant="ghost" size="icon" className="absolute top-1 right-1 h-6 w-6 rounded-full" onClick={() => form.setValue('linkMetadata', undefined)}>
+                        <X className="h-4 w-4" />
+                    </Button>
+                </div>
+            )}
             <div className="p-2">
                 <Form {...form}>
                     <form onSubmit={form.handleSubmit(onSubmit)} className="flex items-center space-x-2">
@@ -431,6 +499,7 @@ function MessageInput({ conversationId, conversation, replyingTo, onCancelReply 
                                     className="text-base border-none focus-visible:ring-0 shadow-none p-2"
                                     rows={1}
                                     {...field}
+                                    onPaste={handlePaste}
                                     onKeyDown={(e) => {
                                         if (e.key === 'Enter' && !e.shiftKey) {
                                             e.preventDefault();
@@ -446,7 +515,7 @@ function MessageInput({ conversationId, conversation, replyingTo, onCancelReply 
                         <Button
                             type="submit"
                             size="icon"
-                            disabled={form.formState.isSubmitting}
+                            disabled={form.formState.isSubmitting || (!form.getValues('text') && !form.getValues('linkMetadata'))}
                             className="rounded-full"
                         >
                             <Send className="h-5 w-5" />

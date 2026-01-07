@@ -140,6 +140,7 @@ export interface Message {
     replyToMessageText?: string;
     postId?: string;
     isForwarded?: boolean;
+    linkMetadata?: LinkMetadata;
 }
 
 
