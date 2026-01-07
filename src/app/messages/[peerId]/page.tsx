@@ -1,5 +1,4 @@
 
-
 "use client";
 
 import { useParams, useRouter } from 'next/navigation';
@@ -121,6 +120,12 @@ function MessageBubble({ message, isOwnMessage, conversation, onSetReply, onForw
         }
     }
     
+    const handleOpenLink = () => {
+        if (message.linkMetadata?.url) {
+            window.open(message.linkMetadata.url, '_blank', 'noopener,noreferrer');
+        }
+    }
+
     const isPostShare = !!message.postId;
     const isLinkShare = !!message.linkMetadata;
 
@@ -184,6 +189,12 @@ function MessageBubble({ message, isOwnMessage, conversation, onSetReply, onForw
                             <DropdownMenuItem onClick={handleOpenPost}>
                                 <ExternalLink className="mr-2 h-4 w-4" />
                                 <span>Open Post</span>
+                            </DropdownMenuItem>
+                        )}
+                        {isLinkShare && (
+                            <DropdownMenuItem onClick={handleOpenLink}>
+                                <ExternalLink className="mr-2 h-4 w-4" />
+                                <span>Open Link</span>
                             </DropdownMenuItem>
                         )}
                         {!isLinkShare && (
@@ -406,7 +417,7 @@ function MessageInput({ conversationId, conversation, replyingTo, onCancelReply 
         const messageRef = doc(collection(firestore, 'conversations', conversationId, 'messages'));
         const conversationRef = doc(firestore, 'conversations', conversationId);
 
-        const newMessage: Omit<Message, 'timestamp' | 'id'> = {
+        const newMessage: Partial<Message> = {
             id: messageRef.id,
             senderId: user.uid,
             text: values.text || '',
@@ -633,5 +644,6 @@ export default function ChatPage() {
         </AppLayout>
     )
 }
+    
 
     
