@@ -51,7 +51,6 @@ export default function ChatSettingsPage() {
 
     const peerId = params.peerId as string;
 
-    const [isMuteConfirmOpen, setIsMuteConfirmOpen] = useState(false);
     const [isBlockConfirmOpen, setIsBlockConfirmOpen] = useState(false);
     
     const conversationId = useMemo(() => {
@@ -93,8 +92,6 @@ export default function ChatSettingsPage() {
             });
             errorEmitter.emit('permission-error', permissionError);
             toast({ variant: 'destructive', title: 'Error', description: `Could not ${isMuted ? 'unmute' : 'mute'} conversation.`})
-        } finally {
-             setIsMuteConfirmOpen(false);
         }
     };
 
@@ -165,7 +162,7 @@ export default function ChatSettingsPage() {
                 </div>
 
                 <div className="mt-8 space-y-2">
-                    <Button variant="ghost" className="w-full justify-start text-base h-12" onClick={() => setIsMuteConfirmOpen(true)}>
+                    <Button variant="ghost" className="w-full justify-start text-base h-12" onClick={handleToggleMute}>
                         {isMuted ? <Bell className="mr-3"/> : <BellOff className="mr-3" />}
                         {isMuted ? 'Unmute Notifications' : 'Mute Notifications'}
                     </Button>
@@ -177,20 +174,6 @@ export default function ChatSettingsPage() {
             </div>
 
              {/* Confirmation Dialogs */}
-            <AlertDialog open={isMuteConfirmOpen} onOpenChange={setIsMuteConfirmOpen}>
-                <AlertDialogContent>
-                    <AlertDialogHeader>
-                        <AlertDialogTitle>{isMuted ? 'Unmute' : 'Mute'} Conversation?</AlertDialogTitle>
-                        <AlertDialogDescription>
-                            You will {isMuted ? 'start receiving' : 'no longer receive'} notifications for messages from this chat.
-                        </AlertDialogDescription>
-                    </AlertDialogHeader>
-                    <AlertDialogFooter>
-                        <AlertDialogCancel>Cancel</AlertDialogCancel>
-                        <AlertDialogAction onClick={handleToggleMute}>Confirm</AlertDialogAction>
-                    </AlertDialogFooter>
-                </AlertDialogContent>
-            </AlertDialog>
             <AlertDialog open={isBlockConfirmOpen} onOpenChange={setIsBlockConfirmOpen}>
                 <AlertDialogContent>
                     <AlertDialogHeader>
