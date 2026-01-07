@@ -10,7 +10,7 @@ import { doc, updateDoc, arrayRemove, arrayUnion, collection, getDocs, writeBatc
 import { useDoc } from '@/firebase/firestore/use-doc';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
-import { ArrowLeft, BellOff, ShieldAlert, MicOff, VideoOff, ChevronRight, PhoneCall, User as UserIcon, Bell, Flag, MessageCircleX, Image as ImageIcon, Link as LinkIcon, BarChart3, Palette } from 'lucide-react';
+import { ArrowLeft, BellOff, ShieldAlert, MicOff, VideoOff, ChevronRight, PhoneCall, User as UserIcon, Bell, Flag, MessageCircleX, Link as LinkIcon, BarChart3 } from 'lucide-react';
 import { getAvatar, formatUserId } from '@/lib/utils';
 import type { Conversation, User } from '@/lib/types';
 import { useToast } from '@/hooks/use-toast';
@@ -305,15 +305,11 @@ export default function ChatSettingsPage() {
                     </Button>
                 </div>
                  <div className="my-4 mt-auto">
-                        <Tabs defaultValue="media">
-                            <TabsList variant="underline" className="grid grid-cols-3">
-                                <TabsTrigger value="media" variant="underline"><ImageIcon /></TabsTrigger>
+                        <Tabs defaultValue="links">
+                            <TabsList variant="underline" className="grid grid-cols-2">
                                 <TabsTrigger value="links" variant="underline"><LinkIcon /></TabsTrigger>
                                 <TabsTrigger value="polls" variant="underline"><BarChart3 /></TabsTrigger>
                             </TabsList>
-                            <TabsContent value="media" className="mt-4 text-center text-muted-foreground py-8">
-                                <p>No media shared in this conversation yet.</p>
-                            </TabsContent>
                              <TabsContent value="links" className="mt-4 text-center text-muted-foreground py-8">
                                 <p>No links shared in this conversation yet.</p>
                             </TabsContent>
@@ -359,7 +355,3 @@ export default function ChatSettingsPage() {
         </AppLayout>
     );
 }
-
-
-
-    
