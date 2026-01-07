@@ -240,6 +240,10 @@ export default function ChatSettingsPage() {
                 </Link>
                 
                  <div className="mt-8">
+                     <Button variant="ghost" className="w-full justify-start text-base h-12" onClick={() => setIsClearConfirmOpen(true)}>
+                        <Trash2 className="mr-3" />
+                        Clear Chat
+                    </Button>
                     <div className="flex items-center justify-between p-3">
                         <Label htmlFor="mute-notifications" className="flex items-center gap-3 text-base font-normal">
                              <BellOff /> Mute Notifications
@@ -296,10 +300,6 @@ export default function ChatSettingsPage() {
                             Report
                         </Button>
                     </ReportDialog>
-                    <Button variant="ghost" className="w-full justify-start text-base h-12" onClick={() => setIsClearConfirmOpen(true)}>
-                        <Trash2 className="mr-3" />
-                        Clear Chat
-                    </Button>
                 </div>
             </div>
 
