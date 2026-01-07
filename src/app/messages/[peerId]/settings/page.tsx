@@ -5,7 +5,7 @@ import { useMemo, useState, useEffect } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import AppLayout from '@/components/AppLayout';
 import { useFirebase, useMemoFirebase, useCollection } from '@/firebase';
-import { doc, updateDoc, getDocs, writeBatch, collection, query, where, getDoc } from 'firebase/firestore';
+import { doc, updateDoc, getDocs, writeBatch, collection, query, where, getDoc, documentId } from 'firebase/firestore';
 import { useDoc } from '@/firebase/firestore/use-doc';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
@@ -88,7 +88,7 @@ function SharedContent() {
         const fetchPosts = async () => {
             setIsLoading(true);
             const postsCollection = collection(firestore, 'posts');
-            const postsQuery = query(postsCollection, where('id', 'in', postIds));
+            const postsQuery = query(postsCollection, where(documentId(), 'in', postIds));
             const snapshot = await getDocs(postsQuery);
             const fetchedPosts = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as WithId<Post>));
             setPosts(fetchedPosts);
@@ -137,7 +137,7 @@ function SharedContent() {
                     <p className="text-center text-muted-foreground py-8">No links shared in this conversation yet.</p>
                 )}
                 {!isLoading && links.map(post => (
-                    <LinkPreviewCard key={post.id} metadata={post.linkMetadata!} />
+                   post.linkMetadata ? <LinkPreviewCard key={post.id} metadata={post.linkMetadata} /> : null
                 ))}
             </TabsContent>
             <TabsContent value="polls" className="mt-0">
