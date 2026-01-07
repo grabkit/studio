@@ -24,13 +24,13 @@ export default function AboutPage() {
                     <p className="text-muted-foreground">Version 1.0.0</p>
                 </div>
                  <div className="divide-y border-y">
-                     <Link href="#" className="flex justify-between items-center p-4 hover:bg-accent">
+                     <Link href="/account/settings/terms" className="flex justify-between items-center p-4 hover:bg-accent">
                         <span>Terms of Service</span>
                     </Link>
-                     <Link href="#" className="flex justify-between items-center p-4 hover:bg-accent">
+                     <Link href="/account/settings/privacy" className="flex justify-between items-center p-4 hover:bg-accent">
                         <span>Privacy Policy</span>
                     </Link>
-                     <Link href="#" className="flex justify-between items-center p-4 hover:bg-accent">
+                     <Link href="/account/settings/licenses" className="flex justify-between items-center p-4 hover:bg-accent">
                         <span>Open Source Licenses</span>
                     </Link>
                  </div>
