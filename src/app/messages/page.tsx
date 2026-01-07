@@ -7,13 +7,13 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { getAvatar, formatMessageTimestamp, formatUserId } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
-import { MessageSquare, Mail, Trash2, BellOff, CheckCircle, User as UserIcon, Bell, Mic } from "lucide-react";
+import { MessageSquare, Mail, Trash2, BellOff, CheckCircle, User as UserIcon, Bell, Mic, RefreshCw } from "lucide-react";
 import { useFirebase, useMemoFirebase } from "@/firebase";
 import { collection, query, where, doc, updateDoc, deleteDoc, arrayUnion, arrayRemove, getDocs } from "firebase/firestore";
 import { useCollection, type WithId } from "@/firebase/firestore/use-collection";
 import { useDoc } from "@/firebase/firestore/use-doc";
 import type { Conversation, User } from "@/lib/types";
-import { useMemo, useState, useEffect, useRef } from "react";
+import React, { useMemo, useState, useEffect, useRef, useCallback, type TouchEvent } from "react";
 import Link from "next/link";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useToast } from "@/hooks/use-toast";
@@ -372,6 +372,12 @@ export default function MessagesPage() {
 
     const [isSheetOpen, setIsSheetOpen] = useState(false);
     const [selectedConvo, setSelectedConvo] = useState<WithId<Conversation> | null>(null);
+    
+    const [isRefreshing, setIsRefreshing] = useState(false);
+    const [pullPosition, setPullPosition] = useState(0);
+    const touchStartRef = useRef(0);
+    const containerRef = useRef<HTMLDivElement>(null);
+
 
     const conversationsQuery = useMemoFirebase(() => {
         if (!user || !firestore) return null;
@@ -381,7 +387,7 @@ export default function MessagesPage() {
         );
     }, [user, firestore]);
 
-    const { data: conversations, isLoading } = useCollection<Conversation>(conversationsQuery);
+    const { data: conversations, isLoading, setData: setConversations } = useCollection<Conversation>(conversationsQuery);
 
     const { chats, requests } = useMemo(() => {
         const chats: WithId<Conversation>[] = [];
@@ -421,6 +427,56 @@ export default function MessagesPage() {
         if (value === 'requests') {
             localStorage.setItem(storageKey, Date.now().toString());
             setHasNewRequests(false);
+        }
+    };
+
+    const fetchConversations = async () => {
+        if (!conversationsQuery) return;
+        try {
+            const querySnapshot = await getDocs(conversationsQuery);
+            const fetchedConversations = querySnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as WithId<Conversation>));
+            setConversations(fetchedConversations);
+        } catch (error) {
+            console.error("Error fetching conversations:", error);
+        }
+    };
+
+    const handleRefresh = async () => {
+        if (isRefreshing) return;
+        setIsRefreshing(true);
+        window.navigator.vibrate?.(50);
+        await fetchConversations();
+        setTimeout(() => {
+            setIsRefreshing(false);
+            setPullPosition(0);
+            window.navigator.vibrate?.(50);
+        }, 500);
+    };
+
+    const handleTouchStart = (e: TouchEvent) => {
+        touchStartRef.current = e.targetTouches[0].clientY;
+    };
+
+    const handleTouchMove = (e: TouchEvent) => {
+        const touchY = e.targetTouches[0].clientY;
+        const pullDistance = touchY - touchStartRef.current;
+        
+        if (containerRef.current && containerRef.current.scrollTop === 0 && pullDistance > 0 && !isRefreshing) {
+            e.preventDefault();
+            const newPullPosition = Math.min(pullDistance, 120);
+            
+            if (pullPosition <= 70 && newPullPosition > 70) {
+                window.navigator.vibrate?.(50);
+            }
+            setPullPosition(newPullPosition);
+        }
+    };
+
+    const handleTouchEnd = () => {
+        if (pullPosition > 70) {
+            handleRefresh();
+        } else {
+            setPullPosition(0);
         }
     };
 
@@ -541,45 +597,64 @@ export default function MessagesPage() {
 
     return (
         <AppLayout showTopBar={false}>
-            <UpvotedUsers />
-            
-            <div className="p-2">
-                <Tabs defaultValue="chats" className="w-full" onValueChange={handleTabChange}>
-                    <TabsList className="grid w-full grid-cols-2 rounded-full">
-                        <TabsTrigger value="chats" className="relative flex items-center justify-center gap-2 rounded-full font-bold">
-                             {hasUnreadChats && (
-                                <div className="w-2 h-2 rounded-full bg-destructive"></div>
-                            )}
-                            Chats
-                        </TabsTrigger>
-                        <TabsTrigger value="requests" className="relative flex items-center justify-center gap-2 rounded-full font-bold">
-                            {hasNewRequests && (
-                                <div className="w-2 h-2 rounded-full bg-destructive"></div>
-                            )}
-                            Requests
-                        </TabsTrigger>
-                    </TabsList>
-                    <TabsContent value="chats">
-                        <ConversationsList 
-                            conversations={chats}
-                            isLoading={isLoading}
-                            type="chats"
-                            currentUser={user}
-                            onAcceptRequest={handleAcceptRequest}
-                            onLongPress={handleLongPress}
-                        />
-                    </TabsContent>
-                    <TabsContent value="requests">
-                        <ConversationsList
-                            conversations={requests}
-                            isLoading={isLoading}
-                            type="requests"
-                            currentUser={user}
-                            onAcceptRequest={handleAcceptRequest}
-                            onLongPress={handleLongPress}
-                        />
-                    </TabsContent>
-                </Tabs>
+             <div
+                ref={containerRef}
+                onTouchStart={handleTouchStart}
+                onTouchMove={handleTouchMove}
+                onTouchEnd={handleTouchEnd}
+                className="relative h-full overflow-y-auto"
+            >
+                <div
+                    className="absolute top-0 left-0 right-0 flex justify-center items-center h-12 text-muted-foreground transition-opacity duration-300 z-10"
+                    style={{ opacity: isRefreshing ? 1 : pullPosition / 70 }}
+                >
+                    <div style={{ transform: `rotate(${isRefreshing ? 0 : pullPosition * 3}deg)` }}>
+                        <RefreshCw className={cn('h-5 w-5', isRefreshing && 'animate-spin')} />
+                    </div>
+                </div>
+
+                <div style={{ paddingTop: `${pullPosition}px` }} className="transition-all duration-300">
+                    <UpvotedUsers />
+                    
+                    <div className="p-2">
+                        <Tabs defaultValue="chats" className="w-full" onValueChange={handleTabChange}>
+                            <TabsList className="grid w-full grid-cols-2 rounded-full">
+                                <TabsTrigger value="chats" className="relative flex items-center justify-center gap-2 rounded-full font-bold">
+                                    {hasUnreadChats && (
+                                        <div className="w-2 h-2 rounded-full bg-destructive"></div>
+                                    )}
+                                    Chats
+                                </TabsTrigger>
+                                <TabsTrigger value="requests" className="relative flex items-center justify-center gap-2 rounded-full font-bold">
+                                    {hasNewRequests && (
+                                        <div className="w-2 h-2 rounded-full bg-destructive"></div>
+                                    )}
+                                    Requests
+                                </TabsTrigger>
+                            </TabsList>
+                            <TabsContent value="chats">
+                                <ConversationsList 
+                                    conversations={chats}
+                                    isLoading={isLoading}
+                                    type="chats"
+                                    currentUser={user}
+                                    onAcceptRequest={handleAcceptRequest}
+                                    onLongPress={handleLongPress}
+                                />
+                            </TabsContent>
+                            <TabsContent value="requests">
+                                <ConversationsList
+                                    conversations={requests}
+                                    isLoading={isLoading}
+                                    type="requests"
+                                    currentUser={user}
+                                    onAcceptRequest={handleAcceptRequest}
+                                    onLongPress={handleLongPress}
+                                />
+                            </TabsContent>
+                        </Tabs>
+                    </div>
+                </div>
             </div>
             
             <Sheet open={isSheetOpen} onOpenChange={setIsSheetOpen}>

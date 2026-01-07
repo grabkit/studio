@@ -4,16 +4,16 @@
 
 import AppLayout from "@/components/AppLayout";
 import { useFirebase, useMemoFirebase, useUser } from "@/firebase";
-import { collection, query, orderBy, limit, doc, updateDoc, writeBatch } from "firebase/firestore";
+import { collection, query, orderBy, limit, doc, updateDoc, writeBatch, getDocs } from "firebase/firestore";
 import { useCollection, type WithId } from "@/firebase/firestore/use-collection";
 import type { Notification } from "@/lib/types";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import Link from "next/link";
-import { Heart, MessageCircle, AlertTriangle, ArrowUp, Mail, Repeat, MessageSquareQuote } from "lucide-react";
+import { Heart, MessageCircle, AlertTriangle, ArrowUp, Mail, Repeat, MessageSquareQuote, RefreshCw } from "lucide-react";
 import { cn, formatTimestamp, getAvatar, formatUserId } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
-import { useEffect } from "react";
+import React, { useEffect, useState, useRef, useCallback, type TouchEvent } from "react";
 
 const notificationInfo = {
     like: {
@@ -124,6 +124,11 @@ function ActivitySkeleton() {
 export default function ActivityPage() {
     const { firestore, user } = useFirebase();
 
+    const [isRefreshing, setIsRefreshing] = useState(false);
+    const [pullPosition, setPullPosition] = useState(0);
+    const touchStartRef = useRef(0);
+    const containerRef = useRef<HTMLDivElement>(null);
+
     const notificationsQuery = useMemoFirebase(() => {
         if (!firestore || !user) return null;
         return query(
@@ -133,7 +138,7 @@ export default function ActivityPage() {
         );
     }, [firestore, user]);
 
-    const { data: notifications, isLoading } = useCollection<Notification>(notificationsQuery);
+    const { data: notifications, isLoading, setData: setNotifications } = useCollection<Notification>(notificationsQuery);
     
     // Mark notifications as read
     useEffect(() => {
@@ -154,30 +159,99 @@ export default function ActivityPage() {
 
     }, [notifications, firestore, user]);
 
+    const fetchNotifications = async () => {
+        if (!notificationsQuery) return;
+        try {
+            const querySnapshot = await getDocs(notificationsQuery);
+            const fetchedNotifications = querySnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as WithId<Notification>));
+            setNotifications(fetchedNotifications);
+        } catch (error) {
+            console.error("Error fetching notifications:", error);
+        }
+    };
+
+    const handleRefresh = async () => {
+        if (isRefreshing) return;
+        setIsRefreshing(true);
+        window.navigator.vibrate?.(50);
+        await fetchNotifications();
+        setTimeout(() => {
+            setIsRefreshing(false);
+            setPullPosition(0);
+            window.navigator.vibrate?.(50);
+        }, 500);
+    };
+
+    const handleTouchStart = (e: TouchEvent) => {
+        touchStartRef.current = e.targetTouches[0].clientY;
+    };
+
+    const handleTouchMove = (e: TouchEvent) => {
+        const touchY = e.targetTouches[0].clientY;
+        const pullDistance = touchY - touchStartRef.current;
+        
+        if (containerRef.current && containerRef.current.scrollTop === 0 && pullDistance > 0 && !isRefreshing) {
+            e.preventDefault();
+            const newPullPosition = Math.min(pullDistance, 120);
+            
+            if (pullPosition <= 70 && newPullPosition > 70) {
+                window.navigator.vibrate?.(50);
+            }
+            setPullPosition(newPullPosition);
+        }
+    };
+
+    const handleTouchEnd = () => {
+        if (pullPosition > 70) {
+            handleRefresh();
+        } else {
+            setPullPosition(0);
+        }
+    };
+
 
     return (
         <AppLayout showTopBar={false}>
-             <div className="p-4 border-b">
-                <h1 className="text-2xl font-bold font-headline">Activity</h1>
-            </div>
-            <div className="divide-y">
-                 {isLoading && (
-                    <>
-                        <ActivitySkeleton />
-                        <ActivitySkeleton />
-                        <ActivitySkeleton />
-                        <ActivitySkeleton />
-                    </>
-                 )}
-                 {!isLoading && notifications?.length === 0 && (
-                    <div className="text-center py-20">
-                         <h2 className="text-2xl font-headline text-primary">No Activity Yet</h2>
-                        <p className="text-muted-foreground mt-2">Likes and comments on your posts will appear here.</p>
+             <div 
+                ref={containerRef}
+                onTouchStart={handleTouchStart}
+                onTouchMove={handleTouchMove}
+                onTouchEnd={handleTouchEnd}
+                className="relative h-full overflow-y-auto"
+            >
+                <div 
+                    className="absolute top-0 left-0 right-0 flex justify-center items-center h-12 text-muted-foreground transition-opacity duration-300"
+                    style={{ opacity: isRefreshing ? 1 : (pullPosition / 70) }}
+                >
+                    <div style={{ transform: `rotate(${isRefreshing ? 0 : pullPosition * 3}deg)` }}>
+                        <RefreshCw className={cn("h-5 w-5", isRefreshing && "animate-spin")} />
                     </div>
-                 )}
-                 {notifications?.map(notification => (
-                    <NotificationItem key={notification.id} notification={notification} />
-                 ))}
+                </div>
+
+                <div style={{ paddingTop: `${pullPosition}px` }} className="transition-all duration-300">
+                    <div className="p-4 border-b">
+                        <h1 className="text-2xl font-bold font-headline">Activity</h1>
+                    </div>
+                    <div className="divide-y">
+                        {isLoading && (
+                            <>
+                                <ActivitySkeleton />
+                                <ActivitySkeleton />
+                                <ActivitySkeleton />
+                                <ActivitySkeleton />
+                            </>
+                        )}
+                        {!isLoading && notifications?.length === 0 && (
+                            <div className="text-center py-20">
+                                <h2 className="text-2xl font-headline text-primary">No Activity Yet</h2>
+                                <p className="text-muted-foreground mt-2">Likes and comments on your posts will appear here.</p>
+                            </div>
+                        )}
+                        {notifications?.map(notification => (
+                            <NotificationItem key={notification.id} notification={notification} />
+                        ))}
+                    </div>
+                </div>
             </div>
         </AppLayout>
     )

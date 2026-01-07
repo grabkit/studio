@@ -9,10 +9,10 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button, buttonVariants } from "@/components/ui/button";
 import { collection, query, where, getDocs, getDoc, doc, updateDoc, arrayUnion, arrayRemove, increment, setDoc, serverTimestamp, deleteField, runTransaction, deleteDoc } from "firebase/firestore";
 import { useCollection, type WithId } from "@/firebase/firestore/use-collection";
-import { Menu, Share2, Link as LinkIcon, Plus, BarChart3, Trash2 } from "lucide-react";
+import { Menu, Share2, Link as LinkIcon, Plus, BarChart3, Trash2, RefreshCw } from "lucide-react";
 import type { Post, Bookmark, User, Notification } from "@/lib/types";
 import { Skeleton } from "@/components/ui/skeleton";
-import React, { useMemo, useState, useEffect, useCallback } from "react";
+import React, { useMemo, useState, useEffect, useCallback, useRef, type TouchEvent } from "react";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { getAvatar, cn, formatUserId } from "@/lib/utils";
 
@@ -123,11 +123,16 @@ function BookmarksList({ bookmarks, bookmarksLoading }: { bookmarks: WithId<Book
 
 
 export default function AccountPage() {
-  const { user: authUser, userProfile, firestore, showVoiceStatusPlayer } = useFirebase();
+  const { user: authUser, userProfile, firestore, showVoiceStatusPlayer, setUserProfile } = useFirebase();
   const { toast } = useToast();
   const [posts, setPosts] = useState<WithId<Post>[]>([]);
   const [postsLoading, setPostsLoading] = useState(true);
   
+  const [isRefreshing, setIsRefreshing] = useState(false);
+  const [pullPosition, setPullPosition] = useState(0);
+  const touchStartRef = useRef(0);
+  const containerRef = useRef<HTMLDivElement>(null);
+
   const updatePostState = useCallback((postId: string, updatedData: Partial<Post>) => {
     setPosts(currentPosts => {
         if (!currentPosts) return [];
@@ -137,10 +142,8 @@ export default function AccountPage() {
     });
     }, []);
 
-  useEffect(() => {
-    if (!firestore || !authUser) return;
-
-    const fetchPosts = async () => {
+    const fetchPosts = useCallback(async () => {
+        if (!firestore || !authUser) return;
         setPostsLoading(true);
         try {
             const postsQuery = query(
@@ -165,10 +168,57 @@ export default function AccountPage() {
         } finally {
             setPostsLoading(false);
         }
+    }, [firestore, authUser]);
+
+  useEffect(() => {
+    fetchPosts();
+  }, [fetchPosts]);
+
+    const fetchProfile = useCallback(async () => {
+        if (!firestore || !authUser) return;
+        const userDocRef = doc(firestore, "users", authUser.uid);
+        const userDoc = await getDoc(userDocRef);
+        if (userDoc.exists()) {
+            setUserProfile({ id: userDoc.id, ...userDoc.data() } as WithId<User>);
+        }
+    }, [firestore, authUser, setUserProfile]);
+
+    const handleRefresh = async () => {
+        if (isRefreshing) return;
+        setIsRefreshing(true);
+        window.navigator.vibrate?.(50);
+        await Promise.all([fetchPosts(), fetchProfile()]); // Fetch both posts and profile
+        setTimeout(() => {
+            setIsRefreshing(false);
+            setPullPosition(0);
+            window.navigator.vibrate?.(50);
+        }, 500);
     };
 
-    fetchPosts();
-}, [firestore, authUser]);
+    const handleTouchStart = (e: TouchEvent) => {
+        touchStartRef.current = e.targetTouches[0].clientY;
+    };
+
+    const handleTouchMove = (e: TouchEvent) => {
+        const touchY = e.targetTouches[0].clientY;
+        const pullDistance = touchY - touchStartRef.current;
+        if (containerRef.current && containerRef.current.scrollTop === 0 && pullDistance > 0 && !isRefreshing) {
+            e.preventDefault();
+            const newPullPosition = Math.min(pullDistance, 120);
+            if (pullPosition <= 70 && newPullPosition > 70) {
+                window.navigator.vibrate?.(50);
+            }
+            setPullPosition(newPullPosition);
+        }
+    };
+
+    const handleTouchEnd = () => {
+        if (pullPosition > 70) {
+            handleRefresh();
+        } else {
+            setPullPosition(0);
+        }
+    };
 
   const handleDeletePost = useCallback((postId: string) => {
     setPosts(currentPosts => currentPosts.filter(p => p.id !== postId));
@@ -278,142 +328,160 @@ export default function AccountPage() {
 
   return (
     <AppLayout showTopBar={false}>
-      <div className="flex items-center justify-between h-14 px-4">
-        <Button variant="ghost" size="icon" asChild>
-            <Link href="/post">
-                <Plus className="h-6 w-6" />
-            </Link>
-        </Button>
-        <div className="flex items-center space-x-2">
-            <Button variant="ghost" size="icon" asChild>
-                <Link href="/account/settings">
-                    <Menu className="h-6 w-6" />
-                </Link>
-            </Button>
+       <div
+        ref={containerRef}
+        onTouchStart={handleTouchStart}
+        onTouchMove={handleTouchMove}
+        onTouchEnd={handleTouchEnd}
+        className="relative h-full overflow-y-auto"
+      >
+        <div 
+          className="absolute top-0 left-0 right-0 flex justify-center items-center h-12 text-muted-foreground transition-opacity duration-300 z-20"
+          style={{ opacity: isRefreshing ? 1 : pullPosition / 70 }}
+        >
+          <div style={{ transform: `rotate(${isRefreshing ? 0 : pullPosition * 3}deg)` }}>
+            <RefreshCw className={cn('h-5 w-5', isRefreshing && 'animate-spin')} />
+          </div>
         </div>
-      </div>
-      <div className="px-4">
-        <div className="flex items-center justify-between space-x-5 mb-4">
-            <div className="flex-shrink-0">
-                <div className="relative inline-block">
-                    <Avatar className="h-20 w-20 md:h-24 md:w-24">
-                        <AvatarImage
-                            src={authUser?.photoURL || undefined}
-                            alt={userProfile?.name || "User"}
-                        />
-                        <AvatarFallback className="text-3xl font-headline bg-secondary">
-                            {getAvatar(userProfile)}
-                        </AvatarFallback>
-                    </Avatar>
-                    {hasVoiceStatus && (
-                        <div className="absolute bottom-0 right-0 bg-background p-1 rounded-full border-2 cursor-pointer" onClick={handleAvatarClick} role="button">
-                            <div className="flex items-center justify-center h-4 w-4 gap-0.5">
-                                <div className="audio-wave-bar-avatar" />
-                                <div className="audio-wave-bar-avatar" />
-                                <div className="audio-wave-bar-avatar" />
-                                <div className="audio-wave-bar-avatar" />
-                                <div className="audio-wave-bar-avatar" />
-                            </div>
+
+        <div style={{ paddingTop: `${pullPosition}px` }} className="transition-all duration-300">
+            <div className="flex items-center justify-between h-14 px-4">
+                <Button variant="ghost" size="icon" asChild>
+                    <Link href="/post">
+                        <Plus className="h-6 w-6" />
+                    </Link>
+                </Button>
+                <div className="flex items-center space-x-2">
+                    <Button variant="ghost" size="icon" asChild>
+                        <Link href="/account/settings">
+                            <Menu className="h-6 w-6" />
+                        </Link>
+                    </Button>
+                </div>
+            </div>
+            <div className="px-4">
+                <div className="flex items-center justify-between space-x-5 mb-4">
+                    <div className="flex-shrink-0">
+                        <div className="relative inline-block">
+                            <Avatar className="h-20 w-20 md:h-24 md:w-24">
+                                <AvatarImage
+                                    src={authUser?.photoURL || undefined}
+                                    alt={userProfile?.name || "User"}
+                                />
+                                <AvatarFallback className="text-3xl font-headline bg-secondary">
+                                    {getAvatar(userProfile)}
+                                </AvatarFallback>
+                            </Avatar>
+                            {hasVoiceStatus && (
+                                <div className="absolute bottom-0 right-0 bg-background p-1 rounded-full border-2 cursor-pointer" onClick={handleAvatarClick} role="button">
+                                    <div className="flex items-center justify-center h-4 w-4 gap-0.5">
+                                        <div className="audio-wave-bar-avatar" />
+                                        <div className="audio-wave-bar-avatar" />
+                                        <div className="audio-wave-bar-avatar" />
+                                        <div className="audio-wave-bar-avatar" />
+                                        <div className="audio-wave-bar-avatar" />
+                                    </div>
+                                </div>
+                            )}
                         </div>
-                    )}
-                </div>
-            </div>
-            <div className="flex-1 flex justify-around text-center">
-                <div>
-                    {isLoading ? (
-                        <div className="font-bold text-lg"><Skeleton className="h-6 w-8 mx-auto" /></div>
-                    ) : (
-                        <div className="font-bold text-lg">{posts?.length ?? 0}</div>
-                    )}
-                    <p className="text-sm text-muted-foreground">Posts</p>
-                </div>
-                <Link href={`/profile/${authUser?.uid}/social?tab=upvotes`} className="cursor-pointer hover:bg-secondary/50 rounded-md p-1 -m-1">
-                    {isLoading ? (
-                        <div className="font-bold text-lg"><Skeleton className="h-6 w-8 mx-auto" /></div>
-                    ) : (
-                        <div className="font-bold text-lg">{userProfile?.upvotes || 0}</div>
-                    )}
-                    <p className="text-sm text-muted-foreground">Upvotes</p>
-                </Link>
-                <Link href={`/profile/${authUser?.uid}/social?tab=upvoted`} className="cursor-pointer hover:bg-secondary/50 rounded-md p-1 -m-1">
-                    {isLoading ? (
-                        <div className="font-bold text-lg"><Skeleton className="h-6 w-8 mx-auto" /></div>
-                    ) : (
-                        <div className="font-bold text-lg">{userProfile?.upvotedCount || 0}</div>
-                    )}
-                    <p className="text-sm text-muted-foreground">Upvoted</p>
-                </Link>
-            </div>
-        </div>
-        
-        {/* User Name, Bio, and Website */}
-        <div className="mb-4 space-y-1">
-            <p className="font-semibold font-headline">{userProfile?.name}</p>
-            {userProfile?.bio && <p className="text-sm">{userProfile.bio}</p>}
-            {userProfile?.website && (
-                <a href={userProfile.website} target="_blank" rel="noopener noreferrer" className="flex items-center gap-2 text-sm text-blue-500 hover:underline">
-                    <LinkIcon className="h-4 w-4" />
-                    <span>{userProfile.website.replace(/^(https?:\/\/)?(www\.)?/, '')}</span>
-                </a>
-            )}
-        </div>
-
-
-        <div className="mb-4 flex items-center space-x-2">
-            <Button variant="secondary" size="sm" className="flex-1 font-bold" asChild>
-              <Link href="/account/settings/edit-profile">Edit Profile</Link>
-            </Button>
-            <Button variant="secondary" size="sm" className="flex-1 font-bold" onClick={handleShareProfile}>
-                Share Profile
-            </Button>
-        </div>
-
-      </div>
-
-        <Tabs defaultValue="posts" className="w-full">
-            <div className="sticky top-0 bg-background z-10">
-              <TabsList variant="underline" className="grid w-full grid-cols-3">
-                  <TabsTrigger value="posts" variant="underline" className="font-semibold">Posts</TabsTrigger>
-                  <TabsTrigger value="replies" variant="underline" className="font-semibold">Replies</TabsTrigger>
-                  <TabsTrigger value="bookmarks" variant="underline" className="font-semibold">Bookmarks</TabsTrigger>
-              </TabsList>
-            </div>
-            <TabsContent value="posts" className="mt-0">
-                <div className="divide-y border-b">
-                    {(postsLoading || bookmarksLoading) && (
-                        <>
-                            <PostSkeleton />
-                            <PostSkeleton />
-                        </>
-                    )}
-                    {!(postsLoading || bookmarksLoading) && posts?.length === 0 && (
-                         <div className="col-span-3 text-center py-16">
-                            <h3 className="text-xl font-headline text-primary">No Posts Yet</h3>
-                            <p className="text-muted-foreground">Start sharing your thoughts!</p>
+                    </div>
+                    <div className="flex-1 flex justify-around text-center">
+                        <div>
+                            {isLoading ? (
+                                <div className="font-bold text-lg"><Skeleton className="h-6 w-8 mx-auto" /></div>
+                            ) : (
+                                <div className="font-bold text-lg">{posts?.length ?? 0}</div>
+                            )}
+                            <p className="text-sm text-muted-foreground">Posts</p>
                         </div>
-                    )}
-                    {posts?.map((post) => (
-                        <HomePostItem 
-                          key={post.id} 
-                          post={post} 
-                          bookmarks={bookmarks} 
-                          updatePost={updatePostState}
-                          onDelete={handleDeletePost} 
-                          onPin={handlePinPost} 
-                          showPinStatus={true}
-                          authorProfile={userProfile}
-                        />
-                    ))}
+                        <Link href={`/profile/${authUser?.uid}/social?tab=upvotes`} className="cursor-pointer hover:bg-secondary/50 rounded-md p-1 -m-1">
+                            {isLoading ? (
+                                <div className="font-bold text-lg"><Skeleton className="h-6 w-8 mx-auto" /></div>
+                            ) : (
+                                <div className="font-bold text-lg">{userProfile?.upvotes || 0}</div>
+                            )}
+                            <p className="text-sm text-muted-foreground">Upvotes</p>
+                        </Link>
+                        <Link href={`/profile/${authUser?.uid}/social?tab=upvoted`} className="cursor-pointer hover:bg-secondary/50 rounded-md p-1 -m-1">
+                            {isLoading ? (
+                                <div className="font-bold text-lg"><Skeleton className="h-6 w-8 mx-auto" /></div>
+                            ) : (
+                                <div className="font-bold text-lg">{userProfile?.upvotedCount || 0}</div>
+                            )}
+                            <p className="text-sm text-muted-foreground">Upvoted</p>
+                        </Link>
+                    </div>
                 </div>
-            </TabsContent>
-             <TabsContent value="replies" className="mt-0">
-                 {authUser?.uid && <RepliesList userId={authUser.uid} />}
-             </TabsContent>
-             <TabsContent value="bookmarks" className="mt-0">
-                 <BookmarksList bookmarks={bookmarks} bookmarksLoading={bookmarksLoading} />
-             </TabsContent>
-        </Tabs>
+                
+                {/* User Name, Bio, and Website */}
+                <div className="mb-4 space-y-1">
+                    <p className="font-semibold font-headline">{userProfile?.name}</p>
+                    {userProfile?.bio && <p className="text-sm">{userProfile.bio}</p>}
+                    {userProfile?.website && (
+                        <a href={userProfile.website} target="_blank" rel="noopener noreferrer" className="flex items-center gap-2 text-sm text-blue-500 hover:underline">
+                            <LinkIcon className="h-4 w-4" />
+                            <span>{userProfile.website.replace(/^(https?:\/\/)?(www\.)?/, '')}</span>
+                        </a>
+                    )}
+                </div>
 
+
+                <div className="mb-4 flex items-center space-x-2">
+                    <Button variant="secondary" size="sm" className="flex-1 font-bold" asChild>
+                    <Link href="/account/settings/edit-profile">Edit Profile</Link>
+                    </Button>
+                    <Button variant="secondary" size="sm" className="flex-1 font-bold" onClick={handleShareProfile}>
+                        Share Profile
+                    </Button>
+                </div>
+
+            </div>
+
+                <Tabs defaultValue="posts" className="w-full">
+                    <div className="sticky top-0 bg-background z-10">
+                    <TabsList variant="underline" className="grid w-full grid-cols-3">
+                        <TabsTrigger value="posts" variant="underline" className="font-semibold">Posts</TabsTrigger>
+                        <TabsTrigger value="replies" variant="underline" className="font-semibold">Replies</TabsTrigger>
+                        <TabsTrigger value="bookmarks" variant="underline" className="font-semibold">Bookmarks</TabsTrigger>
+                    </TabsList>
+                    </div>
+                    <TabsContent value="posts" className="mt-0">
+                        <div className="divide-y border-b">
+                            {(postsLoading || bookmarksLoading) && (
+                                <>
+                                    <PostSkeleton />
+                                    <PostSkeleton />
+                                </>
+                            )}
+                            {!(postsLoading || bookmarksLoading) && posts?.length === 0 && (
+                                <div className="col-span-3 text-center py-16">
+                                    <h3 className="text-xl font-headline text-primary">No Posts Yet</h3>
+                                    <p className="text-muted-foreground">Start sharing your thoughts!</p>
+                                </div>
+                            )}
+                            {posts?.map((post) => (
+                                <HomePostItem 
+                                key={post.id} 
+                                post={post} 
+                                bookmarks={bookmarks} 
+                                updatePost={updatePostState}
+                                onDelete={handleDeletePost} 
+                                onPin={handlePinPost} 
+                                showPinStatus={true}
+                                authorProfile={userProfile}
+                                />
+                            ))}
+                        </div>
+                    </TabsContent>
+                    <TabsContent value="replies" className="mt-0">
+                        {authUser?.uid && <RepliesList userId={authUser.uid} />}
+                    </TabsContent>
+                    <TabsContent value="bookmarks" className="mt-0">
+                        <BookmarksList bookmarks={bookmarks} bookmarksLoading={bookmarksLoading} />
+                    </TabsContent>
+                </Tabs>
+            </div>
+        </div>
     </AppLayout>
   );
 }

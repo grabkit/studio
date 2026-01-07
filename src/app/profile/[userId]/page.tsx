@@ -6,7 +6,7 @@ import { useParams, useRouter } from "next/navigation";
 import { useFirebase, useMemoFirebase, useCollection, type WithId, useDoc } from "@/firebase";
 import { doc, collection, query, where, getDocs, serverTimestamp, setDoc, getDoc, updateDoc, increment, arrayUnion, arrayRemove, deleteField, runTransaction } from "firebase/firestore";
 import type { Post, User, Notification, Conversation } from "@/lib/types";
-import React, { useMemo, useState, useEffect, useCallback } from "react";
+import React, { useMemo, useState, useEffect, useCallback, useRef, type TouchEvent } from "react";
 import Link from "next/link";
 import { useToast } from "@/hooks/use-toast";
 import { format } from "date-fns";
@@ -16,7 +16,7 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { ArrowLeft, MessageSquare, ArrowUpRight, ArrowUp, MoreHorizontal, ShieldAlert, Flag, VolumeX, Info, MinusCircle, Link as LinkIcon, QrCode, Calendar, Badge, User as UserIcon, Volume2, BarChart3 } from "lucide-react";
+import { ArrowLeft, MessageSquare, ArrowUpRight, ArrowUp, MoreHorizontal, ShieldAlert, Flag, VolumeX, Info, MinusCircle, Link as LinkIcon, QrCode, Calendar, Badge, User as UserIcon, Volume2, BarChart3, RefreshCw } from "lucide-react";
 import { getAvatar, cn, formatLastSeen, formatUserId } from "@/lib/utils";
 import { FirestorePermissionError } from "@/firebase/errors";
 import { errorEmitter } from "@/firebase/error-emitter";
@@ -74,6 +74,11 @@ export default function UserProfilePage() {
     const userId = params.userId as string;
     const { firestore, user: currentUser, userProfile: currentUserProfile, showVoiceStatusPlayer, setUserProfile: setCurrentUserProfile, setActiveUserProfile, userProfile } = useFirebase();
     const user = userProfile;
+    
+    const [isRefreshing, setIsRefreshing] = useState(false);
+    const [pullPosition, setPullPosition] = useState(0);
+    const touchStartRef = useRef(0);
+    const containerRef = useRef<HTMLDivElement>(null);
 
     const [posts, setPosts] = useState<WithId<Post>[]>([]);
     const [postsLoading, setPostsLoading] = useState(true);
@@ -115,39 +120,82 @@ export default function UserProfilePage() {
             router.replace('/account');
         }
     }, [currentUser, userId, router]);
+
+    const fetchPosts = useCallback(async () => {
+        if (!firestore || !userId) return;
+        setPostsLoading(true);
+        try {
+            const postsQuery = query(
+                collection(firestore, "posts"),
+                where("authorId", "==", userId)
+            );
+            const querySnapshot = await getDocs(postsQuery);
+            let userPosts = querySnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as WithId<Post>));
+
+            userPosts.sort((a, b) => {
+                if (a.isPinned && !b.isPinned) return -1;
+                if (!a.isPinned && b.isPinned) return 1;
+                const timeA = a.timestamp?.toMillis() || 0;
+                const timeB = b.timestamp?.toMillis() || 0;
+                return timeB - timeA;
+            });
+
+            setPosts(userPosts);
+        } catch (error) {
+            console.error("Error fetching user posts:", error);
+        } finally {
+            setPostsLoading(false);
+        }
+    }, [firestore, userId]);
     
     useEffect(() => {
-      if (!firestore || !userId) return;
-  
-      const fetchPosts = async () => {
-          setPostsLoading(true);
-          try {
-              const postsQuery = query(
-                  collection(firestore, "posts"),
-                  where("authorId", "==", userId)
-              );
-              const querySnapshot = await getDocs(postsQuery);
-              let userPosts = querySnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as WithId<Post>));
-
-               // Sort by pinned status first, then by timestamp
-                userPosts.sort((a, b) => {
-                    if (a.isPinned && !b.isPinned) return -1;
-                    if (!a.isPinned && b.isPinned) return 1;
-                    const timeA = a.timestamp?.toMillis() || 0;
-                    const timeB = b.timestamp?.toMillis() || 0;
-                    return timeB - timeA;
-                });
-
-              setPosts(userPosts);
-          } catch (error) {
-              console.error("Error fetching user posts:", error);
-          } finally {
-              setPostsLoading(false);
-          }
-      };
-  
       fetchPosts();
-    }, [firestore, userId]);
+    }, [fetchPosts]);
+
+    const fetchProfile = useCallback(async () => {
+        if (!userRef) return;
+        const userDoc = await getDoc(userRef);
+        if (userDoc.exists()) {
+            setFetchedUser({ id: userDoc.id, ...userDoc.data() } as WithId<User>);
+        }
+    }, [userRef, setFetchedUser]);
+
+    const handleRefresh = async () => {
+        if (isRefreshing) return;
+        setIsRefreshing(true);
+        window.navigator.vibrate?.(50);
+        await Promise.all([fetchPosts(), fetchProfile()]);
+        setTimeout(() => {
+            setIsRefreshing(false);
+            setPullPosition(0);
+            window.navigator.vibrate?.(50);
+        }, 500);
+    };
+
+    const handleTouchStart = (e: TouchEvent) => {
+        touchStartRef.current = e.targetTouches[0].clientY;
+    };
+
+    const handleTouchMove = (e: TouchEvent) => {
+        const touchY = e.targetTouches[0].clientY;
+        const pullDistance = touchY - touchStartRef.current;
+        if (containerRef.current && containerRef.current.scrollTop === 0 && pullDistance > 0 && !isRefreshing) {
+            e.preventDefault();
+            const newPullPosition = Math.min(pullDistance, 120);
+            if (pullPosition <= 70 && newPullPosition > 70) {
+                window.navigator.vibrate?.(50);
+            }
+            setPullPosition(newPullPosition);
+        }
+    };
+
+    const handleTouchEnd = () => {
+        if (pullPosition > 70) {
+            handleRefresh();
+        } else {
+            setPullPosition(0);
+        }
+    };
 
     const updatePostState = useCallback((postId: string, updatedData: Partial<Post>) => {
         setPosts(currentPosts => {
@@ -546,194 +594,211 @@ export default function UserProfilePage() {
 
     return (
         <AppLayout showTopBar={false}>
-            <div>
-                 <Sheet open={isMoreOptionsSheetOpen} onOpenChange={setIsMoreOptionsSheetOpen}>
-                    <div className="flex items-center justify-between h-14 px-4">
-                         <Button variant="ghost" size="icon" onClick={() => router.back()}>
-                            <ArrowLeft className="h-6 w-6" />
-                        </Button>
-                        <h2 className="text-lg font-semibold font-headline">
-                          {formatUserId(user.id)}
-                        </h2>
-                        <SheetTrigger asChild>
-                            <Button variant="ghost" size="icon" className="justify-self-end">
-                                <MoreHorizontal className="h-6 w-6" />
-                            </Button>
-                        </SheetTrigger>
+            <div
+                ref={containerRef}
+                onTouchStart={handleTouchStart}
+                onTouchMove={handleTouchMove}
+                onTouchEnd={handleTouchEnd}
+                className="relative h-full overflow-y-auto"
+            >
+                <div 
+                    className="absolute top-0 left-0 right-0 flex justify-center items-center h-12 text-muted-foreground transition-opacity duration-300 z-20"
+                    style={{ opacity: isRefreshing ? 1 : pullPosition / 70 }}
+                >
+                    <div style={{ transform: `rotate(${isRefreshing ? 0 : pullPosition * 3}deg)` }}>
+                        <RefreshCw className={cn('h-5 w-5', isRefreshing && 'animate-spin')} />
                     </div>
+                </div>
 
-                    <div className="px-4">
-                         <div className="flex items-center justify-between space-x-5 mb-4">
-                            <div className="flex-shrink-0">
-                                <div className="relative inline-block">
-                                    <Avatar className="h-20 w-20 md:h-24 md:w-24">
-                                        <AvatarImage
-                                            src={undefined}
-                                            alt={user?.name || "User"}
-                                        />
-                                        <AvatarFallback className="text-3xl font-headline bg-secondary">
-                                            {getAvatar(user?.id)}
-                                        </AvatarFallback>
-                                    </Avatar>
-                                    {hasVoiceStatus && (
-                                        <div className="absolute bottom-0 right-0 bg-background p-1 rounded-full border-2 cursor-pointer" onClick={handleAvatarClick} role="button">
-                                            <div className="flex items-center justify-center h-4 w-4 gap-0.5">
-                                                <div className="audio-wave-bar-avatar" />
-                                                <div className="audio-wave-bar-avatar" />
-                                                <div className="audio-wave-bar-avatar" />
-                                                <div className="audio-wave-bar-avatar" />
-                                                <div className="audio-wave-bar-avatar" />
+                <div style={{ paddingTop: `${pullPosition}px` }} className="transition-all duration-300">
+                    <Sheet open={isMoreOptionsSheetOpen} onOpenChange={setIsMoreOptionsSheetOpen}>
+                        <div className="flex items-center justify-between h-14 px-4">
+                            <Button variant="ghost" size="icon" onClick={() => router.back()}>
+                                <ArrowLeft className="h-6 w-6" />
+                            </Button>
+                            <h2 className="text-lg font-semibold font-headline">
+                            {formatUserId(user.id)}
+                            </h2>
+                            <SheetTrigger asChild>
+                                <Button variant="ghost" size="icon" className="justify-self-end">
+                                    <MoreHorizontal className="h-6 w-6" />
+                                </Button>
+                            </SheetTrigger>
+                        </div>
+
+                        <div className="px-4">
+                            <div className="flex items-center justify-between space-x-5 mb-4">
+                                <div className="flex-shrink-0">
+                                    <div className="relative inline-block">
+                                        <Avatar className="h-20 w-20 md:h-24 md:w-24">
+                                            <AvatarImage
+                                                src={undefined}
+                                                alt={user?.name || "User"}
+                                            />
+                                            <AvatarFallback className="text-3xl font-headline bg-secondary">
+                                                {getAvatar(user?.id)}
+                                            </AvatarFallback>
+                                        </Avatar>
+                                        {hasVoiceStatus && (
+                                            <div className="absolute bottom-0 right-0 bg-background p-1 rounded-full border-2 cursor-pointer" onClick={handleAvatarClick} role="button">
+                                                <div className="flex items-center justify-center h-4 w-4 gap-0.5">
+                                                    <div className="audio-wave-bar-avatar" />
+                                                    <div className="audio-wave-bar-avatar" />
+                                                    <div className="audio-wave-bar-avatar" />
+                                                    <div className="audio-wave-bar-avatar" />
+                                                    <div className="audio-wave-bar-avatar" />
+                                                </div>
                                             </div>
-                                        </div>
-                                    )}
+                                        )}
+                                    </div>
                                 </div>
-                            </div>
-                            <div className="flex-1 flex justify-around text-center">
-                                <div>
-                                    {isLoading ? (
+                                <div className="flex-1 flex justify-around text-center">
+                                    <div>
+                                        {isLoading ? (
+                                            <div className="font-bold text-lg"><Skeleton className="h-6 w-8 mx-auto" /></div>
+                                        ) : (
+                                            <div className="font-bold text-lg">{posts?.length ?? 0}</div>
+                                        )}
+                                        <p className="text-sm text-muted-foreground">Posts</p>
+                                    </div>
+                                    <Link href={`/profile/${userId}/social?tab=upvotes`} className="cursor-pointer hover:bg-secondary/50 rounded-md p-1 -m-1">
+                                        {isLoading ? (
                                         <div className="font-bold text-lg"><Skeleton className="h-6 w-8 mx-auto" /></div>
-                                    ) : (
-                                        <div className="font-bold text-lg">{posts?.length ?? 0}</div>
-                                    )}
-                                    <p className="text-sm text-muted-foreground">Posts</p>
+                                        ) : (
+                                        <div className="font-bold text-lg">{user?.upvotes || 0}</div>
+                                        )}
+                                        <p className="text-sm text-muted-foreground">Upvotes</p>
+                                    </Link>
+                                    <Link href={`/profile/${userId}/social?tab=upvoted`} className="cursor-pointer hover:bg-secondary/50 rounded-md p-1 -m-1">
+                                        {isLoading ? (
+                                        <div className="font-bold text-lg"><Skeleton className="h-6 w-8 mx-auto" /></div>
+                                        ) : (
+                                        <div className="font-bold text-lg">{user?.upvotedCount || 0}</div>
+                                        )}
+                                        <p className="text-sm text-muted-foreground">Upvoted</p>
+                                    </Link>
                                 </div>
-                                <Link href={`/profile/${userId}/social?tab=upvotes`} className="cursor-pointer hover:bg-secondary/50 rounded-md p-1 -m-1">
-                                    {isLoading ? (
-                                    <div className="font-bold text-lg"><Skeleton className="h-6 w-8 mx-auto" /></div>
-                                    ) : (
-                                    <div className="font-bold text-lg">{user?.upvotes || 0}</div>
-                                    )}
-                                    <p className="text-sm text-muted-foreground">Upvotes</p>
-                                </Link>
-                                 <Link href={`/profile/${userId}/social?tab=upvoted`} className="cursor-pointer hover:bg-secondary/50 rounded-md p-1 -m-1">
-                                    {isLoading ? (
-                                    <div className="font-bold text-lg"><Skeleton className="h-6 w-8 mx-auto" /></div>
-                                    ) : (
-                                    <div className="font-bold text-lg">{user?.upvotedCount || 0}</div>
-                                    )}
-                                    <p className="text-sm text-muted-foreground">Upvoted</p>
-                                </Link>
                             </div>
-                        </div>
 
-                        {/* User Name, Bio, and Website */}
-                        <div className="mb-4 space-y-1">
-                            <p className="font-semibold font-headline">{formatUserId(user?.id)}</p>
-                            {user?.bio && <p className="text-sm">{user.bio}</p>}
-                            {user?.website && (
-                                <a href={user.website} target="_blank" rel="noopener noreferrer" className="flex items-center gap-2 text-sm text-blue-500 hover:underline">
-                                    <LinkIcon className="h-4 w-4" />
-                                    <span>{user.website.replace(/^(https?:\/\/)?(www\.)?/, '')}</span>
-                                </a>
-                            )}
-                        </div>
-                        
-                        <div className="mb-4 flex items-center space-x-2">
-                             <Button onClick={handleUpvoteUser} variant={hasUpvotedUser ? "default" : "secondary"} className="flex-1 font-bold">
-                                {hasUpvotedUser ? "Upvoted" : "Upvote"}
-                            </Button>
-                            {getMessageButton()}
-                        </div>
-                    </div>
-                    <Tabs defaultValue="posts" className="w-full">
-                        <div className="sticky top-0 bg-background z-10">
-                            <TabsList variant="underline" className="grid w-full grid-cols-2">
-                                <TabsTrigger value="posts" variant="profile" className="font-semibold">Posts</TabsTrigger>
-                                <TabsTrigger value="replies" variant="profile" className="font-semibold">Replies</TabsTrigger>
-                            </TabsList>
-                        </div>
-                        <div>
-                            <TabsContent value="posts" className="mt-0">
-                            <div className="divide-y border-b">
-                                    {(postsLoading || bookmarksLoading) && (
-                                        <>
-                                            <PostSkeleton />
-                                            <PostSkeleton />
-                                        </>
-                                    )}
-                                    {!(postsLoading || bookmarksLoading) && posts?.length === 0 && (
-                                        <div className="text-center py-16">
-                                            <h3 className="text-xl font-headline text-primary">No Posts Yet</h3>
-                                            <p className="text-muted-foreground">This user hasn't posted anything.</p>
-                                        </div>
-                                    )}
-                                    {posts?.map((post) => (
-                                        <HomePostItem 
-                                          key={post.id} 
-                                          post={post} 
-                                          bookmarks={bookmarks} 
-                                          updatePost={updatePostState}
-                                          showPinStatus={true} 
-                                        />
-                                    ))}
-                                </div>
-                            </TabsContent>
-                            <TabsContent value="replies" className="mt-0">
-                                {userId && <RepliesList userId={userId} />}
-                            </TabsContent>
-                        </div>
-                    </Tabs>
-                    <SheetContent side="bottom" className="rounded-t-2xl">
-                        <SheetHeader className="text-left sr-only">
-                           <SheetTitle>Options for {formatUserId(user.id)}</SheetTitle>
-                           <SheetDescription>Manage your interaction with this user.</SheetDescription>
-                        </SheetHeader>
-                         <div className="grid gap-2 py-4">
-                             <div className="border rounded-2xl">
-                                 <Button variant="ghost" className="justify-between text-base py-6 rounded-2xl w-full" onClick={handleMuteUser}>
-                                    <span>{isMuted ? "Unmute" : "Mute"}</span>
-                                    {isMuted ? <Volume2 className="h-5 w-5" /> : <VolumeX className="h-5 w-5" />}
-                                </Button>
-                                <div className="border-t"></div>
-                                <Button variant="ghost" className="justify-between text-base py-6 rounded-2xl w-full" onClick={handleRestrictUser}>
-                                    <span>{isRestricted ? "Unrestrict" : "Restrict"}</span>
-                                    <MinusCircle className="h-5 w-5" />
-                                </Button>
-                             </div>
-                             <div className="border rounded-2xl">
-                                <Button variant="ghost" className="justify-between text-base py-6 rounded-2xl w-full" onClick={handleOpenAbout}>
-                                    <span>About this profile</span>
-                                    <Info className="h-5 w-5" />
-                                </Button>
+                            {/* User Name, Bio, and Website */}
+                            <div className="mb-4 space-y-1">
+                                <p className="font-semibold font-headline">{formatUserId(user?.id)}</p>
+                                {user?.bio && <p className="text-sm">{user.bio}</p>}
+                                {user?.website && (
+                                    <a href={user.website} target="_blank" rel="noopener noreferrer" className="flex items-center gap-2 text-sm text-blue-500 hover:underline">
+                                        <LinkIcon className="h-4 w-4" />
+                                        <span>{user.website.replace(/^(https?:\/\/)?(www\.)?/, '')}</span>
+                                    </a>
+                                )}
                             </div>
-                             <div className="border rounded-2xl">
-                                <Button variant="ghost" className="justify-between text-base py-6 rounded-2xl w-full" onClick={handleShare}>
-                                    <span>Share via...</span>
-                                    <ArrowUpRight className="h-5 w-5" />
+                            
+                            <div className="mb-4 flex items-center space-x-2">
+                                <Button onClick={handleUpvoteUser} variant={hasUpvotedUser ? "default" : "secondary"} className="flex-1 font-bold">
+                                    {hasUpvotedUser ? "Upvoted" : "Upvote"}
                                 </Button>
-                                <div className="border-t"></div>
-                                <Button variant="ghost" className="justify-between text-base py-6 rounded-2xl w-full" onClick={handleCopyLink}>
-                                    <span>Copy Link</span>
-                                    <LinkIcon className="h-5 w-5" />
-                                </Button>
-                                 <div className="border-t"></div>
-                                <Button variant="ghost" className="justify-between text-base py-6 rounded-2xl w-full" onClick={handleOpenQrCode}>
-                                    <span>QR Code</span>
-                                    <QrCode className="h-5 w-5" />
-                                </Button>
+                                {getMessageButton()}
                             </div>
-                            <div className="border rounded-2xl">
-                                <ReportDialog reportedUserId={user.id} reportedUserName={formatUserId(user.id)}>
-                                    <Button variant="ghost" className="justify-between text-base py-6 rounded-2xl w-full text-destructive hover:text-destructive">
-                                        <span>Report</span>
-                                        <Flag className="h-5 w-5" />
+                        </div>
+                        <Tabs defaultValue="posts" className="w-full">
+                            <div className="sticky top-0 bg-background z-10">
+                                <TabsList variant="underline" className="grid w-full grid-cols-2">
+                                    <TabsTrigger value="posts" variant="profile" className="font-semibold">Posts</TabsTrigger>
+                                    <TabsTrigger value="replies" variant="profile" className="font-semibold">Replies</TabsTrigger>
+                                </TabsList>
+                            </div>
+                            <div>
+                                <TabsContent value="posts" className="mt-0">
+                                <div className="divide-y border-b">
+                                        {(postsLoading || bookmarksLoading) && (
+                                            <>
+                                                <PostSkeleton />
+                                                <PostSkeleton />
+                                            </>
+                                        )}
+                                        {!(postsLoading || bookmarksLoading) && posts?.length === 0 && (
+                                            <div className="text-center py-16">
+                                                <h3 className="text-xl font-headline text-primary">No Posts Yet</h3>
+                                                <p className="text-muted-foreground">This user hasn't posted anything.</p>
+                                            </div>
+                                        )}
+                                        {posts?.map((post) => (
+                                            <HomePostItem 
+                                            key={post.id} 
+                                            post={post} 
+                                            bookmarks={bookmarks} 
+                                            updatePost={updatePostState}
+                                            showPinStatus={true} 
+                                            />
+                                        ))}
+                                    </div>
+                                </TabsContent>
+                                <TabsContent value="replies" className="mt-0">
+                                    {userId && <RepliesList userId={userId} />}
+                                </TabsContent>
+                            </div>
+                        </Tabs>
+                        <SheetContent side="bottom" className="rounded-t-2xl">
+                            <SheetHeader className="text-left sr-only">
+                            <SheetTitle>Options for {formatUserId(user.id)}</SheetTitle>
+                            <SheetDescription>Manage your interaction with this user.</SheetDescription>
+                            </SheetHeader>
+                            <div className="grid gap-2 py-4">
+                                <div className="border rounded-2xl">
+                                    <Button variant="ghost" className="justify-between text-base py-6 rounded-2xl w-full" onClick={handleMuteUser}>
+                                        <span>{isMuted ? "Unmute" : "Mute"}</span>
+                                        {isMuted ? <Volume2 className="h-5 w-5" /> : <VolumeX className="h-5 w-5" />}
                                     </Button>
-                                </ReportDialog>
-                                <div className="border-t"></div>
-                                <Button variant="ghost" className="justify-between text-base py-6 rounded-2xl w-full text-destructive hover:text-destructive" onClick={handleBlockUser}>
-                                    <span>{isBlocked ? "Unblock" : "Block"}</span>
-                                    <ShieldAlert className="h-5 w-5" />
-                                </Button>
+                                    <div className="border-t"></div>
+                                    <Button variant="ghost" className="justify-between text-base py-6 rounded-2xl w-full" onClick={handleRestrictUser}>
+                                        <span>{isRestricted ? "Unrestrict" : "Restrict"}</span>
+                                        <MinusCircle className="h-5 w-5" />
+                                    </Button>
+                                </div>
+                                <div className="border rounded-2xl">
+                                    <Button variant="ghost" className="justify-between text-base py-6 rounded-2xl w-full" onClick={handleOpenAbout}>
+                                        <span>About this profile</span>
+                                        <Info className="h-5 w-5" />
+                                    </Button>
+                                </div>
+                                <div className="border rounded-2xl">
+                                    <Button variant="ghost" className="justify-between text-base py-6 rounded-2xl w-full" onClick={handleShare}>
+                                        <span>Share via...</span>
+                                        <ArrowUpRight className="h-5 w-5" />
+                                    </Button>
+                                    <div className="border-t"></div>
+                                    <Button variant="ghost" className="justify-between text-base py-6 rounded-2xl w-full" onClick={handleCopyLink}>
+                                        <span>Copy Link</span>
+                                        <LinkIcon className="h-5 w-5" />
+                                    </Button>
+                                    <div className="border-t"></div>
+                                    <Button variant="ghost" className="justify-between text-base py-6 rounded-2xl w-full" onClick={handleOpenQrCode}>
+                                        <span>QR Code</span>
+                                        <QrCode className="h-5 w-5" />
+                                    </Button>
+                                </div>
+                                <div className="border rounded-2xl">
+                                    <ReportDialog reportedUserId={user.id} reportedUserName={formatUserId(user.id)}>
+                                        <Button variant="ghost" className="justify-between text-base py-6 rounded-2xl w-full text-destructive hover:text-destructive">
+                                            <span>Report</span>
+                                            <Flag className="h-5 w-5" />
+                                        </Button>
+                                    </ReportDialog>
+                                    <div className="border-t"></div>
+                                    <Button variant="ghost" className="justify-between text-base py-6 rounded-2xl w-full text-destructive hover:text-destructive" onClick={handleBlockUser}>
+                                        <span>{isBlocked ? "Unblock" : "Block"}</span>
+                                        <ShieldAlert className="h-5 w-5" />
+                                    </Button>
+                                </div>
                             </div>
-                        </div>
-                    </SheetContent>
-                </Sheet>
-                {user && <AboutProfileSheet user={user} isOpen={isAboutSheetOpen} onOpenChange={setIsAboutSheetOpen} />}
-                 <QrCodeDialog
-                    isOpen={isQrDialogOpen}
-                    onOpenChange={setIsQrDialogOpen}
-                    user={user}
-                />
+                        </SheetContent>
+                    </Sheet>
+                    {user && <AboutProfileSheet user={user} isOpen={isAboutSheetOpen} onOpenChange={setIsAboutSheetOpen} />}
+                    <QrCodeDialog
+                        isOpen={isQrDialogOpen}
+                        onOpenChange={setIsQrDialogOpen}
+                        user={user}
+                    />
+                </div>
             </div>
         </AppLayout>
     );
