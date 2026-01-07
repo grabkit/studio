@@ -25,6 +25,8 @@ import {
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
 import { Skeleton } from '@/components/ui/skeleton';
+import { FirestorePermissionError } from '@/firebase/errors';
+import { errorEmitter } from '@/firebase/error-emitter';
 
 function SettingsPageSkeleton() {
     return (
@@ -33,7 +35,6 @@ function SettingsPageSkeleton() {
             <Skeleton className="h-8 w-48 mb-2" />
             <Skeleton className="h-4 w-64" />
             <div className="mt-8 space-y-2 w-full">
-                <Skeleton className="h-12 w-full rounded-lg" />
                 <Skeleton className="h-12 w-full rounded-lg" />
                 <Skeleton className="h-12 w-full rounded-lg" />
             </div>
@@ -45,14 +46,13 @@ function SettingsPageSkeleton() {
 export default function ChatSettingsPage() {
     const params = useParams();
     const router = useRouter();
-    const { firestore, user: currentUser, userProfile: currentUserProfile, setCurrentUserProfile } = useFirebase();
+    const { firestore, user: currentUser, userProfile: currentUserProfile, setUserProfile: setCurrentUserProfile } = useFirebase();
     const { toast } = useToast();
 
     const peerId = params.peerId as string;
 
     const [isMuteConfirmOpen, setIsMuteConfirmOpen] = useState(false);
     const [isBlockConfirmOpen, setIsBlockConfirmOpen] = useState(false);
-    const [isDeleteConfirmOpen, setIsDeleteConfirmOpen] = useState(false);
     
     const conversationId = useMemo(() => {
         if (!currentUser || !peerId) return null;
@@ -81,31 +81,53 @@ export default function ChatSettingsPage() {
         const updatePayload = {
             mutedBy: isMuted ? arrayRemove(currentUser.uid) : arrayUnion(currentUser.uid)
         };
-        await updateDoc(convoRef, updatePayload);
-        toast({ title: isMuted ? 'Conversation unmuted' : 'Conversation muted' });
-        setIsMuteConfirmOpen(false);
+
+        try {
+            await updateDoc(convoRef, updatePayload);
+            toast({ title: isMuted ? 'Conversation unmuted' : 'Conversation muted' });
+        } catch(error) {
+             const permissionError = new FirestorePermissionError({
+                path: convoRef.path,
+                operation: 'update',
+                requestResourceData: updatePayload
+            });
+            errorEmitter.emit('permission-error', permissionError);
+            toast({ variant: 'destructive', title: 'Error', description: `Could not ${isMuted ? 'unmute' : 'mute'} conversation.`})
+        } finally {
+             setIsMuteConfirmOpen(false);
+        }
     };
 
     const handleBlock = async () => {
         if (!currentUser || !firestore || !currentUserProfile) return;
         const currentUserDocRef = doc(firestore, "users", currentUser.uid);
-        const newBlockedUsers = isBlocked
-            ? currentUserProfile.blockedUsers?.filter(id => id !== peerId)
-            : [...(currentUserProfile.blockedUsers || []), peerId];
         
-        await updateDoc(currentUserDocRef, { blockedUsers: newBlockedUsers });
+        const originalBlockedUsers = currentUserProfile.blockedUsers || [];
+        const newBlockedUsers = isBlocked
+            ? originalBlockedUsers.filter(id => id !== peerId)
+            : [...originalBlockedUsers, peerId];
+        
+        // Optimistic UI Update
         setCurrentUserProfile(current => current ? { ...current, blockedUsers: newBlockedUsers } : null);
-        toast({ title: isBlocked ? 'User unblocked' : 'User blocked' });
-        setIsBlockConfirmOpen(false);
+
+        try {
+            await updateDoc(currentUserDocRef, { blockedUsers: newBlockedUsers });
+            toast({ title: isBlocked ? 'User unblocked' : 'User blocked' });
+        } catch (error) {
+            // Revert on failure
+            setCurrentUserProfile(current => current ? { ...current, blockedUsers: originalBlockedUsers } : null);
+            const permissionError = new FirestorePermissionError({
+                path: currentUserDocRef.path,
+                operation: 'update',
+                requestResourceData: { blockedUsers: newBlockedUsers },
+            });
+            errorEmitter.emit('permission-error', permissionError);
+            toast({ variant: 'destructive', title: 'Error', description: `Could not ${isBlocked ? 'unblock' : 'block'} user.`})
+        } finally {
+            setIsBlockConfirmOpen(false);
+        }
     };
 
-    const handleDeleteChat = async () => {
-        // This is a complex operation. For now, just navigate away.
-        // A full implementation would delete messages and hide the conversation.
-        toast({ title: 'Chat Deleted' });
-        router.push('/messages');
-        setIsDeleteConfirmOpen(false);
-    };
 
     if (isPeerUserLoading || isConversationLoading) {
         return (
@@ -151,9 +173,6 @@ export default function ChatSettingsPage() {
                         <ShieldAlert className="mr-3" />
                          {isBlocked ? 'Unblock User' : 'Block User'}
                     </Button>
-                    <Button variant="ghost" className="w-full justify-start text-base h-12 text-destructive hover:text-destructive" onClick={() => setIsDeleteConfirmOpen(true)}>
-                        <Trash2 className="mr-3" /> Delete Chat
-                    </Button>
                 </div>
             </div>
 
@@ -189,22 +208,7 @@ export default function ChatSettingsPage() {
                     </AlertDialogFooter>
                 </AlertDialogContent>
             </AlertDialog>
-             <AlertDialog open={isDeleteConfirmOpen} onOpenChange={setIsDeleteConfirmOpen}>
-                <AlertDialogContent>
-                    <AlertDialogHeader>
-                        <AlertDialogTitle>Delete Chat?</AlertDialogTitle>
-                        <AlertDialogDescription>
-                            This will permanently delete the chat history on your device. This action cannot be undone.
-                        </AlertDialogDescription>
-                    </AlertDialogHeader>
-                    <AlertDialogFooter>
-                        <AlertDialogCancel>Cancel</AlertDialogCancel>
-                        <AlertDialogAction onClick={handleDeleteChat} className="bg-destructive text-destructive-foreground hover:bg-destructive/90">Delete</AlertDialogAction>
-                    </AlertDialogFooter>
-                </AlertDialogContent>
-            </AlertDialog>
 
         </AppLayout>
     );
 }
-
