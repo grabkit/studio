@@ -9,7 +9,7 @@ import { doc, updateDoc, arrayRemove, arrayUnion, collection, getDocs, writeBatc
 import { useDoc } from '@/firebase/firestore/use-doc';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
-import { ArrowLeft, BellOff, ShieldAlert, MicOff, VideoOff, ChevronRight, PhoneCall, User as UserIcon, Bell, Flag, MessageCircleX, Palette, Check } from 'lucide-react';
+import { ArrowLeft, BellOff, ShieldAlert, MicOff, VideoOff, ChevronRight, PhoneCall, User as UserIcon, Bell, Flag, MessageCircleX } from 'lucide-react';
 import { getAvatar, formatUserId } from '@/lib/utils';
 import type { Conversation, User } from '@/lib/types';
 import { useToast } from '@/hooks/use-toast';
@@ -31,71 +31,6 @@ import { Switch } from '@/components/ui/switch';
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from '@/components/ui/sheet';
 import Link from 'next/link';
 import { ReportDialog } from '@/components/ReportDialog';
-import { cn } from '@/lib/utils';
-
-const themeColors = [
-    { name: 'Default', bg: 'bg-primary', value: 'hsl(var(--primary))' },
-    { name: 'Fuchsia', bg: 'bg-fuchsia-500', value: 'hsl(282 82% 57%)' },
-    { name: 'Orange', bg: 'bg-orange-500', value: 'hsl(25 95% 53%)' },
-    { name: 'Teal', bg: 'bg-teal-500', value: 'hsl(163 72% 48%)' },
-    { name: 'Red', bg: 'bg-red-500', value: 'hsl(0 84% 60%)' },
-    { name: 'Blue', bg: 'bg-blue-500', value: 'hsl(221 83% 53%)' },
-    { name: 'Green', bg: 'bg-green-500', value: 'hsl(142 71% 45%)' },
-    { name: 'Indigo', bg: 'bg-indigo-500', value: 'hsl(243 75% 59%)' },
-    { name: 'Rose', bg: 'bg-rose-500', value: 'hsl(347 87% 61%)' },
-];
-
-
-function ThemeSelectorSheet({ conversation, setConversation, isOpen, onOpenChange }: { conversation: Conversation | null, setConversation: (updater: (current: Conversation | null) => Conversation | null) => void, isOpen: boolean, onOpenChange: (open: boolean) => void }) {
-    const { firestore, toast } = useFirebase();
-    const currentTheme = conversation?.themeColor || 'hsl(var(--primary))';
-    
-    const handleThemeChange = async (colorValue: string) => {
-        if (!firestore || !conversation) return;
-
-        const conversationRef = doc(firestore, 'conversations', conversation.id);
-        const originalColor = conversation.themeColor;
-        
-        // Optimistic update
-        setConversation(current => current ? { ...current, themeColor: colorValue } : null);
-        onOpenChange(false);
-
-        try {
-            await updateDoc(conversationRef, { themeColor: colorValue });
-        } catch (error) {
-            setConversation(current => current ? { ...current, themeColor: originalColor } : null);
-            const permissionError = new FirestorePermissionError({
-                path: conversationRef.path,
-                operation: 'update',
-                requestResourceData: { themeColor: colorValue },
-            });
-            errorEmitter.emit('permission-error', permissionError);
-            toast({ variant: 'destructive', title: 'Error', description: 'Could not update chat theme.' });
-        }
-    };
-    
-    return (
-         <Sheet open={isOpen} onOpenChange={onOpenChange}>
-            <SheetContent side="bottom" className="rounded-t-2xl">
-                <SheetHeader>
-                    <SheetTitle>Chat Theme</SheetTitle>
-                </SheetHeader>
-                <div className="grid grid-cols-3 gap-4 py-6">
-                    {themeColors.map(color => (
-                        <div key={color.name} className="flex flex-col items-center gap-2" onClick={() => handleThemeChange(color.value)}>
-                            <div className={cn("h-16 w-16 rounded-full cursor-pointer relative flex items-center justify-center", color.bg)}>
-                                {currentTheme === color.value && (
-                                    <div className="h-16 w-16 rounded-full border-4 border-background ring-2 ring-inset ring-black/50"></div>
-                                )}
-                            </div>
-                            <span className="text-sm text-muted-foreground">{color.name}</span>
-                        </div>
-                    ))}
-                </div>
-            </SheetContent>
-        </Sheet>
-    );
-}
 
 function SettingsPageSkeleton() {
     return (
@@ -124,7 +59,6 @@ export default function ChatSettingsPage() {
     const [isBlockConfirmOpen, setIsBlockConfirmOpen] = useState(false);
     const [isClearConfirmOpen, setIsClearConfirmOpen] = useState(false);
     const [isCallControlsSheetOpen, setIsCallControlsSheetOpen] = useState(false);
-    const [isThemeSheetOpen, setIsThemeSheetOpen] = useState(false);
     
     const conversationId = useMemo(() => {
         if (!currentUser || !peerId) return null;
@@ -306,10 +240,6 @@ export default function ChatSettingsPage() {
                 </Link>
                 
                  <div className="mt-8">
-                     <Button variant="ghost" className="w-full justify-start text-base h-12" onClick={() => setIsThemeSheetOpen(true)}>
-                        <Palette className="mr-3" />
-                        Chat Theme
-                    </Button>
                      <Button variant="ghost" className="w-full justify-start text-base h-12" onClick={() => setIsClearConfirmOpen(true)}>
                         <MessageCircleX className="mr-3" />
                         Clear Chat
@@ -405,14 +335,6 @@ export default function ChatSettingsPage() {
                     </AlertDialogFooter>
                 </AlertDialogContent>
             </AlertDialog>
-            
-            <ThemeSelectorSheet 
-                conversation={conversation} 
-                setConversation={setConversation} 
-                isOpen={isThemeSheetOpen} 
-                onOpenChange={setIsThemeSheetOpen} 
-            />
-
         </AppLayout>
     );
 }

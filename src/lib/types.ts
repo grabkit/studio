@@ -129,7 +129,6 @@ export interface Conversation {
     postId?: string;
     voiceCallsDisabledBy?: string[];
     videoCallsDisabledBy?: string[];
-    themeColor?: string;
 }
 
 export interface Message {

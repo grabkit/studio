@@ -114,8 +114,6 @@ function MessageBubble({ message, isOwnMessage, conversation, onSetReply, onForw
     }
     
     const isPostShare = !!message.postId;
-    const themeColor = conversation?.themeColor || 'hsl(var(--primary))';
-
 
     return (
         <div className={cn("flex items-end gap-2 group", isOwnMessage ? "justify-end" : "justify-start")}>
@@ -129,10 +127,9 @@ function MessageBubble({ message, isOwnMessage, conversation, onSetReply, onForw
                           className={cn(
                             "max-w-fit rounded-2xl px-3 py-2 cursor-pointer",
                             !isOwnMessage && "bg-secondary rounded-bl-none",
-                            isOwnMessage && "text-primary-foreground rounded-br-none",
+                            isOwnMessage && "bg-primary text-primary-foreground rounded-br-none",
                             isPostShare && "p-2 bg-transparent"
                           )}
-                           style={{ backgroundColor: isOwnMessage && !isPostShare ? themeColor : undefined }}
                         >
                             
                             {message.isForwarded && (
@@ -343,9 +340,6 @@ function MessageInput({ conversationId, conversation, replyingTo, onCancelReply 
         defaultValues: { text: "" },
     });
 
-    const themeColor = conversation?.themeColor || 'hsl(var(--primary))';
-
-
     const onSubmit = (values: z.infer<typeof messageFormSchema>) => {
         if (!firestore || !user || !conversationId || !conversation) return;
 
@@ -447,7 +441,6 @@ function MessageInput({ conversationId, conversation, replyingTo, onCancelReply 
                             size="icon"
                             disabled={form.formState.isSubmitting}
                             className="rounded-full"
-                            style={{ backgroundColor: themeColor }}
                         >
                             <Send className="h-5 w-5" />
                         </Button>
