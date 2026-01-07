@@ -9,7 +9,7 @@ import { doc, updateDoc, arrayRemove, arrayUnion, collection, getDocs, writeBatc
 import { useDoc } from '@/firebase/firestore/use-doc';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
-import { ArrowLeft, BellOff, ShieldAlert, MicOff, VideoOff, ChevronRight, PhoneCall, User as UserIcon, Bell, Trash2, Flag } from 'lucide-react';
+import { ArrowLeft, BellOff, ShieldAlert, MicOff, VideoOff, ChevronRight, PhoneCall, User as UserIcon, Bell, Flag, MessageCircleX } from 'lucide-react';
 import { getAvatar, formatUserId } from '@/lib/utils';
 import type { Conversation, User } from '@/lib/types';
 import { useToast } from '@/hooks/use-toast';
@@ -241,7 +241,7 @@ export default function ChatSettingsPage() {
                 
                  <div className="mt-8">
                      <Button variant="ghost" className="w-full justify-start text-base h-12" onClick={() => setIsClearConfirmOpen(true)}>
-                        <Trash2 className="mr-3" />
+                        <MessageCircleX className="mr-3" />
                         Clear Chat
                     </Button>
                     <div className="flex items-center justify-between p-3">
