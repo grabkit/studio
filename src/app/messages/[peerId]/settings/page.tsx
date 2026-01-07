@@ -243,6 +243,13 @@ export default function ChatSettingsPage() {
                 </Link>
                 
                  <div className="mt-8">
+                     <Button asChild variant="ghost" className="w-full justify-start text-base h-12 px-4 gap-3">
+                        <Link href={`/profile/${peerId}`}>
+                            <UserIcon className="h-5 w-5" />
+                            View Profile
+                        </Link>
+                    </Button>
+
                      <div className="flex items-center justify-between hover:bg-secondary rounded-md h-12 px-4">
                         <Label htmlFor="mute-notifications" className="flex items-center text-base font-normal cursor-pointer gap-3">
                             <BellOff className="h-5 w-5" />
@@ -281,13 +288,6 @@ export default function ChatSettingsPage() {
                             </div>
                         </SheetContent>
                     </Sheet>
-
-                    <Button asChild variant="ghost" className="w-full justify-start text-base h-12 px-4 gap-3">
-                        <Link href={`/profile/${peerId}`}>
-                            <UserIcon className="h-5 w-5" />
-                            View Profile
-                        </Link>
-                    </Button>
                     
                     <Button variant="ghost" className="w-full justify-start text-base h-12 px-4 gap-3" onClick={() => setIsClearConfirmOpen(true)}>
                         <MessageCircleX className="h-5 w-5" />
@@ -304,8 +304,8 @@ export default function ChatSettingsPage() {
                         <ShieldAlert className="h-5 w-5" />
                          {isBlocked ? 'Unblock User' : 'Block User'}
                     </Button>
-                    
-                    <div className="my-4">
+                </div>
+                 <div className="my-4 mt-auto">
                         <Tabs defaultValue="media">
                             <TabsList variant="underline" className="grid grid-cols-3">
                                 <TabsTrigger value="media" variant="underline"><ImageIcon /></TabsTrigger>
@@ -323,7 +323,6 @@ export default function ChatSettingsPage() {
                             </TabsContent>
                         </Tabs>
                     </div>
-                </div>
             </div>
 
             <AlertDialog open={isBlockConfirmOpen} onOpenChange={setIsBlockConfirmOpen}>
