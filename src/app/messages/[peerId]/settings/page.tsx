@@ -244,23 +244,23 @@ export default function ChatSettingsPage() {
                         <MessageCircleX className="mr-3" />
                         Clear Chat
                     </Button>
-                    <div className="flex items-center justify-between p-3">
-                        <Label htmlFor="mute-notifications" className="flex items-center gap-3 text-base font-normal">
-                             <BellOff /> Mute Notifications
-                        </Label>
-                        <Switch id="mute-notifications" checked={isMuted} onCheckedChange={handleToggleMute} />
+                    <div className="flex items-center justify-between hover:bg-secondary rounded-md">
+                        <Button variant="ghost" className="w-full justify-start text-base h-12">
+                            <BellOff className="mr-3" />
+                             Mute Notifications
+                        </Button>
+                        <Switch id="mute-notifications" checked={isMuted} onCheckedChange={handleToggleMute} className="mr-3"/>
                     </div>
                  
                      <Sheet open={isCallControlsSheetOpen} onOpenChange={setIsCallControlsSheetOpen}>
                         <SheetTrigger asChild>
-                            <div className="cursor-pointer hover:bg-secondary">
-                                 <div className="flex items-center justify-between p-3">
-                                    <div className="flex items-center gap-3 text-base font-normal">
-                                         <PhoneCall /> Call Controls
-                                    </div>
-                                    <ChevronRight className="h-5 w-5 text-muted-foreground" />
+                           <Button variant="ghost" className="w-full justify-between text-base h-12">
+                                <div className="flex items-center">
+                                    <PhoneCall className="mr-3" />
+                                    Call Controls
                                 </div>
-                            </div>
+                                <ChevronRight className="h-5 w-5 text-muted-foreground" />
+                            </Button>
                         </SheetTrigger>
                         <SheetContent side="bottom" className="rounded-t-2xl">
                              <SheetHeader>
