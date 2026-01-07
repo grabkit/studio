@@ -345,17 +345,13 @@ export default function AccountPage() {
 
         <div style={{ paddingTop: `${pullPosition}px` }} className="transition-all duration-300">
             <div className="flex items-center justify-between h-14 px-4">
-                <Button variant="ghost" size="icon" asChild>
-                    <Link href="/post">
-                        <Plus className="h-6 w-6" />
-                    </Link>
-                </Button>
+                 <Link href="/post" className={cn(buttonVariants({ variant: "ghost", size: "icon" }))}>
+                    <Plus className="h-6 w-6" />
+                </Link>
                 <div className="flex items-center space-x-2">
-                    <Button asChild variant="ghost" size="icon">
-                      <Link href="/account/settings">
-                          <Menu className="h-6 w-6" />
-                      </Link>
-                    </Button>
+                    <Link href="/account/settings" className={cn(buttonVariants({ variant: "ghost", size: "icon" }))}>
+                      <Menu className="h-6 w-6" />
+                    </Link>
                 </div>
             </div>
             <div className="px-4">
@@ -491,5 +487,7 @@ export default function AccountPage() {
 
 
 
+
+    
 
     
