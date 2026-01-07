@@ -10,7 +10,7 @@ import { doc, updateDoc, getDocs, writeBatch, collection, query, where, getDoc, 
 import { useDoc } from '@/firebase/firestore/use-doc';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
-import { ArrowLeft, BellOff, ShieldAlert, MicOff, VideoOff, ChevronRight, PhoneCall, User as UserIcon, Bell, Flag, MessageCircleX, Link as LinkIcon, BarChart3, Palette } from 'lucide-react';
+import { ArrowLeft, BellOff, ShieldAlert, MicOff, VideoOff, ChevronRight, PhoneCall, User as UserIcon, Bell, Flag, MessageCircleX, Link as LinkIcon, BarChart3, Palette, Image as ImageIcon } from 'lucide-react';
 import { getAvatar, formatUserId } from '@/lib/utils';
 import type { Conversation, User, Message, Post, Bookmark } from '@/lib/types';
 import { useToast } from '@/hooks/use-toast';
@@ -37,6 +37,9 @@ import { WithId } from '@/firebase/firestore/use-collection';
 import { PostItem as HomePostItem, PostSkeleton } from "@/app/home/page";
 import { LinkPreviewCard } from '@/components/LinkPreviewCard';
 import { ScrollArea } from '@/components/ui/scroll-area';
+import { format } from 'date-fns';
+import { QrCodeDialog } from '@/components/QrCodeDialog';
+import { Calendar, Badge } from 'lucide-react';
 
 
 function SettingsPageSkeleton() {
@@ -162,6 +165,44 @@ function SharedContent() {
     );
 }
 
+function AboutProfileSheet({ user, isOpen, onOpenChange }: { user: WithId<User>, isOpen: boolean, onOpenChange: (open: boolean) => void }) {
+
+    return (
+        <Sheet open={isOpen} onOpenChange={onOpenChange}>
+            <SheetContent side="bottom" className="rounded-t-2xl">
+                <SheetHeader className="text-left mb-4">
+                    <SheetTitle>About this account</SheetTitle>
+                </SheetHeader>
+                <div className="space-y-4">
+                    <div className="flex items-center">
+                        <UserIcon className="h-5 w-5 mr-3 text-muted-foreground" />
+                        <div>
+                            <p className="text-sm text-muted-foreground">User ID</p>
+                            <p className="font-mono text-sm">{formatUserId(user.id)}</p>
+                        </div>
+                    </div>
+                    {user.createdAt && (
+                        <div className="flex items-center">
+                            <Calendar className="h-5 w-5 mr-3 text-muted-foreground" />
+                            <div>
+                                <p className="text-sm text-muted-foreground">Joined</p>
+                                <p className="font-semibold">{format(user.createdAt.toDate(), "MMMM yyyy")}</p>
+                            </div>
+                        </div>
+                    )}
+                    <div className="flex items-center">
+                        <Badge className="h-5 w-5 mr-3 text-muted-foreground" />
+                        <div>
+                            <p className="text-sm text-muted-foreground">Account Status</p>
+                            <p className="font-semibold capitalize">{user.status || 'Active'}</p>
+                        </div>
+                    </div>
+                </div>
+            </SheetContent>
+        </Sheet>
+    )
+}
+
 export default function ChatSettingsPage() {
     const params = useParams();
     const router = useRouter();
@@ -173,6 +214,8 @@ export default function ChatSettingsPage() {
     const [isBlockConfirmOpen, setIsBlockConfirmOpen] = useState(false);
     const [isClearConfirmOpen, setIsClearConfirmOpen] = useState(false);
     const [isCallControlsSheetOpen, setIsCallControlsSheetOpen] = useState(false);
+    const [isAboutSheetOpen, setIsAboutSheetOpen] = useState(false);
+    const [isQrDialogOpen, setIsQrDialogOpen] = useState(false);
     
     const conversationId = useMemo(() => {
         if (!currentUser || !peerId) return null;
@@ -321,7 +364,7 @@ export default function ChatSettingsPage() {
     if (isPeerUserLoading || isConversationLoading) {
         return (
             <AppLayout showTopBar={false}>
-                <div className="fixed top-0 left-0 right-0 z-10 flex items-center p-2 bg-background h-14 max-w-2xl mx-auto sm:px-4">
+                 <div className="fixed top-0 left-0 right-0 z-10 flex items-center p-2 bg-background/80 backdrop-blur-sm border-b h-14 max-w-2xl mx-auto sm:px-4">
                     <Button variant="ghost" size="icon" onClick={() => router.back()}>
                         <ArrowLeft />
                     </Button>
@@ -454,6 +497,12 @@ export default function ChatSettingsPage() {
                     </AlertDialogFooter>
                 </AlertDialogContent>
             </AlertDialog>
+             {peerUser && <AboutProfileSheet user={peerUser} isOpen={isAboutSheetOpen} onOpenChange={setIsAboutSheetOpen} />}
+            <QrCodeDialog
+                isOpen={isQrDialogOpen}
+                onOpenChange={setIsQrDialogOpen}
+                user={peerUser}
+            />
         </AppLayout>
     );
 }
