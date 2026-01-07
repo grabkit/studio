@@ -1,4 +1,5 @@
 
+
 "use client";
 
 import { useMemo, useState } from 'react';
@@ -9,7 +10,7 @@ import { doc, updateDoc, arrayRemove, arrayUnion, collection, getDocs, writeBatc
 import { useDoc } from '@/firebase/firestore/use-doc';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
-import { ArrowLeft, BellOff, ShieldAlert, MicOff, VideoOff, ChevronRight, PhoneCall, User as UserIcon, Bell, Flag, MessageCircleX } from 'lucide-react';
+import { ArrowLeft, BellOff, ShieldAlert, MicOff, VideoOff, ChevronRight, PhoneCall, User as UserIcon, Bell, Flag, MessageCircleX, Image as ImageIcon, Link as LinkIcon, BarChart3 } from 'lucide-react';
 import { getAvatar, formatUserId } from '@/lib/utils';
 import type { Conversation, User } from '@/lib/types';
 import { useToast } from '@/hooks/use-toast';
@@ -31,6 +32,8 @@ import { Switch } from '@/components/ui/switch';
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from '@/components/ui/sheet';
 import Link from 'next/link';
 import { ReportDialog } from '@/components/ReportDialog';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+
 
 function SettingsPageSkeleton() {
     return (
@@ -240,13 +243,9 @@ export default function ChatSettingsPage() {
                 </Link>
                 
                  <div className="mt-8">
-                     <Button variant="ghost" className="w-full justify-start text-base h-12" onClick={() => setIsClearConfirmOpen(true)}>
-                        <MessageCircleX className="mr-3 h-5 w-5" />
-                        Clear Chat
-                    </Button>
-                    <div className="flex items-center justify-between hover:bg-secondary rounded-md h-12 px-4">
-                        <Label htmlFor="mute-notifications" className="flex items-center text-base font-normal cursor-pointer">
-                            <BellOff className="mr-3 h-5 w-5" />
+                     <div className="flex items-center justify-between hover:bg-secondary rounded-md h-12 px-4">
+                        <Label htmlFor="mute-notifications" className="flex items-center text-base font-normal cursor-pointer gap-3">
+                            <BellOff className="h-5 w-5" />
                              Mute Notifications
                         </Label>
                         <Switch id="mute-notifications" checked={isMuted} onCheckedChange={handleToggleMute} />
@@ -254,9 +253,9 @@ export default function ChatSettingsPage() {
                  
                      <Sheet open={isCallControlsSheetOpen} onOpenChange={setIsCallControlsSheetOpen}>
                         <SheetTrigger asChild>
-                           <Button variant="ghost" className="w-full justify-between text-base h-12">
-                                <div className="flex items-center">
-                                    <PhoneCall className="mr-3 h-5 w-5" />
+                           <Button variant="ghost" className="w-full justify-between text-base h-12 px-4">
+                                <div className="flex items-center gap-3">
+                                    <PhoneCall className="h-5 w-5" />
                                     Call Controls
                                 </div>
                                 <ChevronRight className="h-5 w-5 text-muted-foreground" />
@@ -282,24 +281,47 @@ export default function ChatSettingsPage() {
                             </div>
                         </SheetContent>
                     </Sheet>
-                    
-                    <Button asChild variant="ghost" className="w-full justify-start text-base h-12">
+
+                    <Button asChild variant="ghost" className="w-full justify-start text-base h-12 px-4 gap-3">
                         <Link href={`/profile/${peerId}`}>
-                            <UserIcon className="mr-3 h-5 w-5" />
+                            <UserIcon className="h-5 w-5" />
                             View Profile
                         </Link>
                     </Button>
+                    
+                    <div className="my-4">
+                        <Tabs defaultValue="media">
+                            <TabsList variant="underline" className="grid grid-cols-3">
+                                <TabsTrigger value="media" variant="underline"><ImageIcon /></TabsTrigger>
+                                <TabsTrigger value="links" variant="underline"><LinkIcon /></TabsTrigger>
+                                <TabsTrigger value="polls" variant="underline"><BarChart3 /></TabsTrigger>
+                            </TabsList>
+                            <TabsContent value="media" className="mt-4 text-center text-muted-foreground py-8">
+                                <p>No media shared in this conversation yet.</p>
+                            </TabsContent>
+                             <TabsContent value="links" className="mt-4 text-center text-muted-foreground py-8">
+                                <p>No links shared in this conversation yet.</p>
+                            </TabsContent>
+                             <TabsContent value="polls" className="mt-4 text-center text-muted-foreground py-8">
+                                <p>No polls shared in this conversation yet.</p>
+                            </TabsContent>
+                        </Tabs>
+                    </div>
 
-                    <Button variant="ghost" className="w-full justify-start text-base h-12 text-destructive hover:text-destructive" onClick={() => setIsBlockConfirmOpen(true)}>
-                        <ShieldAlert className="mr-3 h-5 w-5" />
-                         {isBlocked ? 'Unblock User' : 'Block User'}
+                    <Button variant="ghost" className="w-full justify-start text-base h-12 text-destructive hover:text-destructive px-4 gap-3" onClick={() => setIsClearConfirmOpen(true)}>
+                        <MessageCircleX className="h-5 w-5" />
+                        Clear Chat
                     </Button>
-                     <ReportDialog reportedUserId={peerUser.id} reportedUserName={formatUserId(peerUser.id)}>
-                        <Button variant="ghost" className="w-full justify-start text-base h-12 text-destructive hover:text-destructive">
-                            <Flag className="mr-3 h-5 w-5" />
+                    <ReportDialog reportedUserId={peerUser.id} reportedUserName={formatUserId(peerUser.id)}>
+                        <Button variant="ghost" className="w-full justify-start text-base h-12 text-destructive hover:text-destructive px-4 gap-3">
+                            <Flag className="h-5 w-5" />
                             Report
                         </Button>
                     </ReportDialog>
+                    <Button variant="ghost" className="w-full justify-start text-base h-12 text-destructive hover:text-destructive px-4 gap-3" onClick={() => setIsBlockConfirmOpen(true)}>
+                        <ShieldAlert className="h-5 w-5" />
+                         {isBlocked ? 'Unblock User' : 'Block User'}
+                    </Button>
                 </div>
             </div>
 
