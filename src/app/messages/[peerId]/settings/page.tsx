@@ -9,7 +9,7 @@ import { doc, updateDoc, arrayRemove, arrayUnion } from 'firebase/firestore';
 import { useDoc } from '@/firebase/firestore/use-doc';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
-import { ArrowLeft, BellOff, ShieldAlert, MicOff, VideoOff, ChevronRight, PhoneCall } from 'lucide-react';
+import { ArrowLeft, BellOff, ShieldAlert, MicOff, VideoOff, ChevronRight, PhoneCall, User as UserIcon, Bell } from 'lucide-react';
 import { getAvatar, formatUserId } from '@/lib/utils';
 import type { Conversation, User } from '@/lib/types';
 import { useToast } from '@/hooks/use-toast';
@@ -37,10 +37,10 @@ function SettingsPageSkeleton() {
             <Skeleton className="h-24 w-24 rounded-full mb-4" />
             <Skeleton className="h-8 w-48 mb-2" />
             <Skeleton className="h-4 w-64" />
-            <div className="mt-8 space-y-2 w-full">
-                <Skeleton className="h-12 w-full rounded-lg" />
-                <Skeleton className="h-12 w-full rounded-lg" />
-                <Skeleton className="h-12 w-full rounded-lg" />
+            <div className="mt-8 w-full">
+                <Skeleton className="h-12 w-full" />
+                <Skeleton className="h-12 w-full" />
+                <Skeleton className="h-12 w-full" />
             </div>
         </div>
     )
@@ -168,7 +168,7 @@ export default function ChatSettingsPage() {
     if (isPeerUserLoading || isConversationLoading) {
         return (
             <AppLayout showTopBar={false}>
-                <div className="fixed top-0 left-0 right-0 z-10 flex items-center p-2 bg-background border-b h-14 max-w-2xl mx-auto sm:px-4">
+                <div className="fixed top-0 left-0 right-0 z-10 flex items-center p-2 bg-background h-14 max-w-2xl mx-auto sm:px-4">
                     <Button variant="ghost" size="icon" onClick={() => router.back()}>
                         <ArrowLeft />
                     </Button>
@@ -185,7 +185,7 @@ export default function ChatSettingsPage() {
 
     return (
         <AppLayout showTopBar={false}>
-            <div className="fixed top-0 left-0 right-0 z-10 flex items-center p-2 bg-background border-b h-14 max-w-2xl mx-auto sm:px-4">
+            <div className="fixed top-0 left-0 right-0 z-10 flex items-center p-2 bg-background h-14 max-w-2xl mx-auto sm:px-4">
                 <Button variant="ghost" size="icon" onClick={() => router.back()}>
                     <ArrowLeft />
                 </Button>
@@ -201,7 +201,7 @@ export default function ChatSettingsPage() {
                 </Link>
                 
                  <div className="mt-8">
-                     <div className="flex items-center justify-between p-3">
+                    <div className="flex items-center justify-between p-3">
                         <Label htmlFor="mute-notifications" className="flex items-center gap-3 text-base font-normal">
                              <BellOff /> Mute Notifications
                         </Label>
@@ -223,7 +223,7 @@ export default function ChatSettingsPage() {
                              <SheetHeader>
                                 <SheetTitle>Call Controls</SheetTitle>
                             </SheetHeader>
-                             <div className="mt-4 divide-y border-y rounded-lg overflow-hidden">
+                             <div className="mt-4">
                                  <div className="flex items-center justify-between p-3">
                                     <Label htmlFor="disable-voice" className="flex items-center gap-3 text-base font-normal">
                                          <MicOff /> Disable Voice Calls
