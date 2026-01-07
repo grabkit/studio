@@ -10,7 +10,7 @@ import { doc, updateDoc, arrayRemove, arrayUnion, collection, getDocs, writeBatc
 import { useDoc } from '@/firebase/firestore/use-doc';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
-import { ArrowLeft, BellOff, ShieldAlert, MicOff, VideoOff, ChevronRight, PhoneCall, User as UserIcon, Bell, Flag, MessageCircleX, Image as ImageIcon, Link as LinkIcon, BarChart3 } from 'lucide-react';
+import { ArrowLeft, BellOff, ShieldAlert, MicOff, VideoOff, ChevronRight, PhoneCall, User as UserIcon, Bell, Flag, MessageCircleX, Image as ImageIcon, Link as LinkIcon, BarChart3, Palette } from 'lucide-react';
 import { getAvatar, formatUserId } from '@/lib/utils';
 import type { Conversation, User } from '@/lib/types';
 import { useToast } from '@/hooks/use-toast';
@@ -289,7 +289,7 @@ export default function ChatSettingsPage() {
                         </Link>
                     </Button>
                     
-                    <Button variant="ghost" className="w-full justify-start text-base h-12 text-destructive hover:text-destructive px-4 gap-3" onClick={() => setIsClearConfirmOpen(true)}>
+                    <Button variant="ghost" className="w-full justify-start text-base h-12 px-4 gap-3" onClick={() => setIsClearConfirmOpen(true)}>
                         <MessageCircleX className="h-5 w-5" />
                         Clear Chat
                     </Button>
@@ -362,3 +362,6 @@ export default function ChatSettingsPage() {
     );
 }
 
+
+
+    
