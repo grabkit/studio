@@ -207,42 +207,39 @@ export default function ChatSettingsPage() {
                         </Label>
                         <Switch id="mute-notifications" checked={isMuted} onCheckedChange={handleToggleMute} />
                     </div>
-                 </div>
-
-                 <Sheet open={isCallControlsSheetOpen} onOpenChange={setIsCallControlsSheetOpen}>
-                    <SheetTrigger asChild>
-                        <div className="mt-4 cursor-pointer hover:bg-secondary rounded-lg">
-                             <div className="flex items-center justify-between p-3">
-                                <div className="flex items-center gap-3 text-base font-normal">
-                                     <PhoneCall /> Call Controls
+                 
+                     <Sheet open={isCallControlsSheetOpen} onOpenChange={setIsCallControlsSheetOpen}>
+                        <SheetTrigger asChild>
+                            <div className="cursor-pointer hover:bg-secondary">
+                                 <div className="flex items-center justify-between p-3">
+                                    <div className="flex items-center gap-3 text-base font-normal">
+                                         <PhoneCall /> Call Controls
+                                    </div>
+                                    <ChevronRight className="h-5 w-5 text-muted-foreground" />
                                 </div>
-                                <ChevronRight className="h-5 w-5 text-muted-foreground" />
                             </div>
-                        </div>
-                    </SheetTrigger>
-                    <SheetContent side="bottom" className="rounded-t-2xl">
-                         <SheetHeader>
-                            <SheetTitle>Call Controls</SheetTitle>
-                        </SheetHeader>
-                         <div className="mt-4 divide-y border-y rounded-lg overflow-hidden">
-                             <div className="flex items-center justify-between p-3">
-                                <Label htmlFor="disable-voice" className="flex items-center gap-3 text-base font-normal">
-                                     <MicOff /> Disable Voice Calls
-                                </Label>
-                                <Switch id="disable-voice" checked={isVoiceDisabled} onCheckedChange={() => handleToggleCall('voice')} />
+                        </SheetTrigger>
+                        <SheetContent side="bottom" className="rounded-t-2xl">
+                             <SheetHeader>
+                                <SheetTitle>Call Controls</SheetTitle>
+                            </SheetHeader>
+                             <div className="mt-4 divide-y border-y rounded-lg overflow-hidden">
+                                 <div className="flex items-center justify-between p-3">
+                                    <Label htmlFor="disable-voice" className="flex items-center gap-3 text-base font-normal">
+                                         <MicOff /> Disable Voice Calls
+                                    </Label>
+                                    <Switch id="disable-voice" checked={isVoiceDisabled} onCheckedChange={() => handleToggleCall('voice')} />
+                                </div>
+                                 <div className="flex items-center justify-between p-3">
+                                    <Label htmlFor="disable-video" className="flex items-center gap-3 text-base font-normal">
+                                         <VideoOff /> Disable Video Calls
+                                    </Label>
+                                    <Switch id="disable-video" checked={isVideoDisabled} onCheckedChange={() => handleToggleCall('video')} />
+                                </div>
                             </div>
-                             <div className="flex items-center justify-between p-3">
-                                <Label htmlFor="disable-video" className="flex items-center gap-3 text-base font-normal">
-                                     <VideoOff /> Disable Video Calls
-                                </Label>
-                                <Switch id="disable-video" checked={isVideoDisabled} onCheckedChange={() => handleToggleCall('video')} />
-                            </div>
-                        </div>
-                    </SheetContent>
-                </Sheet>
+                        </SheetContent>
+                    </Sheet>
 
-
-                <div className="mt-4">
                     <Button variant="ghost" className="w-full justify-start text-base h-12 text-destructive hover:text-destructive" onClick={() => setIsBlockConfirmOpen(true)}>
                         <ShieldAlert className="mr-3" />
                          {isBlocked ? 'Unblock User' : 'Block User'}
