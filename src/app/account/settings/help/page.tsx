@@ -28,7 +28,7 @@ export default function HelpPage() {
                         </div>
                     </div>
                 </Link>
-                <div className="block p-4 border rounded-lg hover:bg-accent cursor-pointer">
+                <Link href="/account/settings/help/report-problem" className="block p-4 border rounded-lg hover:bg-accent cursor-pointer">
                     <div className="flex items-center space-x-4">
                         <MessageSquareQuote className="h-8 w-8 text-primary"/>
                         <div>
@@ -36,8 +36,8 @@ export default function HelpPage() {
                             <p className="text-sm text-muted-foreground">Let us know about a bug or issue.</p>
                         </div>
                     </div>
-                </div>
-                 <div className="block p-4 border rounded-lg hover:bg-accent cursor-pointer">
+                </Link>
+                 <Link href="/account/settings/help/safety" className="block p-4 border rounded-lg hover:bg-accent cursor-pointer">
                     <div className="flex items-center space-x-4">
                         <ShieldCheck className="h-8 w-8 text-primary"/>
                         <div>
@@ -45,7 +45,7 @@ export default function HelpPage() {
                             <p className="text-sm text-muted-foreground">Tips for staying safe on Blur.</p>
                         </div>
                     </div>
-                </div>
+                </Link>
             </div>
         </AppLayout>
     )
