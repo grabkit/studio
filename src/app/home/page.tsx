@@ -631,10 +631,14 @@ export default function HomePage() {
   const handleRefresh = async () => {
     if (isRefreshing) return;
     setIsRefreshing(true);
+    // Vibrate when refresh is triggered
+    window.navigator.vibrate?.(50);
     await fetchPostsAndShuffle();
     setTimeout(() => {
       setIsRefreshing(false);
       setPullPosition(0);
+      // Vibrate when refresh is complete
+      window.navigator.vibrate?.(50);
     }, 500); // Animation delay
   };
 
@@ -650,7 +654,14 @@ export default function HomePage() {
     if (containerRef.current && containerRef.current.scrollTop === 0 && pullDistance > 0 && !isRefreshing) {
       // Prevent browser's default pull-to-refresh action
       e.preventDefault();
-      setPullPosition(Math.min(pullDistance, 120)); // Max pull
+      const newPullPosition = Math.min(pullDistance, 120);
+      
+      // Trigger haptic feedback when threshold is passed
+      if (pullPosition <= 70 && newPullPosition > 70) {
+        window.navigator.vibrate?.(50);
+      }
+
+      setPullPosition(newPullPosition); // Max pull
     }
   };
 
