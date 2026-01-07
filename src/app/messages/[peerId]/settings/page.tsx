@@ -101,19 +101,14 @@ function SharedContent() {
 
     }, [firestore, messages, messagesLoading]);
 
-    const { links, polls } = useMemo(() => {
-        const polls: WithId<Post>[] = [];
-        posts.forEach(post => {
-            if (post.type === 'poll') {
-                polls.push(post);
-            }
-        });
-        
-        const linksFromMessages = messages?.filter(m => !!m.linkMetadata) || [];
+    const links = useMemo(() => {
+        return messages?.filter(m => !!m.linkMetadata) || [];
+    }, [messages]);
 
-        return { links: linksFromMessages, polls };
-    }, [posts, messages]);
-
+    const polls = useMemo(() => {
+        return posts.filter(post => post.type === 'poll');
+    }, [posts]);
+    
      const bookmarksQuery = useMemoFirebase(() => {
         if (!firestore || !currentUser) return null;
         return collection(firestore, 'users', currentUser.uid, 'bookmarks');
@@ -123,7 +118,7 @@ function SharedContent() {
 
     return (
         <Tabs defaultValue="links">
-            <div className="sticky top-14 bg-background z-10 border-b">
+            <div className="sticky top-0 bg-background z-10 border-b">
                 <TabsList variant="underline" className="grid grid-cols-2">
                     <TabsTrigger value="links" variant="underline"><LinkIcon /></TabsTrigger>
                     <TabsTrigger value="polls" variant="underline"><BarChart3 /></TabsTrigger>
@@ -381,13 +376,13 @@ export default function ChatSettingsPage() {
 
     return (
         <AppLayout showTopBar={false}>
-            <div className="fixed top-0 left-0 right-0 z-10 flex items-center p-2 bg-background/80 backdrop-blur-sm h-14 max-w-2xl mx-auto sm:px-4">
-                <Button variant="ghost" size="icon" onClick={() => router.back()}>
-                    <ArrowLeft />
-                </Button>
-                <h2 className="text-lg font-bold mx-auto -translate-x-4">Conversation Info</h2>
-            </div>
-            <ScrollArea className="h-full pt-14">
+            <ScrollArea className="h-full">
+                <div className="flex items-center p-2 bg-background/80 backdrop-blur-sm h-14 max-w-2xl mx-auto sm:px-4">
+                    <Button variant="ghost" size="icon" onClick={() => router.back()}>
+                        <ArrowLeft />
+                    </Button>
+                    <h2 className="text-lg font-bold mx-auto -translate-x-4">Conversation Info</h2>
+                </div>
                 <div className="px-4 pt-6 flex flex-col items-center text-center">
                     <Link href={`/profile/${peerId}`}>
                         <Avatar className="h-24 w-24 mb-4">
