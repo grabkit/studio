@@ -1,18 +1,17 @@
 
-
 "use client";
 
-import { useMemo, useState } from 'react';
+import { useMemo, useState, useEffect } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import AppLayout from '@/components/AppLayout';
-import { useFirebase, useMemoFirebase } from '@/firebase';
-import { doc, updateDoc, arrayRemove, arrayUnion, collection, getDocs, writeBatch } from 'firebase/firestore';
+import { useFirebase, useMemoFirebase, useCollection } from '@/firebase';
+import { doc, updateDoc, getDocs, writeBatch, collection, query, where, getDoc } from 'firebase/firestore';
 import { useDoc } from '@/firebase/firestore/use-doc';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
-import { ArrowLeft, BellOff, ShieldAlert, MicOff, VideoOff, ChevronRight, PhoneCall, User as UserIcon, Bell, Flag, MessageCircleX, Link as LinkIcon, BarChart3 } from 'lucide-react';
+import { ArrowLeft, BellOff, ShieldAlert, MicOff, VideoOff, ChevronRight, PhoneCall, User as UserIcon, Bell, Flag, MessageCircleX, Link as LinkIcon, BarChart3, Palette } from 'lucide-react';
 import { getAvatar, formatUserId } from '@/lib/utils';
-import type { Conversation, User } from '@/lib/types';
+import type { Conversation, User, Message, Post, Bookmark } from '@/lib/types';
 import { useToast } from '@/hooks/use-toast';
 import {
   AlertDialog,
@@ -33,6 +32,9 @@ import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from '@/co
 import Link from 'next/link';
 import { ReportDialog } from '@/components/ReportDialog';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { WithId } from '@/firebase/firestore/use-collection';
+import { PostItem as HomePostItem, PostSkeleton } from "@/app/home/page";
+import { LinkPreviewCard } from '@/components/LinkPreviewCard';
 
 
 function SettingsPageSkeleton() {
@@ -50,6 +52,115 @@ function SettingsPageSkeleton() {
     )
 }
 
+function SharedContent() {
+    const { firestore, user: currentUser } = useFirebase();
+    const params = useParams();
+    const peerId = params.peerId as string;
+    const [posts, setPosts] = useState<WithId<Post>[]>([]);
+    const [isLoading, setIsLoading] = useState(true);
+
+    const conversationId = useMemo(() => {
+        if (!currentUser || !peerId) return null;
+        return [currentUser.uid, peerId].sort().join('_');
+    }, [currentUser, peerId]);
+
+    const messagesQuery = useMemoFirebase(() => {
+        if (!firestore || !conversationId) return null;
+        return query(collection(firestore, 'conversations', conversationId, 'messages'));
+    }, [firestore, conversationId]);
+
+    const { data: messages } = useCollection<Message>(messagesQuery);
+    
+    useEffect(() => {
+        if (!firestore || !messages) {
+            setIsLoading(messages === undefined);
+            return;
+        }
+
+        const postIds = messages.map(m => m.postId).filter((id): id is string => !!id);
+        
+        if (postIds.length === 0) {
+            setPosts([]);
+            setIsLoading(false);
+            return;
+        }
+
+        const fetchPosts = async () => {
+            setIsLoading(true);
+            const postsCollection = collection(firestore, 'posts');
+            const postsQuery = query(postsCollection, where('id', 'in', postIds));
+            const snapshot = await getDocs(postsQuery);
+            const fetchedPosts = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as WithId<Post>));
+            setPosts(fetchedPosts);
+            setIsLoading(false);
+        };
+
+        fetchPosts();
+
+    }, [firestore, messages]);
+
+    const { links, polls } = useMemo(() => {
+        const links: WithId<Post>[] = [];
+        const polls: WithId<Post>[] = [];
+        posts.forEach(post => {
+            if (post.linkMetadata) {
+                links.push(post);
+            }
+            if (post.type === 'poll') {
+                polls.push(post);
+            }
+        });
+        return { links, polls };
+    }, [posts]);
+
+     const bookmarksQuery = useMemoFirebase(() => {
+        if (!firestore || !currentUser) return null;
+        return collection(firestore, 'users', currentUser.uid, 'bookmarks');
+    }, [firestore, currentUser]);
+
+    const { data: bookmarks } = useCollection<Bookmark>(bookmarksQuery);
+
+    return (
+        <Tabs defaultValue="links">
+            <TabsList variant="underline" className="grid grid-cols-2">
+                <TabsTrigger value="links" variant="underline"><LinkIcon /></TabsTrigger>
+                <TabsTrigger value="polls" variant="underline"><BarChart3 /></TabsTrigger>
+            </TabsList>
+            <TabsContent value="links" className="mt-4 space-y-3">
+                {isLoading && (
+                    <>
+                        <Skeleton className="h-28 w-full rounded-lg" />
+                        <Skeleton className="h-28 w-full rounded-lg" />
+                    </>
+                )}
+                {!isLoading && links.length === 0 && (
+                    <p className="text-center text-muted-foreground py-8">No links shared in this conversation yet.</p>
+                )}
+                {!isLoading && links.map(post => (
+                    <LinkPreviewCard key={post.id} metadata={post.linkMetadata!} />
+                ))}
+            </TabsContent>
+            <TabsContent value="polls" className="mt-0">
+                {isLoading && (
+                    <>
+                        <PostSkeleton />
+                        <PostSkeleton />
+                    </>
+                )}
+                {!isLoading && polls.length === 0 && (
+                     <p className="text-center text-muted-foreground py-8">No polls shared in this conversation yet.</p>
+                )}
+                 {!isLoading && polls.map(post => (
+                    <HomePostItem 
+                        key={post.id} 
+                        post={post} 
+                        bookmarks={bookmarks || []}
+                    />
+                ))}
+            </TabsContent>
+        </Tabs>
+    );
+}
 
 export default function ChatSettingsPage() {
     const params = useParams();
@@ -305,19 +416,8 @@ export default function ChatSettingsPage() {
                     </Button>
                 </div>
                  <div className="my-4 mt-auto">
-                        <Tabs defaultValue="links">
-                            <TabsList variant="underline" className="grid grid-cols-2">
-                                <TabsTrigger value="links" variant="underline"><LinkIcon /></TabsTrigger>
-                                <TabsTrigger value="polls" variant="underline"><BarChart3 /></TabsTrigger>
-                            </TabsList>
-                             <TabsContent value="links" className="mt-4 text-center text-muted-foreground py-8">
-                                <p>No links shared in this conversation yet.</p>
-                            </TabsContent>
-                             <TabsContent value="polls" className="mt-4 text-center text-muted-foreground py-8">
-                                <p>No polls shared in this conversation yet.</p>
-                            </TabsContent>
-                        </Tabs>
-                    </div>
+                    <SharedContent />
+                </div>
             </div>
 
             <AlertDialog open={isBlockConfirmOpen} onOpenChange={setIsBlockConfirmOpen}>
