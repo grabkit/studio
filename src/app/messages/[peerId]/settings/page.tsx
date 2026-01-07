@@ -249,8 +249,7 @@ export default function ChatSettingsPage() {
                             View Profile
                         </Link>
                     </Button>
-
-                     <div className="flex items-center justify-between hover:bg-secondary rounded-md h-12 px-4">
+                     <div className="flex items-center justify-between hover:bg-secondary rounded-md h-12 px-4 gap-3">
                         <Label htmlFor="mute-notifications" className="flex items-center text-base font-normal cursor-pointer gap-3">
                             <BellOff className="h-5 w-5" />
                              Mute Notifications
