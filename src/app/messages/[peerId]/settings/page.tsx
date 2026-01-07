@@ -289,6 +289,22 @@ export default function ChatSettingsPage() {
                         </Link>
                     </Button>
                     
+                    <Button variant="ghost" className="w-full justify-start text-base h-12 text-destructive hover:text-destructive px-4 gap-3" onClick={() => setIsClearConfirmOpen(true)}>
+                        <MessageCircleX className="h-5 w-5" />
+                        Clear Chat
+                    </Button>
+
+                    <ReportDialog reportedUserId={peerUser.id} reportedUserName={formatUserId(peerUser.id)}>
+                        <Button variant="ghost" className="w-full justify-start text-base h-12 text-destructive hover:text-destructive px-4 gap-3">
+                            <Flag className="h-5 w-5" />
+                            Report
+                        </Button>
+                    </ReportDialog>
+                    <Button variant="ghost" className="w-full justify-start text-base h-12 text-destructive hover:text-destructive px-4 gap-3" onClick={() => setIsBlockConfirmOpen(true)}>
+                        <ShieldAlert className="h-5 w-5" />
+                         {isBlocked ? 'Unblock User' : 'Block User'}
+                    </Button>
+                    
                     <div className="my-4">
                         <Tabs defaultValue="media">
                             <TabsList variant="underline" className="grid grid-cols-3">
@@ -307,21 +323,6 @@ export default function ChatSettingsPage() {
                             </TabsContent>
                         </Tabs>
                     </div>
-
-                    <Button variant="ghost" className="w-full justify-start text-base h-12 text-destructive hover:text-destructive px-4 gap-3" onClick={() => setIsClearConfirmOpen(true)}>
-                        <MessageCircleX className="h-5 w-5" />
-                        Clear Chat
-                    </Button>
-                    <ReportDialog reportedUserId={peerUser.id} reportedUserName={formatUserId(peerUser.id)}>
-                        <Button variant="ghost" className="w-full justify-start text-base h-12 text-destructive hover:text-destructive px-4 gap-3">
-                            <Flag className="h-5 w-5" />
-                            Report
-                        </Button>
-                    </ReportDialog>
-                    <Button variant="ghost" className="w-full justify-start text-base h-12 text-destructive hover:text-destructive px-4 gap-3" onClick={() => setIsBlockConfirmOpen(true)}>
-                        <ShieldAlert className="h-5 w-5" />
-                         {isBlocked ? 'Unblock User' : 'Block User'}
-                    </Button>
                 </div>
             </div>
 
@@ -360,3 +361,4 @@ export default function ChatSettingsPage() {
         </AppLayout>
     );
 }
+
