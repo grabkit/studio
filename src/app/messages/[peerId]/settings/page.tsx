@@ -200,8 +200,8 @@ export default function ChatSettingsPage() {
                     <p className="text-muted-foreground">{peerUser.bio || "No bio yet."}</p>
                 </Link>
                 
-                 <div className="mt-8 border rounded-lg overflow-hidden">
-                     <div className="flex items-center justify-between p-3 bg-card">
+                 <div className="mt-8">
+                     <div className="flex items-center justify-between p-3">
                         <Label htmlFor="mute-notifications" className="flex items-center gap-3 text-base font-normal">
                              <BellOff /> Mute Notifications
                         </Label>
@@ -211,7 +211,7 @@ export default function ChatSettingsPage() {
 
                  <Sheet open={isCallControlsSheetOpen} onOpenChange={setIsCallControlsSheetOpen}>
                     <SheetTrigger asChild>
-                        <div className="mt-4 border rounded-lg overflow-hidden cursor-pointer hover:bg-secondary">
+                        <div className="mt-4 cursor-pointer hover:bg-secondary rounded-lg">
                              <div className="flex items-center justify-between p-3">
                                 <div className="flex items-center gap-3 text-base font-normal">
                                      <PhoneCall /> Call Controls
@@ -242,7 +242,7 @@ export default function ChatSettingsPage() {
                 </Sheet>
 
 
-                <div className="mt-4 border rounded-lg overflow-hidden">
+                <div className="mt-4">
                     <Button variant="ghost" className="w-full justify-start text-base h-12 text-destructive hover:text-destructive" onClick={() => setIsBlockConfirmOpen(true)}>
                         <ShieldAlert className="mr-3" />
                          {isBlocked ? 'Unblock User' : 'Block User'}
