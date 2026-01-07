@@ -77,7 +77,7 @@ function SharedContent() {
     const { data: messages, isLoading: messagesLoading } = useCollection<Message>(messagesQuery);
     
     useEffect(() => {
-        const fetchSharedContent = async () => {
+        const fetchSharedPosts = async () => {
             if (!firestore || !messages) {
                 setIsLoading(messagesLoading);
                 return;
@@ -87,7 +87,8 @@ function SharedContent() {
             
             if (postIds.length > 0) {
                 const postsCollection = collection(firestore, 'posts');
-                const postsQuery = query(postsCollection, where(documentId(), 'in', postIds));
+                // Firestore 'in' query is limited to 30 items. For a real app with more items, batching would be better.
+                const postsQuery = query(postsCollection, where(documentId(), 'in', postIds.slice(0, 30)));
                 const snapshot = await getDocs(postsQuery);
                 const fetchedPosts = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as WithId<Post>));
                 setPosts(fetchedPosts);
@@ -97,7 +98,7 @@ function SharedContent() {
             setIsLoading(false);
         };
 
-        fetchSharedContent();
+        fetchSharedPosts();
 
     }, [firestore, messages, messagesLoading]);
 
@@ -359,7 +360,7 @@ export default function ChatSettingsPage() {
     if (isPeerUserLoading || isConversationLoading) {
         return (
             <AppLayout showTopBar={false}>
-                 <div className="fixed top-0 left-0 right-0 z-10 flex items-center p-2 bg-background/80 backdrop-blur-sm border-b h-14 max-w-2xl mx-auto sm:px-4">
+                 <div className="flex items-center p-2 bg-background/80 backdrop-blur-sm h-14 max-w-2xl mx-auto sm:px-4">
                     <Button variant="ghost" size="icon" onClick={() => router.back()}>
                         <ArrowLeft />
                     </Button>
