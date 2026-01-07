@@ -1,5 +1,3 @@
-
-
 "use client";
 
 import * as React from "react";
@@ -484,7 +482,7 @@ function PostPageComponent() {
                                                 )}
                                                 />
                                         </div>
-                                        <Button type="submit" disabled={form.formState.isSubmitting} className="rounded-full w-32">
+                                        <Button type="submit" disabled={form.formState.isSubmitting} className="rounded-full w-32 font-bold">
                                             {form.formState.isSubmitting ? <Loader2 className="h-4 w-4 animate-spin" /> : (isEditMode ? 'Save Changes' : 'Publish')}
                                         </Button>
                                     </div>
