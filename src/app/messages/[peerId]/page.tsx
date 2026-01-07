@@ -196,11 +196,20 @@ function MessageBubble({ message, isOwnMessage, conversationId, onSetReply, onFo
     )
 }
 
-function ChatHeader({ peerId, peerUser, onStartCall, onStartVideoCall }: { peerId: string, peerUser: WithId<User> | null, onStartCall: () => void, onStartVideoCall: () => void }) {
+function ChatHeader({ peerId, peerUser, onStartCall, onStartVideoCall, conversation }: { peerId: string, peerUser: WithId<User> | null, onStartCall: () => void, onStartVideoCall: () => void, conversation: WithId<Conversation> | null }) {
     const router = useRouter();
+    const { user: currentUser } = useFirebase();
     const { isOnline, lastSeen } = usePresence(peerId);
 
     const isLoading = !peerUser;
+
+    const isVideoDisabledByPeer = useMemo(() => {
+        return conversation?.videoCallsDisabledBy?.includes(peerId) || false;
+    }, [conversation, peerId]);
+
+    const isVoiceDisabledByPeer = useMemo(() => {
+        return conversation?.voiceCallsDisabledBy?.includes(peerId) || false;
+    }, [conversation, peerId]);
     
     return (
         <div className="fixed top-0 left-0 right-0 z-10 flex items-center p-2 bg-background/80 backdrop-blur-sm border-b h-14 max-w-2xl mx-auto sm:px-4">
@@ -220,10 +229,10 @@ function ChatHeader({ peerId, peerUser, onStartCall, onStartVideoCall }: { peerI
                     </p>
                 </div>
             </Link>
-            <Button variant="ghost" size="icon" onClick={onStartVideoCall}>
+            <Button variant="ghost" size="icon" onClick={onStartVideoCall} disabled={isVideoDisabledByPeer}>
                 <Video />
             </Button>
-            <Button variant="ghost" size="icon" onClick={onStartCall}>
+            <Button variant="ghost" size="icon" onClick={onStartCall} disabled={isVoiceDisabledByPeer}>
                 <Phone />
             </Button>
         </div>
@@ -506,7 +515,7 @@ export default function ChatPage() {
     if (!user || isConversationLoading || isPeerUserLoading) {
       return (
         <AppLayout showTopBar={false} showBottomNav={false}>
-          <ChatHeader peerId={peerId} peerUser={peerUser} onStartCall={handleStartCall} onStartVideoCall={handleStartVideoCall} />
+          <ChatHeader peerId={peerId} peerUser={peerUser} onStartCall={handleStartCall} onStartVideoCall={handleStartVideoCall} conversation={conversation}/>
           <div className="pt-14">
             <div className="space-y-4 p-4">
                 <Skeleton className="h-10 w-3/5" />
@@ -521,7 +530,7 @@ export default function ChatPage() {
 
     return (
         <AppLayout showTopBar={false} showBottomNav={false}>
-            <ChatHeader peerId={peerId} peerUser={peerUser} onStartCall={handleStartCall} onStartVideoCall={handleStartVideoCall} />
+            <ChatHeader peerId={peerId} peerUser={peerUser} onStartCall={handleStartCall} onStartVideoCall={handleStartVideoCall} conversation={conversation} />
 
             <div className="pt-14">
                 {conversationId && <ChatMessages conversationId={conversationId} conversation={conversation} onSetReply={handleSetReply} onForward={handleForward} replyingTo={replyingTo} />}

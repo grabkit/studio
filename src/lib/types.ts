@@ -127,6 +127,8 @@ export interface Conversation {
     lastReadTimestamps?: Record<string, any>;
     mutedBy?: string[];
     postId?: string;
+    voiceCallsDisabledBy?: string[];
+    videoCallsDisabledBy?: string[];
 }
 
 export interface Message {

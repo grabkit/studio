@@ -9,7 +9,7 @@ import { doc, updateDoc, arrayRemove, arrayUnion } from 'firebase/firestore';
 import { useDoc } from '@/firebase/firestore/use-doc';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
-import { ArrowLeft, Bell, BellOff, ShieldAlert, Trash2 } from 'lucide-react';
+import { ArrowLeft, Bell, BellOff, ShieldAlert, Trash2, MicOff, VideoOff } from 'lucide-react';
 import { getAvatar, formatUserId } from '@/lib/utils';
 import type { Conversation, User } from '@/lib/types';
 import { WithId } from '@/firebase/firestore/use-collection';
@@ -27,6 +27,8 @@ import {
 import { Skeleton } from '@/components/ui/skeleton';
 import { FirestorePermissionError } from '@/firebase/errors';
 import { errorEmitter } from '@/firebase/error-emitter';
+import { Label } from '@/components/ui/label';
+import { Switch } from '@/components/ui/switch';
 
 function SettingsPageSkeleton() {
     return (
@@ -35,6 +37,7 @@ function SettingsPageSkeleton() {
             <Skeleton className="h-8 w-48 mb-2" />
             <Skeleton className="h-4 w-64" />
             <div className="mt-8 space-y-2 w-full">
+                <Skeleton className="h-12 w-full rounded-lg" />
                 <Skeleton className="h-12 w-full rounded-lg" />
                 <Skeleton className="h-12 w-full rounded-lg" />
             </div>
@@ -72,7 +75,10 @@ export default function ChatSettingsPage() {
     const { data: peerUser, isLoading: isPeerUserLoading } = useDoc<User>(peerUserRef);
 
     const isMuted = useMemo(() => conversation?.mutedBy?.includes(currentUser?.uid || ''), [conversation, currentUser]);
-     const isBlocked = useMemo(() => currentUserProfile?.blockedUsers?.includes(peerId) ?? false, [currentUserProfile, peerId]);
+    const isBlocked = useMemo(() => currentUserProfile?.blockedUsers?.includes(peerId) ?? false, [currentUserProfile, peerId]);
+    
+    const isVoiceDisabled = useMemo(() => conversation?.voiceCallsDisabledBy?.includes(currentUser?.uid || ''), [conversation, currentUser]);
+    const isVideoDisabled = useMemo(() => conversation?.videoCallsDisabledBy?.includes(currentUser?.uid || ''), [conversation, currentUser]);
 
     const handleToggleMute = async () => {
         if (!firestore || !currentUser || !conversation) return;
@@ -94,6 +100,32 @@ export default function ChatSettingsPage() {
             toast({ variant: 'destructive', title: 'Error', description: `Could not ${isMuted ? 'unmute' : 'mute'} conversation.`})
         }
     };
+    
+    const handleToggleCall = async (type: 'voice' | 'video') => {
+        if (!firestore || !currentUser || !conversation) return;
+        const convoRef = doc(firestore, 'conversations', conversation.id);
+        
+        const field = type === 'voice' ? 'voiceCallsDisabledBy' : 'videoCallsDisabledBy';
+        const isDisabled = type === 'voice' ? isVoiceDisabled : isVideoDisabled;
+        
+        const updatePayload = {
+            [field]: isDisabled ? arrayRemove(currentUser.uid) : arrayUnion(currentUser.uid)
+        };
+
+        try {
+            await updateDoc(convoRef, updatePayload);
+            toast({ title: isDisabled ? `${type.charAt(0).toUpperCase() + type.slice(1)} calls enabled` : `${type.charAt(0).toUpperCase() + type.slice(1)} calls disabled` });
+        } catch(error) {
+             const permissionError = new FirestorePermissionError({
+                path: convoRef.path,
+                operation: 'update',
+                requestResourceData: updatePayload
+            });
+            errorEmitter.emit('permission-error', permissionError);
+            toast({ variant: 'destructive', title: 'Error', description: `Could not update call settings.`})
+        }
+    };
+
 
     const handleBlock = async () => {
         if (!currentUser || !firestore || !currentUserProfile) return;
@@ -160,13 +192,31 @@ export default function ChatSettingsPage() {
                     <h2 className="text-2xl font-bold font-headline">{formatUserId(peerUser.id)}</h2>
                     <p className="text-muted-foreground">{peerUser.bio || "No bio yet."}</p>
                 </div>
+                
+                 <div className="mt-8 divide-y border-y">
+                     <div className="flex items-center justify-between p-3">
+                        <Label htmlFor="mute-notifications" className="flex items-center gap-3 text-base font-normal">
+                             <BellOff /> Mute Notifications
+                        </Label>
+                        <Switch id="mute-notifications" checked={isMuted} onCheckedChange={handleToggleMute} />
+                    </div>
+                     <div className="flex items-center justify-between p-3">
+                        <Label htmlFor="disable-voice" className="flex items-center gap-3 text-base font-normal">
+                             <MicOff /> Disable Voice Calls
+                        </Label>
+                        <Switch id="disable-voice" checked={isVoiceDisabled} onCheckedChange={() => handleToggleCall('voice')} />
+                    </div>
+                     <div className="flex items-center justify-between p-3">
+                        <Label htmlFor="disable-video" className="flex items-center gap-3 text-base font-normal">
+                             <VideoOff /> Disable Video Calls
+                        </Label>
+                        <Switch id="disable-video" checked={isVideoDisabled} onCheckedChange={() => handleToggleCall('video')} />
+                    </div>
+                </div>
 
-                <div className="mt-8 space-y-2">
-                    <Button variant="ghost" className="w-full justify-start text-base h-12" onClick={handleToggleMute}>
-                        {isMuted ? <Bell className="mr-3"/> : <BellOff className="mr-3" />}
-                        {isMuted ? 'Unmute Notifications' : 'Mute Notifications'}
-                    </Button>
-                    <Button variant="ghost" className="w-full justify-start text-base h-12" onClick={() => setIsBlockConfirmOpen(true)}>
+
+                <div className="mt-4 space-y-2">
+                    <Button variant="ghost" className="w-full justify-start text-base h-12 text-destructive hover:text-destructive" onClick={() => setIsBlockConfirmOpen(true)}>
                         <ShieldAlert className="mr-3" />
                          {isBlocked ? 'Unblock User' : 'Block User'}
                     </Button>
