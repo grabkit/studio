@@ -45,9 +45,9 @@ export default function LicensesPage() {
                     <p className="p-4 text-sm text-muted-foreground">
                         This application is built using the following open source software. We are grateful to the community for these amazing tools.
                     </p>
-                    <div className="divide-y border-y">
+                    <div>
                         {licenses.map(lib => (
-                            <div key={lib.name} className="p-4">
+                            <div key={lib.name} className="px-4 py-3">
                                 <p className="font-semibold">{lib.name}</p>
                                 <p className="text-sm text-muted-foreground">{lib.license}</p>
                             </div>
