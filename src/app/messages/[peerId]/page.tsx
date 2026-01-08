@@ -97,7 +97,7 @@ function PostPreviewCard({ postId }: { postId: string }) {
 }
 
 
-function MessageBubble({ message, isOwnMessage, conversation, onSetReply, onForward }: { message: WithId<Message>, isOwnMessage: boolean, conversation: Conversation | null, onSetReply: (message: WithId<Message>) => void, onForward: (message: WithId<Message>) => void }) {
+function MessageBubble({ message, isOwnMessage, conversation, onSetReply, onForward }: { message: WithId<Message>, isOwnMessage: boolean, conversation: WithId<Conversation> | null, onSetReply: (message: WithId<Message>) => void, onForward: (message: WithId<Message>) => void }) {
     const { toast } = useToast();
     const { firestore } = useFirebase();
     const router = useRouter();
@@ -187,7 +187,7 @@ function MessageBubble({ message, isOwnMessage, conversation, onSetReply, onForw
             ) : null}
 
             {message.text && (
-                 <p className="px-3 py-1.5 text-base whitespace-pre-wrap break-words max-w-full">{message.text}</p>
+                 <p className="px-3 py-1.5 text-base whitespace-pre-wrap max-w-full break-words">{message.text}</p>
             )}
 
              <p className={cn(
@@ -202,27 +202,20 @@ function MessageBubble({ message, isOwnMessage, conversation, onSetReply, onForw
 
     return (
         <Sheet open={isSheetOpen} onOpenChange={setIsSheetOpen}>
-            <div className={cn(
-                "flex",
+             <div className={cn(
+                "group flex",
                 isOwnMessage ? "justify-end" : "justify-start",
-            )}>
+             )}>
                 <div className={cn(
-                    "group flex flex-col",
-                    isOwnMessage ? "items-end" : "items-start",
-                    isPostShare || isLinkShare ? 'w-64' : 'max-w-[80%]'
+                    "flex flex-col rounded-2xl",
+                    isOwnMessage ? "rounded-br-none" : "rounded-bl-none",
+                    isOwnMessage
+                        ? (isPostShare ? "bg-secondary text-secondary-foreground" : "bg-blue-500 text-white")
+                        : "bg-gray-200 text-gray-900 dark:bg-gray-700 dark:text-gray-50",
+                    isPostShare || isLinkShare ? "w-64" : "max-w-[80%]",
                 )}>
                     <SheetTrigger asChild>
-                         <div
-                          className={cn(
-                            "relative flex flex-col rounded-2xl",
-                             isOwnMessage 
-                                ? (isPostShare)
-                                    ? "bg-secondary text-secondary-foreground"
-                                    : "bg-blue-500 text-white"
-                                : "bg-gray-200 text-gray-900 dark:bg-gray-700 dark:text-gray-50",
-                            isOwnMessage ? "rounded-br-none" : "rounded-bl-none"
-                          )}
-                        >
+                         <div>
                            {bubbleContent}
                         </div>
                     </SheetTrigger>
@@ -722,3 +715,4 @@ export default function ChatPage() {
     
 
     
+
