@@ -3,7 +3,7 @@
 
 import { useParams, useRouter } from 'next/navigation';
 import { useFirebase, useMemoFirebase } from '@/firebase';
-import { collection, query, orderBy, doc, setDoc, serverTimestamp, updateDoc, writeBatch, increment, deleteDoc, getDoc, where } from 'firestore';
+import { collection, query, orderBy, doc, setDoc, serverTimestamp, updateDoc, writeBatch, increment, deleteDoc, getDoc, where } from 'firebase/firestore';
 import { useCollection } from '@/firebase/firestore/use-collection';
 import { useDoc } from '@/firebase/firestore/use-doc';
 import { useForm } from 'react-hook-form';
@@ -677,8 +677,8 @@ export default function ChatPage() {
     if (!user || isLoading) {
       return (
         <AppLayout showTopBar={false} showBottomNav={false}>
-            <ChatHeader peerId={peerId} peerUser={peerUser} onStartCall={handleStartCall} onStartVideoCall={handleStartVideoCall} conversation={conversation} onBack={handleBackNavigation}/>
             <div ref={pageRef} className="h-full bg-background animate-slide-in-right">
+                <ChatHeader peerId={peerId} peerUser={peerUser} onStartCall={handleStartCall} onStartVideoCall={handleStartVideoCall} conversation={conversation} onBack={handleBackNavigation}/>
                 <div className="pt-14">
                     <div className="space-y-4 p-4">
                         <Skeleton className="h-10 w-3/5" />
@@ -713,4 +713,6 @@ export default function ChatPage() {
         </AppLayout>
     )
 }
+    
+
     
