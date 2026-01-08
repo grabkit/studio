@@ -333,19 +333,9 @@ export default function AccountPage() {
         onTouchMove={handleTouchMove}
         onTouchEnd={handleTouchEnd}
       >
-        <div className="flex items-center justify-between h-14 px-4 bg-background">
-            <Link href="/post" className={cn(buttonVariants({ variant: "ghost", size: "icon" }))}>
-                <Plus className="h-6 w-6" />
-            </Link>
-            <div className="flex items-center space-x-2">
-                <Link href="/account/settings" className={cn(buttonVariants({ variant: 'ghost', size: 'icon' }))}>
-                  <Menu className="h-6 w-6" />
-                </Link>
-            </div>
-        </div>
          <div 
           className="absolute top-0 left-0 right-0 flex justify-center items-center h-12 text-muted-foreground transition-opacity duration-300 z-10 pointer-events-none"
-          style={{ opacity: isRefreshing ? 1 : pullPosition / 70, transform: `translateY(${pullPosition}px)` }}
+          style={{ opacity: isRefreshing ? 1 : pullPosition / 70 }}
         >
           <div style={{ transform: `rotate(${isRefreshing ? 0 : pullPosition * 3}deg)` }}>
             <RefreshCw className={cn('h-5 w-5', isRefreshing && 'animate-spin')} />
@@ -353,6 +343,16 @@ export default function AccountPage() {
         </div>
 
         <div style={{ transform: `translateY(${pullPosition}px)` }} className="transition-transform duration-300 bg-background">
+            <div className="flex items-center justify-between h-14 px-4 bg-background">
+                <Link href="/post" className={cn(buttonVariants({ variant: "ghost", size: "icon" }))}>
+                    <Plus className="h-6 w-6" />
+                </Link>
+                <div className="flex items-center space-x-2">
+                    <Link href="/account/settings" className={cn(buttonVariants({ variant: 'ghost', size: 'icon' }))}>
+                    <Menu className="h-6 w-6" />
+                    </Link>
+                </div>
+            </div>
             <div className="px-4 pt-4">
                 <div className="flex items-center justify-between space-x-5 mb-4">
                     <div className="flex-shrink-0">
@@ -420,10 +420,10 @@ export default function AccountPage() {
 
 
                 <div className="mb-4 flex items-center space-x-2">
-                    <Button variant="secondary" size="sm" className="flex-1 font-bold" asChild>
+                    <Button variant="secondary" size="sm" className="flex-1 font-bold rounded-[5px]" asChild>
                     <Link href="/account/settings/edit-profile">Edit Profile</Link>
                     </Button>
-                    <Button variant="secondary" size="sm" className="flex-1 font-bold" onClick={handleShareProfile}>
+                    <Button variant="secondary" size="sm" className="flex-1 font-bold rounded-[5px]" onClick={handleShareProfile}>
                         Share Profile
                     </Button>
                 </div>
@@ -477,4 +477,5 @@ export default function AccountPage() {
         </div>
     </AppLayout>
   );
-}
+
+    
