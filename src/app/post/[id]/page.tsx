@@ -29,6 +29,7 @@ import React, { useState } from "react";
 import Link from 'next/link';
 import Image from "next/image";
 import { PollComponent } from "@/app/home/page";
+import { motion } from "framer-motion";
 
 import AppLayout from "@/components/AppLayout";
 import { Card, CardContent } from "@/components/ui/card";
@@ -850,29 +851,35 @@ export default function PostDetailPage() {
 
   return (
     <AppLayout showTopBar={false} showBottomNav={false}>
-        <div className="fixed top-0 left-0 right-0 z-10 flex items-center p-2 bg-background border-b h-14 max-w-2xl mx-auto sm:px-4">
-            <Button variant="ghost" size="icon" onClick={() => router.back()}>
-                <ArrowLeft />
-            </Button>
-            <h2 className="text-lg font-bold mx-auto -translate-x-4">Post</h2>
-        </div>
-        <div className="pt-14 pb-40">
-            <PostDetailItem post={post} updatePost={updatePostState} />
-            <div>
-                {(post.commentsAllowed !== false && areCommentsLoading) && <div className="p-4 text-center">Loading replies...</div>}
-                
-                {post.commentsAllowed !== false && filteredComments?.map((comment) => (
-                    <CommentItem key={comment.id} comment={comment} postAuthorId={post.authorId} />
-                ))}
-
-                {(post.commentsAllowed !== false && !areCommentsLoading && filteredComments?.length === 0) && (
-                <div className="text-center py-10">
-                    <p className="text-muted-foreground">No Replies yet. Be the first to reply!</p>
-                </div>
-                )}
+        <motion.div
+            initial={{ scale: 0.98, opacity: 0 }}
+            animate={{ scale: 1, opacity: 1 }}
+            transition={{ duration: 0.3 }}
+        >
+            <div className="fixed top-0 left-0 right-0 z-10 flex items-center p-2 bg-background border-b h-14 max-w-2xl mx-auto sm:px-4">
+                <Button variant="ghost" size="icon" onClick={() => router.back()}>
+                    <ArrowLeft />
+                </Button>
+                <h2 className="text-lg font-bold mx-auto -translate-x-4">Post</h2>
             </div>
-        </div>
-        <CommentForm post={post} commentsAllowed={post.commentsAllowed} />
+            <div className="pt-14 pb-40">
+                <PostDetailItem post={post} updatePost={updatePostState} />
+                <div>
+                    {(post.commentsAllowed !== false && areCommentsLoading) && <div className="p-4 text-center">Loading replies...</div>}
+                    
+                    {post.commentsAllowed !== false && filteredComments?.map((comment) => (
+                        <CommentItem key={comment.id} comment={comment} postAuthorId={post.authorId} />
+                    ))}
+
+                    {(post.commentsAllowed !== false && !areCommentsLoading && filteredComments?.length === 0) && (
+                    <div className="text-center py-10">
+                        <p className="text-muted-foreground">No Replies yet. Be the first to reply!</p>
+                    </div>
+                    )}
+                </div>
+            </div>
+            <CommentForm post={post} commentsAllowed={post.commentsAllowed} />
+        </motion.div>
     </AppLayout>
   );
 }
