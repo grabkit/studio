@@ -54,14 +54,14 @@ function PostPreviewCard({ postId }: { postId: string }) {
 
     if (!post) {
         return (
-            <div className="p-3 border rounded-lg text-center text-sm text-muted-foreground bg-background/50">
+            <div className="p-3 border rounded-lg text-center text-sm text-muted-foreground bg-secondary/50">
                 This post is no longer available.
             </div>
         );
     }
     
     return (
-        <div className="block border rounded-lg overflow-hidden transition-colors bg-background/50 hover:bg-background/80 w-full">
+        <div className="block border rounded-lg overflow-hidden transition-colors bg-secondary/50 hover:bg-secondary/80 w-full">
             <div className="p-3">
                 <div className="flex items-center gap-2 mb-2">
                     <Avatar className="h-6 w-6">
@@ -74,7 +74,7 @@ function PostPreviewCard({ postId }: { postId: string }) {
                 {post.type === 'poll' && post.pollOptions && (
                     <div className="mt-2 space-y-1.5">
                         {post.pollOptions.map((option, index) => (
-                            <div key={index} className="flex items-center gap-2 text-sm text-muted-foreground bg-background/50 p-1.5 rounded-md">
+                            <div key={index} className="flex items-center gap-2 text-sm text-muted-foreground bg-secondary/50 p-1.5 rounded-md">
                                 <List className="h-4 w-4" />
                                 <span>{option.option}</span>
                             </div>
@@ -159,7 +159,7 @@ function MessageBubble({ message, isOwnMessage, conversation, onSetReply, onForw
     const hasSpecialContent = isPostShare || isLinkShare || !!message.replyToMessageText;
     
     const bubbleContent = (
-         <div className={cn("flex flex-col w-full", isOwnMessage ? "items-end" : "items-start")}>
+         <div className="flex flex-col w-full break-words">
             {message.isForwarded && (
                 <div className="flex items-center gap-1.5 text-xs opacity-70 mb-1">
                     <Forward className="h-3 w-3" />
@@ -169,8 +169,7 @@ function MessageBubble({ message, isOwnMessage, conversation, onSetReply, onForw
 
             {message.replyToMessageText && (
                 <div className={cn(
-                    "p-2 rounded-lg mb-1 w-full",
-                    isOwnMessage ? "bg-blue-200/60 dark:bg-blue-900/40" : "bg-black/5 dark:bg-white/5"
+                    "p-2 rounded-lg mb-1 w-full bg-black/10 dark:bg-white/10"
                 )}>
                     <p className="text-xs font-semibold truncate text-primary">{formatUserId(message.replyToMessageId === message.senderId ? message.senderId : undefined)}</p>
                     <p className="text-sm opacity-80 line-clamp-2">{message.replyToMessageText}</p>
@@ -188,11 +187,11 @@ function MessageBubble({ message, isOwnMessage, conversation, onSetReply, onForw
             ) : null}
 
             {message.text && (
-                 <p className="max-w-full break-words">{message.text}</p>
+                 <p className="max-w-full whitespace-pre-wrap">{message.text}</p>
             )}
 
              <p className={cn(
-                "text-[11px] mt-1", 
+                "text-[11px] mt-1 self-end", 
                 isOwnMessage ? "text-white/70" : "text-muted-foreground"
              )}>
                 {message.timestamp?.toDate ? formatMessageTimestamp(message.timestamp.toDate()) : '...'}
@@ -205,16 +204,16 @@ function MessageBubble({ message, isOwnMessage, conversation, onSetReply, onForw
         <Sheet open={isSheetOpen} onOpenChange={setIsSheetOpen}>
             <div className={cn("flex w-full", isOwnMessage ? "justify-end" : "justify-start")}>
                 <div className={cn(
-                    "flex items-end gap-2 group",
-                    isPostShare || isLinkShare ? 'w-64' : 'max-w-[80%]'
+                    "group flex flex-col max-w-[80%]",
+                    (isPostShare || isLinkShare) && 'w-64'
                 )}>
                     <SheetTrigger asChild>
                          <div
                           className={cn(
-                            "rounded-2xl px-3 py-1.5 cursor-pointer flex flex-col",
-                            isOwnMessage 
-                                ? (isLinkShare ? "bg-secondary text-secondary-foreground rounded-br-md" : "bg-blue-500 text-white rounded-br-md")
-                                : "bg-gray-200 dark:bg-neutral-700 text-black dark:text-white rounded-bl-md",
+                            "flex flex-col rounded-2xl px-3 py-1.5 cursor-pointer",
+                             isOwnMessage 
+                                ? (isLinkShare ? "bg-secondary text-secondary-foreground rounded-br-md" : "bg-primary text-primary-foreground rounded-br-md")
+                                : "bg-secondary text-secondary-foreground rounded-bl-md",
                           )}
                         >
                            {bubbleContent}
@@ -563,7 +562,7 @@ function MessageInput({ conversationId, conversation, replyingTo, onCancelReply 
                                 <div className="relative flex items-center">
                                     <Textarea
                                         placeholder="Message"
-                                        className="text-base border-gray-300 dark:border-neutral-700 rounded-2xl focus-visible:ring-1 focus-visible:ring-primary shadow-none pr-10 bg-gray-100 dark:bg-neutral-800"
+                                        className="text-base border-none focus-visible:ring-0 shadow-none pr-10 bg-secondary"
                                         rows={1}
                                         maxRows={5}
                                         {...field}
@@ -724,3 +723,6 @@ export default function ChatPage() {
     
 
 
+
+
+    
