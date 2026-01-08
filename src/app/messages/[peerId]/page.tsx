@@ -1,5 +1,4 @@
 
-
 "use client";
 
 import { useParams, useRouter } from 'next/navigation';
@@ -208,10 +207,10 @@ function MessageBubble({ message, isOwnMessage, conversation, onSetReply, onForw
                 isOwnMessage ? "justify-end" : "justify-start",
              )}>
                 <div className={cn(
-                    "flex flex-col rounded-2xl",
+                    "flex flex-col rounded-2xl max-w-[80%]",
                     isOwnMessage ? "bg-blue-500 text-white" : "bg-secondary text-foreground",
                     isOwnMessage ? "rounded-br-none" : "rounded-bl-none",
-                    (isPostShare || isLinkShare) ? "w-64" : "max-w-[80%]",
+                     (isPostShare || isLinkShare) && 'w-64',
                 )}>
                     <SheetTrigger asChild>
                          <div>
@@ -417,6 +416,7 @@ function MessageInput({ conversationId, conversation, replyingTo, onCancelReply 
     });
 
     const linkMetadata = form.watch("linkMetadata");
+    const textValue = form.watch("text");
     
     const fetchPreview = async (url: string) => {
         setIsFetchingPreview(true);
@@ -569,7 +569,7 @@ function MessageInput({ conversationId, conversation, replyingTo, onCancelReply 
                          <Button
                             type="submit"
                             size="icon"
-                            disabled={form.formState.isSubmitting || (!form.getValues('text') && !form.getValues('linkMetadata'))}
+                            disabled={form.formState.isSubmitting || (!textValue && !linkMetadata)}
                             className="rounded-full shrink-0 h-8 w-8 bg-black hover:bg-gray-800"
                         >
                             <Send className="h-4 w-4" />
@@ -716,6 +716,8 @@ export default function ChatPage() {
     
 
 
+
+    
 
     
 
