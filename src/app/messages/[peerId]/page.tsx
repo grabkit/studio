@@ -184,7 +184,7 @@ function MessageBubble({ message, isOwnMessage, conversation, onSetReply, onForw
             ) : isLinkShare && message.linkMetadata ? (
                 <div className="w-full my-1 px-2">
                     <SheetTrigger asChild>
-                         <div>
+                         <div className="cursor-pointer">
                             <LinkPreviewCard metadata={message.linkMetadata} />
                         </div>
                     </SheetTrigger>
@@ -212,10 +212,10 @@ function MessageBubble({ message, isOwnMessage, conversation, onSetReply, onForw
                 isOwnMessage ? "justify-end" : "justify-start",
              )}>
                 <div className={cn(
-                    "flex flex-col rounded-2xl max-w-[80%]",
+                    "flex flex-col rounded-2xl",
                     isOwnMessage ? "bg-blue-500 text-white" : "bg-secondary text-foreground",
                     isOwnMessage ? "rounded-br-none" : "rounded-bl-none",
-                     (isPostShare || isLinkShare) && 'w-64',
+                     (isPostShare || isLinkShare) ? 'w-64' : 'max-w-[80%]',
                 )}>
                     <SheetTrigger asChild>
                          <div>
@@ -577,7 +577,7 @@ function MessageInput({ conversationId, conversation, replyingTo, onCancelReply 
                             disabled={form.formState.isSubmitting || (!textValue && !linkMetadata)}
                             className="rounded-full shrink-0 h-8 w-8 bg-black hover:bg-gray-800"
                         >
-                            <Send className="h-4 w-4" />
+                            <Send className="h-4 w-4" fill="currentColor"/>
                         </Button>
                     </form>
                 </Form>
@@ -729,3 +729,4 @@ export default function ChatPage() {
     
 
     
+
