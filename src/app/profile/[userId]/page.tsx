@@ -9,6 +9,7 @@ import React, { useMemo, useState, useEffect, useCallback, useRef, type TouchEve
 import Link from "next/link";
 import { useToast } from "@/hooks/use-toast";
 import { format } from "date-fns";
+import { motion } from "framer-motion";
 
 import AppLayout from "@/components/AppLayout";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
@@ -599,144 +600,150 @@ export default function UserProfilePage() {
 
     return (
         <AppLayout showTopBar={false} showBottomNav={true}>
-            <div
-                ref={containerRef}
-                onTouchStart={handleTouchStart}
-                onTouchMove={handleTouchMove}
-                onTouchEnd={handleTouchEnd}
+            <motion.div
+                initial={{ scale: 0.98, opacity: 0 }}
+                animate={{ scale: 1, opacity: 1 }}
+                transition={{ duration: 0.3 }}
             >
                 <Sheet open={isMoreOptionsSheetOpen} onOpenChange={setIsMoreOptionsSheetOpen}>
-                    <div className="flex items-center justify-between h-14 px-4 bg-background">
-                        <Button variant="ghost" size="icon" onClick={handleBackNavigation}>
-                            <ArrowLeft className="h-6 w-6" />
-                        </Button>
-                        <h2 className="text-lg font-semibold font-headline">
-                            {formatUserId(user.id)}
-                        </h2>
-                        <SheetTrigger asChild>
-                            <Button variant="ghost" size="icon" className="justify-self-end">
-                                <MoreHorizontal className="h-6 w-6" />
-                            </Button>
-                        </SheetTrigger>
-                    </div>
-
                     <div 
-                        className="absolute top-0 left-0 right-0 flex justify-center items-center h-12 text-muted-foreground transition-opacity duration-300 z-10 pointer-events-none"
-                        style={{ opacity: isRefreshing ? 1 : pullPosition / 70 }}
+                        ref={containerRef}
+                        onTouchStart={handleTouchStart}
+                        onTouchMove={handleTouchMove}
+                        onTouchEnd={handleTouchEnd}
                     >
-                        <div style={{ transform: `rotate(${isRefreshing ? 0 : pullPosition * 3}deg)` }}>
-                            <RefreshCw className={cn('h-5 w-5', isRefreshing && 'animate-spin')} />
+                        <div className="flex items-center justify-between h-14 px-4 bg-background">
+                            <Button variant="ghost" size="icon" onClick={handleBackNavigation}>
+                                <ArrowLeft className="h-6 w-6" />
+                            </Button>
+                            <h2 className="text-lg font-semibold font-headline">
+                                {formatUserId(user.id)}
+                            </h2>
+                            <SheetTrigger asChild>
+                                <Button variant="ghost" size="icon" className="justify-self-end">
+                                    <MoreHorizontal className="h-6 w-6" />
+                                </Button>
+                            </SheetTrigger>
                         </div>
-                    </div>
-                    
-                    <div style={{ transform: `translateY(${pullPosition}px)` }} className="transition-transform duration-300 bg-background">
-                        <div className="px-4 pt-4">
-                            <div className="flex items-center justify-between space-x-5 mb-4">
-                                <div className="flex-shrink-0">
-                                    <div className="relative inline-block">
-                                        <Avatar className="h-20 w-20 md:h-24 md:w-24">
-                                            <AvatarImage
-                                                src={undefined}
-                                                alt={user?.name || "User"}
-                                            />
-                                            <AvatarFallback className="text-3xl font-headline bg-secondary">
-                                                {getAvatar(user?.id)}
-                                            </AvatarFallback>
-                                        </Avatar>
-                                        {hasVoiceStatus && (
-                                            <div className="absolute bottom-0 right-0 bg-background p-1 rounded-full border-2 cursor-pointer" onClick={handleAvatarClick} role="button">
-                                                <div className="flex items-center justify-center h-4 w-4 gap-0.5">
-                                                    <div className="audio-wave-bar-avatar" />
-                                                    <div className="audio-wave-bar-avatar" />
-                                                    <div className="audio-wave-bar-avatar" />
-                                                    <div className="audio-wave-bar-avatar" />
-                                                    <div className="audio-wave-bar-avatar" />
+
+                        <div 
+                            className="absolute top-0 left-0 right-0 flex justify-center items-center h-12 text-muted-foreground transition-opacity duration-300 z-10 pointer-events-none"
+                            style={{ opacity: isRefreshing ? 1 : pullPosition / 70 }}
+                        >
+                            <div style={{ transform: `rotate(${isRefreshing ? 0 : pullPosition * 3}deg)` }}>
+                                <RefreshCw className={cn('h-5 w-5', isRefreshing && 'animate-spin')} />
+                            </div>
+                        </div>
+                        
+                        <div style={{ transform: `translateY(${pullPosition}px)` }} className="transition-transform duration-300 bg-background">
+                            <div className="px-4 pt-4">
+                                <div className="flex items-center justify-between space-x-5 mb-4">
+                                    <div className="flex-shrink-0">
+                                        <div className="relative inline-block">
+                                            <Avatar className="h-20 w-20 md:h-24 md:w-24">
+                                                <AvatarImage
+                                                    src={undefined}
+                                                    alt={user?.name || "User"}
+                                                />
+                                                <AvatarFallback className="text-3xl font-headline bg-secondary">
+                                                    {getAvatar(user?.id)}
+                                                </AvatarFallback>
+                                            </Avatar>
+                                            {hasVoiceStatus && (
+                                                <div className="absolute bottom-0 right-0 bg-background p-1 rounded-full border-2 cursor-pointer" onClick={handleAvatarClick} role="button">
+                                                    <div className="flex items-center justify-center h-4 w-4 gap-0.5">
+                                                        <div className="audio-wave-bar-avatar" />
+                                                        <div className="audio-wave-bar-avatar" />
+                                                        <div className="audio-wave-bar-avatar" />
+                                                        <div className="audio-wave-bar-avatar" />
+                                                        <div className="audio-wave-bar-avatar" />
+                                                    </div>
                                                 </div>
+                                            )}
+                                        </div>
+                                    </div>
+                                    <div className="flex-1 flex justify-around text-center">
+                                        <div>
+                                            {isLoading ? (
+                                                <div className="font-bold text-lg"><Skeleton className="h-6 w-8 mx-auto" /></div>
+                                            ) : (
+                                                <div className="font-bold text-lg">{posts?.length ?? 0}</div>
+                                            )}
+                                            <p className="text-sm text-muted-foreground">Posts</p>
+                                        </div>
+                                        <Link href={`/profile/${userId}/social?tab=upvotes`} className="cursor-pointer hover:bg-secondary/50 rounded-md p-1 -m-1">
+                                            {isLoading ? (
+                                            <div className="font-bold text-lg"><Skeleton className="h-6 w-8 mx-auto" /></div>
+                                            ) : (
+                                            <div className="font-bold text-lg">{user?.upvotes || 0}</div>
+                                            )}
+                                            <p className="text-sm text-muted-foreground">Upvotes</p>
+                                        </Link>
+                                        <Link href={`/profile/${userId}/social?tab=upvoted`} className="cursor-pointer hover:bg-secondary/50 rounded-md p-1 -m-1">
+                                            {isLoading ? (
+                                            <div className="font-bold text-lg"><Skeleton className="h-6 w-8 mx-auto" /></div>
+                                            ) : (
+                                            <div className="font-bold text-lg">{user?.upvotedCount || 0}</div>
+                                            )}
+                                            <p className="text-sm text-muted-foreground">Upvoted</p>
+                                        </Link>
+                                    </div>
+                                </div>
+                                <div className="mb-4 space-y-1">
+                                    <p className="font-semibold font-headline">{formatUserId(user?.id)}</p>
+                                    {user?.bio && <p className="text-sm">{user.bio}</p>}
+                                    {user?.website && (
+                                        <a href={user.website} target="_blank" rel="noopener noreferrer" className="flex items-center gap-2 text-sm text-blue-500 hover:underline">
+                                            <LinkIcon className="h-4 w-4" />
+                                            <span>{user.website.replace(/^(https?:\/\/)?(www\.)?/, '')}</span>
+                                        </a>
+                                    )}
+                                </div>
+                                <div className="mb-4 flex items-center space-x-2">
+                                    <Button onClick={handleUpvoteUser} variant={hasUpvotedUser ? "secondary" : "default"} className="flex-1 font-bold rounded-[5px]">
+                                        {hasUpvotedUser ? "Upvoted" : "Upvote"}
+                                    </Button>
+                                    {getMessageButton()}
+                                </div>
+                            </div>
+
+                            <Tabs defaultValue="posts" className="w-full">
+                               <div className="sticky top-0 bg-background z-10">
+                                    <TabsList variant="underline" className="grid w-full grid-cols-2">
+                                        <TabsTrigger value="posts" variant="profile" className="font-semibold">Posts</TabsTrigger>
+                                        <TabsTrigger value="replies" variant="profile" className="font-semibold">Replies</TabsTrigger>
+                                    </TabsList>
+                                </div>
+                                <TabsContent value="posts" className="mt-0">
+                                    <div className="divide-y border-b">
+                                        {(postsLoading || bookmarksLoading) && (
+                                            <>
+                                                <PostSkeleton />
+                                                <PostSkeleton />
+                                            </>
+                                        )}
+                                        {!(postsLoading || bookmarksLoading) && posts?.length === 0 && (
+                                            <div className="text-center py-16">
+                                                <h3 className="text-xl font-headline text-primary">No Posts Yet</h3>
+                                                <p className="text-muted-foreground">This user hasn't posted anything.</p>
                                             </div>
                                         )}
+                                        {posts?.map((post) => (
+                                            <HomePostItem 
+                                            key={post.id} 
+                                            post={post} 
+                                            bookmarks={bookmarks} 
+                                            updatePost={updatePostState}
+                                            showPinStatus={true} 
+                                            />
+                                        ))}
                                     </div>
-                                </div>
-                                <div className="flex-1 flex justify-around text-center">
-                                    <div>
-                                        {isLoading ? (
-                                            <div className="font-bold text-lg"><Skeleton className="h-6 w-8 mx-auto" /></div>
-                                        ) : (
-                                            <div className="font-bold text-lg">{posts?.length ?? 0}</div>
-                                        )}
-                                        <p className="text-sm text-muted-foreground">Posts</p>
-                                    </div>
-                                    <Link href={`/profile/${userId}/social?tab=upvotes`} className="cursor-pointer hover:bg-secondary/50 rounded-md p-1 -m-1">
-                                        {isLoading ? (
-                                        <div className="font-bold text-lg"><Skeleton className="h-6 w-8 mx-auto" /></div>
-                                        ) : (
-                                        <div className="font-bold text-lg">{user?.upvotes || 0}</div>
-                                        )}
-                                        <p className="text-sm text-muted-foreground">Upvotes</p>
-                                    </Link>
-                                    <Link href={`/profile/${userId}/social?tab=upvoted`} className="cursor-pointer hover:bg-secondary/50 rounded-md p-1 -m-1">
-                                        {isLoading ? (
-                                        <div className="font-bold text-lg"><Skeleton className="h-6 w-8 mx-auto" /></div>
-                                        ) : (
-                                        <div className="font-bold text-lg">{user?.upvotedCount || 0}</div>
-                                        )}
-                                        <p className="text-sm text-muted-foreground">Upvoted</p>
-                                    </Link>
-                                </div>
-                            </div>
-                            <div className="mb-4 space-y-1">
-                                <p className="font-semibold font-headline">{formatUserId(user?.id)}</p>
-                                {user?.bio && <p className="text-sm">{user.bio}</p>}
-                                {user?.website && (
-                                    <a href={user.website} target="_blank" rel="noopener noreferrer" className="flex items-center gap-2 text-sm text-blue-500 hover:underline">
-                                        <LinkIcon className="h-4 w-4" />
-                                        <span>{user.website.replace(/^(https?:\/\/)?(www\.)?/, '')}</span>
-                                    </a>
-                                )}
-                            </div>
-                            <div className="mb-4 flex items-center space-x-2">
-                                <Button onClick={handleUpvoteUser} variant={hasUpvotedUser ? "secondary" : "default"} className="flex-1 font-bold rounded-[5px]">
-                                    {hasUpvotedUser ? "Upvoted" : "Upvote"}
-                                </Button>
-                                {getMessageButton()}
-                            </div>
+                                </TabsContent>
+                                <TabsContent value="replies" className="mt-0">
+                                    {userId && <RepliesList userId={userId} />}
+                                </TabsContent>
+                            </Tabs>
                         </div>
-
-                        <Tabs defaultValue="posts" className="w-full">
-                           <div className="sticky top-0 bg-background z-10">
-                                <TabsList variant="underline" className="grid w-full grid-cols-2">
-                                    <TabsTrigger value="posts" variant="profile" className="font-semibold">Posts</TabsTrigger>
-                                    <TabsTrigger value="replies" variant="profile" className="font-semibold">Replies</TabsTrigger>
-                                </TabsList>
-                            </div>
-                            <TabsContent value="posts" className="mt-0">
-                                <div className="divide-y border-b">
-                                    {(postsLoading || bookmarksLoading) && (
-                                        <>
-                                            <PostSkeleton />
-                                            <PostSkeleton />
-                                        </>
-                                    )}
-                                    {!(postsLoading || bookmarksLoading) && posts?.length === 0 && (
-                                        <div className="text-center py-16">
-                                            <h3 className="text-xl font-headline text-primary">No Posts Yet</h3>
-                                            <p className="text-muted-foreground">This user hasn't posted anything.</p>
-                                        </div>
-                                    )}
-                                    {posts?.map((post) => (
-                                        <HomePostItem 
-                                        key={post.id} 
-                                        post={post} 
-                                        bookmarks={bookmarks} 
-                                        updatePost={updatePostState}
-                                        showPinStatus={true} 
-                                        />
-                                    ))}
-                                </div>
-                            </TabsContent>
-                            <TabsContent value="replies" className="mt-0">
-                                {userId && <RepliesList userId={userId} />}
-                            </TabsContent>
-                        </Tabs>
                     </div>
 
                     <SheetContent side="bottom" className="rounded-t-2xl">
@@ -800,9 +807,7 @@ export default function UserProfilePage() {
                     onOpenChange={setIsQrDialogOpen}
                     user={user}
                 />
-            </div>
+            </motion.div>
         </AppLayout>
     );
 }
-
-    
