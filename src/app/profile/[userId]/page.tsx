@@ -9,7 +9,6 @@ import React, { useMemo, useState, useEffect, useCallback, useRef, type TouchEve
 import Link from "next/link";
 import { useToast } from "@/hooks/use-toast";
 import { format } from "date-fns";
-import { motion } from "framer-motion";
 
 import AppLayout from "@/components/AppLayout";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
@@ -79,6 +78,7 @@ export default function UserProfilePage() {
     const [pullPosition, setPullPosition] = useState(0);
     const touchStartRef = useRef(0);
     const containerRef = useRef<HTMLDivElement>(null);
+    const pageRef = useRef<HTMLDivElement>(null);
 
     const [posts, setPosts] = useState<WithId<Post>[]>([]);
     const [postsLoading, setPostsLoading] = useState(true);
@@ -499,6 +499,18 @@ export default function UserProfilePage() {
             showVoiceStatusPlayer(user);
         }
     }
+    
+    const handleBackNavigation = () => {
+        if (pageRef.current) {
+            pageRef.current.classList.remove('animate-slide-in-right');
+            pageRef.current.classList.add('animate-slide-out-right');
+            setTimeout(() => {
+                router.back();
+            }, 300); // Duration of the animation
+        } else {
+            router.back();
+        }
+    };
 
 
     if (userLoading || (currentUser && userId === currentUser.uid)) {
@@ -595,18 +607,11 @@ export default function UserProfilePage() {
     };
 
     return (
-        <motion.div
-            key={userId}
-            initial={{ x: 300, opacity: 0 }}
-            animate={{ x: 0, opacity: 1 }}
-            exit={{ x: 300, opacity: 0 }}
-            transition={{ duration: 0.3, ease: 'easeOut' }}
-            className="h-full bg-background"
-        >
+        <div ref={pageRef} className="h-full bg-background animate-slide-in-right">
             <AppLayout showTopBar={false}>
                 <Sheet open={isMoreOptionsSheetOpen} onOpenChange={setIsMoreOptionsSheetOpen}>
                     <div className="fixed top-0 left-0 right-0 z-20 flex items-center justify-between h-14 px-4 bg-background">
-                        <Button variant="ghost" size="icon" onClick={() => router.back()}>
+                        <Button variant="ghost" size="icon" onClick={handleBackNavigation}>
                             <ArrowLeft className="h-6 w-6" />
                         </Button>
                         <h2 className="text-lg font-semibold font-headline">
@@ -811,6 +816,6 @@ export default function UserProfilePage() {
                     user={user}
                 />
             </AppLayout>
-        </motion.div>
+        </div>
     );
 }
