@@ -265,7 +265,7 @@ function MessageBubble({ message, isOwnMessage, conversation, onSetReply, onForw
     )
 }
 
-function ChatHeader({ peerId, peerUser, onStartCall, onStartVideoCall, conversation }: { peerId: string, peerUser: WithId<User> | null, onStartCall: () => void, onStartVideoCall: () => void, conversation: WithId<Conversation> | null }) {
+function ChatHeader({ peerId, peerUser, onStartCall, onStartVideoCall, conversation, onBack }: { peerId: string, peerUser: WithId<User> | null, onStartCall: () => void, onStartVideoCall: () => void, conversation: WithId<Conversation> | null, onBack: () => void }) {
     const router = useRouter();
     const { user: currentUser } = useFirebase();
     const { isOnline, lastSeen } = usePresence(peerId);
@@ -285,7 +285,7 @@ function ChatHeader({ peerId, peerUser, onStartCall, onStartVideoCall, conversat
             className="fixed top-0 left-0 right-0 z-10 flex items-center p-2 bg-background/80 backdrop-blur-sm border-b h-14 max-w-2xl mx-auto sm:px-4 cursor-pointer"
             onClick={() => router.push(`/messages/${peerId}/settings`)}
         >
-            <Button variant="ghost" size="icon" onClick={(e) => { e.stopPropagation(); router.back(); }}>
+            <Button variant="ghost" size="icon" onClick={(e) => { e.stopPropagation(); onBack(); }}>
                 <ArrowLeft />
             </Button>
             <div className="flex-1 flex items-center gap-3 ml-2">
@@ -467,7 +467,10 @@ function MessageInput({ conversationId, conversation, replyingTo, onCancelReply 
         }
         if (values.linkMetadata) {
             newMessage.linkMetadata = values.linkMetadata;
+        } else {
+             delete (newMessage as any).linkMetadata;
         }
+
 
         if (replyingTo) {
             (newMessage as any).replyToMessageId = replyingTo.id;
@@ -591,6 +594,7 @@ export default function ChatPage() {
     const { firestore, user, startCall, startVideoCall } = useFirebase();
     const params = useParams();
     const router = useRouter();
+    const pageRef = useRef<HTMLDivElement>(null);
     const peerId = params.peerId as string;
     const [replyingTo, setReplyingTo] = useState<WithId<Message> | null>(null);
     const [forwardingMessage, setForwardingMessage] = useState<WithId<Message> | null>(null);
@@ -618,6 +622,19 @@ export default function ChatPage() {
         if (!peerId) return;
         startVideoCall(peerId);
     }
+    
+    const handleBackNavigation = () => {
+        if (pageRef.current) {
+            pageRef.current.classList.remove('animate-slide-in-right');
+            pageRef.current.classList.add('animate-slide-out-right');
+            setTimeout(() => {
+                router.back();
+            }, 300); // Duration of the animation
+        } else {
+            router.back();
+        }
+    };
+
 
     const conversationId = useMemo(() => {
         if (!user || !peerId) return null;
@@ -657,36 +674,40 @@ export default function ChatPage() {
 
     if (!user || isConversationLoading || isPeerUserLoading) {
       return (
-        <AppLayout showTopBar={false} showBottomNav={false}>
-          <ChatHeader peerId={peerId} peerUser={peerUser} onStartCall={handleStartCall} onStartVideoCall={handleStartVideoCall} conversation={conversation}/>
-          <div className="pt-14">
-            <div className="space-y-4 p-4">
-                <Skeleton className="h-10 w-3/5" />
-                <Skeleton className="h-10 w-3/5 ml-auto" />
-                <Skeleton className="h-16 w-4/5" />
+        <div ref={pageRef} className="h-full bg-background animate-slide-in-right">
+            <AppLayout showTopBar={false} showBottomNav={false}>
+            <ChatHeader peerId={peerId} peerUser={peerUser} onStartCall={handleStartCall} onStartVideoCall={handleStartVideoCall} conversation={conversation} onBack={handleBackNavigation}/>
+            <div className="pt-14">
+                <div className="space-y-4 p-4">
+                    <Skeleton className="h-10 w-3/5" />
+                    <Skeleton className="h-10 w-3/5 ml-auto" />
+                    <Skeleton className="h-16 w-4/5" />
+                </div>
             </div>
-          </div>
-        </AppLayout>
+            </AppLayout>
+        </div>
       )
     }
 
 
     return (
-        <AppLayout showTopBar={false} showBottomNav={false}>
-            <ChatHeader peerId={peerId} peerUser={peerUser} onStartCall={handleStartCall} onStartVideoCall={handleStartVideoCall} conversation={conversation} />
+         <div ref={pageRef} className="h-full bg-background animate-slide-in-right">
+            <AppLayout showTopBar={false} showBottomNav={false}>
+                <ChatHeader peerId={peerId} peerUser={peerUser} onStartCall={handleStartCall} onStartVideoCall={handleStartVideoCall} conversation={conversation} onBack={handleBackNavigation} />
 
-            <div className="pt-14">
-                {conversationId && <ChatMessages conversationId={conversationId} conversation={conversation} onSetReply={handleSetReply} onForward={handleForward} replyingTo={replyingTo} />}
-            </div>
+                <div className="pt-14">
+                    {conversationId && <ChatMessages conversationId={conversationId} conversation={conversation} onSetReply={handleSetReply} onForward={handleForward} replyingTo={replyingTo} />}
+                </div>
 
-            {conversationId && <MessageInput conversationId={conversationId} conversation={conversation} replyingTo={replyingTo} onCancelReply={handleCancelReply} />}
-            
-            <ForwardSheet 
-                isOpen={isForwardSheetOpen}
-                onOpenChange={setIsForwardSheetOpen}
-                message={forwardingMessage}
-            />
-        </AppLayout>
+                {conversationId && <MessageInput conversationId={conversationId} conversation={conversation} replyingTo={replyingTo} onCancelReply={handleCancelReply} />}
+                
+                <ForwardSheet 
+                    isOpen={isForwardSheetOpen}
+                    onOpenChange={setIsForwardSheetOpen}
+                    message={forwardingMessage}
+                />
+            </AppLayout>
+        </div>
     )
 }
     
@@ -694,4 +715,5 @@ export default function ChatPage() {
     
 
     
+
 
