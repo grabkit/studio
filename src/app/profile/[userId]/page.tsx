@@ -584,7 +584,7 @@ export default function UserProfilePage() {
     const getMessageButton = () => {
         if (!conversation) {
             return (
-                <Button onClick={handleStartConversation} variant="secondary" className="flex-1 font-bold rounded-[10px]">
+                <Button onClick={handleStartConversation} variant="secondary" className="flex-1 font-bold rounded-none">
                     Message
                 </Button>
             );
@@ -592,7 +592,7 @@ export default function UserProfilePage() {
 
         if (conversation.status === 'pending') {
             return (
-                <Button variant="secondary" className="flex-1 font-bold rounded-[10px]" disabled>
+                <Button variant="secondary" className="flex-1 font-bold rounded-none" disabled>
                     Requested
                 </Button>
             );
@@ -600,14 +600,14 @@ export default function UserProfilePage() {
 
         // status === 'accepted'
         return (
-            <Button onClick={handleStartConversation} variant="secondary" className="flex-1 font-bold rounded-[10px]">
+            <Button onClick={handleStartConversation} variant="secondary" className="flex-1 font-bold rounded-none">
                 Message
             </Button>
         );
     };
 
     return (
-        <AppLayout showTopBar={false}>
+        <AppLayout showTopBar={false} showBottomNav={true}>
             <div ref={pageRef} className="h-full bg-background animate-slide-in-right">
                 <Sheet open={isMoreOptionsSheetOpen} onOpenChange={setIsMoreOptionsSheetOpen}>
                     <div className="fixed top-0 left-0 right-0 z-20 flex items-center justify-between h-14 px-4 bg-background">
@@ -708,7 +708,7 @@ export default function UserProfilePage() {
                                 </div>
                                 
                                 <div className="mb-4 flex items-center space-x-2">
-                                    <Button onClick={handleUpvoteUser} variant={hasUpvotedUser ? "default" : "secondary"} className="flex-1 font-bold rounded-[10px]">
+                                    <Button onClick={handleUpvoteUser} variant={hasUpvotedUser ? "default" : "secondary"} className="flex-1 font-bold rounded-none">
                                         {hasUpvotedUser ? "Upvoted" : "Upvote"}
                                     </Button>
                                     {getMessageButton()}
@@ -819,4 +819,3 @@ export default function UserProfilePage() {
         </AppLayout>
     );
 }
-
