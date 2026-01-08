@@ -664,8 +664,8 @@ export default function ChatPage() {
     return (
         <AppLayout showTopBar={false} showBottomNav={false}>
             <motion.div
-                initial={{ opacity: 0 }}
-                animate={{ opacity: 1 }}
+                initial={{ scale: 0.98, opacity: 0 }}
+                animate={{ scale: 1, opacity: 1 }}
                 transition={{ duration: 0.3 }}
             >
                 <ChatHeader 
@@ -716,5 +716,6 @@ export default function ChatPage() {
     
 
     
+
 
 
