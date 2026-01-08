@@ -157,7 +157,10 @@ function MessageBubble({ message, isOwnMessage, conversation, onSetReply, onForw
     const isLinkShare = !!message.linkMetadata;
     
     const bubbleContent = (
-         <div className="space-y-1">
+         <div className={cn(
+            "flex flex-col",
+            isOwnMessage ? "items-end" : "items-start"
+         )}>
             {message.isForwarded && (
                 <div className="flex items-center gap-1.5 text-xs opacity-70 mb-1">
                     <Forward className="h-3 w-3" />
@@ -167,7 +170,7 @@ function MessageBubble({ message, isOwnMessage, conversation, onSetReply, onForw
 
             {message.replyToMessageText && (
                 <div className={cn(
-                    "p-2 rounded-md",
+                    "p-2 rounded-md mb-1",
                     isOwnMessage ? "bg-black/10" : "bg-black/5"
                 )}>
                     <p className="text-xs font-semibold truncate">{formatUserId(message.replyToMessageId === message.senderId ? message.senderId : undefined)}</p>
@@ -176,19 +179,23 @@ function MessageBubble({ message, isOwnMessage, conversation, onSetReply, onForw
             )}
 
             {isPostShare && message.postId ? (
-                <PostPreviewCard postId={message.postId} />
+                <div className="w-64">
+                    <PostPreviewCard postId={message.postId} />
+                </div>
             ) : isLinkShare && message.linkMetadata ? (
-                <LinkPreviewCard metadata={message.linkMetadata} />
+                <div className="w-64">
+                    <LinkPreviewCard metadata={message.linkMetadata} />
+                </div>
             ) : null}
 
             {message.text && (
-                 <p className="text-sm whitespace-pre-wrap">{message.text}</p>
+                 <p className="whitespace-pre-wrap max-w-full">{message.text}</p>
             )}
 
              <p className={cn(
-                "text-xs text-right", 
+                "text-xs", 
                 isOwnMessage ? "text-primary-foreground/70" : "text-muted-foreground",
-                (isLinkShare || isPostShare) && "mt-1"
+                (isLinkShare || isPostShare || message.replyToMessageText) && "mt-1"
              )}>
                 {message.timestamp?.toDate ? formatMessageTimestamp(message.timestamp.toDate()) : '...'}
              </p>
@@ -198,7 +205,10 @@ function MessageBubble({ message, isOwnMessage, conversation, onSetReply, onForw
 
     return (
         <Sheet open={isSheetOpen} onOpenChange={setIsSheetOpen}>
-            <div className={cn("flex items-end gap-2 group", isOwnMessage ? "justify-end" : "justify-start")}>
+            <div className={cn(
+                "flex items-end gap-2 group",
+                isOwnMessage ? "justify-end" : "justify-start"
+            )}>
                  <div className={cn(
                     "flex items-center",
                     isOwnMessage ? "flex-row-reverse" : "flex-row"
@@ -206,9 +216,9 @@ function MessageBubble({ message, isOwnMessage, conversation, onSetReply, onForw
                     <SheetTrigger asChild>
                          <div
                           className={cn(
-                            "rounded-2xl px-3 py-1.5 cursor-pointer flex flex-col break-words",
-                            isLinkShare ? 'w-64' : 'max-w-[80%]',
-                            isOwnMessage ? "bg-primary text-primary-foreground rounded-br-none" : "bg-secondary rounded-bl-none"
+                            "rounded-2xl px-3 py-1.5 cursor-pointer max-w-[80%]",
+                            isOwnMessage ? "bg-primary text-primary-foreground rounded-br-none" : "bg-secondary rounded-bl-none",
+                            isLinkShare && isOwnMessage && "bg-secondary text-secondary-foreground"
                           )}
                         >
                            {bubbleContent}
@@ -709,4 +719,6 @@ export default function ChatPage() {
         </AppLayout>
     )
 }
+    
+
     
