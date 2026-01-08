@@ -48,7 +48,7 @@ function PostPreviewCard({ postId }: { postId: string }) {
     const { data: post, isLoading } = useDoc<Post>(postRef);
 
     if (isLoading) {
-        return <Skeleton className="h-24 w-full rounded-lg" />;
+        return <Skeleton className="h-24 w-full rounded-lg bg-secondary" />;
     }
 
     if (!post) {
@@ -60,7 +60,7 @@ function PostPreviewCard({ postId }: { postId: string }) {
     }
     
     return (
-        <div className="block border rounded-lg overflow-hidden transition-colors bg-background/80 hover:bg-background w-full">
+        <div className="block border rounded-lg overflow-hidden bg-secondary hover:bg-secondary/80 transition-colors w-full">
             <div className="p-3">
                 <div className="flex items-center gap-2 mb-2">
                     <Avatar className="h-6 w-6">
@@ -73,7 +73,7 @@ function PostPreviewCard({ postId }: { postId: string }) {
                 {post.type === 'poll' && post.pollOptions && (
                     <div className="mt-2 space-y-1.5">
                         {post.pollOptions.map((option, index) => (
-                            <div key={index} className="flex items-center gap-2 text-sm text-muted-foreground bg-secondary/50 p-1.5 rounded-md">
+                            <div key={index} className="flex items-center gap-2 text-sm text-muted-foreground bg-background/50 p-1.5 rounded-md">
                                 <List className="h-4 w-4" />
                                 <span>{option.option}</span>
                             </div>
@@ -187,7 +187,7 @@ function MessageBubble({ message, isOwnMessage, conversation, onSetReply, onForw
             ) : null}
 
             {message.text && (
-                 <p className="px-3 py-1.5 text-base whitespace-pre-wrap max-w-full break-words">{message.text}</p>
+                 <p className="px-3 py-1.5 text-base break-words whitespace-pre-wrap max-w-full">{message.text}</p>
             )}
 
              <p className={cn(
@@ -208,11 +208,9 @@ function MessageBubble({ message, isOwnMessage, conversation, onSetReply, onForw
              )}>
                 <div className={cn(
                     "flex flex-col rounded-2xl",
-                    isOwnMessage ? "rounded-br-none" : "rounded-bl-none",
-                    isOwnMessage
-                        ? "bg-blue-500 text-white"
-                        : "bg-gray-200 text-gray-900 dark:bg-gray-700 dark:text-gray-50",
-                    isPostShare || isLinkShare ? 'w-64' : 'max-w-[80%]',
+                    isOwnMessage ? "rounded-br-none bg-blue-500 text-white" : "rounded-bl-none bg-secondary text-foreground",
+                    isPostShare ? "w-64" : "max-w-[80%]",
+                    isLinkShare && 'w-64',
                 )}>
                     <SheetTrigger asChild>
                          <div>
@@ -552,7 +550,7 @@ function MessageInput({ conversationId, conversation, replyingTo, onCancelReply 
             )}
             <div className="p-2 flex items-center gap-2">
                 <Form {...form}>
-                    <form onSubmit={form.handleSubmit(onSubmit)} className="flex-1 flex items-center rounded-full bg-gray-100 dark:bg-gray-800 px-2">
+                    <form onSubmit={form.handleSubmit(onSubmit)} className="flex-1 flex items-center rounded-full bg-secondary px-2">
                          <Textarea
                             placeholder="Message..."
                             className="flex-1 bg-transparent border-none focus-visible:ring-0 shadow-none resize-none text-base px-2 py-2.5"
@@ -717,5 +715,7 @@ export default function ChatPage() {
     
 
 
+
+    
 
     
