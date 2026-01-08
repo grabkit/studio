@@ -204,16 +204,16 @@ function MessageBubble({ message, isOwnMessage, conversation, onSetReply, onForw
         <Sheet open={isSheetOpen} onOpenChange={setIsSheetOpen}>
             <div className={cn("flex w-full", isOwnMessage ? "justify-end" : "justify-start")}>
                 <div className={cn(
-                    "flex items-end gap-2 group max-w-[80%]",
-                    (isPostShare || isLinkShare) && "max-w-[85%] sm:max-w-[65%]"
+                    "flex items-end gap-2 group",
+                    isPostShare || isLinkShare ? "w-64" : "max-w-[80%]"
                 )}>
                     <SheetTrigger asChild>
                          <div
                           className={cn(
                             "rounded-2xl px-3 py-1.5 cursor-pointer flex flex-col",
                             isOwnMessage 
-                                ? "bg-blue-500 text-white rounded-br-md" 
-                                : "bg-gray-200 dark:bg-neutral-700 text-black dark:text-white rounded-bl-md"
+                                ? (isLinkShare ? "bg-secondary text-secondary-foreground rounded-br-md" : "bg-blue-500 text-white rounded-br-md")
+                                : "bg-gray-200 dark:bg-neutral-700 text-black dark:text-white rounded-bl-md",
                           )}
                         >
                            {bubbleContent}
