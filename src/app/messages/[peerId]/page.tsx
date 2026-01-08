@@ -3,7 +3,7 @@
 
 import { useParams, useRouter } from 'next/navigation';
 import { useFirebase, useMemoFirebase } from '@/firebase';
-import { collection, query, orderBy, doc, setDoc, serverTimestamp, updateDoc, writeBatch, increment, deleteDoc, getDoc, where } from 'firebase/firestore';
+import { collection, query, orderBy, doc, setDoc, serverTimestamp, updateDoc, writeBatch, increment, deleteDoc, getDoc, where } from "firebase/firestore";
 import { useCollection } from '@/firebase/firestore/use-collection';
 import { useDoc } from '@/firebase/firestore/use-doc';
 import { useForm } from 'react-hook-form';
@@ -673,36 +673,30 @@ export default function ChatPage() {
     }, [userUnreadCount, conversationRef, firestore, user]);
     
     const isLoading = isConversationLoading || isPeerUserLoading;
-
-    if (!user || isLoading) {
-      return (
-        <AppLayout showTopBar={false} showBottomNav={false}>
-            <div ref={pageRef} className="h-full bg-background animate-slide-in-right">
-                <ChatHeader peerId={peerId} peerUser={peerUser} onStartCall={handleStartCall} onStartVideoCall={handleStartVideoCall} conversation={conversation} onBack={handleBackNavigation}/>
-                <div className="pt-14">
-                    <div className="space-y-4 p-4">
-                        <Skeleton className="h-10 w-3/5" />
-                        <Skeleton className="h-10 w-3/5 ml-auto" />
-                        <Skeleton className="h-16 w-4/5" />
-                    </div>
+    
+    const mainContent = (
+      <>
+        <ChatHeader peerId={peerId} peerUser={peerUser} onStartCall={handleStartCall} onStartVideoCall={handleStartVideoCall} conversation={conversation} onBack={handleBackNavigation}/>
+        <div className="overflow-y-auto h-full pt-14 pb-40">
+            {isLoading ? (
+                <div className="space-y-4 p-4">
+                    <Skeleton className="h-10 w-3/5" />
+                    <Skeleton className="h-10 w-3/5 ml-auto" />
+                    <Skeleton className="h-16 w-4/5" />
                 </div>
-                 <MessageInput conversationId={conversationId || ''} conversation={conversation} replyingTo={replyingTo} onCancelReply={handleCancelReply} />
-            </div>
-        </AppLayout>
-      )
-    }
+            ) : (
+                conversationId && <ChatMessages conversationId={conversationId} conversation={conversation} onSetReply={handleSetReply} onForward={handleForward} />
+            )}
+        </div>
+        {conversationId && <MessageInput conversationId={conversationId} conversation={conversation} replyingTo={replyingTo} onCancelReply={handleCancelReply} />}
+      </>
+    );
 
 
     return (
         <AppLayout showTopBar={false} showBottomNav={false}>
             <div ref={pageRef} className="h-full bg-background animate-slide-in-right">
-                <ChatHeader peerId={peerId} peerUser={peerUser} onStartCall={handleStartCall} onStartVideoCall={handleStartVideoCall} conversation={conversation} onBack={handleBackNavigation}/>
-
-                <div className="flex-1 overflow-y-auto pt-14 pb-24 h-full">
-                    {conversationId && <ChatMessages conversationId={conversationId} conversation={conversation} onSetReply={handleSetReply} onForward={handleForward} />}
-                </div>
-
-                {conversationId && <MessageInput conversationId={conversationId} conversation={conversation} replyingTo={replyingTo} onCancelReply={handleCancelReply} />}
+                {mainContent}
             </div>
             
             <ForwardSheet 
@@ -713,6 +707,8 @@ export default function ChatPage() {
         </AppLayout>
     )
 }
+    
+
     
 
     
