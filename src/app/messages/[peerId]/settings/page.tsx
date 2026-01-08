@@ -372,7 +372,7 @@ export default function ChatSettingsPage() {
 
     if (isPeerUserLoading || isConversationLoading) {
         return (
-            <AppLayout showTopBar={false}>
+            <AppLayout showTopBar={false} showBottomNav={true}>
                  <div className="flex items-center p-2 bg-background/80 backdrop-blur-sm h-14 max-w-2xl mx-auto sm:px-4">
                     <Button variant="ghost" size="icon" onClick={() => router.back()}>
                         <ArrowLeft />
@@ -385,12 +385,12 @@ export default function ChatSettingsPage() {
     }
 
     if (!peerUser) {
-        return <AppLayout showTopBar={false}><p>User not found.</p></AppLayout>
+        return <AppLayout showTopBar={false} showBottomNav={true}><p>User not found.</p></AppLayout>
     }
 
     return (
-        <div ref={pageRef} className="h-full bg-background animate-slide-in-right">
-            <AppLayout showTopBar={false}>
+        <AppLayout showTopBar={false} showBottomNav={true}>
+            <div ref={pageRef} className="h-full bg-background animate-slide-in-right">
                 <ScrollArea className="h-full">
                     <div className="flex items-center p-2 bg-background/80 backdrop-blur-sm h-14 max-w-2xl mx-auto sm:px-4">
                         <Button variant="ghost" size="icon" onClick={handleBackNavigation}>
@@ -474,46 +474,46 @@ export default function ChatSettingsPage() {
                         <SharedContent />
                     </div>
                 </ScrollArea>
+            </div>
 
-                <AlertDialog open={isBlockConfirmOpen} onOpenChange={setIsBlockConfirmOpen}>
-                    <AlertDialogContent>
-                        <AlertDialogHeader>
-                            <AlertDialogTitle>{isBlocked ? 'Unblock' : 'Block'} {formatUserId(peerUser.id)}?</AlertDialogTitle>
-                            <AlertDialogDescription>
-                            {isBlocked 
-                                ? "You will now be able to see this user's content and they will be able to message and call you."
-                                : "Blocked users will not be able to call you or send you messages. They will not be notified that you've blocked them."
-                            }
-                            </AlertDialogDescription>
-                        </AlertDialogHeader>
-                        <AlertDialogFooter>
-                            <AlertDialogCancel>Cancel</AlertDialogCancel>
-                            <AlertDialogAction onClick={handleBlock}>{isBlocked ? 'Unblock' : 'Block'}</AlertDialogAction>
-                        </AlertDialogFooter>
-                    </AlertDialogContent>
-                </AlertDialog>
-                
-                <AlertDialog open={isClearConfirmOpen} onOpenChange={setIsClearConfirmOpen}>
-                    <AlertDialogContent>
-                        <AlertDialogHeader>
-                            <AlertDialogTitle>Clear this chat?</AlertDialogTitle>
-                            <AlertDialogDescription>
-                            This will permanently delete all messages in this conversation on your device. This action cannot be undone.
-                            </AlertDialogDescription>
-                        </AlertDialogHeader>
-                        <AlertDialogFooter>
-                            <AlertDialogCancel>Cancel</AlertDialogCancel>
-                            <AlertDialogAction onClick={handleClearChat}>Clear Chat</AlertDialogAction>
-                        </AlertDialogFooter>
-                    </AlertDialogContent>
-                </AlertDialog>
-                {peerUser && <AboutProfileSheet user={peerUser} isOpen={isAboutSheetOpen} onOpenChange={setIsAboutSheetOpen} />}
-                <QrCodeDialog
-                    isOpen={isQrDialogOpen}
-                    onOpenChange={setIsQrDialogOpen}
-                    user={peerUser}
-                />
-            </AppLayout>
-        </div>
+            <AlertDialog open={isBlockConfirmOpen} onOpenChange={setIsBlockConfirmOpen}>
+                <AlertDialogContent>
+                    <AlertDialogHeader>
+                        <AlertDialogTitle>{isBlocked ? 'Unblock' : 'Block'} {formatUserId(peerUser.id)}?</AlertDialogTitle>
+                        <AlertDialogDescription>
+                        {isBlocked 
+                            ? "You will now be able to see this user's content and they will be able to message and call you."
+                            : "Blocked users will not be able to call you or send you messages. They will not be notified that you've blocked them."
+                        }
+                        </AlertDialogDescription>
+                    </AlertDialogHeader>
+                    <AlertDialogFooter>
+                        <AlertDialogCancel>Cancel</AlertDialogCancel>
+                        <AlertDialogAction onClick={handleBlock}>{isBlocked ? 'Unblock' : 'Block'}</AlertDialogAction>
+                    </AlertDialogFooter>
+                </AlertDialogContent>
+            </AlertDialog>
+            
+            <AlertDialog open={isClearConfirmOpen} onOpenChange={setIsClearConfirmOpen}>
+                <AlertDialogContent>
+                    <AlertDialogHeader>
+                        <AlertDialogTitle>Clear this chat?</AlertDialogTitle>
+                        <AlertDialogDescription>
+                        This will permanently delete all messages in this conversation on your device. This action cannot be undone.
+                        </AlertDialogDescription>
+                    </AlertDialogHeader>
+                    <AlertDialogFooter>
+                        <AlertDialogCancel>Cancel</AlertDialogCancel>
+                        <AlertDialogAction onClick={handleClearChat}>Clear Chat</AlertDialogAction>
+                    </AlertDialogFooter>
+                </AlertDialogContent>
+            </AlertDialog>
+            {peerUser && <AboutProfileSheet user={peerUser} isOpen={isAboutSheetOpen} onOpenChange={setIsAboutSheetOpen} />}
+            <QrCodeDialog
+                isOpen={isQrDialogOpen}
+                onOpenChange={setIsQrDialogOpen}
+                user={peerUser}
+            />
+        </AppLayout>
     );
 }
