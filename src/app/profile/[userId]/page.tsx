@@ -575,7 +575,7 @@ export default function UserProfilePage() {
     const getMessageButton = () => {
         if (!conversation) {
             return (
-                <Button onClick={handleStartConversation} variant="secondary" className="flex-1 font-bold rounded-none">
+                <Button onClick={handleStartConversation} variant="secondary" className="flex-1 font-bold rounded-[5px]">
                     Message
                 </Button>
             );
@@ -583,7 +583,7 @@ export default function UserProfilePage() {
 
         if (conversation.status === 'pending') {
             return (
-                <Button variant="secondary" className="flex-1 font-bold rounded-none" disabled>
+                <Button variant="secondary" className="flex-1 font-bold rounded-[5px]" disabled>
                     Requested
                 </Button>
             );
@@ -591,7 +591,7 @@ export default function UserProfilePage() {
 
         // status === 'accepted'
         return (
-            <Button asChild variant="secondary" className="flex-1 font-bold rounded-none">
+            <Button asChild variant="secondary" className="flex-1 font-bold rounded-[5px]">
                 <Link href={`/messages/${userId}`}>Message</Link>
             </Button>
         );
@@ -599,9 +599,15 @@ export default function UserProfilePage() {
 
     return (
         <AppLayout showTopBar={false} showBottomNav={true}>
-            <div className="h-full flex flex-col bg-background">
+            <div 
+                className="h-full overflow-y-auto"
+                ref={containerRef}
+                onTouchStart={handleTouchStart}
+                onTouchMove={handleTouchMove}
+                onTouchEnd={handleTouchEnd}
+            >
                 <Sheet open={isMoreOptionsSheetOpen} onOpenChange={setIsMoreOptionsSheetOpen}>
-                    <div className="fixed top-0 left-0 right-0 z-20 flex items-center justify-between h-14 px-4 bg-background border-b">
+                    <div className="flex items-center justify-between h-14 px-4 bg-background border-b">
                         <Button variant="ghost" size="icon" onClick={handleBackNavigation}>
                             <ArrowLeft className="h-6 w-6" />
                         </Button>
@@ -616,95 +622,88 @@ export default function UserProfilePage() {
                     </div>
 
                     <div 
-                         ref={containerRef}
-                         onTouchStart={handleTouchStart}
-                         onTouchMove={handleTouchMove}
-                         onTouchEnd={handleTouchEnd}
-                         className="flex-1 pt-14 overflow-y-auto"
+                        className="absolute top-14 left-0 right-0 flex justify-center items-center h-12 text-muted-foreground transition-opacity duration-300 z-10 pointer-events-none"
+                        style={{ opacity: isRefreshing ? 1 : pullPosition / 70 }}
                     >
-                        <div 
-                            className="absolute top-14 left-0 right-0 flex justify-center items-center h-12 text-muted-foreground transition-opacity duration-300 z-10 pointer-events-none"
-                            style={{ opacity: isRefreshing ? 1 : pullPosition / 70 }}
-                        >
-                            <div style={{ transform: `rotate(${isRefreshing ? 0 : pullPosition * 3}deg)` }}>
-                                <RefreshCw className={cn('h-5 w-5', isRefreshing && 'animate-spin')} />
-                            </div>
+                        <div style={{ transform: `rotate(${isRefreshing ? 0 : pullPosition * 3}deg)` }}>
+                            <RefreshCw className={cn('h-5 w-5', isRefreshing && 'animate-spin')} />
                         </div>
-                        <div style={{ transform: `translateY(${pullPosition}px)` }} className="transition-transform duration-300 bg-background">
-                            <div className="px-4 pt-4">
-                                <div className="flex items-center justify-between space-x-5 mb-4">
-                                    <div className="flex-shrink-0">
-                                        <div className="relative inline-block">
-                                            <Avatar className="h-20 w-20 md:h-24 md:w-24">
-                                                <AvatarImage
-                                                    src={undefined}
-                                                    alt={user?.name || "User"}
-                                                />
-                                                <AvatarFallback className="text-3xl font-headline bg-secondary">
-                                                    {getAvatar(user?.id)}
-                                                </AvatarFallback>
-                                            </Avatar>
-                                            {hasVoiceStatus && (
-                                                <div className="absolute bottom-0 right-0 bg-background p-1 rounded-full border-2 cursor-pointer" onClick={handleAvatarClick} role="button">
-                                                    <div className="flex items-center justify-center h-4 w-4 gap-0.5">
-                                                        <div className="audio-wave-bar-avatar" />
-                                                        <div className="audio-wave-bar-avatar" />
-                                                        <div className="audio-wave-bar-avatar" />
-                                                        <div className="audio-wave-bar-avatar" />
-                                                        <div className="audio-wave-bar-avatar" />
-                                                    </div>
+                    </div>
+                    
+                    <div style={{ transform: `translateY(${pullPosition}px)` }} className="transition-transform duration-300 bg-background">
+                        <div className="px-4 pt-4">
+                            <div className="flex items-center justify-between space-x-5 mb-4">
+                                <div className="flex-shrink-0">
+                                    <div className="relative inline-block">
+                                        <Avatar className="h-20 w-20 md:h-24 md:w-24">
+                                            <AvatarImage
+                                                src={undefined}
+                                                alt={user?.name || "User"}
+                                            />
+                                            <AvatarFallback className="text-3xl font-headline bg-secondary">
+                                                {getAvatar(user?.id)}
+                                            </AvatarFallback>
+                                        </Avatar>
+                                        {hasVoiceStatus && (
+                                            <div className="absolute bottom-0 right-0 bg-background p-1 rounded-full border-2 cursor-pointer" onClick={handleAvatarClick} role="button">
+                                                <div className="flex items-center justify-center h-4 w-4 gap-0.5">
+                                                    <div className="audio-wave-bar-avatar" />
+                                                    <div className="audio-wave-bar-avatar" />
+                                                    <div className="audio-wave-bar-avatar" />
+                                                    <div className="audio-wave-bar-avatar" />
+                                                    <div className="audio-wave-bar-avatar" />
                                                 </div>
-                                            )}
-                                        </div>
-                                    </div>
-                                    <div className="flex-1 flex justify-around text-center">
-                                        <div>
-                                            {isLoading ? (
-                                                <div className="font-bold text-lg"><Skeleton className="h-6 w-8 mx-auto" /></div>
-                                            ) : (
-                                                <div className="font-bold text-lg">{posts?.length ?? 0}</div>
-                                            )}
-                                            <p className="text-sm text-muted-foreground">Posts</p>
-                                        </div>
-                                        <Link href={`/profile/${userId}/social?tab=upvotes`} className="cursor-pointer hover:bg-secondary/50 rounded-md p-1 -m-1">
-                                            {isLoading ? (
-                                            <div className="font-bold text-lg"><Skeleton className="h-6 w-8 mx-auto" /></div>
-                                            ) : (
-                                            <div className="font-bold text-lg">{user?.upvotes || 0}</div>
-                                            )}
-                                            <p className="text-sm text-muted-foreground">Upvotes</p>
-                                        </Link>
-                                        <Link href={`/profile/${userId}/social?tab=upvoted`} className="cursor-pointer hover:bg-secondary/50 rounded-md p-1 -m-1">
-                                            {isLoading ? (
-                                            <div className="font-bold text-lg"><Skeleton className="h-6 w-8 mx-auto" /></div>
-                                            ) : (
-                                            <div className="font-bold text-lg">{user?.upvotedCount || 0}</div>
-                                            )}
-                                            <p className="text-sm text-muted-foreground">Upvoted</p>
-                                        </Link>
+                                            </div>
+                                        )}
                                     </div>
                                 </div>
-                                <div className="mb-4 space-y-1">
-                                    <p className="font-semibold font-headline">{formatUserId(user?.id)}</p>
-                                    {user?.bio && <p className="text-sm">{user.bio}</p>}
-                                    {user?.website && (
-                                        <a href={user.website} target="_blank" rel="noopener noreferrer" className="flex items-center gap-2 text-sm text-blue-500 hover:underline">
-                                            <LinkIcon className="h-4 w-4" />
-                                            <span>{user.website.replace(/^(https?:\/\/)?(www\.)?/, '')}</span>
-                                        </a>
-                                    )}
+                                <div className="flex-1 flex justify-around text-center">
+                                    <div>
+                                        {isLoading ? (
+                                            <div className="font-bold text-lg"><Skeleton className="h-6 w-8 mx-auto" /></div>
+                                        ) : (
+                                            <div className="font-bold text-lg">{posts?.length ?? 0}</div>
+                                        )}
+                                        <p className="text-sm text-muted-foreground">Posts</p>
+                                    </div>
+                                    <Link href={`/profile/${userId}/social?tab=upvotes`} className="cursor-pointer hover:bg-secondary/50 rounded-md p-1 -m-1">
+                                        {isLoading ? (
+                                        <div className="font-bold text-lg"><Skeleton className="h-6 w-8 mx-auto" /></div>
+                                        ) : (
+                                        <div className="font-bold text-lg">{user?.upvotes || 0}</div>
+                                        )}
+                                        <p className="text-sm text-muted-foreground">Upvotes</p>
+                                    </Link>
+                                    <Link href={`/profile/${userId}/social?tab=upvoted`} className="cursor-pointer hover:bg-secondary/50 rounded-md p-1 -m-1">
+                                        {isLoading ? (
+                                        <div className="font-bold text-lg"><Skeleton className="h-6 w-8 mx-auto" /></div>
+                                        ) : (
+                                        <div className="font-bold text-lg">{user?.upvotedCount || 0}</div>
+                                        )}
+                                        <p className="text-sm text-muted-foreground">Upvoted</p>
+                                    </Link>
                                 </div>
-                                <div className="mb-4 flex items-center space-x-2">
-                                    <Button onClick={handleUpvoteUser} variant={hasUpvotedUser ? "secondary" : "default"} className="flex-1 font-bold rounded-none">
-                                        {hasUpvotedUser ? "Upvoted" : "Upvote"}
-                                    </Button>
-                                    {getMessageButton()}
-                                </div>
+                            </div>
+                            <div className="mb-4 space-y-1">
+                                <p className="font-semibold font-headline">{formatUserId(user?.id)}</p>
+                                {user?.bio && <p className="text-sm">{user.bio}</p>}
+                                {user?.website && (
+                                    <a href={user.website} target="_blank" rel="noopener noreferrer" className="flex items-center gap-2 text-sm text-blue-500 hover:underline">
+                                        <LinkIcon className="h-4 w-4" />
+                                        <span>{user.website.replace(/^(https?:\/\/)?(www\.)?/, '')}</span>
+                                    </a>
+                                )}
+                            </div>
+                            <div className="mb-4 flex items-center space-x-2">
+                                <Button onClick={handleUpvoteUser} variant={hasUpvotedUser ? "secondary" : "default"} className="flex-1 font-bold rounded-[5px]">
+                                    {hasUpvotedUser ? "Upvoted" : "Upvote"}
+                                </Button>
+                                {getMessageButton()}
                             </div>
                         </div>
 
                         <Tabs defaultValue="posts" className="w-full">
-                           <div className="sticky top-14 bg-background z-10">
+                           <div className="sticky top-0 bg-background z-10">
                                 <TabsList variant="underline" className="grid w-full grid-cols-2">
                                     <TabsTrigger value="posts" variant="profile" className="font-semibold">Posts</TabsTrigger>
                                     <TabsTrigger value="replies" variant="profile" className="font-semibold">Replies</TabsTrigger>
@@ -806,5 +805,3 @@ export default function UserProfilePage() {
         </AppLayout>
     );
 }
-
-    
