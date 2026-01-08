@@ -158,12 +158,9 @@ function MessageBubble({ message, isOwnMessage, conversation, onSetReply, onForw
     const hasSpecialContent = isPostShare || isLinkShare || !!message.replyToMessageText;
     
     const bubbleContent = (
-         <div className={cn(
-            "flex flex-col",
-            isPostShare || isLinkShare ? "w-64" : "max-w-[80%]"
-        )}>
+         <>
             {message.isForwarded && (
-                <div className="flex items-center gap-1.5 text-xs opacity-70 mb-1">
+                <div className="flex items-center gap-1.5 text-xs opacity-70 mb-1 px-3 pt-2">
                     <Forward className="h-3 w-3" />
                     <span>Forwarded</span>
                 </div>
@@ -171,7 +168,8 @@ function MessageBubble({ message, isOwnMessage, conversation, onSetReply, onForw
 
             {message.replyToMessageText && (
                 <div className={cn(
-                    "p-2 rounded-lg mb-1 w-full bg-black/10 dark:bg-white/10"
+                    "p-2 rounded-lg mb-1 mx-2 mt-1 w-auto",
+                    isOwnMessage ? "bg-black/10 dark:bg-white/10" : "bg-gray-200 dark:bg-gray-700"
                 )}>
                     <p className="text-xs font-semibold truncate text-primary">{formatUserId(message.replyToMessageId === message.senderId ? message.senderId : undefined)}</p>
                     <p className="text-sm opacity-80 line-clamp-2">{message.replyToMessageText}</p>
@@ -179,26 +177,26 @@ function MessageBubble({ message, isOwnMessage, conversation, onSetReply, onForw
             )}
 
             {isPostShare && message.postId ? (
-                <div className="w-full my-1">
+                <div className="w-full my-1 px-2">
                     <PostPreviewCard postId={message.postId} />
                 </div>
             ) : isLinkShare && message.linkMetadata ? (
-                <div className="w-full my-1">
+                <div className="w-full my-1 px-2">
                     <LinkPreviewCard metadata={message.linkMetadata} />
                 </div>
             ) : null}
 
             {message.text && (
-                 <p className="max-w-full whitespace-pre-wrap">{message.text}</p>
+                 <p className="px-3 py-1.5 text-base max-w-full break-words whitespace-pre-wrap">{message.text}</p>
             )}
 
              <p className={cn(
-                "text-[11px] mt-1 self-end", 
+                "text-[11px] mt-1 self-end px-3 pb-1.5", 
                 isOwnMessage ? "text-white/70" : "text-muted-foreground"
              )}>
                 {message.timestamp?.toDate ? formatMessageTimestamp(message.timestamp.toDate()) : '...'}
              </p>
-        </div>
+        </>
     );
 
 
@@ -209,19 +207,20 @@ function MessageBubble({ message, isOwnMessage, conversation, onSetReply, onForw
                 isOwnMessage ? "justify-end" : "justify-start",
             )}>
                 <div className={cn(
-                    "group flex flex-col",
+                    "group flex flex-col max-w-[80%]",
                     isOwnMessage ? "items-end" : "items-start",
-                    isPostShare || isLinkShare ? 'w-64' : 'max-w-[80%]'
+                     (isPostShare || isLinkShare) && 'w-64'
                 )}>
                     <SheetTrigger asChild>
                          <div
                           className={cn(
-                            "relative flex flex-col rounded-2xl px-1.5 py-1",
+                            "relative flex flex-col rounded-2xl",
                              isOwnMessage 
-                                ? (isLinkShare || isPostShare)
-                                    ? "bg-secondary text-secondary-foreground rounded-br-none"
-                                    : "bg-primary text-primary-foreground rounded-br-none"
-                                : "bg-secondary text-secondary-foreground rounded-bl-none"
+                                ? (isPostShare)
+                                    ? "bg-secondary text-secondary-foreground"
+                                    : "bg-blue-500 text-white"
+                                : "bg-gray-200 text-gray-900 dark:bg-gray-700 dark:text-gray-50",
+                            isOwnMessage ? "rounded-br-none" : "rounded-bl-none"
                           )}
                         >
                            {bubbleContent}
@@ -558,41 +557,28 @@ function MessageInput({ conversationId, conversation, replyingTo, onCancelReply 
                     </Button>
                 </div>
             )}
-            <div className="p-2">
+            <div className="p-2 flex items-center gap-2">
                 <Form {...form}>
-                    <form onSubmit={form.handleSubmit(onSubmit)} className="flex items-end space-x-2">
-                        <FormField
-                            control={form.control}
-                            name="text"
-                            render={({ field }) => (
-                            <FormItem className="flex-1">
-                                <FormControl>
-                                <div className="relative flex items-center">
-                                    <Textarea
-                                        placeholder="Message"
-                                        className="text-base border-none focus-visible:ring-0 shadow-none pr-10 bg-secondary"
-                                        rows={1}
-                                        maxRows={5}
-                                        {...field}
-                                        onPaste={handlePaste}
-                                        onKeyDown={(e) => {
-                                            if (e.key === 'Enter' && !e.shiftKey) {
-                                                e.preventDefault();
-                                                form.handleSubmit(onSubmit)();
-                                            }
-                                        }}
-                                    />
-                                </div>
-                                </FormControl>
-                                <FormMessage />
-                            </FormItem>
-                            )}
+                    <form onSubmit={form.handleSubmit(onSubmit)} className="flex-1 flex items-center rounded-full bg-gray-100 dark:bg-gray-800 px-2">
+                         <Textarea
+                            placeholder="Message..."
+                            className="flex-1 bg-transparent border-none focus-visible:ring-0 shadow-none resize-none text-base px-2 py-2.5"
+                            rows={1}
+                            maxRows={5}
+                            onPaste={handlePaste}
+                            onKeyDown={(e) => {
+                                if (e.key === 'Enter' && !e.shiftKey) {
+                                    e.preventDefault();
+                                    form.handleSubmit(onSubmit)();
+                                }
+                            }}
+                            {...form.register("text")}
                         />
-                        <Button
+                         <Button
                             type="submit"
                             size="icon"
                             disabled={form.formState.isSubmitting || (!form.getValues('text') && !form.getValues('linkMetadata'))}
-                            className="rounded-full shrink-0 h-9 w-9"
+                            className="rounded-full shrink-0 h-8 w-8 bg-blue-500 hover:bg-blue-600"
                         >
                             <Send className="h-4 w-4" />
                         </Button>
