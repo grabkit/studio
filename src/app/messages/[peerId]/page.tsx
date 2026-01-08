@@ -49,19 +49,19 @@ function PostPreviewCard({ postId }: { postId: string }) {
     const { data: post, isLoading } = useDoc<Post>(postRef);
 
     if (isLoading) {
-        return <Skeleton className="h-24 w-full rounded-lg bg-secondary" />;
+        return <Skeleton className="h-24 w-full rounded-[10px] bg-secondary" />;
     }
 
     if (!post) {
         return (
-            <div className="p-3 border rounded-lg text-center text-sm text-muted-foreground bg-secondary/50">
+            <div className="p-3 border rounded-[10px] text-center text-sm text-muted-foreground bg-secondary/50">
                 This post is no longer available.
             </div>
         );
     }
     
     return (
-        <div className="block border rounded-lg overflow-hidden bg-secondary/80 w-full">
+        <div className="block border rounded-[10px] overflow-hidden bg-secondary/80 w-full">
             <div className="p-3">
                 <div className="flex items-center gap-2 mb-2">
                     <Avatar className="h-6 w-6">
@@ -211,7 +211,7 @@ function MessageBubble({ message, isOwnMessage, conversation, onSetReply, onForw
                     "flex flex-col rounded-2xl",
                     isOwnMessage ? "bg-blue-500 text-white" : "bg-secondary text-foreground",
                     isOwnMessage ? "rounded-br-none" : "rounded-bl-none",
-                    isPostShare || isLinkShare ? "w-64" : "max-w-[80%]",
+                    (isPostShare || isLinkShare) ? "w-64" : "max-w-[80%]",
                 )}>
                     <SheetTrigger asChild>
                          <div>
@@ -570,7 +570,7 @@ function MessageInput({ conversationId, conversation, replyingTo, onCancelReply 
                             type="submit"
                             size="icon"
                             disabled={form.formState.isSubmitting || (!form.getValues('text') && !form.getValues('linkMetadata'))}
-                            className="rounded-full shrink-0 h-8 w-8 bg-blue-500 hover:bg-blue-600"
+                            className="rounded-full shrink-0 h-8 w-8 bg-black hover:bg-gray-800"
                         >
                             <Send className="h-4 w-4" />
                         </Button>
@@ -722,4 +722,3 @@ export default function ChatPage() {
     
 
     
-
