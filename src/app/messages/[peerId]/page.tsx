@@ -282,13 +282,12 @@ function ChatHeader({ peerId, peerUser, onStartCall, onStartVideoCall, conversat
     
     return (
         <div 
-            className="flex items-center p-2 bg-background/80 backdrop-blur-sm border-b h-14 max-w-2xl mx-auto sm:px-4 cursor-pointer"
-            onClick={() => router.push(`/messages/${peerId}/settings`)}
+            className="fixed top-0 left-0 right-0 z-10 flex items-center p-2 bg-background/80 backdrop-blur-sm border-b h-14 max-w-2xl mx-auto sm:px-4"
         >
             <Button variant="ghost" size="icon" onClick={(e) => { e.stopPropagation(); onBack(); }}>
                 <ArrowLeft />
             </Button>
-            <div className="flex-1 flex items-center gap-3 ml-2">
+            <div className="flex-1 flex items-center gap-3 ml-2 cursor-pointer" onClick={() => router.push(`/messages/${peerId}/settings`)}>
                 <div onClick={(e) => { e.stopPropagation(); router.push(`/profile/${peerId}`); }}>
                     <Avatar className="h-8 w-8">
                         <AvatarFallback>{isLoading ? <Skeleton className="h-8 w-8 rounded-full" /> : getAvatar(peerUser)}</AvatarFallback>
@@ -508,7 +507,7 @@ function MessageInput({ conversationId, conversation, replyingTo, onCancelReply 
     
     if (conversation && conversation.status !== 'accepted') {
         return (
-             <div className="border-t bg-background">
+             <div className="fixed bottom-0 left-0 right-0 max-w-2xl mx-auto bg-background border-t">
                 <div className="p-4 text-center text-sm text-muted-foreground">
                     The user has not accepted your message request yet.
                 </div>
@@ -517,7 +516,7 @@ function MessageInput({ conversationId, conversation, replyingTo, onCancelReply 
     }
 
     return (
-         <div className={cn("border-t bg-background", replyingTo ? "pb-0" : "pb-safe")}>
+         <div className={cn("fixed bottom-0 left-0 right-0 max-w-2xl mx-auto bg-background border-t", replyingTo ? "pb-0" : "pb-safe")}>
             {replyingTo && (
                 <div className="p-2 border-b border-dashed bg-secondary/50 text-sm">
                     <div className="flex justify-between items-center">
@@ -597,6 +596,8 @@ export default function ChatPage() {
     const [replyingTo, setReplyingTo] = useState<WithId<Message> | null>(null);
     const [forwardingMessage, setForwardingMessage] = useState<WithId<Message> | null>(null);
     const [isForwardSheetOpen, setIsForwardSheetOpen] = useState(false);
+    
+    const peerId = params.peerId as string;
 
     const handleSetReply = (message: WithId<Message>) => {
         setReplyingTo(message);
@@ -633,8 +634,6 @@ export default function ChatPage() {
         }
     };
 
-    const peerId = params.peerId as string;
-    
     const conversationId = useMemo(() => {
         if (!user || !peerId) return null;
         return [user.uid, peerId].sort().join('_');
@@ -677,14 +676,16 @@ export default function ChatPage() {
       return (
         <div ref={pageRef} className="h-full bg-background animate-slide-in-right">
             <AppLayout showTopBar={false} showBottomNav={false}>
-            <ChatHeader peerId={peerId} peerUser={peerUser} onStartCall={handleStartCall} onStartVideoCall={handleStartVideoCall} conversation={conversation} onBack={handleBackNavigation}/>
-            <div className="pt-14">
-                <div className="space-y-4 p-4">
-                    <Skeleton className="h-10 w-3/5" />
-                    <Skeleton className="h-10 w-3/5 ml-auto" />
-                    <Skeleton className="h-16 w-4/5" />
+                <div className="fixed top-0 left-0 right-0 z-10">
+                    <ChatHeader peerId={peerId} peerUser={peerUser} onStartCall={handleStartCall} onStartVideoCall={handleStartVideoCall} conversation={conversation} onBack={handleBackNavigation}/>
                 </div>
-            </div>
+                <div className="pt-14">
+                    <div className="space-y-4 p-4">
+                        <Skeleton className="h-10 w-3/5" />
+                        <Skeleton className="h-10 w-3/5 ml-auto" />
+                        <Skeleton className="h-16 w-4/5" />
+                    </div>
+                </div>
             </AppLayout>
         </div>
       )
@@ -694,10 +695,10 @@ export default function ChatPage() {
     return (
          <div ref={pageRef} className="h-full bg-background animate-slide-in-right">
             <AppLayout showTopBar={false} showBottomNav={false}>
-                <div className="flex flex-col h-full">
+                <div className="relative h-full flex flex-col">
                     <ChatHeader peerId={peerId} peerUser={peerUser} onStartCall={handleStartCall} onStartVideoCall={handleStartVideoCall} conversation={conversation} onBack={handleBackNavigation} />
 
-                    <div className="flex-1 overflow-y-auto">
+                    <div className="flex-1 overflow-y-auto pt-14 pb-32">
                       {conversationId && <ChatMessages conversationId={conversationId} conversation={conversation} onSetReply={handleSetReply} onForward={handleForward} />}
                     </div>
 
@@ -721,6 +722,8 @@ export default function ChatPage() {
 
 
 
+
+    
 
     
 
