@@ -182,12 +182,12 @@ function MessageBubble({ message, isOwnMessage, conversation, onSetReply, onForw
                 <>
                   <LinkPreviewCard metadata={message.linkMetadata} />
                   {message.text && (
-                    <p className="text-sm whitespace-pre-wrap pt-2">{message.text}</p>
+                    <p className="text-sm whitespace-pre-wrap break-words pt-2">{message.text}</p>
                   )}
                 </>
             ) : (
                 message.text && (
-                    <p className="text-sm whitespace-pre-wrap">{message.text}</p>
+                    <p className="text-sm whitespace-pre-wrap break-words">{message.text}</p>
                 )
             )}
 
@@ -214,7 +214,6 @@ function MessageBubble({ message, isOwnMessage, conversation, onSetReply, onForw
                             "max-w-fit rounded-2xl px-3 py-2 cursor-pointer",
                             !isOwnMessage && "bg-secondary rounded-bl-none",
                             isOwnMessage && "bg-primary text-primary-foreground rounded-br-none",
-                             isPostShare && "p-0 bg-transparent"
                           )}
                         >
                            {bubbleContent}
@@ -725,4 +724,5 @@ export default function ChatPage() {
     
 
     
+
 

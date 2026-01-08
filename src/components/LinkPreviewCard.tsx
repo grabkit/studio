@@ -15,7 +15,7 @@ export function LinkPreviewCard({ metadata }: { metadata: LinkMetadata }) {
     return (
         <a href={metadata.url} target="_blank" rel="noopener noreferrer" className="block mt-2">
             {metadata.imageUrl && (
-                <div className="relative h-32 bg-secondary rounded-lg overflow-hidden">
+                <div className="relative h-32 bg-secondary rounded-t-lg overflow-hidden">
                     <Image
                         src={metadata.imageUrl}
                         alt={metadata.title || 'Link preview'}
