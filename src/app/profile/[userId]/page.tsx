@@ -708,7 +708,7 @@ export default function UserProfilePage() {
                                 </div>
                                 
                                 <div className="mb-4 flex items-center space-x-2">
-                                    <Button onClick={handleUpvoteUser} variant={hasUpvotedUser ? "default" : "secondary"} className="flex-1 font-bold rounded-[5px]">
+                                    <Button onClick={handleUpvoteUser} variant={hasUpvotedUser ? "secondary" : "default"} className="flex-1 font-bold rounded-[5px]">
                                         {hasUpvotedUser ? "Upvoted" : "Upvote"}
                                     </Button>
                                     {getMessageButton()}
@@ -819,3 +819,5 @@ export default function UserProfilePage() {
         </AppLayout>
     );
 }
+
+    
