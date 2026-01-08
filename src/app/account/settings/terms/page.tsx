@@ -24,14 +24,14 @@ export default function TermsOfServicePage() {
     };
 
     return (
-        <div ref={pageRef} className="h-full bg-background animate-slide-in-right">
-            <AppLayout showTopBar={false} showBottomNav={false}>
-                <div className="fixed top-0 left-0 right-0 z-10 flex items-center p-2 bg-background border-b h-14 max-w-2xl mx-auto sm:px-4">
-                    <Button variant="ghost" size="icon" onClick={handleBackNavigation}>
-                        <ArrowLeft />
-                    </Button>
-                    <h2 className="text-lg font-bold mx-auto -translate-x-4">Terms of Service</h2>
-                </div>
+        <AppLayout showTopBar={false} showBottomNav={false}>
+            <div className="fixed top-0 left-0 right-0 z-20 flex items-center p-2 bg-background border-b h-14 max-w-2xl mx-auto sm:px-4">
+                <Button variant="ghost" size="icon" onClick={handleBackNavigation}>
+                    <ArrowLeft />
+                </Button>
+                <h2 className="text-lg font-bold mx-auto -translate-x-4">Terms of Service</h2>
+            </div>
+            <div ref={pageRef} className="h-full bg-background animate-slide-in-right">
                 <div className="pt-14 h-full overflow-y-auto">
                     <div className="p-4 space-y-4 prose prose-sm dark:prose-invert max-w-none">
                         <p className="text-muted-foreground">Last updated: {new Date().toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' })}</p>
@@ -96,7 +96,7 @@ export default function TermsOfServicePage() {
                         </p>
                     </div>
                 </div>
-            </AppLayout>
-        </div>
+            </div>
+        </AppLayout>
     )
 }
