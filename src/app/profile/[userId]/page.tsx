@@ -584,7 +584,7 @@ export default function UserProfilePage() {
     const getMessageButton = () => {
         if (!conversation) {
             return (
-                <Button onClick={handleStartConversation} variant="secondary" className="flex-1 font-bold">
+                <Button onClick={handleStartConversation} variant="secondary" className="flex-1 font-bold rounded-[10px]">
                     Message
                 </Button>
             );
@@ -592,7 +592,7 @@ export default function UserProfilePage() {
 
         if (conversation.status === 'pending') {
             return (
-                <Button variant="secondary" className="flex-1 font-bold" disabled>
+                <Button variant="secondary" className="flex-1 font-bold rounded-[10px]" disabled>
                     Requested
                 </Button>
             );
@@ -600,7 +600,7 @@ export default function UserProfilePage() {
 
         // status === 'accepted'
         return (
-            <Button onClick={handleStartConversation} variant="secondary" className="flex-1 font-bold">
+            <Button onClick={handleStartConversation} variant="secondary" className="flex-1 font-bold rounded-[10px]">
                 Message
             </Button>
         );
@@ -708,7 +708,7 @@ export default function UserProfilePage() {
                                 </div>
                                 
                                 <div className="mb-4 flex items-center space-x-2">
-                                    <Button onClick={handleUpvoteUser} variant={hasUpvotedUser ? "default" : "secondary"} className="flex-1 font-bold">
+                                    <Button onClick={handleUpvoteUser} variant={hasUpvotedUser ? "default" : "secondary"} className="flex-1 font-bold rounded-[10px]">
                                         {hasUpvotedUser ? "Upvoted" : "Upvote"}
                                     </Button>
                                     {getMessageButton()}
