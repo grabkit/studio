@@ -44,6 +44,7 @@ const messageFormSchema = z.object({
 
 function PostPreviewCard({ postId }: { postId: string }) {
     const { firestore } = useFirebase();
+    const router = useRouter();
     const postRef = useMemoFirebase(() => doc(firestore, 'posts', postId), [firestore, postId]);
     const { data: post, isLoading } = useDoc<Post>(postRef);
 
@@ -60,7 +61,7 @@ function PostPreviewCard({ postId }: { postId: string }) {
     }
     
     return (
-        <div className="block border rounded-[10px] overflow-hidden bg-secondary/80 w-full">
+        <div className="block border rounded-[10px] overflow-hidden bg-secondary/80 w-full cursor-pointer" onClick={() => router.push(`/post/${postId}`)}>
             <div className="p-3">
                 <div className="flex items-center gap-2 mb-2">
                     <Avatar className="h-6 w-6">

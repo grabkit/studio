@@ -1,3 +1,4 @@
+
 "use client";
 
 import Image from "next/image";
@@ -13,7 +14,7 @@ export function LinkPreviewCard({ metadata }: { metadata: LinkMetadata }) {
     };
 
     return (
-        <a href={metadata.url} target="_blank" rel="noopener noreferrer" className="block rounded-[10px] overflow-hidden bg-background/50 hover:bg-background/80 transition-colors">
+        <div className="block rounded-[10px] overflow-hidden bg-secondary/80 cursor-pointer">
             {metadata.imageUrl && (
                 <div className="relative h-32 bg-secondary">
                     <Image
@@ -31,6 +32,6 @@ export function LinkPreviewCard({ metadata }: { metadata: LinkMetadata }) {
                     <p className="text-xs text-muted-foreground mt-1 line-clamp-2">{metadata.description}</p>
                 )}
             </div>
-        </a>
+        </div>
     )
 }
