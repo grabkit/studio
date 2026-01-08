@@ -34,6 +34,7 @@ import { ShareSheet } from "@/components/ShareSheet";
 import { RepostSheet } from "@/components/RepostSheet";
 import { QuotedPostCard } from "@/components/QuotedPostCard";
 import { Sheet, SheetContent, SheetDescription, SheetHeader, SheetTitle, SheetTrigger } from "@/components/ui/sheet";
+import { AnimatedCount } from "@/components/AnimatedCount";
 
 
 function LinkPreview({ metadata }: { metadata: LinkMetadata }) {
@@ -200,6 +201,7 @@ function InnerPostItem({ post, bookmarks, updatePost, onDelete, onPin, showPinSt
   const [isMoreOptionsSheetOpen, setIsMoreOptionsSheetOpen] = useState(false);
   const [isRepostSheetOpen, setIsRepostSheetOpen] = useState(false);
   const [isLiking, setIsLiking] = useState(false);
+  const [likeDirection, setLikeDirection] = useState<'up' | 'down'>('up');
   
   const isOwner = user?.uid === post.authorId;
   const isBookmarked = useMemo(() => bookmarks?.some(b => b.postId === post.id), [bookmarks, post.id]);
@@ -236,6 +238,7 @@ function InnerPostItem({ post, bookmarks, updatePost, onDelete, onPin, showPinSt
     const postRef = doc(firestore, 'posts', post.id);
     const originalLikes = post.likes;
     const originalLikeCount = post.likeCount;
+    setLikeDirection(hasLiked ? 'down' : 'up');
 
     // Optimistic UI update
     const newLikes = hasLiked
@@ -466,14 +469,14 @@ function InnerPostItem({ post, bookmarks, updatePost, onDelete, onPin, showPinSt
 
             <div className="flex items-center justify-between pt-2 text-muted-foreground">
                 <div className="flex items-center space-x-6">
-                  <button onClick={handleLike} disabled={isLiking} className={cn("flex items-center space-x-1", hasLiked && "text-pink-500")}>
+                  <button onClick={handleLike} disabled={isLiking} className={cn("flex items-center space-x-1 w-8", hasLiked && "text-pink-500")}>
                     <Heart className="h-4 w-4" fill={hasLiked ? 'currentColor' : 'none'} />
-                    <span className="text-xs">{post.likeCount > 0 ? formatCount(post.likeCount) : ''}</span>
+                    <AnimatedCount count={post.likeCount} direction={likeDirection} />
                   </button>
                   <CommentButtonWrapper
                     href={`/post/${post.id}`}
                     className={cn(
-                        "flex items-center space-x-1",
+                        "flex items-center space-x-1 w-8",
                         repliesAllowed ? "hover:text-primary" : "opacity-50 pointer-events-none"
                     )}
                   >
@@ -481,11 +484,11 @@ function InnerPostItem({ post, bookmarks, updatePost, onDelete, onPin, showPinSt
                       <MessageCircle className="h-4 w-4" />
                       {!repliesAllowed && <Slash className="absolute top-0 left-0 h-4 w-4 stroke-[2.5px]" />}
                     </div>
-                    <span className="text-xs">{post.commentCount > 0 ? formatCount(post.commentCount) : ''}</span>
+                    <AnimatedCount count={post.commentCount} direction="up" />
                   </CommentButtonWrapper>
-                  <button onClick={handleRepost} className="flex items-center space-x-1 hover:text-green-500">
+                  <button onClick={handleRepost} className="flex items-center space-x-1 w-8 hover:text-green-500">
                     <Repeat className={cn("h-4 w-4")} />
-                    <span className="text-xs">{post.repostCount > 0 ? formatCount(post.repostCount) : ''}</span>
+                    <AnimatedCount count={post.repostCount} direction="up" />
                   </button>
                   <button onClick={() => setIsShareSheetOpen(true)} className="flex items-center space-x-1 hover:text-primary">
                     <ArrowUpRight className="h-4 w-4" />

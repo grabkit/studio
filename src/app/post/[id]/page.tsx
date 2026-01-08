@@ -71,6 +71,7 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { QuotedPostCard } from "@/components/QuotedPostCard";
+import { AnimatedCount } from "@/components/AnimatedCount";
 
 
 function LinkPreview({ metadata }: { metadata: LinkMetadata }) {
@@ -109,6 +110,7 @@ function PostDetailItem({ post, updatePost }: { post: WithId<Post>, updatePost: 
   const router = useRouter();
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
   const [isLiking, setIsLiking] = useState(false);
+  const [likeDirection, setLikeDirection] = useState<'up' | 'down'>('up');
 
   const isOwner = user?.uid === post.authorId;
   const repliesAllowed = post.commentsAllowed !== false;
@@ -124,6 +126,7 @@ function PostDetailItem({ post, updatePost }: { post: WithId<Post>, updatePost: 
     }
 
     setIsLiking(true);
+    setLikeDirection(hasLiked ? 'down' : 'up');
     const postRef = doc(firestore, 'posts', post.id);
     const originalLikes = post.likes;
     const originalLikeCount = post.likeCount;
@@ -307,15 +310,15 @@ function PostDetailItem({ post, updatePost }: { post: WithId<Post>, updatePost: 
 
             <div className="border-t border-b -mx-4 my-2 px-4 py-2 text-sm text-muted-foreground flex items-center justify-around">
                 <div className="flex items-center space-x-2">
-                    <span className="font-bold text-foreground">{formatCount(post.likeCount)}</span>
+                    <span className="font-bold text-foreground"><AnimatedCount count={post.likeCount} direction={likeDirection}/></span>
                     <span>Likes</span>
                 </div>
                  <div className="flex items-center space-x-2">
-                    <span className="font-bold text-foreground">{formatCount(post.commentCount)}</span>
+                    <span className="font-bold text-foreground"><AnimatedCount count={post.commentCount} direction="up" /></span>
                     <span>Replies</span>
                 </div>
                  <div className="flex items-center space-x-2">
-                    <span className="font-bold text-foreground">{formatCount(post.repostCount)}</span>
+                    <span className="font-bold text-foreground"><AnimatedCount count={post.repostCount} direction="up" /></span>
                     <span>Reposts</span>
                 </div>
             </div>

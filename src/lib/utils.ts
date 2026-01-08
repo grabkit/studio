@@ -1,3 +1,4 @@
+
 import { clsx, type ClassValue } from "clsx"
 import { twMerge } from "tailwind-merge"
 import { formatDistanceToNowStrict, isToday, isYesterday, format, isThisWeek, fromUnixTime } from "date-fns";
@@ -136,8 +137,8 @@ export const getAvatar = (user: Partial<User> | string | null | undefined): stri
 };
 
 
-export function formatCount(count: number): string {
-    if (!count) {
+export function formatCount(count: number | undefined | null): string {
+    if (count === undefined || count === null) {
         return "";
     }
     if (count >= 1_000_000) {
