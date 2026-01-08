@@ -48,27 +48,27 @@ function PostPreviewCard({ postId }: { postId: string }) {
     const { data: post, isLoading } = useDoc<Post>(postRef);
 
     if (isLoading) {
-        return <Skeleton className="h-24 w-full rounded-2xl" />;
+        return <Skeleton className="h-24 w-full rounded-lg" />;
     }
 
     if (!post) {
         return (
-            <div className="p-3 border rounded-2xl text-center text-sm text-muted-foreground bg-secondary/20">
+            <div className="p-3 border rounded-lg text-center text-sm text-muted-foreground bg-background/50">
                 This post is no longer available.
             </div>
         );
     }
     
     return (
-        <div className="block border rounded-2xl overflow-hidden transition-colors bg-secondary/20 hover:bg-secondary/50">
+        <div className="block border rounded-lg overflow-hidden transition-colors bg-background/50 hover:bg-background/80">
             <div className="p-3">
                 <div className="flex items-center gap-2 mb-2">
                     <Avatar className="h-6 w-6">
                         <AvatarFallback className="text-xs">{getAvatar({id: post.authorId})}</AvatarFallback>
                     </Avatar>
-                    <span className="text-xs font-semibold text-foreground">{formatUserId(post.authorId)}</span>
+                    <span className="text-xs font-semibold">{formatUserId(post.authorId)}</span>
                 </div>
-                <p className="text-sm line-clamp-3 text-foreground">{post.content}</p>
+                <p className="text-sm line-clamp-3">{post.content}</p>
 
                 {post.type === 'poll' && post.pollOptions && (
                     <div className="mt-2 space-y-1.5">
@@ -157,9 +157,9 @@ function MessageBubble({ message, isOwnMessage, conversation, onSetReply, onForw
     const isLinkShare = !!message.linkMetadata;
     
     const bubbleContent = (
-        <div className="space-y-2">
+         <div className="space-y-1">
             {message.isForwarded && (
-                <div className="flex items-center gap-1 text-xs opacity-70 mb-1">
+                <div className="flex items-center gap-1.5 text-xs opacity-70 mb-1">
                     <Forward className="h-3 w-3" />
                     <span>Forwarded</span>
                 </div>
@@ -171,30 +171,27 @@ function MessageBubble({ message, isOwnMessage, conversation, onSetReply, onForw
                     isOwnMessage ? "bg-black/10" : "bg-black/5"
                 )}>
                     <p className="text-xs font-semibold truncate">{formatUserId(message.replyToMessageId === message.senderId ? message.senderId : undefined)}</p>
-                    <p className="text-xs opacity-80 whitespace-pre-wrap break-words">{message.replyToMessageText}</p>
+                    <p className="text-xs opacity-80 line-clamp-2">{message.replyToMessageText}</p>
                 </div>
             )}
 
             {isPostShare && message.postId ? (
                 <PostPreviewCard postId={message.postId} />
             ) : isLinkShare && message.linkMetadata ? (
-                <>
-                    {message.text && (
-                        <p className="text-sm pb-2 break-words">{message.text}</p>
-                    )}
-                    <LinkPreviewCard metadata={message.linkMetadata} />
-                </>
-            ) : (
-                message.text && (
-                    <p className="text-sm break-words">{message.text}</p>
-                )
+                <LinkPreviewCard metadata={message.linkMetadata} />
+            ) : null}
+
+            {message.text && (
+                 <p className="text-sm whitespace-pre-wrap">{message.text}</p>
             )}
 
-            {message.timestamp?.toDate && !isPostShare && !isLinkShare && (
-                <p className={cn("text-xs mt-1 text-right", isOwnMessage ? "text-primary-foreground/70" : "text-muted-foreground")}>
-                    {formatMessageTimestamp(message.timestamp.toDate())}
-                </p>
-            )}
+             <p className={cn(
+                "text-xs text-right", 
+                isOwnMessage ? "text-primary-foreground/70" : "text-muted-foreground",
+                (isLinkShare || isPostShare) && "mt-1"
+             )}>
+                {message.timestamp?.toDate ? formatMessageTimestamp(message.timestamp.toDate()) : '...'}
+             </p>
         </div>
     );
 
@@ -209,11 +206,9 @@ function MessageBubble({ message, isOwnMessage, conversation, onSetReply, onForw
                     <SheetTrigger asChild>
                          <div
                           className={cn(
-                            "rounded-2xl px-3 py-2 cursor-pointer flex flex-col",
+                            "rounded-2xl px-3 py-1.5 cursor-pointer flex flex-col break-words",
                             isLinkShare ? 'w-64' : 'max-w-[80%]',
-                            !isOwnMessage && "bg-secondary rounded-bl-none",
-                            isOwnMessage && !isLinkShare && "bg-primary text-primary-foreground rounded-br-none",
-                            isOwnMessage && isLinkShare && "bg-secondary text-secondary-foreground rounded-br-none"
+                            isOwnMessage ? "bg-primary text-primary-foreground rounded-br-none" : "bg-secondary rounded-bl-none"
                           )}
                         >
                            {bubbleContent}
@@ -239,12 +234,10 @@ function MessageBubble({ message, isOwnMessage, conversation, onSetReply, onForw
                                 <span>Open Link</span>
                             </Button>
                         )}
-                        {!isLinkShare && (
-                             <Button variant="ghost" className="justify-start text-base py-6 rounded-2xl w-full gap-3" onClick={handleReply}>
-                                <Reply />
-                                <span>Reply</span>
-                            </Button>
-                        )}
+                        <Button variant="ghost" className="justify-start text-base py-6 rounded-2xl w-full gap-3" onClick={handleReply}>
+                            <Reply />
+                            <span>Reply</span>
+                        </Button>
                          <div className="border-t"></div>
                         <Button variant="ghost" className="justify-start text-base py-6 rounded-2xl w-full gap-3" onClick={handleForward}>
                             <Forward />
@@ -716,25 +709,4 @@ export default function ChatPage() {
         </AppLayout>
     )
 }
-    
-
-    
-
-    
-
-
-
-
-
-
-
-    
-
-    
-
-    
-
-
-
-
     
