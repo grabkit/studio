@@ -20,7 +20,7 @@ type SettingsKeys = keyof NotificationSettings;
 
 function NotificationSettingItem({ id, label, description, isChecked, onToggle, disabled }: { id: SettingsKeys, label: string, description: string, isChecked: boolean, onToggle: (id: SettingsKeys, checked: boolean) => void, disabled: boolean }) {
     return (
-        <div className="flex items-center justify-between p-4 border-b">
+        <div className="flex items-center justify-between p-4">
             <div className="flex-1 pr-4">
                 <Label htmlFor={id} className="text-base font-medium">{label}</Label>
                 <p className="text-sm text-muted-foreground">{description}</p>
@@ -37,9 +37,9 @@ function NotificationSettingItem({ id, label, description, isChecked, onToggle, 
 
 function SettingsSkeleton() {
     return (
-        <div className="divide-y">
+        <div>
             {[...Array(5)].map((_, i) => (
-                 <div key={i} className="flex items-center justify-between p-4 border-b">
+                 <div key={i} className="flex items-center justify-between p-4">
                     <div className="flex-1 pr-4 space-y-2">
                        <Skeleton className="h-5 w-32" />
                        <Skeleton className="h-4 w-48" />
@@ -119,7 +119,7 @@ export default function NotificationsSettingsPage() {
             <SettingsSkeleton />
         </div>
     ) : (
-        <div className="divide-y">
+        <div className="border-y">
             <NotificationSettingItem 
                 id="push"
                 label="Push Notifications"
