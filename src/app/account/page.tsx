@@ -327,7 +327,14 @@ export default function AccountPage() {
 
   return (
     <AppLayout showTopBar={false}>
-        <div className="fixed top-0 left-0 right-0 z-20 flex items-center justify-between h-14 px-4 bg-background">
+       <div
+        ref={containerRef}
+        onTouchStart={handleTouchStart}
+        onTouchMove={handleTouchMove}
+        onTouchEnd={handleTouchEnd}
+        className="relative h-full overflow-y-auto"
+      >
+        <div className="sticky top-0 z-20 flex items-center justify-between h-14 px-4 bg-background">
             <Link href="/post" className={cn(buttonVariants({ variant: "ghost", size: "icon" }))}>
                 <Plus className="h-6 w-6" />
             </Link>
@@ -337,16 +344,8 @@ export default function AccountPage() {
                 </Link>
             </div>
         </div>
-
-       <div
-        ref={containerRef}
-        onTouchStart={handleTouchStart}
-        onTouchMove={handleTouchMove}
-        onTouchEnd={handleTouchEnd}
-        className="relative h-full overflow-y-auto pt-14"
-      >
          <div 
-          className="absolute top-0 left-0 right-0 flex justify-center items-center h-12 text-muted-foreground transition-opacity duration-300 z-10 pointer-events-none"
+          className="absolute top-14 left-0 right-0 flex justify-center items-center h-12 text-muted-foreground transition-opacity duration-300 z-10 pointer-events-none"
           style={{ opacity: isRefreshing ? 1 : pullPosition / 70 }}
         >
           <div style={{ transform: `rotate(${isRefreshing ? 0 : pullPosition * 3}deg)` }}>
@@ -480,5 +479,3 @@ export default function AccountPage() {
     </AppLayout>
   );
 }
-
-    
