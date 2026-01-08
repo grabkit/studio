@@ -181,9 +181,9 @@ function MessageBubble({ message, isOwnMessage, conversation, onSetReply, onForw
             ) : isLinkShare && message.linkMetadata ? (
                 <>
                   <LinkPreviewCard metadata={message.linkMetadata} />
-                  {message.text && (
-                    <p className="text-sm whitespace-pre-wrap break-words pt-2">{message.text}</p>
-                  )}
+                   {message.text && (
+                        <p className="text-sm whitespace-pre-wrap break-words pt-2 truncate">{message.text}</p>
+                    )}
                 </>
             ) : (
                 message.text && (
@@ -205,13 +205,13 @@ function MessageBubble({ message, isOwnMessage, conversation, onSetReply, onForw
             <div className={cn("flex items-end gap-2 group", isOwnMessage ? "justify-end" : "justify-start")}>
                  <div className={cn(
                     "flex items-center",
-                    isLinkShare ? "w-64" : "max-w-[80%]",
+                     isLinkShare ? "w-64" : "max-w-[80%]",
                     isOwnMessage ? "flex-row-reverse" : "flex-row"
                 )}>
                     <SheetTrigger asChild>
                          <div
                           className={cn(
-                            "max-w-fit rounded-2xl px-3 py-2 cursor-pointer",
+                            "max-w-fit rounded-2xl px-3 py-2 cursor-pointer break-words",
                             !isOwnMessage && "bg-secondary rounded-bl-none",
                             isOwnMessage && "bg-primary text-primary-foreground rounded-br-none",
                           )}
@@ -724,5 +724,6 @@ export default function ChatPage() {
     
 
     
+
 
 
