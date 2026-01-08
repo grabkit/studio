@@ -3,7 +3,7 @@
 
 import { useParams, useRouter } from 'next/navigation';
 import { useFirebase, useMemoFirebase } from '@/firebase';
-import { collection, query, orderBy, doc, setDoc, serverTimestamp, updateDoc, writeBatch, increment, deleteDoc, getDoc, where } from 'firebase/firestore';
+import { collection, query, orderBy, doc, setDoc, serverTimestamp, updateDoc, writeBatch, increment, deleteDoc, getDoc, where } from 'firestore';
 import { useCollection } from '@/firebase/firestore/use-collection';
 import { useDoc } from '@/firebase/firestore/use-doc';
 import { useForm } from 'react-hook-form';
@@ -598,6 +598,12 @@ export default function ChatPage() {
     const [isForwardSheetOpen, setIsForwardSheetOpen] = useState(false);
     
     const peerId = params.peerId as string;
+    
+    const conversationId = useMemo(() => {
+        if (!user || !peerId) return null;
+        return [user.uid, peerId].sort().join('_');
+    }, [user, peerId]);
+
 
     const handleSetReply = (message: WithId<Message>) => {
         setReplyingTo(message);
@@ -634,10 +640,6 @@ export default function ChatPage() {
         }
     };
 
-    const conversationId = useMemo(() => {
-        if (!user || !peerId) return null;
-        return [user.uid, peerId].sort().join('_');
-    }, [user, peerId]);
     
     const conversationRef = useMemoFirebase(() => {
         if (!firestore || !conversationId) return null;
