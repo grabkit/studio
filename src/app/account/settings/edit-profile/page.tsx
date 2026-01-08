@@ -141,137 +141,137 @@ export default function EditProfilePage() {
 
     return (
         <div ref={pageRef} className="h-full bg-background animate-slide-in-right">
-        <AppLayout showTopBar={false} showBottomNav={false}>
-            <Form {...form}>
-                <form onSubmit={form.handleSubmit(onSubmit)}>
-                    <div className="fixed top-0 left-0 right-0 z-10 flex items-center justify-between p-2 bg-background border-b h-14 max-w-2xl mx-auto sm:px-4">
-                        <div className="flex items-center">
-                            <Button variant="ghost" size="icon" type="button" onClick={handleBackNavigation}>
-                                <ArrowLeft />
-                            </Button>
-                            <h2 className="text-lg font-bold ml-2">Edit Profile</h2>
-                        </div>
-                        <Button type="submit" disabled={form.formState.isSubmitting} className="font-bold">
-                             {form.formState.isSubmitting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-                            Save
-                        </Button>
-                    </div>
-
-                    <div className="pt-20 px-4 space-y-6">
-                        <div className="flex justify-center">
-                             <div className="relative">
-                                <Avatar className="h-24 w-24">
-                                    <AvatarImage src={authUser?.photoURL || undefined} alt={userProfile?.name} />
-                                    <AvatarFallback className="text-4xl">
-                                        {getAvatar(userProfile)}
-                                    </AvatarFallback>
-                                </Avatar>
-                                <Button 
-                                    type="button" 
-                                    variant="secondary" 
-                                    className="absolute -bottom-1 -right-1 rounded-full border-2 border-background h-8 w-8 p-0"
-                                    onClick={() => setIsEmojiSheetOpen(true)}
-                                >
-                                    <Pencil className="h-4 w-4" />
+            <AppLayout showTopBar={false} showBottomNav={false}>
+                <Form {...form}>
+                    <form onSubmit={form.handleSubmit(onSubmit)}>
+                        <div className="fixed top-0 left-0 right-0 z-10 flex items-center justify-between p-2 bg-background border-b h-14 max-w-2xl mx-auto sm:px-4">
+                            <div className="flex items-center">
+                                <Button variant="ghost" size="icon" type="button" onClick={handleBackNavigation}>
+                                    <ArrowLeft />
                                 </Button>
+                                <h2 className="text-lg font-bold ml-2">Edit Profile</h2>
+                            </div>
+                            <Button type="submit" disabled={form.formState.isSubmitting} className="font-bold">
+                                {form.formState.isSubmitting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                                Save
+                            </Button>
+                        </div>
+
+                        <div className="pt-14 h-full overflow-y-auto">
+                            <div className="px-4 pt-6 space-y-6">
+                                <div className="flex justify-center">
+                                    <div className="relative">
+                                        <Avatar className="h-24 w-24">
+                                            <AvatarImage src={authUser?.photoURL || undefined} alt={userProfile?.name} />
+                                            <AvatarFallback className="text-4xl">
+                                                {getAvatar(userProfile)}
+                                            </AvatarFallback>
+                                        </Avatar>
+                                        <Button
+                                            type="button"
+                                            variant="secondary"
+                                            className="absolute -bottom-1 -right-1 rounded-full border-2 border-background h-8 w-8 p-0"
+                                            onClick={() => setIsEmojiSheetOpen(true)}
+                                        >
+                                            <Pencil className="h-4 w-4" />
+                                        </Button>
+                                    </div>
+                                </div>
+                                
+                                <div className="space-y-4">
+                                    <FormItem>
+                                    <FormLabel>Name</FormLabel>
+                                    <Input value={userProfile?.name || ''} disabled />
+                                </FormItem>
+
+                                    <FormItem>
+                                        <FormLabel>Email</FormLabel>
+                                        <Input value={authUser?.email || ''} disabled />
+                                    </FormItem>
+
+                                    <FormItem>
+                                        <FormLabel>Username</FormLabel>
+                                        <Input value={formatUserId(authUser?.uid)} disabled />
+                                    </FormItem>
+                                    
+                                    <FormField
+                                        control={form.control}
+                                        name="bio"
+                                        render={({ field }) => (
+                                            <FormItem>
+                                            <FormLabel>Bio</FormLabel>
+                                            <FormControl>
+                                                <Textarea rows={3} {...field} />
+                                            </FormControl>
+                                            <FormMessage />
+                                            </FormItem>
+                                        )}
+                                    />
+                                    
+                                    <FormField
+                                        control={form.control}
+                                        name="website"
+                                        render={({ field }) => (
+                                            <FormItem>
+                                            <FormLabel>Links</FormLabel>
+                                            <FormControl>
+                                                <Input placeholder="https://your-website.com" {...field} />
+                                            </FormControl>
+                                            <FormMessage />
+                                            </FormItem>
+                                        )}
+                                    />
+                                    
+                                    <FormField
+                                        control={form.control}
+                                        name="gender"
+                                        render={({ field }) => (
+                                            <FormItem>
+                                                <FormLabel>Gender</FormLabel>
+                                                <Select onValueChange={field.onChange} defaultValue={field.value}>
+                                                    <FormControl>
+                                                    <SelectTrigger>
+                                                        <SelectValue placeholder="Select your gender" />
+                                                    </SelectTrigger>
+                                                    </FormControl>
+                                                    <SelectContent>
+                                                        <SelectItem value="prefer_not_to_say">Prefer not to say</SelectItem>
+                                                        <SelectItem value="male">Male</SelectItem>
+                                                        <SelectItem value="female">Female</SelectItem>
+                                                        <SelectItem value="other">Other</SelectItem>
+                                                    </SelectContent>
+                                                </Select>
+                                                <FormMessage />
+                                            </FormItem>
+                                        )}
+                                    />
+                                </div>
                             </div>
                         </div>
-                        
-                        <div className="space-y-4">
-                            <FormItem>
-                               <FormLabel>Name</FormLabel>
-                               <Input value={userProfile?.name || ''} disabled />
-                           </FormItem>
-
-                             <FormItem>
-                                <FormLabel>Email</FormLabel>
-                                <Input value={authUser?.email || ''} disabled />
-                            </FormItem>
-
-                             <FormItem>
-                                <FormLabel>Username</FormLabel>
-                                <Input value={formatUserId(authUser?.uid)} disabled />
-                            </FormItem>
-                            
-                             <FormField
-                                control={form.control}
-                                name="bio"
-                                render={({ field }) => (
-                                    <FormItem>
-                                    <FormLabel>Bio</FormLabel>
-                                    <FormControl>
-                                        <Textarea rows={3} {...field} />
-                                    </FormControl>
-                                    <FormMessage />
-                                    </FormItem>
-                                )}
-                            />
-                            
-                            <FormField
-                                control={form.control}
-                                name="website"
-                                render={({ field }) => (
-                                    <FormItem>
-                                    <FormLabel>Links</FormLabel>
-                                    <FormControl>
-                                        <Input placeholder="https://your-website.com" {...field} />
-                                    </FormControl>
-                                    <FormMessage />
-                                    </FormItem>
-                                )}
-                            />
-                            
-                            <FormField
-                                control={form.control}
-                                name="gender"
-                                render={({ field }) => (
-                                    <FormItem>
-                                        <FormLabel>Gender</FormLabel>
-                                        <Select onValueChange={field.onChange} defaultValue={field.value}>
-                                            <FormControl>
-                                            <SelectTrigger>
-                                                <SelectValue placeholder="Select your gender" />
-                                            </SelectTrigger>
-                                            </FormControl>
-                                            <SelectContent>
-                                                <SelectItem value="prefer_not_to_say">Prefer not to say</SelectItem>
-                                                <SelectItem value="male">Male</SelectItem>
-                                                <SelectItem value="female">Female</SelectItem>
-                                                <SelectItem value="other">Other</SelectItem>
-                                            </SelectContent>
-                                        </Select>
-                                        <FormMessage />
-                                    </FormItem>
-                                )}
-                            />
-
-                        </div>
-
-                    </div>
-                </form>
-            </Form>
-             <Sheet open={isEmojiSheetOpen} onOpenChange={setIsEmojiSheetOpen}>
-                <SheetContent side="bottom" className="rounded-t-2xl h-[60dvh] flex flex-col p-4">
-                    <SheetHeader className="text-center">
-                        <SheetTitle>Choose your Avatar</SheetTitle>
-                    </SheetHeader>
-                    <ScrollArea className="flex-grow my-4">
-                        <div className="grid grid-cols-6 gap-2">
-                            {defaultAvatars.map((emoji, index) => (
-                                <Button
-                                    key={index}
-                                    variant="ghost"
-                                    className="text-3xl aspect-square h-auto w-full"
-                                    onClick={() => handleAvatarChange(emoji)}
-                                >
-                                    {emoji}
-                                </Button>
-                            ))}
-                        </div>
-                    </ScrollArea>
-                </SheetContent>
-            </Sheet>
-        </AppLayout>
+                    </form>
+                </Form>
+                <Sheet open={isEmojiSheetOpen} onOpenChange={setIsEmojiSheetOpen}>
+                    <SheetContent side="bottom" className="rounded-t-2xl h-[60dvh] flex flex-col p-4">
+                        <SheetHeader className="text-center">
+                            <SheetTitle>Choose your Avatar</SheetTitle>
+                        </SheetHeader>
+                        <ScrollArea className="flex-grow my-4">
+                            <div className="grid grid-cols-6 gap-2">
+                                {defaultAvatars.map((emoji, index) => (
+                                    <Button
+                                        key={index}
+                                        variant="ghost"
+                                        className="text-3xl aspect-square h-auto w-full"
+                                        onClick={() => handleAvatarChange(emoji)}
+                                    >
+                                        {emoji}
+                                    </Button>
+                                ))}
+                            </div>
+                        </ScrollArea>
+                    </SheetContent>
+                </Sheet>
+            </AppLayout>
         </div>
     );
 }
