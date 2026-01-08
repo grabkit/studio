@@ -33,8 +33,8 @@ export default function AboutPage() {
                 <h2 className="text-lg font-bold mx-auto -translate-x-4">About</h2>
             </div>
             <div ref={pageRef} className="h-full bg-background animate-slide-in-right">
-                <div className="pt-14 h-full overflow-y-auto">
-                    <div className="divide-y border-y">
+                <div className="pt-14 h-full overflow-y-auto flex flex-col">
+                    <div>
                         <Link href="/account/settings/terms" className="flex justify-between items-center p-4 hover:bg-accent">
                             <span>Terms of Service</span>
                         </Link>
