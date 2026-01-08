@@ -620,7 +620,7 @@ export default function UserProfilePage() {
                          onTouchStart={handleTouchStart}
                          onTouchMove={handleTouchMove}
                          onTouchEnd={handleTouchEnd}
-                         className="flex-1 flex flex-col pt-14 overflow-y-auto"
+                         className="flex-1 pt-14 overflow-y-auto"
                     >
                         <div 
                             className="absolute top-14 left-0 right-0 flex justify-center items-center h-12 text-muted-foreground transition-opacity duration-300 z-10 pointer-events-none"
@@ -806,3 +806,5 @@ export default function UserProfilePage() {
         </AppLayout>
     );
 }
+
+    
