@@ -819,5 +819,3 @@ export default function UserProfilePage() {
         </AppLayout>
     );
 }
-
-    
