@@ -607,8 +607,8 @@ export default function UserProfilePage() {
     };
 
     return (
-        <div ref={pageRef} className="h-full bg-background animate-slide-in-right">
-            <AppLayout showTopBar={false}>
+        <AppLayout showTopBar={false}>
+            <div ref={pageRef} className="h-full bg-background animate-slide-in-right">
                 <Sheet open={isMoreOptionsSheetOpen} onOpenChange={setIsMoreOptionsSheetOpen}>
                     <div className="fixed top-0 left-0 right-0 z-20 flex items-center justify-between h-14 px-4 bg-background">
                         <Button variant="ghost" size="icon" onClick={handleBackNavigation}>
@@ -815,7 +815,8 @@ export default function UserProfilePage() {
                     onOpenChange={setIsQrDialogOpen}
                     user={user}
                 />
-            </AppLayout>
-        </div>
+            </div>
+        </AppLayout>
     );
 }
+
