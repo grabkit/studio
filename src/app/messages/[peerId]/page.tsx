@@ -314,7 +314,7 @@ function ChatHeader({ peerId, peerUser, onStartCall, onStartVideoCall, conversat
 }
 
 
-function ChatMessages({ conversationId, conversation, onSetReply, onForward, replyingTo }: { conversationId: string, conversation: WithId<Conversation> | null, onSetReply: (message: WithId<Message>) => void, onForward: (message: WithId<Message>) => void, replyingTo: WithId<Message> | null }) {
+function ChatMessages({ conversationId, conversation, onSetReply, onForward }: { conversationId: string, conversation: WithId<Conversation> | null, onSetReply: (message: WithId<Message>) => void, onForward: (message: WithId<Message>) => void }) {
     const { firestore, user } = useFirebase();
     const messagesEndRef = React.useRef<HTMLDivElement | null>(null);
 
@@ -350,7 +350,7 @@ function ChatMessages({ conversationId, conversation, onSetReply, onForward, rep
 
 
     React.useEffect(() => {
-        messagesEndRef.current?.scrollIntoView({ behavior: "auto" });
+        messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
     }, [messages]);
     
     if (isLoading) {
@@ -398,7 +398,6 @@ function ChatMessages({ conversationId, conversation, onSetReply, onForward, rep
                     {seenStatus}
                 </div>
             )}
-            <div className={cn(replyingTo ? "h-24" : "h-14")} />
         </div>
     )
 }
@@ -518,7 +517,7 @@ function MessageInput({ conversationId, conversation, replyingTo, onCancelReply 
     }
 
     return (
-         <div className="fixed bottom-0 left-0 right-0 bg-background border-t z-10 max-w-2xl mx-auto sm:px-4">
+         <div className={cn("fixed bottom-0 left-0 right-0 bg-background border-t z-10 max-w-2xl mx-auto sm:px-4", replyingTo ? "pb-0" : "pb-safe")}>
             {replyingTo && (
                 <div className="p-2 border-b border-dashed bg-secondary/50 text-sm">
                     <div className="flex justify-between items-center">
@@ -595,7 +594,6 @@ export default function ChatPage() {
     const params = useParams();
     const router = useRouter();
     const pageRef = useRef<HTMLDivElement>(null);
-    const peerId = params.peerId as string;
     const [replyingTo, setReplyingTo] = useState<WithId<Message> | null>(null);
     const [forwardingMessage, setForwardingMessage] = useState<WithId<Message> | null>(null);
     const [isForwardSheetOpen, setIsForwardSheetOpen] = useState(false);
@@ -641,6 +639,8 @@ export default function ChatPage() {
         return [user.uid, peerId].sort().join('_');
     }, [user, peerId]);
     
+    const peerId = params.peerId as string;
+    
     const conversationRef = useMemoFirebase(() => {
         if (!firestore || !conversationId) return null;
         return doc(firestore, 'conversations', conversationId);
@@ -671,8 +671,10 @@ export default function ChatPage() {
         });
 
     }, [userUnreadCount, conversationRef, firestore, user]);
+    
+    const isLoading = isConversationLoading || isPeerUserLoading;
 
-    if (!user || isConversationLoading || isPeerUserLoading) {
+    if (!user || isLoading) {
       return (
         <div ref={pageRef} className="h-full bg-background animate-slide-in-right">
             <AppLayout showTopBar={false} showBottomNav={false}>
@@ -695,8 +697,8 @@ export default function ChatPage() {
             <AppLayout showTopBar={false} showBottomNav={false}>
                 <ChatHeader peerId={peerId} peerUser={peerUser} onStartCall={handleStartCall} onStartVideoCall={handleStartVideoCall} conversation={conversation} onBack={handleBackNavigation} />
 
-                <div className="pt-14">
-                    {conversationId && <ChatMessages conversationId={conversationId} conversation={conversation} onSetReply={handleSetReply} onForward={handleForward} replyingTo={replyingTo} />}
+                <div className="h-full overflow-y-auto pt-14 pb-24">
+                  {conversationId && <ChatMessages conversationId={conversationId} conversation={conversation} onSetReply={handleSetReply} onForward={handleForward} />}
                 </div>
 
                 {conversationId && <MessageInput conversationId={conversationId} conversation={conversation} replyingTo={replyingTo} onCancelReply={handleCancelReply} />}
@@ -717,3 +719,6 @@ export default function ChatPage() {
     
 
 
+
+
+    
