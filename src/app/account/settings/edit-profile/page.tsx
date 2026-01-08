@@ -2,7 +2,7 @@
 
 "use client";
 
-import React, { useState } from "react";
+import React, { useState, useRef } from "react";
 import { useRouter } from "next/navigation";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -39,6 +39,8 @@ export default function EditProfilePage() {
     const { user: authUser, userProfile, firestore, setUserProfile } = useFirebase();
     const { toast } = useToast();
     const [isEmojiSheetOpen, setIsEmojiSheetOpen] = useState(false);
+    const pageRef = useRef<HTMLDivElement>(null);
+
 
     const form = useForm<z.infer<typeof profileSchema>>({
         resolver: zodResolver(profileSchema),
@@ -48,6 +50,19 @@ export default function EditProfilePage() {
             gender: userProfile?.gender || "",
         },
     });
+
+    const handleBackNavigation = () => {
+        if (pageRef.current) {
+            pageRef.current.classList.remove('animate-slide-in-right');
+            pageRef.current.classList.add('animate-slide-out-right');
+            setTimeout(() => {
+                router.back();
+            }, 300);
+        } else {
+            router.back();
+        }
+    };
+
 
     const handleAvatarChange = async (emoji: string) => {
         if (!authUser || !firestore) return;
@@ -101,7 +116,7 @@ export default function EditProfilePage() {
             });
 
             toast({ title: "Profile Updated", description: "Your changes have been saved." });
-            router.back();
+            handleBackNavigation();
         } catch (error: any) {
              console.error("Error updating profile:", error);
             if (error.code === 'auth/requires-recent-login') {
@@ -125,12 +140,13 @@ export default function EditProfilePage() {
 
 
     return (
+        <div ref={pageRef} className="h-full bg-background animate-slide-in-right">
         <AppLayout showTopBar={false} showBottomNav={false}>
             <Form {...form}>
                 <form onSubmit={form.handleSubmit(onSubmit)}>
                     <div className="fixed top-0 left-0 right-0 z-10 flex items-center justify-between p-2 bg-background border-b h-14 max-w-2xl mx-auto sm:px-4">
                         <div className="flex items-center">
-                            <Button variant="ghost" size="icon" type="button" onClick={() => router.back()}>
+                            <Button variant="ghost" size="icon" type="button" onClick={handleBackNavigation}>
                                 <ArrowLeft />
                             </Button>
                             <h2 className="text-lg font-bold ml-2">Edit Profile</h2>
@@ -256,7 +272,6 @@ export default function EditProfilePage() {
                 </SheetContent>
             </Sheet>
         </AppLayout>
+        </div>
     );
 }
-
-    

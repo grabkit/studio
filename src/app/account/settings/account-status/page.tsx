@@ -65,8 +65,8 @@ export default function AccountStatusPage() {
                     </Button>
                     <h2 className="text-lg font-bold mx-auto -translate-x-4">Account Status</h2>
                 </div>
-                <div className="pt-20 px-4">
-                    <Card>
+                <div className="pt-14 px-4">
+                    <Card className="mt-6">
                         <CardHeader className="text-center items-center">
                             <Icon className={cn("h-16 w-16 mb-4", iconColor)} />
                             <CardTitle className="flex items-center gap-2">

@@ -33,7 +33,7 @@ export default function AboutPage() {
                     </Button>
                     <h2 className="text-lg font-bold mx-auto -translate-x-4">About</h2>
                 </div>
-                <div className="pt-14 p-4 flex flex-col h-full">
+                <div className="pt-14 flex flex-col h-full">
                     <div className="divide-y border-y">
                         <Link href="/account/settings/terms" className="flex justify-between items-center p-4 hover:bg-accent">
                             <span>Terms of Service</span>
