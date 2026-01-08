@@ -13,7 +13,7 @@ export function LinkPreviewCard({ metadata }: { metadata: LinkMetadata }) {
     };
 
     return (
-        <a href={metadata.url} target="_blank" rel="noopener noreferrer" className="block rounded-lg overflow-hidden bg-background/50 hover:bg-background/80 transition-colors">
+        <a href={metadata.url} target="_blank" rel="noopener noreferrer" className="block rounded-[10px] overflow-hidden bg-background/50 hover:bg-background/80 transition-colors">
             {metadata.imageUrl && (
                 <div className="relative h-32 bg-secondary">
                     <Image
