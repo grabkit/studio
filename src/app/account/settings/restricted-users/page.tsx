@@ -6,7 +6,7 @@ import { useFirebase } from "@/firebase";
 import { doc, getDoc, updateDoc, arrayRemove } from "firebase/firestore";
 import type { User } from "@/lib/types";
 import { WithId } from "@/firebase/firestore/use-collection";
-import React, { useEffect, useState, useMemo } from "react";
+import React, { useEffect, useState, useMemo, useRef } from "react";
 import AppLayout from "@/components/AppLayout";
 import { Button } from "@/components/ui/button";
 import { ArrowLeft, MinusCircle } from "lucide-react";
@@ -53,11 +53,24 @@ function RestrictedUserItem({ user, onUnrestrict }: { user: WithId<User>, onUnre
 export default function RestrictedUsersPage() {
     const { user: currentUser, firestore, userProfile } = useFirebase();
     const router = useRouter();
+    const pageRef = useRef<HTMLDivElement>(null);
     const { toast } = useToast();
     const [restrictedUsers, setRestrictedUsers] = useState<WithId<User>[]>([]);
     const [isLoading, setIsLoading] = useState(true);
 
     const restrictedUserIds = useMemo(() => userProfile?.restrictedUsers || [], [userProfile]);
+
+    const handleBackNavigation = () => {
+        if (pageRef.current) {
+            pageRef.current.classList.remove('animate-slide-in-right');
+            pageRef.current.classList.add('animate-slide-out-right');
+            setTimeout(() => {
+                router.back();
+            }, 300);
+        } else {
+            router.back();
+        }
+    };
 
     useEffect(() => {
         if (!firestore || !currentUser) return;
@@ -110,38 +123,40 @@ export default function RestrictedUsersPage() {
 
 
     return (
-        <AppLayout showTopBar={false}>
-            <div className="fixed top-0 left-0 right-0 z-10 flex items-center p-2 bg-background border-b h-14 max-w-2xl mx-auto sm:px-4">
-                <Button variant="ghost" size="icon" onClick={() => router.back()}>
-                    <ArrowLeft />
-                </Button>
-                <h2 className="text-lg font-bold mx-auto -translate-x-4">Restricted Accounts</h2>
-            </div>
+        <div ref={pageRef} className="h-full bg-background animate-slide-in-right">
+            <AppLayout showTopBar={false}>
+                <div className="fixed top-0 left-0 right-0 z-10 flex items-center p-2 bg-background border-b h-14 max-w-2xl mx-auto sm:px-4">
+                    <Button variant="ghost" size="icon" onClick={handleBackNavigation}>
+                        <ArrowLeft />
+                    </Button>
+                    <h2 className="text-lg font-bold mx-auto -translate-x-4">Restricted Accounts</h2>
+                </div>
 
-            <div className="pt-14">
-                 {isLoading && (
-                    <>
-                        <RestrictedUserSkeleton />
-                        <RestrictedUserSkeleton />
-                    </>
-                 )}
-                 {!isLoading && restrictedUsers.length === 0 && (
-                     <div className="text-center py-16">
-                         <div className="inline-block p-4 bg-secondary rounded-full">
-                            <MinusCircle className="h-10 w-10 text-muted-foreground" />
+                <div className="pt-14">
+                     {isLoading && (
+                        <>
+                            <RestrictedUserSkeleton />
+                            <RestrictedUserSkeleton />
+                        </>
+                     )}
+                     {!isLoading && restrictedUsers.length === 0 && (
+                         <div className="text-center py-16">
+                             <div className="inline-block p-4 bg-secondary rounded-full">
+                                <MinusCircle className="h-10 w-10 text-muted-foreground" />
+                            </div>
+                            <h3 className="text-xl font-headline mt-4">No Restricted Accounts</h3>
+                            <p className="text-muted-foreground mt-2">You haven't restricted anyone yet.</p>
                         </div>
-                        <h3 className="text-xl font-headline mt-4">No Restricted Accounts</h3>
-                        <p className="text-muted-foreground mt-2">You haven't restricted anyone yet.</p>
-                    </div>
-                 )}
-                {!isLoading && (
-                    <div className="divide-y">
-                        {restrictedUsers.map(user => (
-                            <RestrictedUserItem key={user.id} user={user} onUnrestrict={handleUnrestrict} />
-                        ))}
-                    </div>
-                )}
-            </div>
-        </AppLayout>
+                     )}
+                    {!isLoading && (
+                        <div className="divide-y">
+                            {restrictedUsers.map(user => (
+                                <RestrictedUserItem key={user.id} user={user} onUnrestrict={handleUnrestrict} />
+                            ))}
+                        </div>
+                    )}
+                </div>
+            </AppLayout>
+        </div>
     );
 }
