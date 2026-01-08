@@ -33,34 +33,36 @@ export default function HelpPage() {
                 <h2 className="text-lg font-bold mx-auto -translate-x-4">Help Center</h2>
             </div>
             <div ref={pageRef} className="h-full bg-background animate-slide-in-right">
-                <div className="pt-14 p-4 space-y-4 h-full overflow-y-auto">
-                    <Link href="/account/settings/community-guidelines" className="block p-4 border rounded-lg hover:bg-accent">
-                        <div className="flex items-center space-x-4">
-                            <BookOpen className="h-8 w-8 text-primary"/>
-                            <div>
-                                <h3 className="font-semibold">Community Guidelines</h3>
-                                <p className="text-sm text-muted-foreground">Learn about our rules and policies.</p>
+                <div className="pt-14 h-full overflow-y-auto">
+                    <div>
+                        <Link href="/account/settings/community-guidelines" className="block px-4 py-3 hover:bg-accent">
+                            <div className="flex items-center space-x-4">
+                                <BookOpen className="h-8 w-8 text-primary"/>
+                                <div>
+                                    <h3 className="font-semibold">Community Guidelines</h3>
+                                    <p className="text-sm text-muted-foreground">Learn about our rules and policies.</p>
+                                </div>
                             </div>
-                        </div>
-                    </Link>
-                    <Link href="/account/settings/help/report-problem" className="block p-4 border rounded-lg hover:bg-accent cursor-pointer">
-                        <div className="flex items-center space-x-4">
-                            <MessageSquareQuote className="h-8 w-8 text-primary"/>
-                            <div>
-                                <h3 className="font-semibold">Report a Problem</h3>
-                                <p className="text-sm text-muted-foreground">Let us know about a bug or issue.</p>
+                        </Link>
+                        <Link href="/account/settings/help/report-problem" className="block px-4 py-3 hover:bg-accent cursor-pointer">
+                            <div className="flex items-center space-x-4">
+                                <MessageSquareQuote className="h-8 w-8 text-primary"/>
+                                <div>
+                                    <h3 className="font-semibold">Report a Problem</h3>
+                                    <p className="text-sm text-muted-foreground">Let us know about a bug or issue.</p>
+                                </div>
                             </div>
-                        </div>
-                    </Link>
-                    <Link href="/account/settings/help/safety" className="block p-4 border rounded-lg hover:bg-accent cursor-pointer">
-                        <div className="flex items-center space-x-4">
-                            <ShieldCheck className="h-8 w-8 text-primary"/>
-                            <div>
-                                <h3 className="font-semibold">Safety & Security</h3>
-                                <p className="text-sm text-muted-foreground">Tips for staying safe on Blur.</p>
+                        </Link>
+                        <Link href="/account/settings/help/safety" className="block px-4 py-3 hover:bg-accent cursor-pointer">
+                            <div className="flex items-center space-x-4">
+                                <ShieldCheck className="h-8 w-8 text-primary"/>
+                                <div>
+                                    <h3 className="font-semibold">Safety & Security</h3>
+                                    <p className="text-sm text-muted-foreground">Tips for staying safe on Blur.</p>
+                                </div>
                             </div>
-                        </div>
-                    </Link>
+                        </Link>
+                    </div>
                 </div>
             </div>
         </AppLayout>
