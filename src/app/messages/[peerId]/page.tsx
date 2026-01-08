@@ -209,8 +209,8 @@ function MessageBubble({ message, isOwnMessage, conversation, onSetReply, onForw
                     <SheetTrigger asChild>
                          <div
                           className={cn(
-                            "rounded-2xl px-3 py-2 cursor-pointer break-words",
-                            isLinkShare ? 'w-64' : 'max-w-[80%]',
+                            "rounded-2xl px-3 py-2 cursor-pointer",
+                            isLinkShare ? 'w-64 break-words' : 'max-w-[80%]',
                             !isOwnMessage && "bg-secondary rounded-bl-none",
                             isOwnMessage && !isLinkShare && "bg-primary text-primary-foreground rounded-br-none",
                             isOwnMessage && isLinkShare && "bg-secondary text-secondary-foreground rounded-br-none"
