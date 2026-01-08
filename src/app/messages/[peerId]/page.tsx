@@ -1,4 +1,5 @@
 
+
 "use client";
 
 import { useParams, useRouter } from 'next/navigation';
@@ -180,13 +181,13 @@ function MessageBubble({ message, isOwnMessage, conversation, onSetReply, onForw
             ) : isLinkShare && message.linkMetadata ? (
                 <>
                     {message.text && (
-                        <p className="text-sm whitespace-pre-wrap break-words pb-2">{message.text}</p>
+                        <p className="text-sm break-words pb-2">{message.text}</p>
                     )}
                     <LinkPreviewCard metadata={message.linkMetadata} />
                 </>
             ) : (
                 message.text && (
-                    <p className="text-sm whitespace-pre-wrap break-words">{message.text}</p>
+                    <p className="text-sm break-words">{message.text}</p>
                 )
             )}
 
