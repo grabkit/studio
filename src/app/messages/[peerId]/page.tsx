@@ -199,7 +199,8 @@ function MessageBubble({ message, isOwnMessage, conversation, onSetReply, onForw
         <Sheet open={isSheetOpen} onOpenChange={setIsSheetOpen}>
             <div className={cn("flex items-end gap-2 group", isOwnMessage ? "justify-end" : "justify-start")}>
                  <div className={cn(
-                    "flex items-center max-w-[80%]",
+                    "flex items-center",
+                    isLinkShare ? "max-w-xs" : "max-w-[80%]",
                     isOwnMessage ? "flex-row-reverse" : "flex-row"
                 )}>
                     <SheetTrigger asChild>
