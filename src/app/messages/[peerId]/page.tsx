@@ -19,7 +19,7 @@ import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
 import { Form, FormControl, FormField, FormItem, FormMessage } from '@/components/ui/form';
 import { Skeleton } from '@/components/ui/skeleton';
-import { ArrowLeft, Send, Reply, Forward, Copy, Trash2, X, Heart, MessageCircle, ExternalLink, Phone, Video, Loader2, ListBullet } from 'lucide-react';
+import { ArrowLeft, Send, Reply, Forward, Copy, Trash2, X, Heart, MessageCircle, ExternalLink, Phone, Video, Loader2, List } from 'lucide-react';
 import { cn, getAvatar, formatMessageTimestamp, formatLastSeen, formatTimestamp, formatUserId, formatDateSeparator } from '@/lib/utils';
 import type { Conversation, Message, User, Post, LinkMetadata } from '@/lib/types';
 import { WithId } from '@/firebase/firestore/use-collection';
@@ -73,7 +73,7 @@ function PostPreviewCard({ postId }: { postId: string }) {
                     <div className="mt-2 space-y-1.5">
                         {post.pollOptions.map((option, index) => (
                             <div key={index} className="flex items-center gap-2 text-sm text-muted-foreground bg-background/50 p-1.5 rounded-md">
-                                <ListBullet className="h-4 w-4" />
+                                <List className="h-4 w-4" />
                                 <span>{option.option}</span>
                             </div>
                         ))}
