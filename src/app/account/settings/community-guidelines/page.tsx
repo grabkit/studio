@@ -24,15 +24,15 @@ export default function CommunityGuidelinesPage() {
     };
 
     return (
-        <div ref={pageRef} className="h-full bg-background animate-slide-in-right">
-            <AppLayout showTopBar={false} showBottomNav={false}>
-                <div className="fixed top-0 left-0 right-0 z-10 flex items-center p-2 bg-background border-b h-14 max-w-2xl mx-auto sm:px-4">
-                    <Button variant="ghost" size="icon" onClick={handleBackNavigation}>
-                        <ArrowLeft />
-                    </Button>
-                    <h2 className="text-lg font-bold mx-auto -translate-x-4">Community Guidelines</h2>
-                </div>
-                <div className="pt-14 p-4 space-y-4 prose prose-sm dark:prose-invert max-w-none">
+        <AppLayout showTopBar={false} showBottomNav={false}>
+            <div className="fixed top-0 left-0 right-0 z-10 flex items-center p-2 bg-background border-b h-14 max-w-2xl mx-auto sm:px-4">
+                <Button variant="ghost" size="icon" onClick={handleBackNavigation}>
+                    <ArrowLeft />
+                </Button>
+                <h2 className="text-lg font-bold mx-auto -translate-x-4">Community Guidelines</h2>
+            </div>
+            <div ref={pageRef} className="h-full bg-background animate-slide-in-right">
+                <div className="pt-14 p-4 space-y-4 prose prose-sm dark:prose-invert max-w-none h-full overflow-y-auto">
                     <p className="text-muted-foreground">Last updated: {new Date().toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' })}</p>
                     
                     <p>
@@ -78,7 +78,7 @@ export default function CommunityGuidelinesPage() {
                         These guidelines are a living document and may be updated as our community evolves. Thank you for being a part of Blur and helping us keep it a welcoming space for everyone.
                     </p>
                 </div>
-            </AppLayout>
-        </div>
+            </div>
+        </AppLayout>
     )
 }

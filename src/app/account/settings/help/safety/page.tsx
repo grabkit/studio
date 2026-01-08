@@ -24,15 +24,15 @@ export default function SafetyAndSecurityPage() {
     };
 
     return (
-        <div ref={pageRef} className="h-full bg-background animate-slide-in-right">
-            <AppLayout showTopBar={false} showBottomNav={false}>
-                <div className="fixed top-0 left-0 right-0 z-10 flex items-center p-2 bg-background border-b h-14 max-w-2xl mx-auto sm:px-4">
-                    <Button variant="ghost" size="icon" onClick={handleBackNavigation}>
-                        <ArrowLeft />
-                    </Button>
-                    <h2 className="text-lg font-bold mx-auto -translate-x-4">Safety & Security</h2>
-                </div>
-                <div className="pt-14 p-4 space-y-4 prose prose-sm dark:prose-invert max-w-none">
+        <AppLayout showTopBar={false} showBottomNav={false}>
+            <div className="fixed top-0 left-0 right-0 z-10 flex items-center p-2 bg-background border-b h-14 max-w-2xl mx-auto sm:px-4">
+                <Button variant="ghost" size="icon" onClick={handleBackNavigation}>
+                    <ArrowLeft />
+                </Button>
+                <h2 className="text-lg font-bold mx-auto -translate-x-4">Safety & Security</h2>
+            </div>
+            <div ref={pageRef} className="h-full bg-background animate-slide-in-right">
+                <div className="pt-14 p-4 space-y-4 prose prose-sm dark:prose-invert max-w-none h-full overflow-y-auto">
                     <h3 className="font-semibold text-lg">Keeping Your Account Secure</h3>
                     
                     <h4 className="font-semibold">1. Choose a Strong, Unique Password</h4>
@@ -67,7 +67,7 @@ export default function SafetyAndSecurityPage() {
                         Use the "Restrict" and "Mute" features to control your experience. Muting an account hides their posts from your feed, and restricting them means their comments on your posts will only be visible to you and them unless you approve them.
                     </p>
                 </div>
-            </AppLayout>
-        </div>
+            </div>
+        </AppLayout>
     )
 }

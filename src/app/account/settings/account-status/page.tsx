@@ -57,15 +57,15 @@ export default function AccountStatusPage() {
     const { icon: Icon, title, description, badgeVariant, iconColor } = StatusInfo[status];
 
     return (
-        <div ref={pageRef} className="h-full bg-background animate-slide-in-right">
-            <AppLayout showTopBar={false} showBottomNav={false}>
-                <div className="fixed top-0 left-0 right-0 z-10 flex items-center p-2 bg-background border-b h-14 max-w-2xl mx-auto sm:px-4">
-                    <Button variant="ghost" size="icon" onClick={handleBackNavigation}>
-                        <ArrowLeft />
-                    </Button>
-                    <h2 className="text-lg font-bold mx-auto -translate-x-4">Account Status</h2>
-                </div>
-                <div className="pt-14 px-4">
+        <AppLayout showTopBar={false} showBottomNav={false}>
+            <div className="fixed top-0 left-0 right-0 z-10 flex items-center p-2 bg-background border-b h-14 max-w-2xl mx-auto sm:px-4">
+                <Button variant="ghost" size="icon" onClick={handleBackNavigation}>
+                    <ArrowLeft />
+                </Button>
+                <h2 className="text-lg font-bold mx-auto -translate-x-4">Account Status</h2>
+            </div>
+            <div ref={pageRef} className="h-full bg-background animate-slide-in-right">
+                <div className="pt-14 px-4 h-full overflow-y-auto">
                     <Card className="mt-6">
                         <CardHeader className="text-center items-center">
                             <Icon className={cn("h-16 w-16 mb-4", iconColor)} />
@@ -86,7 +86,7 @@ export default function AccountStatusPage() {
                         <Button variant="link">View Community Guidelines</Button>
                     </div>
                 </div>
-            </AppLayout>
-        </div>
+            </div>
+        </AppLayout>
     )
 }

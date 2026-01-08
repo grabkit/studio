@@ -140,23 +140,23 @@ export default function EditProfilePage() {
 
 
     return (
-        <div ref={pageRef} className="h-full bg-background animate-slide-in-right">
-            <AppLayout showTopBar={false} showBottomNav={false}>
-                <Form {...form}>
-                    <form onSubmit={form.handleSubmit(onSubmit)}>
-                        <div className="fixed top-0 left-0 right-0 z-10 flex items-center justify-between p-2 bg-background border-b h-14 max-w-2xl mx-auto sm:px-4">
-                            <div className="flex items-center">
-                                <Button variant="ghost" size="icon" type="button" onClick={handleBackNavigation}>
-                                    <ArrowLeft />
-                                </Button>
-                                <h2 className="text-lg font-bold ml-2">Edit Profile</h2>
-                            </div>
-                            <Button type="submit" disabled={form.formState.isSubmitting} className="font-bold">
-                                {form.formState.isSubmitting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-                                Save
+        <AppLayout showTopBar={false} showBottomNav={false}>
+            <Form {...form}>
+                <form onSubmit={form.handleSubmit(onSubmit)}>
+                    <div className="fixed top-0 left-0 right-0 z-10 flex items-center justify-between p-2 bg-background border-b h-14 max-w-2xl mx-auto sm:px-4">
+                        <div className="flex items-center">
+                            <Button variant="ghost" size="icon" type="button" onClick={handleBackNavigation}>
+                                <ArrowLeft />
                             </Button>
+                            <h2 className="text-lg font-bold ml-2">Edit Profile</h2>
                         </div>
+                        <Button type="submit" disabled={form.formState.isSubmitting} className="font-bold">
+                            {form.formState.isSubmitting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                            Save
+                        </Button>
+                    </div>
 
+                    <div ref={pageRef} className="h-full bg-background animate-slide-in-right">
                         <div className="pt-14 h-full overflow-y-auto">
                             <div className="px-4 pt-6 space-y-6">
                                 <div className="flex justify-center">
@@ -248,30 +248,30 @@ export default function EditProfilePage() {
                                 </div>
                             </div>
                         </div>
-                    </form>
-                </Form>
-                <Sheet open={isEmojiSheetOpen} onOpenChange={setIsEmojiSheetOpen}>
-                    <SheetContent side="bottom" className="rounded-t-2xl h-[60dvh] flex flex-col p-4">
-                        <SheetHeader className="text-center">
-                            <SheetTitle>Choose your Avatar</SheetTitle>
-                        </SheetHeader>
-                        <ScrollArea className="flex-grow my-4">
-                            <div className="grid grid-cols-6 gap-2">
-                                {defaultAvatars.map((emoji, index) => (
-                                    <Button
-                                        key={index}
-                                        variant="ghost"
-                                        className="text-3xl aspect-square h-auto w-full"
-                                        onClick={() => handleAvatarChange(emoji)}
-                                    >
-                                        {emoji}
-                                    </Button>
-                                ))}
-                            </div>
-                        </ScrollArea>
-                    </SheetContent>
-                </Sheet>
-            </AppLayout>
-        </div>
+                    </div>
+                </form>
+            </Form>
+            <Sheet open={isEmojiSheetOpen} onOpenChange={setIsEmojiSheetOpen}>
+                <SheetContent side="bottom" className="rounded-t-2xl h-[60dvh] flex flex-col p-4">
+                    <SheetHeader className="text-center">
+                        <SheetTitle>Choose your Avatar</SheetTitle>
+                    </SheetHeader>
+                    <ScrollArea className="flex-grow my-4">
+                        <div className="grid grid-cols-6 gap-2">
+                            {defaultAvatars.map((emoji, index) => (
+                                <Button
+                                    key={index}
+                                    variant="ghost"
+                                    className="text-3xl aspect-square h-auto w-full"
+                                    onClick={() => handleAvatarChange(emoji)}
+                                >
+                                    {emoji}
+                                </Button>
+                            ))}
+                        </div>
+                    </ScrollArea>
+                </SheetContent>
+            </Sheet>
+        </AppLayout>
     );
 }
