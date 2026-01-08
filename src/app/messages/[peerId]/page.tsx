@@ -1,5 +1,4 @@
 
-
 "use client";
 
 import { useParams, useRouter } from 'next/navigation';
@@ -12,7 +11,7 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
 import React, { useMemo, useEffect, useRef, useState } from 'react';
 import { isSameDay } from 'date-fns';
-import { motion } from 'framer-motion';
+import { motion } from "framer-motion";
 
 
 import AppLayout from '@/components/AppLayout';
@@ -159,7 +158,10 @@ function MessageBubble({ message, isOwnMessage, conversation, onSetReply, onForw
     const hasSpecialContent = isPostShare || isLinkShare || !!message.replyToMessageText;
     
     const bubbleContent = (
-         <div className="flex flex-col w-full break-words">
+         <div className={cn(
+            "flex flex-col",
+            isPostShare || isLinkShare ? "w-64" : "max-w-[80%]"
+        )}>
             {message.isForwarded && (
                 <div className="flex items-center gap-1.5 text-xs opacity-70 mb-1">
                     <Forward className="h-3 w-3" />
@@ -202,18 +204,24 @@ function MessageBubble({ message, isOwnMessage, conversation, onSetReply, onForw
 
     return (
         <Sheet open={isSheetOpen} onOpenChange={setIsSheetOpen}>
-            <div className={cn("flex w-full", isOwnMessage ? "justify-end" : "justify-start")}>
+            <div className={cn(
+                "flex",
+                isOwnMessage ? "justify-end" : "justify-start",
+            )}>
                 <div className={cn(
-                    "group flex flex-col max-w-[80%]",
-                    (isPostShare || isLinkShare) && 'w-64'
+                    "group flex flex-col",
+                    isOwnMessage ? "items-end" : "items-start",
+                    isPostShare || isLinkShare ? 'w-64' : 'max-w-[80%]'
                 )}>
                     <SheetTrigger asChild>
                          <div
                           className={cn(
-                            "flex flex-col rounded-2xl px-3 py-1.5 cursor-pointer",
+                            "relative flex flex-col rounded-2xl px-1.5 py-1",
                              isOwnMessage 
-                                ? (isLinkShare ? "bg-secondary text-secondary-foreground rounded-br-md" : "bg-primary text-primary-foreground rounded-br-md")
-                                : "bg-secondary text-secondary-foreground rounded-bl-md",
+                                ? (isLinkShare || isPostShare)
+                                    ? "bg-secondary text-secondary-foreground rounded-br-none"
+                                    : "bg-primary text-primary-foreground rounded-br-none"
+                                : "bg-secondary text-secondary-foreground rounded-bl-none"
                           )}
                         >
                            {bubbleContent}
@@ -724,5 +732,7 @@ export default function ChatPage() {
 
 
 
+
+    
 
     
