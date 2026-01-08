@@ -47,19 +47,19 @@ function PostPreviewCard({ postId }: { postId: string }) {
     const { data: post, isLoading } = useDoc<Post>(postRef);
 
     if (isLoading) {
-        return <Skeleton className="h-24 w-full rounded-lg" />;
+        return <Skeleton className="h-24 w-full rounded-2xl" />;
     }
 
     if (!post) {
         return (
-            <div className="p-3 border rounded-lg text-center text-sm text-muted-foreground bg-secondary/20">
+            <div className="p-3 border rounded-2xl text-center text-sm text-muted-foreground bg-secondary/20">
                 This post is no longer available.
             </div>
         );
     }
     
     return (
-        <div className="block border rounded-lg overflow-hidden transition-colors bg-secondary/20 hover:bg-secondary/50">
+        <div className="block border rounded-2xl overflow-hidden transition-colors bg-secondary/20 hover:bg-secondary/50">
             <div className="p-3">
                 <div className="flex items-center gap-2 mb-2">
                     <Avatar className="h-6 w-6">
@@ -447,7 +447,7 @@ function MessageInput({ conversationId, conversation, replyingTo, onCancelReply 
         const newMessage: Partial<Message> = {
             id: messageRef.id,
             senderId: user.uid,
-            text: values.text || '',
+            text: values.text,
             linkMetadata: values.linkMetadata,
         };
 
