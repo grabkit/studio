@@ -633,13 +633,12 @@ export default function ChatPage() {
         }
     };
 
+    const peerId = params.peerId as string;
 
     const conversationId = useMemo(() => {
         if (!user || !peerId) return null;
         return [user.uid, peerId].sort().join('_');
     }, [user, peerId]);
-    
-    const peerId = params.peerId as string;
     
     const conversationRef = useMemoFirebase(() => {
         if (!firestore || !conversationId) return null;
@@ -720,5 +719,7 @@ export default function ChatPage() {
 
 
 
+
+    
 
     
