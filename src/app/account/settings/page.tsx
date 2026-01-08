@@ -47,7 +47,6 @@ export default function SettingsPage() {
     const router = useRouter();
     const { auth, database } = useFirebase();
     const { toast } = useToast();
-    const pageRef = useRef<HTMLDivElement>(null);
     
     const handleLogout = async () => {
         if (!auth || !auth.currentUser || !database) return;
@@ -76,30 +75,17 @@ export default function SettingsPage() {
         }
       };
 
-    const handleBackNavigation = () => {
-        if (pageRef.current) {
-            pageRef.current.classList.remove('animate-slide-in-right');
-            pageRef.current.classList.add('animate-slide-out-right');
-            setTimeout(() => {
-                router.back();
-            }, 300); // Duration of the animation
-        } else {
-            router.back();
-        }
-    };
-
-
     return (
         <AppLayout showTopBar={false}>
-            <div ref={pageRef} className="h-full bg-background animate-slide-in-right">
+            <div className="h-full bg-background animate-slide-in-right">
                 <div className="fixed top-0 left-0 right-0 z-10 flex items-center p-2 bg-background border-b h-14 max-w-2xl mx-auto sm:px-4">
-                    <Button variant="ghost" size="icon" onClick={handleBackNavigation}>
+                    <Button variant="ghost" size="icon" onClick={() => router.back()}>
                         <ArrowLeft />
                     </Button>
                     <h2 className="text-lg font-bold mx-auto -translate-x-4">Settings</h2>
                 </div>
 
-                <div className="pt-14">
+                <div className="pt-14 h-full overflow-y-auto">
                     {Object.entries(settingsItems).map(([category, items]) => (
                         <div key={category} className="my-4">
                             <h3 className="px-4 py-2 text-sm font-semibold text-muted-foreground">{category}</h3>
