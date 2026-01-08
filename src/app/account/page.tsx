@@ -332,9 +332,18 @@ export default function AccountPage() {
                 <Plus className="h-6 w-6" />
             </Link>
             <div className="flex items-center space-x-2">
-                <Link href="/account/settings" className={cn(buttonVariants({ variant: "ghost", size: "icon" }))}>
-                    <Settings className="h-6 w-6" />
-                </Link>
+                <DropdownMenu>
+                    <DropdownMenuTrigger asChild>
+                        <Button variant="ghost" size="icon">
+                            <Menu className="h-6 w-6" />
+                        </Button>
+                    </DropdownMenuTrigger>
+                    <DropdownMenuContent align="end">
+                        <DropdownMenuItem asChild>
+                            <Link href="/account/settings">Settings</Link>
+                        </DropdownMenuItem>
+                    </DropdownMenuContent>
+                </DropdownMenu>
             </div>
         </div>
 
@@ -480,3 +489,5 @@ export default function AccountPage() {
     </AppLayout>
   );
 }
+
+    
