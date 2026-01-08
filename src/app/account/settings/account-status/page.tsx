@@ -75,18 +75,11 @@ export default function AccountStatusPage() {
                                         <p className="font-semibold">{userProfile?.createdAt ? format(userProfile.createdAt.toDate(), "MMMM d, yyyy") : 'Not available'}</p>
                                     </div>
                                 </div>
-                                 <div className="flex items-center">
-                                    <MapPin className="h-5 w-5 mr-4 text-muted-foreground" />
-                                    <div>
-                                        <p className="text-sm text-muted-foreground">Based In</p>
-                                        <p className="font-semibold">San Francisco, CA</p>
-                                    </div>
-                                </div>
                                 <div className="flex items-center">
                                     <Globe className="h-5 w-5 mr-4 text-muted-foreground" />
                                     <div>
                                         <p className="text-sm text-muted-foreground">Country</p>
-                                        <p className="font-semibold">United States</p>
+                                        <p className="font-semibold">India</p>
                                     </div>
                                 </div>
                             </div>
