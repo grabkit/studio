@@ -119,7 +119,7 @@ export default function NotificationsSettingsPage() {
             <SettingsSkeleton />
         </div>
     ) : (
-        <div className="border-y divide-y">
+        <div className="border-y">
             <NotificationSettingItem 
                 id="push"
                 label="Push Notifications"
