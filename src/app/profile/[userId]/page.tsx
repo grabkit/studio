@@ -12,7 +12,7 @@ import { format } from "date-fns";
 
 import AppLayout from "@/components/AppLayout";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { Button } from "@/components/ui/button";
+import { Button, buttonVariants } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { ArrowLeft, MessageSquare, ArrowUpRight, ArrowUp, MoreHorizontal, ShieldAlert, Flag, VolumeX, Info, MinusCircle, Link as LinkIcon, QrCode, Calendar, Badge, User as UserIcon, Volume2, BarChart3, RefreshCw } from "lucide-react";
@@ -584,7 +584,7 @@ export default function UserProfilePage() {
     const getMessageButton = () => {
         if (!conversation) {
             return (
-                <Button onClick={handleStartConversation} variant="secondary" className="flex-1 font-bold rounded-none">
+                <Button onClick={handleStartConversation} variant="secondary" className="flex-1 font-bold rounded-[5px]">
                     Message
                 </Button>
             );
@@ -592,7 +592,7 @@ export default function UserProfilePage() {
 
         if (conversation.status === 'pending') {
             return (
-                <Button variant="secondary" className="flex-1 font-bold rounded-none" disabled>
+                <Button variant="secondary" className="flex-1 font-bold rounded-[5px]" disabled>
                     Requested
                 </Button>
             );
@@ -600,7 +600,7 @@ export default function UserProfilePage() {
 
         // status === 'accepted'
         return (
-            <Button onClick={handleStartConversation} variant="secondary" className="flex-1 font-bold rounded-none">
+            <Button onClick={handleStartConversation} variant="secondary" className="flex-1 font-bold rounded-[5px]">
                 Message
             </Button>
         );
@@ -708,7 +708,7 @@ export default function UserProfilePage() {
                                 </div>
                                 
                                 <div className="mb-4 flex items-center space-x-2">
-                                    <Button onClick={handleUpvoteUser} variant={hasUpvotedUser ? "default" : "secondary"} className="flex-1 font-bold rounded-none">
+                                    <Button onClick={handleUpvoteUser} variant={hasUpvotedUser ? "default" : "secondary"} className="flex-1 font-bold rounded-[5px]">
                                         {hasUpvotedUser ? "Upvoted" : "Upvote"}
                                     </Button>
                                     {getMessageButton()}
