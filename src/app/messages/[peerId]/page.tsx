@@ -1,5 +1,4 @@
 
-
 "use client";
 
 import { useParams, useRouter } from 'next/navigation';
@@ -158,7 +157,7 @@ function MessageBubble({ message, isOwnMessage, conversation, onSetReply, onForw
     const isLinkShare = !!message.linkMetadata;
     
     const bubbleContent = (
-        <div className="w-64 space-y-2 break-words">
+        <div className="space-y-2 break-words">
             {message.isForwarded && (
                 <div className="flex items-center gap-1 text-xs opacity-70 mb-1">
                     <Forward className="h-3 w-3" />
@@ -180,10 +179,10 @@ function MessageBubble({ message, isOwnMessage, conversation, onSetReply, onForw
                 <PostPreviewCard postId={message.postId} />
             ) : isLinkShare && message.linkMetadata ? (
                 <>
-                  <LinkPreviewCard metadata={message.linkMetadata} />
-                   {message.text && (
+                  {message.text && (
                         <p className="text-sm whitespace-pre-wrap break-words pt-2">{message.text}</p>
                     )}
+                    <LinkPreviewCard metadata={message.linkMetadata} />
                 </>
             ) : (
                 message.text && (
@@ -211,9 +210,10 @@ function MessageBubble({ message, isOwnMessage, conversation, onSetReply, onForw
                     <SheetTrigger asChild>
                          <div
                           className={cn(
-                            "max-w-fit rounded-2xl px-3 py-2 cursor-pointer break-words",
+                            "rounded-2xl px-3 py-2 cursor-pointer break-words",
                             !isOwnMessage && "bg-secondary rounded-bl-none",
-                            isOwnMessage && "bg-primary text-primary-foreground rounded-br-none",
+                            isOwnMessage && !isLinkShare && "bg-primary text-primary-foreground rounded-br-none",
+                            isOwnMessage && isLinkShare && "bg-secondary text-foreground rounded-br-none"
                           )}
                         >
                            {bubbleContent}
@@ -724,6 +724,7 @@ export default function ChatPage() {
     
 
     
+
 
 
 
