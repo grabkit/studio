@@ -459,9 +459,15 @@ function MessageInput({ conversationId, conversation, replyingTo, onCancelReply 
         const newMessage: Partial<Message> = {
             id: messageRef.id,
             senderId: user.uid,
-            text: values.text,
-            linkMetadata: values.linkMetadata,
         };
+        
+        // Clean up undefined values before sending to Firestore
+        if (values.text) {
+            newMessage.text = values.text;
+        }
+        if (values.linkMetadata) {
+            newMessage.linkMetadata = values.linkMetadata;
+        }
 
         if (replyingTo) {
             (newMessage as any).replyToMessageId = replyingTo.id;
@@ -688,3 +694,4 @@ export default function ChatPage() {
     
 
     
+
