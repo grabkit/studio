@@ -60,7 +60,7 @@ function PostPreviewCard({ postId }: { postId: string }) {
     }
     
     return (
-        <div className="block border rounded-lg overflow-hidden bg-secondary hover:bg-secondary/80 transition-colors w-full">
+        <div className="block border rounded-lg overflow-hidden bg-secondary/80 w-full">
             <div className="p-3">
                 <div className="flex items-center gap-2 mb-2">
                     <Avatar className="h-6 w-6">
@@ -155,7 +155,6 @@ function MessageBubble({ message, isOwnMessage, conversation, onSetReply, onForw
 
     const isPostShare = !!message.postId;
     const isLinkShare = !!message.linkMetadata;
-    const hasSpecialContent = isPostShare || isLinkShare || !!message.replyToMessageText;
     
     const bubbleContent = (
          <>
@@ -169,7 +168,9 @@ function MessageBubble({ message, isOwnMessage, conversation, onSetReply, onForw
             {message.replyToMessageText && (
                 <div className={cn(
                     "p-2 rounded-lg mb-1 mx-2 mt-1 w-auto",
-                     isOwnMessage ? "bg-blue-400" : "bg-gray-200 dark:bg-gray-700"
+                    !isOwnMessage ? "bg-gray-200 dark:bg-gray-700" :
+                    isLinkShare ? "bg-blue-400" :
+                    "bg-blue-400"
                 )}>
                     <p className="text-xs font-semibold truncate text-primary">{formatUserId(message.replyToMessageId === message.senderId ? message.senderId : undefined)}</p>
                     <p className="text-sm opacity-80 line-clamp-2">{message.replyToMessageText}</p>
@@ -208,7 +209,10 @@ function MessageBubble({ message, isOwnMessage, conversation, onSetReply, onForw
              )}>
                 <div className={cn(
                     "flex flex-col rounded-2xl",
-                    isOwnMessage ? "bg-blue-500 text-white rounded-br-none" : "bg-secondary text-foreground rounded-bl-none",
+                    isOwnMessage ? 
+                        (isLinkShare ? "bg-blue-500 text-white" : (isPostShare ? "bg-secondary text-foreground" : "bg-blue-500 text-white")) :
+                        "bg-secondary text-foreground",
+                    isOwnMessage ? "rounded-br-none" : "rounded-bl-none",
                     isPostShare || isLinkShare ? "w-64" : "max-w-[80%]",
                 )}>
                     <SheetTrigger asChild>
