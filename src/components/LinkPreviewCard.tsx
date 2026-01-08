@@ -16,7 +16,7 @@ export function LinkPreviewCard({ metadata }: { metadata: LinkMetadata }) {
     return (
         <div className="block border rounded-xl overflow-hidden hover:bg-secondary/50 transition-colors">
             {metadata.imageUrl && (
-                <div className="relative aspect-video bg-secondary">
+                <div className="relative h-32 bg-secondary">
                     <Image
                         src={metadata.imageUrl}
                         alt={metadata.title || 'Link preview'}
