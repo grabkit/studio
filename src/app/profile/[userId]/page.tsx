@@ -606,7 +606,7 @@ export default function UserProfilePage() {
                 onTouchEnd={handleTouchEnd}
             >
                 <Sheet open={isMoreOptionsSheetOpen} onOpenChange={setIsMoreOptionsSheetOpen}>
-                    <div className="flex items-center justify-between h-14 px-4 bg-background border-b">
+                    <div className="flex items-center justify-between h-14 px-4 bg-background">
                         <Button variant="ghost" size="icon" onClick={handleBackNavigation}>
                             <ArrowLeft className="h-6 w-6" />
                         </Button>
@@ -702,7 +702,7 @@ export default function UserProfilePage() {
                         </div>
 
                         <Tabs defaultValue="posts" className="w-full">
-                           <div className="sticky top-0 bg-background z-10 border-b">
+                           <div className="sticky top-0 bg-background z-10">
                                 <TabsList variant="underline" className="grid w-full grid-cols-2">
                                     <TabsTrigger value="posts" variant="profile" className="font-semibold">Posts</TabsTrigger>
                                     <TabsTrigger value="replies" variant="profile" className="font-semibold">Replies</TabsTrigger>
@@ -804,3 +804,5 @@ export default function UserProfilePage() {
         </AppLayout>
     );
 }
+
+    
