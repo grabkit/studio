@@ -187,7 +187,7 @@ function MessageBubble({ message, isOwnMessage, conversation, onSetReply, onForw
             ) : null}
 
             {message.text && (
-                 <p className="max-w-full break-words whitespace-pre-wrap">{message.text}</p>
+                 <p className="max-w-full break-words">{message.text}</p>
             )}
 
              <p className={cn(
@@ -205,7 +205,7 @@ function MessageBubble({ message, isOwnMessage, conversation, onSetReply, onForw
             <div className={cn("flex w-full", isOwnMessage ? "justify-end" : "justify-start")}>
                 <div className={cn(
                     "flex items-end gap-2 group",
-                    isPostShare || isLinkShare ? "w-64" : "max-w-[80%]"
+                    isPostShare || isLinkShare ? 'w-64' : 'max-w-[80%]'
                 )}>
                     <SheetTrigger asChild>
                          <div
@@ -721,3 +721,4 @@ export default function ChatPage() {
     
 
     
+
