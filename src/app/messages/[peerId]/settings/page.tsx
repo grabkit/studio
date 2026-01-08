@@ -2,7 +2,7 @@
 
 "use client";
 
-import { useMemo, useState, useEffect } from 'react';
+import { useMemo, useState, useEffect, useRef } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import AppLayout from '@/components/AppLayout';
 import { useFirebase, useMemoFirebase, useCollection } from '@/firebase';
@@ -204,6 +204,7 @@ export default function ChatSettingsPage() {
     const router = useRouter();
     const { firestore, user: currentUser, userProfile: currentUserProfile, setUserProfile: setCurrentUserProfile } = useFirebase();
     const { toast } = useToast();
+    const pageRef = useRef<HTMLDivElement>(null);
 
     const peerId = params.peerId as string;
 
@@ -236,6 +237,18 @@ export default function ChatSettingsPage() {
     
     const isVoiceDisabled = useMemo(() => conversation?.voiceCallsDisabledBy?.includes(currentUser?.uid || ''), [conversation, currentUser]);
     const isVideoDisabled = useMemo(() => conversation?.videoCallsDisabledBy?.includes(currentUser?.uid || ''), [conversation, currentUser]);
+
+    const handleBackNavigation = () => {
+        if (pageRef.current) {
+            pageRef.current.classList.remove('animate-slide-in-right');
+            pageRef.current.classList.add('animate-slide-out-right');
+            setTimeout(() => {
+                router.back();
+            }, 300);
+        } else {
+            router.back();
+        }
+    };
 
     const handleToggleMute = async () => {
         if (!firestore || !currentUser || !conversation) return;
@@ -376,129 +389,131 @@ export default function ChatSettingsPage() {
     }
 
     return (
-        <AppLayout showTopBar={false}>
-            <ScrollArea className="h-full">
-                <div className="flex items-center p-2 bg-background/80 backdrop-blur-sm h-14 max-w-2xl mx-auto sm:px-4">
-                    <Button variant="ghost" size="icon" onClick={() => router.back()}>
-                        <ArrowLeft />
-                    </Button>
-                    <h2 className="text-lg font-bold mx-auto -translate-x-4">Conversation Info</h2>
-                </div>
-                <div className="px-4 pt-6 flex flex-col items-center text-center">
-                    <Link href={`/profile/${peerId}`}>
-                        <Avatar className="h-24 w-24 mb-4">
-                            <AvatarFallback className="text-4xl">{getAvatar(peerUser)}</AvatarFallback>
-                        </Avatar>
-                        <h2 className="text-2xl font-bold font-headline">{formatUserId(peerUser.id)}</h2>
-                        <p className="text-muted-foreground">{peerUser.bio || "No bio yet."}</p>
-                    </Link>
-                </div>
-                
-                 <div className="mt-8 mx-4">
-                     <Button asChild variant="ghost" className="w-full justify-start text-base h-12 px-4 gap-3">
-                        <Link href={`/profile/${peerId}`}>
-                            <UserIcon className="h-5 w-5" />
-                            View Profile
-                        </Link>
-                    </Button>
-                     <div className="flex items-center justify-between hover:bg-secondary rounded-md h-12 px-4 gap-3">
-                        <Label htmlFor="mute-notifications" className="flex items-center text-base font-normal cursor-pointer gap-3">
-                            <BellOff className="h-5 w-5" />
-                             Mute Notifications
-                        </Label>
-                        <Switch id="mute-notifications" checked={isMuted} onCheckedChange={handleToggleMute} />
-                    </div>
-                 
-                     <Sheet open={isCallControlsSheetOpen} onOpenChange={setIsCallControlsSheetOpen}>
-                        <SheetTrigger asChild>
-                           <Button variant="ghost" className="w-full justify-between text-base h-12 px-4">
-                                <div className="flex items-center gap-3">
-                                    <PhoneCall className="h-5 w-5" />
-                                    Call Controls
-                                </div>
-                                <ChevronRight className="h-5 w-5 text-muted-foreground" />
-                            </Button>
-                        </SheetTrigger>
-                        <SheetContent side="bottom" className="rounded-t-2xl">
-                             <SheetHeader>
-                                <SheetTitle>Call Controls</SheetTitle>
-                            </SheetHeader>
-                             <div className="mt-4">
-                                 <div className="flex items-center justify-between p-3">
-                                    <Label htmlFor="disable-voice" className="flex items-center gap-3 text-base font-normal">
-                                         <MicOff /> Disable Voice Calls
-                                    </Label>
-                                    <Switch id="disable-voice" checked={isVoiceDisabled} onCheckedChange={() => handleToggleCall('voice')} />
-                                </div>
-                                 <div className="flex items-center justify-between p-3">
-                                    <Label htmlFor="disable-video" className="flex items-center gap-3 text-base font-normal">
-                                         <VideoOff /> Disable Video Calls
-                                    </Label>
-                                    <Switch id="disable-video" checked={isVideoDisabled} onCheckedChange={() => handleToggleCall('video')} />
-                                </div>
-                            </div>
-                        </SheetContent>
-                    </Sheet>
-                    
-                    <Button variant="ghost" className="w-full justify-start text-base h-12 px-4 gap-3" onClick={() => setIsClearConfirmOpen(true)}>
-                        <MessageCircleX className="h-5 w-5" />
-                        Clear Chat
-                    </Button>
-
-                    <ReportDialog reportedUserId={peerUser.id} reportedUserName={formatUserId(peerUser.id)}>
-                        <Button variant="ghost" className="w-full justify-start text-base h-12 text-destructive hover:text-destructive px-4 gap-3">
-                            <Flag className="h-5 w-5" />
-                            Report
+        <div ref={pageRef} className="h-full bg-background animate-slide-in-right">
+            <AppLayout showTopBar={false}>
+                <ScrollArea className="h-full">
+                    <div className="flex items-center p-2 bg-background/80 backdrop-blur-sm h-14 max-w-2xl mx-auto sm:px-4">
+                        <Button variant="ghost" size="icon" onClick={handleBackNavigation}>
+                            <ArrowLeft />
                         </Button>
-                    </ReportDialog>
-                    <Button variant="ghost" className="w-full justify-start text-base h-12 text-destructive hover:text-destructive px-4 gap-3" onClick={() => setIsBlockConfirmOpen(true)}>
-                        <ShieldAlert className="h-5 w-5" />
-                         {isBlocked ? 'Unblock User' : 'Block User'}
-                    </Button>
-                </div>
-                 <div className="my-4">
-                    <SharedContent />
-                </div>
-            </ScrollArea>
+                        <h2 className="text-lg font-bold mx-auto -translate-x-4">Conversation Info</h2>
+                    </div>
+                    <div className="px-4 pt-6 flex flex-col items-center text-center">
+                        <Link href={`/profile/${peerId}`}>
+                            <Avatar className="h-24 w-24 mb-4">
+                                <AvatarFallback className="text-4xl">{getAvatar(peerUser)}</AvatarFallback>
+                            </Avatar>
+                            <h2 className="text-2xl font-bold font-headline">{formatUserId(peerUser.id)}</h2>
+                            <p className="text-muted-foreground">{peerUser.bio || "No bio yet."}</p>
+                        </Link>
+                    </div>
+                    
+                    <div className="mt-8 mx-4">
+                        <Button asChild variant="ghost" className="w-full justify-start text-base h-12 px-4 gap-3">
+                            <Link href={`/profile/${peerId}`}>
+                                <UserIcon className="h-5 w-5" />
+                                View Profile
+                            </Link>
+                        </Button>
+                        <div className="flex items-center justify-between hover:bg-secondary rounded-md h-12 px-4 gap-3">
+                            <Label htmlFor="mute-notifications" className="flex items-center text-base font-normal cursor-pointer gap-3">
+                                <BellOff className="h-5 w-5" />
+                                Mute Notifications
+                            </Label>
+                            <Switch id="mute-notifications" checked={isMuted} onCheckedChange={handleToggleMute} />
+                        </div>
+                    
+                        <Sheet open={isCallControlsSheetOpen} onOpenChange={setIsCallControlsSheetOpen}>
+                            <SheetTrigger asChild>
+                            <Button variant="ghost" className="w-full justify-between text-base h-12 px-4">
+                                    <div className="flex items-center gap-3">
+                                        <PhoneCall className="h-5 w-5" />
+                                        Call Controls
+                                    </div>
+                                    <ChevronRight className="h-5 w-5 text-muted-foreground" />
+                                </Button>
+                            </SheetTrigger>
+                            <SheetContent side="bottom" className="rounded-t-2xl">
+                                <SheetHeader>
+                                    <SheetTitle>Call Controls</SheetTitle>
+                                </SheetHeader>
+                                <div className="mt-4">
+                                    <div className="flex items-center justify-between p-3">
+                                        <Label htmlFor="disable-voice" className="flex items-center gap-3 text-base font-normal">
+                                            <MicOff /> Disable Voice Calls
+                                        </Label>
+                                        <Switch id="disable-voice" checked={isVoiceDisabled} onCheckedChange={() => handleToggleCall('voice')} />
+                                    </div>
+                                    <div className="flex items-center justify-between p-3">
+                                        <Label htmlFor="disable-video" className="flex items-center gap-3 text-base font-normal">
+                                            <VideoOff /> Disable Video Calls
+                                        </Label>
+                                        <Switch id="disable-video" checked={isVideoDisabled} onCheckedChange={() => handleToggleCall('video')} />
+                                    </div>
+                                </div>
+                            </SheetContent>
+                        </Sheet>
+                        
+                        <Button variant="ghost" className="w-full justify-start text-base h-12 px-4 gap-3" onClick={() => setIsClearConfirmOpen(true)}>
+                            <MessageCircleX className="h-5 w-5" />
+                            Clear Chat
+                        </Button>
 
-            <AlertDialog open={isBlockConfirmOpen} onOpenChange={setIsBlockConfirmOpen}>
-                <AlertDialogContent>
-                    <AlertDialogHeader>
-                        <AlertDialogTitle>{isBlocked ? 'Unblock' : 'Block'} {formatUserId(peerUser.id)}?</AlertDialogTitle>
-                        <AlertDialogDescription>
-                           {isBlocked 
-                             ? "You will now be able to see this user's content and they will be able to message and call you."
-                             : "Blocked users will not be able to call you or send you messages. They will not be notified that you've blocked them."
-                           }
-                        </AlertDialogDescription>
-                    </AlertDialogHeader>
-                    <AlertDialogFooter>
-                        <AlertDialogCancel>Cancel</AlertDialogCancel>
-                        <AlertDialogAction onClick={handleBlock}>{isBlocked ? 'Unblock' : 'Block'}</AlertDialogAction>
-                    </AlertDialogFooter>
-                </AlertDialogContent>
-            </AlertDialog>
-            
-            <AlertDialog open={isClearConfirmOpen} onOpenChange={setIsClearConfirmOpen}>
-                <AlertDialogContent>
-                    <AlertDialogHeader>
-                        <AlertDialogTitle>Clear this chat?</AlertDialogTitle>
-                        <AlertDialogDescription>
-                           This will permanently delete all messages in this conversation on your device. This action cannot be undone.
-                        </AlertDialogDescription>
-                    </AlertDialogHeader>
-                    <AlertDialogFooter>
-                        <AlertDialogCancel>Cancel</AlertDialogCancel>
-                        <AlertDialogAction onClick={handleClearChat}>Clear Chat</AlertDialogAction>
-                    </AlertDialogFooter>
-                </AlertDialogContent>
-            </AlertDialog>
-             {peerUser && <AboutProfileSheet user={peerUser} isOpen={isAboutSheetOpen} onOpenChange={setIsAboutSheetOpen} />}
-            <QrCodeDialog
-                isOpen={isQrDialogOpen}
-                onOpenChange={setIsQrDialogOpen}
-                user={peerUser}
-            />
-        </AppLayout>
+                        <ReportDialog reportedUserId={peerUser.id} reportedUserName={formatUserId(peerUser.id)}>
+                            <Button variant="ghost" className="w-full justify-start text-base h-12 text-destructive hover:text-destructive px-4 gap-3">
+                                <Flag className="h-5 w-5" />
+                                Report
+                            </Button>
+                        </ReportDialog>
+                        <Button variant="ghost" className="w-full justify-start text-base h-12 text-destructive hover:text-destructive px-4 gap-3" onClick={() => setIsBlockConfirmOpen(true)}>
+                            <ShieldAlert className="h-5 w-5" />
+                            {isBlocked ? 'Unblock User' : 'Block User'}
+                        </Button>
+                    </div>
+                    <div className="my-4">
+                        <SharedContent />
+                    </div>
+                </ScrollArea>
+
+                <AlertDialog open={isBlockConfirmOpen} onOpenChange={setIsBlockConfirmOpen}>
+                    <AlertDialogContent>
+                        <AlertDialogHeader>
+                            <AlertDialogTitle>{isBlocked ? 'Unblock' : 'Block'} {formatUserId(peerUser.id)}?</AlertDialogTitle>
+                            <AlertDialogDescription>
+                            {isBlocked 
+                                ? "You will now be able to see this user's content and they will be able to message and call you."
+                                : "Blocked users will not be able to call you or send you messages. They will not be notified that you've blocked them."
+                            }
+                            </AlertDialogDescription>
+                        </AlertDialogHeader>
+                        <AlertDialogFooter>
+                            <AlertDialogCancel>Cancel</AlertDialogCancel>
+                            <AlertDialogAction onClick={handleBlock}>{isBlocked ? 'Unblock' : 'Block'}</AlertDialogAction>
+                        </AlertDialogFooter>
+                    </AlertDialogContent>
+                </AlertDialog>
+                
+                <AlertDialog open={isClearConfirmOpen} onOpenChange={setIsClearConfirmOpen}>
+                    <AlertDialogContent>
+                        <AlertDialogHeader>
+                            <AlertDialogTitle>Clear this chat?</AlertDialogTitle>
+                            <AlertDialogDescription>
+                            This will permanently delete all messages in this conversation on your device. This action cannot be undone.
+                            </AlertDialogDescription>
+                        </AlertDialogHeader>
+                        <AlertDialogFooter>
+                            <AlertDialogCancel>Cancel</AlertDialogCancel>
+                            <AlertDialogAction onClick={handleClearChat}>Clear Chat</AlertDialogAction>
+                        </AlertDialogFooter>
+                    </AlertDialogContent>
+                </AlertDialog>
+                {peerUser && <AboutProfileSheet user={peerUser} isOpen={isAboutSheetOpen} onOpenChange={setIsAboutSheetOpen} />}
+                <QrCodeDialog
+                    isOpen={isQrDialogOpen}
+                    onOpenChange={setIsQrDialogOpen}
+                    user={peerUser}
+                />
+            </AppLayout>
+        </div>
     );
 }
