@@ -155,12 +155,10 @@ function MessageBubble({ message, isOwnMessage, conversation, onSetReply, onForw
 
     const isPostShare = !!message.postId;
     const isLinkShare = !!message.linkMetadata;
+    const hasSpecialContent = isPostShare || isLinkShare || !!message.replyToMessageText;
     
     const bubbleContent = (
-         <div className={cn(
-            "flex flex-col",
-            isOwnMessage ? "items-end" : "items-start"
-         )}>
+         <div className={cn("flex flex-col w-full", isOwnMessage ? "items-end" : "items-start")}>
             {message.isForwarded && (
                 <div className="flex items-center gap-1.5 text-xs opacity-70 mb-1">
                     <Forward className="h-3 w-3" />
@@ -170,32 +168,31 @@ function MessageBubble({ message, isOwnMessage, conversation, onSetReply, onForw
 
             {message.replyToMessageText && (
                 <div className={cn(
-                    "p-2 rounded-md mb-1",
-                    isOwnMessage ? "bg-black/10" : "bg-black/5"
+                    "p-2 rounded-lg mb-1 w-full",
+                    isOwnMessage ? "bg-blue-200/60 dark:bg-blue-900/40" : "bg-black/5 dark:bg-white/5"
                 )}>
-                    <p className="text-xs font-semibold truncate">{formatUserId(message.replyToMessageId === message.senderId ? message.senderId : undefined)}</p>
-                    <p className="text-xs opacity-80 line-clamp-2">{message.replyToMessageText}</p>
+                    <p className="text-xs font-semibold truncate text-primary">{formatUserId(message.replyToMessageId === message.senderId ? message.senderId : undefined)}</p>
+                    <p className="text-sm opacity-80 line-clamp-2">{message.replyToMessageText}</p>
                 </div>
             )}
 
             {isPostShare && message.postId ? (
-                <div className="w-64">
+                <div className="w-full my-1">
                     <PostPreviewCard postId={message.postId} />
                 </div>
             ) : isLinkShare && message.linkMetadata ? (
-                <div className="w-64">
+                <div className="w-full my-1">
                     <LinkPreviewCard metadata={message.linkMetadata} />
                 </div>
             ) : null}
 
             {message.text && (
-                 <p className="whitespace-pre-wrap max-w-full">{message.text}</p>
+                 <p className="max-w-full break-words whitespace-pre-wrap">{message.text}</p>
             )}
 
              <p className={cn(
-                "text-xs", 
-                isOwnMessage ? "text-primary-foreground/70" : "text-muted-foreground",
-                (isLinkShare || isPostShare || message.replyToMessageText) && "mt-1"
+                "text-[11px] mt-1", 
+                isOwnMessage ? "text-white/70" : "text-muted-foreground"
              )}>
                 {message.timestamp?.toDate ? formatMessageTimestamp(message.timestamp.toDate()) : '...'}
              </p>
@@ -205,20 +202,18 @@ function MessageBubble({ message, isOwnMessage, conversation, onSetReply, onForw
 
     return (
         <Sheet open={isSheetOpen} onOpenChange={setIsSheetOpen}>
-            <div className={cn(
-                "flex items-end gap-2 group",
-                isOwnMessage ? "justify-end" : "justify-start"
-            )}>
-                 <div className={cn(
-                    "flex items-center",
-                    isOwnMessage ? "flex-row-reverse" : "flex-row"
+            <div className={cn("flex w-full", isOwnMessage ? "justify-end" : "justify-start")}>
+                <div className={cn(
+                    "flex items-end gap-2 group max-w-[80%]",
+                    (isPostShare || isLinkShare) && "max-w-[85%] sm:max-w-[65%]"
                 )}>
                     <SheetTrigger asChild>
                          <div
                           className={cn(
-                            "rounded-2xl px-3 py-1.5 cursor-pointer max-w-[80%]",
-                            isOwnMessage ? "bg-primary text-primary-foreground rounded-br-none" : "bg-secondary rounded-bl-none",
-                            isLinkShare && isOwnMessage && "bg-secondary text-secondary-foreground"
+                            "rounded-2xl px-3 py-1.5 cursor-pointer flex flex-col",
+                            isOwnMessage 
+                                ? "bg-blue-500 text-white rounded-br-md" 
+                                : "bg-gray-200 dark:bg-neutral-700 text-black dark:text-white rounded-bl-md"
                           )}
                         >
                            {bubbleContent}
@@ -387,7 +382,7 @@ function ChatMessages({ conversationId, conversation, onSetReply, onForward }: {
 
     return (
         <div className="p-4">
-            <div className="space-y-4">
+            <div className="space-y-2">
                 {messagesWithSeparators?.map((item, index) => {
                     if (item.type === 'separator') {
                         return (
@@ -528,11 +523,11 @@ function MessageInput({ conversationId, conversation, replyingTo, onCancelReply 
     return (
          <div className={cn("fixed bottom-0 left-0 right-0 max-w-2xl mx-auto bg-background border-t", replyingTo ? "pb-0" : "pb-safe")}>
             {replyingTo && (
-                <div className="p-2 border-b border-dashed bg-secondary/50 text-sm">
-                    <div className="flex justify-between items-center">
-                        <div>
+                <div className="p-2 border-b bg-secondary/50 text-sm">
+                    <div className="flex justify-between items-center px-2">
+                        <div className="flex-1 overflow-hidden">
                             <p className="font-semibold text-primary">Replying to {replyingTo.senderId === user?.uid ? 'yourself' : formatUserId(replyingTo.senderId)}</p>
-                            <p className="text-muted-foreground truncate max-w-xs">{replyingTo.text}</p>
+                            <p className="text-muted-foreground truncate">{replyingTo.text}</p>
                         </div>
                         <Button variant="ghost" size="icon" onClick={onCancelReply}>
                             <X className="h-4 w-4" />
@@ -557,26 +552,29 @@ function MessageInput({ conversationId, conversation, replyingTo, onCancelReply 
             )}
             <div className="p-2">
                 <Form {...form}>
-                    <form onSubmit={form.handleSubmit(onSubmit)} className="flex items-center space-x-2">
+                    <form onSubmit={form.handleSubmit(onSubmit)} className="flex items-end space-x-2">
                         <FormField
                             control={form.control}
                             name="text"
                             render={({ field }) => (
                             <FormItem className="flex-1">
                                 <FormControl>
-                                <Textarea
-                                    placeholder="Start a new message..."
-                                    className="text-base border-none focus-visible:ring-0 shadow-none p-2"
-                                    rows={1}
-                                    {...field}
-                                    onPaste={handlePaste}
-                                    onKeyDown={(e) => {
-                                        if (e.key === 'Enter' && !e.shiftKey) {
-                                            e.preventDefault();
-                                            form.handleSubmit(onSubmit)();
-                                        }
-                                    }}
-                                />
+                                <div className="relative flex items-center">
+                                    <Textarea
+                                        placeholder="Message"
+                                        className="text-base border-gray-300 dark:border-neutral-700 rounded-2xl focus-visible:ring-1 focus-visible:ring-primary shadow-none pr-10 bg-gray-100 dark:bg-neutral-800"
+                                        rows={1}
+                                        maxRows={5}
+                                        {...field}
+                                        onPaste={handlePaste}
+                                        onKeyDown={(e) => {
+                                            if (e.key === 'Enter' && !e.shiftKey) {
+                                                e.preventDefault();
+                                                form.handleSubmit(onSubmit)();
+                                            }
+                                        }}
+                                    />
+                                </div>
                                 </FormControl>
                                 <FormMessage />
                             </FormItem>
@@ -586,9 +584,9 @@ function MessageInput({ conversationId, conversation, replyingTo, onCancelReply 
                             type="submit"
                             size="icon"
                             disabled={form.formState.isSubmitting || (!form.getValues('text') && !form.getValues('linkMetadata'))}
-                            className="rounded-full"
+                            className="rounded-full shrink-0 h-9 w-9"
                         >
-                            <Send className="h-5 w-5" />
+                            <Send className="h-4 w-4" />
                         </Button>
                     </form>
                 </Form>
@@ -675,6 +673,7 @@ export default function ChatPage() {
                 initial={{ scale: 0.98, opacity: 0 }}
                 animate={{ scale: 1, opacity: 1 }}
                 transition={{ duration: 0.3 }}
+                 className="flex flex-col h-screen"
             >
                 <ChatHeader 
                     peerId={peerId} 
@@ -683,7 +682,7 @@ export default function ChatPage() {
                     onStartVideoCall={handleStartVideoCall} 
                     conversation={conversation} 
                 />
-                <div className="overflow-y-auto h-full pt-14 pb-40">
+                <div className="flex-1 overflow-y-auto pt-14 pb-40">
                     {isLoading ? (
                         <div className="space-y-4 p-4">
                             <Skeleton className="h-10 w-3/5" />
