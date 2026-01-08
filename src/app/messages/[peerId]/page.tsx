@@ -169,7 +169,7 @@ function MessageBubble({ message, isOwnMessage, conversation, onSetReply, onForw
             {message.replyToMessageText && (
                 <div className={cn(
                     "p-2 rounded-lg mb-1 mx-2 mt-1 w-auto",
-                    isOwnMessage ? "bg-black/10 dark:bg-white/10" : "bg-gray-200 dark:bg-gray-700"
+                    isOwnMessage ? "bg-blue-400" : "bg-gray-200 dark:bg-gray-700"
                 )}>
                     <p className="text-xs font-semibold truncate text-primary">{formatUserId(message.replyToMessageId === message.senderId ? message.senderId : undefined)}</p>
                     <p className="text-sm opacity-80 line-clamp-2">{message.replyToMessageText}</p>
@@ -210,9 +210,9 @@ function MessageBubble({ message, isOwnMessage, conversation, onSetReply, onForw
                     "flex flex-col rounded-2xl",
                     isOwnMessage ? "rounded-br-none" : "rounded-bl-none",
                     isOwnMessage
-                        ? (isPostShare ? "bg-secondary text-secondary-foreground" : "bg-blue-500 text-white")
+                        ? "bg-blue-500 text-white"
                         : "bg-gray-200 text-gray-900 dark:bg-gray-700 dark:text-gray-50",
-                    isPostShare || isLinkShare ? "w-64" : "max-w-[80%]",
+                    isPostShare || isLinkShare ? 'w-64' : 'max-w-[80%]',
                 )}>
                     <SheetTrigger asChild>
                          <div>
@@ -716,3 +716,6 @@ export default function ChatPage() {
 
     
 
+
+
+    
