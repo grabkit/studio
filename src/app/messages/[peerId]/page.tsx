@@ -68,7 +68,7 @@ function PostPreviewCard({ postId }: { postId: string }) {
                     </Avatar>
                     <span className="text-xs font-semibold">{formatUserId(post.authorId)}</span>
                 </div>
-                <p className="text-sm line-clamp-3">{post.content}</p>
+                <p className="text-sm line-clamp-3 text-foreground">{post.content}</p>
 
                 {post.type === 'poll' && post.pollOptions && (
                     <div className="mt-2 space-y-1.5">
@@ -169,7 +169,7 @@ function MessageBubble({ message, isOwnMessage, conversation, onSetReply, onForw
             {message.replyToMessageText && (
                 <div className={cn(
                     "p-2 rounded-lg mb-1 mx-2 mt-1 w-auto",
-                    isOwnMessage ? "bg-blue-400" : "bg-gray-200 dark:bg-gray-700"
+                     isOwnMessage ? "bg-blue-400" : "bg-gray-200 dark:bg-gray-700"
                 )}>
                     <p className="text-xs font-semibold truncate text-primary">{formatUserId(message.replyToMessageId === message.senderId ? message.senderId : undefined)}</p>
                     <p className="text-sm opacity-80 line-clamp-2">{message.replyToMessageText}</p>
@@ -208,9 +208,8 @@ function MessageBubble({ message, isOwnMessage, conversation, onSetReply, onForw
              )}>
                 <div className={cn(
                     "flex flex-col rounded-2xl",
-                    isOwnMessage ? "rounded-br-none bg-blue-500 text-white" : "rounded-bl-none bg-secondary text-foreground",
-                    isPostShare ? "w-64" : "max-w-[80%]",
-                    isLinkShare && 'w-64',
+                    isOwnMessage ? "bg-blue-500 text-white rounded-br-none" : "bg-secondary text-foreground rounded-bl-none",
+                    isPostShare || isLinkShare ? "w-64" : "max-w-[80%]",
                 )}>
                     <SheetTrigger asChild>
                          <div>
@@ -715,6 +714,8 @@ export default function ChatPage() {
     
 
 
+
+    
 
     
 
