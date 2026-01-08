@@ -155,12 +155,53 @@ function MessageBubble({ message, isOwnMessage, conversation, onSetReply, onForw
 
     const isPostShare = !!message.postId;
     const isLinkShare = !!message.linkMetadata;
+    
+    const bubbleContent = (
+        <div>
+            {message.isForwarded && (
+                <div className="flex items-center gap-1 text-xs opacity-70 mb-1">
+                    <Forward className="h-3 w-3" />
+                    <span>Forwarded</span>
+                </div>
+            )}
+
+            {message.replyToMessageText && (
+                <div className={cn(
+                    "p-2 rounded-md mb-2",
+                    isOwnMessage ? "bg-black/10" : "bg-black/5"
+                )}>
+                    <p className="text-xs font-semibold truncate">{formatUserId(message.replyToMessageId === message.senderId ? message.senderId : undefined)}</p>
+                    <p className="text-xs opacity-80 whitespace-pre-wrap break-words">{message.replyToMessageText}</p>
+                </div>
+            )}
+
+            {message.text && !isLinkShare && <p className="text-sm whitespace-pre-wrap">{message.text}</p>}
+
+            {isPostShare && message.postId ? (
+                <div className="w-64">
+                    <PostPreviewCard postId={message.postId} />
+                </div>
+            ) : isLinkShare && message.linkMetadata ? (
+                <div className='space-y-2 w-64'>
+                    {message.text && <p className="text-sm whitespace-pre-wrap">{message.text}</p>}
+                    <LinkPreviewCard metadata={message.linkMetadata} />
+                </div>
+            ) : null}
+
+            {message.timestamp?.toDate && !isPostShare && !isLinkShare && (
+                <p className={cn("text-xs mt-1 text-right", isOwnMessage ? "text-primary-foreground/70" : "text-muted-foreground")}>
+                    {formatMessageTimestamp(message.timestamp.toDate())}
+                </p>
+            )}
+        </div>
+    );
+
 
     return (
         <Sheet open={isSheetOpen} onOpenChange={setIsSheetOpen}>
             <div className={cn("flex items-end gap-2 group", isOwnMessage ? "justify-end" : "justify-start")}>
                  <div className={cn(
-                    "flex items-center max-w-[70%]",
+                    "flex items-center max-w-[80%]",
                     isOwnMessage ? "flex-row-reverse" : "flex-row"
                 )}>
                     <SheetTrigger asChild>
@@ -169,46 +210,10 @@ function MessageBubble({ message, isOwnMessage, conversation, onSetReply, onForw
                             "max-w-fit rounded-2xl px-3 py-2 cursor-pointer",
                             !isOwnMessage && "bg-secondary rounded-bl-none",
                             isOwnMessage && "bg-primary text-primary-foreground rounded-br-none",
-                            (isPostShare || isLinkShare) && "p-2 bg-transparent"
+                             (isPostShare || isLinkShare) && "p-0 bg-transparent",
                           )}
                         >
-                            
-                            {message.isForwarded && (
-                                <div className="flex items-center gap-1 text-xs opacity-70 mb-1">
-                                    <Forward className="h-3 w-3" />
-                                    <span>Forwarded</span>
-                                </div>
-                            )}
-
-                            {isPostShare && message.postId ? (
-                                <div>
-                                    <PostPreviewCard postId={message.postId} />
-                                </div>
-                            ) : isLinkShare && message.linkMetadata ? (
-                                <div className='space-y-2'>
-                                    {message.text && <p className="text-sm whitespace-pre-wrap">{message.text}</p>}
-                                    <LinkPreviewCard metadata={message.linkMetadata} />
-                                </div>
-                            ) : (
-                                <div>
-                                    {message.replyToMessageText && (
-                                        <div className={cn(
-                                            "p-2 rounded-md mb-2",
-                                            isOwnMessage ? "bg-black/10" : "bg-black/5"
-                                        )}>
-                                            <p className="text-xs font-semibold truncate">{formatUserId(message.replyToMessageId === message.senderId ? message.senderId : undefined)}</p>
-                                            <p className="text-xs opacity-80 whitespace-pre-wrap break-words">{message.replyToMessageText}</p>
-                                        </div>
-                                    )}
-
-                                    <p className="text-sm whitespace-pre-wrap">{message.text}</p>
-                                </div>
-                            )}
-                             {message.timestamp?.toDate && !isPostShare && !isLinkShare && (
-                                <p className={cn("text-xs mt-1 text-right", isOwnMessage ? "text-primary-foreground/70" : "text-muted-foreground")}>
-                                    {formatMessageTimestamp(message.timestamp.toDate())}
-                                </p>
-                            )}
+                           {bubbleContent}
                         </div>
                     </SheetTrigger>
                 </div>
@@ -716,6 +721,7 @@ export default function ChatPage() {
     
 
     
+
 
 
 
