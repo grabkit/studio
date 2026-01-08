@@ -178,7 +178,7 @@ export default function UserProfilePage() {
     const handleTouchMove = (e: TouchEvent) => {
         const touchY = e.targetTouches[0].clientY;
         const pullDistance = touchY - touchStartRef.current;
-        if (containerRef.current && containerRef.current.scrollTop === 0 && pullDistance > 0 && !isRefreshing) {
+        if (window.scrollY === 0 && pullDistance > 0 && !isRefreshing) {
             e.preventDefault();
             const newPullPosition = Math.min(pullDistance, 120);
             if (pullPosition <= 70 && newPullPosition > 70) {
@@ -507,7 +507,7 @@ export default function UserProfilePage() {
     if (userLoading || (currentUser && userId === currentUser.uid)) {
         return (
             <AppLayout showTopBar={false}>
-                 <div className="fixed top-0 left-0 right-0 z-20 flex items-center justify-between h-14 px-4 bg-background">
+                 <div className="flex items-center justify-between h-14 px-4 bg-background">
                     <Button variant="ghost" size="icon" onClick={() => router.back()}>
                         <ArrowLeft className="h-6 w-6" />
                     </Button>
@@ -554,7 +554,7 @@ export default function UserProfilePage() {
     if (!user) {
         return (
              <AppLayout showTopBar={false}>
-                <div className="fixed top-0 left-0 right-0 z-20 flex items-center justify-between h-14 px-4 bg-background">
+                <div className="flex items-center justify-between h-14 px-4 bg-background">
                     <Button variant="ghost" size="icon" onClick={() => router.back()}>
                         <ArrowLeft className="h-6 w-6" />
                     </Button>
@@ -599,8 +599,7 @@ export default function UserProfilePage() {
 
     return (
         <AppLayout showTopBar={false} showBottomNav={true}>
-            <div 
-                className="h-full overflow-y-auto"
+            <div
                 ref={containerRef}
                 onTouchStart={handleTouchStart}
                 onTouchMove={handleTouchMove}
@@ -622,7 +621,7 @@ export default function UserProfilePage() {
                     </div>
 
                     <div 
-                        className="absolute top-14 left-0 right-0 flex justify-center items-center h-12 text-muted-foreground transition-opacity duration-300 z-10 pointer-events-none"
+                        className="absolute top-0 left-0 right-0 flex justify-center items-center h-12 text-muted-foreground transition-opacity duration-300 z-10 pointer-events-none"
                         style={{ opacity: isRefreshing ? 1 : pullPosition / 70 }}
                     >
                         <div style={{ transform: `rotate(${isRefreshing ? 0 : pullPosition * 3}deg)` }}>
@@ -703,7 +702,7 @@ export default function UserProfilePage() {
                         </div>
 
                         <Tabs defaultValue="posts" className="w-full">
-                           <div className="sticky top-0 bg-background z-10">
+                           <div className="sticky top-0 bg-background z-10 border-b">
                                 <TabsList variant="underline" className="grid w-full grid-cols-2">
                                     <TabsTrigger value="posts" variant="profile" className="font-semibold">Posts</TabsTrigger>
                                     <TabsTrigger value="replies" variant="profile" className="font-semibold">Replies</TabsTrigger>
