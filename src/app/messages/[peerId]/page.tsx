@@ -1,4 +1,5 @@
 
+
 "use client";
 
 import { useParams, useRouter } from 'next/navigation';
@@ -169,7 +170,6 @@ function MessageBubble({ message, isOwnMessage, conversation, onSetReply, onForw
                 <div className={cn(
                     "p-2 rounded-lg mb-1 mx-2 mt-1 w-auto",
                     !isOwnMessage ? "bg-gray-200 dark:bg-gray-700" :
-                    isLinkShare ? "bg-blue-400" :
                     "bg-blue-400"
                 )}>
                     <p className="text-xs font-semibold truncate text-primary">{formatUserId(message.replyToMessageId === message.senderId ? message.senderId : undefined)}</p>
@@ -209,9 +209,7 @@ function MessageBubble({ message, isOwnMessage, conversation, onSetReply, onForw
              )}>
                 <div className={cn(
                     "flex flex-col rounded-2xl",
-                    isOwnMessage ? 
-                        (isLinkShare ? "bg-blue-500 text-white" : (isPostShare ? "bg-secondary text-foreground" : "bg-blue-500 text-white")) :
-                        "bg-secondary text-foreground",
+                    isOwnMessage ? "bg-blue-500 text-white" : "bg-secondary text-foreground",
                     isOwnMessage ? "rounded-br-none" : "rounded-bl-none",
                     isPostShare || isLinkShare ? "w-64" : "max-w-[80%]",
                 )}>
@@ -724,3 +722,4 @@ export default function ChatPage() {
     
 
     
+
