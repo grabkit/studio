@@ -10,7 +10,7 @@ import { useRef } from "react";
 
 function SettingsItem({ href, label, icon: Icon }: { href: string, label: string, icon: React.ElementType }) {
     return (
-        <Link href={href} className="flex items-center justify-between p-4 transition-colors hover:bg-accent cursor-pointer">
+        <Link href={href} className="flex items-center justify-between px-4 py-3 transition-colors hover:bg-accent cursor-pointer">
             <div className="flex items-center space-x-4">
                 <Icon className="h-5 w-5 text-muted-foreground" />
                 <span className="text-base">{label}</span>
