@@ -89,7 +89,7 @@ export default function SettingsPage() {
                     {Object.entries(settingsItems).map(([category, items]) => (
                         <div key={category} className="my-4">
                             <h3 className="px-4 py-2 text-sm font-semibold text-muted-foreground">{category}</h3>
-                            <div className="border-y divide-y">
+                            <div className="border-y">
                             {items.map(item => (
                                     <SettingsItem key={item.href} {...item} />
                                 ))}
