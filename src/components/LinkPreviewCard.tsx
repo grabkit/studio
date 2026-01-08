@@ -13,9 +13,9 @@ export function LinkPreviewCard({ metadata }: { metadata: LinkMetadata }) {
     };
 
     return (
-        <a href={metadata.url} target="_blank" rel="noopener noreferrer" className="block border rounded-xl overflow-hidden hover:bg-secondary/50 transition-colors w-64">
+        <a href={metadata.url} target="_blank" rel="noopener noreferrer" className="block mt-2">
             {metadata.imageUrl && (
-                <div className="relative h-32 bg-secondary">
+                <div className="relative h-32 bg-secondary rounded-lg overflow-hidden">
                     <Image
                         src={metadata.imageUrl}
                         alt={metadata.title || 'Link preview'}
@@ -24,9 +24,9 @@ export function LinkPreviewCard({ metadata }: { metadata: LinkMetadata }) {
                     />
                 </div>
             )}
-            <div className="p-3 bg-secondary/50">
+            <div className="pt-2">
                 <p className="text-xs text-muted-foreground uppercase tracking-wider">{getDomainName(metadata.url)}</p>
-                <p className="font-semibold text-sm truncate mt-0.5 text-foreground">{metadata.title || metadata.url}</p>
+                <p className="font-semibold text-sm truncate mt-0.5">{metadata.title || metadata.url}</p>
                 {metadata.description && (
                     <p className="text-xs text-muted-foreground mt-1 line-clamp-2">{metadata.description}</p>
                 )}

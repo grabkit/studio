@@ -1,4 +1,5 @@
 
+
 "use client";
 
 import { useParams, useRouter } from 'next/navigation';
@@ -157,7 +158,7 @@ function MessageBubble({ message, isOwnMessage, conversation, onSetReply, onForw
     const isLinkShare = !!message.linkMetadata;
     
     const bubbleContent = (
-        <div>
+        <div className="space-y-2">
             {message.isForwarded && (
                 <div className="flex items-center gap-1 text-xs opacity-70 mb-1">
                     <Forward className="h-3 w-3" />
@@ -167,7 +168,7 @@ function MessageBubble({ message, isOwnMessage, conversation, onSetReply, onForw
 
             {message.replyToMessageText && (
                 <div className={cn(
-                    "p-2 rounded-md mb-2",
+                    "p-2 rounded-md",
                     isOwnMessage ? "bg-black/10" : "bg-black/5"
                 )}>
                     <p className="text-xs font-semibold truncate">{formatUserId(message.replyToMessageId === message.senderId ? message.senderId : undefined)}</p>
@@ -175,17 +176,14 @@ function MessageBubble({ message, isOwnMessage, conversation, onSetReply, onForw
                 </div>
             )}
 
-            {message.text && !isLinkShare && <p className="text-sm whitespace-pre-wrap">{message.text}</p>}
+            {message.text && (
+                 <p className="text-sm whitespace-pre-wrap">{message.text}</p>
+            )}
 
             {isPostShare && message.postId ? (
-                <div className="w-64">
-                    <PostPreviewCard postId={message.postId} />
-                </div>
+                <PostPreviewCard postId={message.postId} />
             ) : isLinkShare && message.linkMetadata ? (
-                <div className='w-64 space-y-2'>
-                    <LinkPreviewCard metadata={message.linkMetadata} />
-                    {message.text && <p className="text-sm whitespace-pre-wrap">{message.text}</p>}
-                </div>
+                <LinkPreviewCard metadata={message.linkMetadata} />
             ) : null}
 
             {message.timestamp?.toDate && !isPostShare && !isLinkShare && (
@@ -210,7 +208,7 @@ function MessageBubble({ message, isOwnMessage, conversation, onSetReply, onForw
                             "max-w-fit rounded-2xl px-3 py-2 cursor-pointer",
                             !isOwnMessage && "bg-secondary rounded-bl-none",
                             isOwnMessage && "bg-primary text-primary-foreground rounded-br-none",
-                             (isPostShare || isLinkShare) && "p-0 bg-transparent",
+                            isPostShare && "p-0 bg-transparent"
                           )}
                         >
                            {bubbleContent}
@@ -721,10 +719,3 @@ export default function ChatPage() {
     
 
     
-
-
-
-
-
-
-
