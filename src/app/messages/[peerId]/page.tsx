@@ -158,7 +158,7 @@ function MessageBubble({ message, isOwnMessage, conversation, onSetReply, onForw
     const isLinkShare = !!message.linkMetadata;
     
     const bubbleContent = (
-        <div className="space-y-2">
+        <div className="w-64 space-y-2 break-words">
             {message.isForwarded && (
                 <div className="flex items-center gap-1 text-xs opacity-70 mb-1">
                     <Forward className="h-3 w-3" />
@@ -182,7 +182,7 @@ function MessageBubble({ message, isOwnMessage, conversation, onSetReply, onForw
                 <>
                   <LinkPreviewCard metadata={message.linkMetadata} />
                    {message.text && (
-                        <p className="text-sm whitespace-pre-wrap break-words pt-2 truncate">{message.text}</p>
+                        <p className="text-sm whitespace-pre-wrap break-words pt-2">{message.text}</p>
                     )}
                 </>
             ) : (
@@ -724,6 +724,7 @@ export default function ChatPage() {
     
 
     
+
 
 
 
