@@ -181,13 +181,13 @@ function MessageBubble({ message, isOwnMessage, conversation, onSetReply, onForw
             ) : isLinkShare && message.linkMetadata ? (
                 <>
                     {message.text && (
-                        <p className="text-sm pb-2">{message.text}</p>
+                        <p className="text-sm pb-2 whitespace-pre-wrap break-words">{message.text}</p>
                     )}
                     <LinkPreviewCard metadata={message.linkMetadata} />
                 </>
             ) : (
                 message.text && (
-                    <p className="text-sm">{message.text}</p>
+                    <p className="text-sm whitespace-pre-wrap break-words">{message.text}</p>
                 )
             )}
 
@@ -734,4 +734,5 @@ export default function ChatPage() {
     
 
     
+
 
