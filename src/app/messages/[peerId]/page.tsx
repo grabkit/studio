@@ -60,7 +60,7 @@ function PostPreviewCard({ postId }: { postId: string }) {
     }
     
     return (
-        <div className="block border rounded-lg overflow-hidden transition-colors bg-secondary/50 hover:bg-secondary/80 w-full">
+        <div className="block border rounded-lg overflow-hidden transition-colors bg-background/80 hover:bg-background w-full">
             <div className="p-3">
                 <div className="flex items-center gap-2 mb-2">
                     <Avatar className="h-6 w-6">
@@ -187,7 +187,7 @@ function MessageBubble({ message, isOwnMessage, conversation, onSetReply, onForw
             ) : null}
 
             {message.text && (
-                 <p className="px-3 py-1.5 text-base max-w-full break-words whitespace-pre-wrap">{message.text}</p>
+                 <p className="px-3 py-1.5 text-base whitespace-pre-wrap break-words max-w-full">{message.text}</p>
             )}
 
              <p className={cn(
@@ -207,9 +207,9 @@ function MessageBubble({ message, isOwnMessage, conversation, onSetReply, onForw
                 isOwnMessage ? "justify-end" : "justify-start",
             )}>
                 <div className={cn(
-                    "group flex flex-col max-w-[80%]",
+                    "group flex flex-col",
                     isOwnMessage ? "items-end" : "items-start",
-                     (isPostShare || isLinkShare) && 'w-64'
+                    isPostShare || isLinkShare ? 'w-64' : 'max-w-[80%]'
                 )}>
                     <SheetTrigger asChild>
                          <div
