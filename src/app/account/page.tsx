@@ -347,6 +347,9 @@ export default function AccountPage() {
                 <Link href="/post" className={cn(buttonVariants({ variant: "ghost", size: "icon" }))}>
                     <Plus className="h-6 w-6" />
                 </Link>
+                <h2 className="text-lg font-bold font-headline">
+                    {formatUserId(authUser?.uid)}
+                </h2>
                 <div className="flex items-center space-x-2">
                     <Link href="/account/settings" className={cn(buttonVariants({ variant: 'ghost', size: 'icon' }))}>
                     <Menu className="h-6 w-6" />
