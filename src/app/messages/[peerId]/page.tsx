@@ -179,10 +179,10 @@ function MessageBubble({ message, isOwnMessage, conversation, onSetReply, onForw
                 <PostPreviewCard postId={message.postId} />
             ) : isLinkShare && message.linkMetadata ? (
                 <>
-                    <LinkPreviewCard metadata={message.linkMetadata} />
                     {message.text && (
                         <p className="text-sm whitespace-pre-wrap break-words pt-2">{message.text}</p>
                     )}
+                    <LinkPreviewCard metadata={message.linkMetadata} />
                 </>
             ) : (
                 message.text && (
@@ -320,7 +320,6 @@ function ChatHeader({ peerId, peerUser, onStartCall, onStartVideoCall, conversat
     )
 }
 
-
 function ChatMessages({ conversationId, conversation, onSetReply, onForward }: { conversationId: string, conversation: WithId<Conversation> | null, onSetReply: (message: WithId<Message>) => void, onForward: (message: WithId<Message>) => void }) {
     const { firestore, user } = useFirebase();
     const messagesEndRef = React.useRef<HTMLDivElement | null>(null);
@@ -408,7 +407,6 @@ function ChatMessages({ conversationId, conversation, onSetReply, onForward }: {
         </div>
     )
 }
-
 
 function MessageInput({ conversationId, conversation, replyingTo, onCancelReply }: { conversationId: string, conversation: WithId<Conversation> | null, replyingTo: WithId<Message> | null, onCancelReply: () => void }) {
     const { firestore, user } = useFirebase();
@@ -595,7 +593,6 @@ function MessageInput({ conversationId, conversation, replyingTo, onCancelReply 
     )
 }
 
-
 export default function ChatPage() {
     const { firestore, user, startCall, startVideoCall } = useFirebase();
     const params = useParams();
@@ -729,5 +726,7 @@ export default function ChatPage() {
 
 
 
+
+    
 
     
