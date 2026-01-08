@@ -11,6 +11,7 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
 import React, { useMemo, useEffect, useRef, useState } from 'react';
 import { isSameDay } from 'date-fns';
+import { motion } from 'framer-motion';
 
 
 import AppLayout from '@/components/AppLayout';
@@ -662,45 +663,51 @@ export default function ChatPage() {
 
     return (
         <AppLayout showTopBar={false} showBottomNav={false}>
-            <ChatHeader 
-                peerId={peerId} 
-                peerUser={peerUser} 
-                onStartCall={handleStartCall} 
-                onStartVideoCall={handleStartVideoCall} 
-                conversation={conversation} 
-            />
-            <div className="overflow-y-auto h-full pt-14 pb-40">
-                {isLoading ? (
-                    <div className="space-y-4 p-4">
-                        <Skeleton className="h-10 w-3/5" />
-                        <Skeleton className="h-10 w-3/5 ml-auto" />
-                        <Skeleton className="h-16 w-4/5" />
-                    </div>
-                ) : (
-                    conversationId && (
-                        <ChatMessages 
-                            conversationId={conversationId} 
-                            conversation={conversation} 
-                            onSetReply={handleSetReply} 
-                            onForward={handleForward} 
-                        />
-                    )
-                )}
-            </div>
-            {conversationId && (
-                <MessageInput 
-                    conversationId={conversationId} 
+            <motion.div
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                transition={{ duration: 0.3 }}
+            >
+                <ChatHeader 
+                    peerId={peerId} 
+                    peerUser={peerUser} 
+                    onStartCall={handleStartCall} 
+                    onStartVideoCall={handleStartVideoCall} 
                     conversation={conversation} 
-                    replyingTo={replyingTo} 
-                    onCancelReply={handleCancelReply} 
                 />
-            )}
-            
-            <ForwardSheet 
-                isOpen={isForwardSheetOpen}
-                onOpenChange={setIsForwardSheetOpen}
-                message={forwardingMessage}
-            />
+                <div className="overflow-y-auto h-full pt-14 pb-40">
+                    {isLoading ? (
+                        <div className="space-y-4 p-4">
+                            <Skeleton className="h-10 w-3/5" />
+                            <Skeleton className="h-10 w-3/5 ml-auto" />
+                            <Skeleton className="h-16 w-4/5" />
+                        </div>
+                    ) : (
+                        conversationId && (
+                            <ChatMessages 
+                                conversationId={conversationId} 
+                                conversation={conversation} 
+                                onSetReply={handleSetReply} 
+                                onForward={handleForward} 
+                            />
+                        )
+                    )}
+                </div>
+                {conversationId && (
+                    <MessageInput 
+                        conversationId={conversationId} 
+                        conversation={conversation} 
+                        replyingTo={replyingTo} 
+                        onCancelReply={handleCancelReply} 
+                    />
+                )}
+                
+                <ForwardSheet 
+                    isOpen={isForwardSheetOpen}
+                    onOpenChange={setIsForwardSheetOpen}
+                    message={forwardingMessage}
+                />
+            </motion.div>
         </AppLayout>
     )
 }
@@ -709,4 +716,5 @@ export default function ChatPage() {
     
 
     
+
 
