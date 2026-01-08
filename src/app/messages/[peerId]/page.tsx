@@ -176,15 +176,20 @@ function MessageBubble({ message, isOwnMessage, conversation, onSetReply, onForw
                 </div>
             )}
 
-            {message.text && (
-                 <p className="text-sm whitespace-pre-wrap">{message.text}</p>
-            )}
-
             {isPostShare && message.postId ? (
                 <PostPreviewCard postId={message.postId} />
             ) : isLinkShare && message.linkMetadata ? (
-                <LinkPreviewCard metadata={message.linkMetadata} />
-            ) : null}
+                <>
+                  <LinkPreviewCard metadata={message.linkMetadata} />
+                  {message.text && (
+                    <p className="text-sm whitespace-pre-wrap pt-2">{message.text}</p>
+                  )}
+                </>
+            ) : (
+                message.text && (
+                    <p className="text-sm whitespace-pre-wrap">{message.text}</p>
+                )
+            )}
 
             {message.timestamp?.toDate && !isPostShare && !isLinkShare && (
                 <p className={cn("text-xs mt-1 text-right", isOwnMessage ? "text-primary-foreground/70" : "text-muted-foreground")}>
@@ -200,7 +205,7 @@ function MessageBubble({ message, isOwnMessage, conversation, onSetReply, onForw
             <div className={cn("flex items-end gap-2 group", isOwnMessage ? "justify-end" : "justify-start")}>
                  <div className={cn(
                     "flex items-center",
-                    isLinkShare ? "max-w-xs" : "max-w-[80%]",
+                    isLinkShare ? "w-64" : "max-w-[80%]",
                     isOwnMessage ? "flex-row-reverse" : "flex-row"
                 )}>
                     <SheetTrigger asChild>
@@ -209,7 +214,7 @@ function MessageBubble({ message, isOwnMessage, conversation, onSetReply, onForw
                             "max-w-fit rounded-2xl px-3 py-2 cursor-pointer",
                             !isOwnMessage && "bg-secondary rounded-bl-none",
                             isOwnMessage && "bg-primary text-primary-foreground rounded-br-none",
-                            isPostShare && "p-0 bg-transparent"
+                             isPostShare && "p-0 bg-transparent"
                           )}
                         >
                            {bubbleContent}
@@ -720,3 +725,4 @@ export default function ChatPage() {
     
 
     
+
