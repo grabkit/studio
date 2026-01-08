@@ -1,4 +1,5 @@
 
+
 "use client";
 
 import { useParams, useRouter } from 'next/navigation';
@@ -60,7 +61,7 @@ function PostPreviewCard({ postId }: { postId: string }) {
     }
     
     return (
-        <div className="block border rounded-lg overflow-hidden transition-colors bg-background/50 hover:bg-background/80">
+        <div className="block border rounded-lg overflow-hidden transition-colors bg-background/50 hover:bg-background/80 w-full">
             <div className="p-3">
                 <div className="flex items-center gap-2 mb-2">
                     <Avatar className="h-6 w-6">
@@ -721,4 +722,5 @@ export default function ChatPage() {
     
 
     
+
 
