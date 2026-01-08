@@ -61,7 +61,7 @@ function PostPreviewCard({ postId }: { postId: string }) {
     }
     
     return (
-        <div className="block border rounded-[10px] overflow-hidden bg-secondary/80 w-full cursor-pointer" onClick={() => router.push(`/post/${postId}`)}>
+        <div className="block border rounded-[10px] overflow-hidden bg-secondary/80 w-full cursor-pointer">
             <div className="p-3">
                 <div className="flex items-center gap-2 mb-2">
                     <Avatar className="h-6 w-6">
@@ -183,7 +183,11 @@ function MessageBubble({ message, isOwnMessage, conversation, onSetReply, onForw
                 </div>
             ) : isLinkShare && message.linkMetadata ? (
                 <div className="w-full my-1 px-2">
-                    <LinkPreviewCard metadata={message.linkMetadata} />
+                    <SheetTrigger asChild>
+                         <div>
+                            <LinkPreviewCard metadata={message.linkMetadata} />
+                        </div>
+                    </SheetTrigger>
                 </div>
             ) : null}
 
