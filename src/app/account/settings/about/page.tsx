@@ -3,10 +3,22 @@
 
 import AppLayout from "@/components/AppLayout";
 import { Button } from "@/components/ui/button";
-import { ArrowLeft } from "lucide-react";
+import { ArrowLeft, ChevronRight, FileText, Shield, Library } from "lucide-react";
 import { useRouter } from "next/navigation";
 import Link from 'next/link';
 import { useRef } from "react";
+
+function SettingsItem({ href, label, icon: Icon }: { href: string, label: string, icon: React.ElementType }) {
+    return (
+        <Link href={href} className="flex items-center justify-between p-4 transition-colors hover:bg-accent cursor-pointer">
+            <div className="flex items-center space-x-4">
+                <Icon className="h-5 w-5 text-muted-foreground" />
+                <span className="text-base">{label}</span>
+            </div>
+            <ChevronRight className="h-5 w-5 text-muted-foreground" />
+        </Link>
+    )
+}
 
 export default function AboutPage() {
     const router = useRouter();
@@ -35,15 +47,9 @@ export default function AboutPage() {
             <div ref={pageRef} className="h-full bg-background animate-slide-in-right">
                 <div className="pt-14 h-full overflow-y-auto flex flex-col">
                     <div>
-                        <Link href="/account/settings/terms" className="flex justify-between items-center p-4 hover:bg-accent">
-                            <span>Terms of Service</span>
-                        </Link>
-                        <Link href="/account/settings/privacy" className="flex justify-between items-center p-4 hover:bg-accent">
-                            <span>Privacy Policy</span>
-                        </Link>
-                        <Link href="/account/settings/licenses" className="flex justify-between items-center p-4 hover:bg-accent">
-                            <span>Open Source Licenses</span>
-                        </Link>
+                        <SettingsItem href="/account/settings/terms" label="Terms of Service" icon={FileText} />
+                        <SettingsItem href="/account/settings/privacy" label="Privacy Policy" icon={Shield} />
+                        <SettingsItem href="/account/settings/licenses" label="Open Source Licenses" icon={Library} />
                     </div>
                     <div className="text-center mt-auto pb-4">
                         <h1 className="text-2xl font-bold font-headline">Blur</h1>
