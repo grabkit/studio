@@ -1,5 +1,4 @@
 
-
 "use client";
 
 import { useParams, useRouter } from 'next/navigation';
@@ -181,13 +180,13 @@ function MessageBubble({ message, isOwnMessage, conversation, onSetReply, onForw
             ) : isLinkShare && message.linkMetadata ? (
                 <>
                     {message.text && (
-                        <p className="text-sm pb-2 whitespace-pre-wrap break-words">{message.text}</p>
+                        <p className="text-sm pb-2 break-words">{message.text}</p>
                     )}
                     <LinkPreviewCard metadata={message.linkMetadata} />
                 </>
             ) : (
                 message.text && (
-                    <p className="text-sm whitespace-pre-wrap break-words">{message.text}</p>
+                    <p className="text-sm break-words">{message.text}</p>
                 )
             )}
 
@@ -210,8 +209,8 @@ function MessageBubble({ message, isOwnMessage, conversation, onSetReply, onForw
                     <SheetTrigger asChild>
                          <div
                           className={cn(
-                            "rounded-2xl px-3 py-2 cursor-pointer break-words",
-                             isLinkShare ? 'w-64' : 'max-w-[80%]',
+                            "rounded-2xl px-3 py-2 cursor-pointer flex flex-col",
+                            isLinkShare ? 'w-64' : 'max-w-[80%]',
                             !isOwnMessage && "bg-secondary rounded-bl-none",
                             isOwnMessage && !isLinkShare && "bg-primary text-primary-foreground rounded-br-none",
                             isOwnMessage && isLinkShare && "bg-secondary text-secondary-foreground rounded-br-none"
@@ -736,3 +735,6 @@ export default function ChatPage() {
     
 
 
+
+
+    
