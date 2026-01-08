@@ -8,7 +8,7 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button, buttonVariants } from "@/components/ui/button";
 import { collection, query, where, getDocs, getDoc, doc, updateDoc, arrayUnion, arrayRemove, increment, setDoc, serverTimestamp, deleteField, runTransaction, deleteDoc } from "firebase/firestore";
 import { useCollection, type WithId } from "@/firebase/firestore/use-collection";
-import { Menu, Share2, Link as LinkIcon, Plus, BarChart3, Trash2, RefreshCw } from "lucide-react";
+import { Menu, Share2, Link as LinkIcon, Plus, BarChart3, Trash2, RefreshCw, Settings } from "lucide-react";
 import type { Post, Bookmark, User, Notification } from "@/lib/types";
 import { Skeleton } from "@/components/ui/skeleton";
 import React, { useMemo, useState, useEffect, useCallback, useRef, type TouchEvent } from "react";
@@ -333,7 +333,7 @@ export default function AccountPage() {
             </Link>
             <div className="flex items-center space-x-2">
                 <Link href="/account/settings" className={cn(buttonVariants({ variant: "ghost", size: "icon" }))}>
-                    <Menu className="h-6 w-6" />
+                    <Settings className="h-6 w-6" />
                 </Link>
             </div>
         </div>
@@ -480,5 +480,3 @@ export default function AccountPage() {
     </AppLayout>
   );
 }
-
-    

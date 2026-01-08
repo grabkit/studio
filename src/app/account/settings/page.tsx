@@ -1,7 +1,7 @@
 
 "use client";
 
-import React, { useRef } from "react";
+import React from "react";
 import AppLayout from "@/components/AppLayout";
 import { Button } from "@/components/ui/button";
 import { ArrowLeft, ChevronRight, User, Bell, UserX, HelpCircle, Info, LogOut, UserPlus, VolumeX, MinusCircle } from "lucide-react";
@@ -77,7 +77,7 @@ export default function SettingsPage() {
 
     return (
         <AppLayout showTopBar={false}>
-            <div className="h-full bg-background animate-slide-in-right">
+            <div className="h-full bg-background">
                 <div className="fixed top-0 left-0 right-0 z-10 flex items-center p-2 bg-background border-b h-14 max-w-2xl mx-auto sm:px-4">
                     <Button variant="ghost" size="icon" onClick={() => router.back()}>
                         <ArrowLeft />
