@@ -154,7 +154,7 @@ export function PollComponent({ post, user }: { post: WithId<Post>, user: any })
                             <div className="absolute inset-0 flex items-center justify-between px-4">
                                  <div className="flex items-center gap-2">
                                      {isUserChoice && <CheckCircle2 className="h-4 w-4 text-primary" />}
-                                    <span className="font-medium truncate text-primary">{option.option}</span>
+                                    <span className="font-bold truncate text-primary">{option.option}</span>
                                 </div>
                                 <span className="font-semibold text-primary">{percentage.toFixed(0)}%</span>
                             </div>
@@ -165,7 +165,7 @@ export function PollComponent({ post, user }: { post: WithId<Post>, user: any })
                             >
                                <div className="flex items-center gap-2">
                                      {isUserChoice && <CheckCircle2 className="h-4 w-4 text-primary-foreground" />}
-                                    <span className="font-medium truncate text-primary-foreground">{option.option}</span>
+                                    <span className="font-bold truncate text-primary-foreground">{option.option}</span>
                                 </div>
                                 <span className="font-semibold text-primary-foreground">{percentage.toFixed(0)}%</span>
                             </div>
@@ -176,7 +176,7 @@ export function PollComponent({ post, user }: { post: WithId<Post>, user: any })
                         <Button
                             key={index}
                             variant="outline"
-                            className="w-full justify-center h-10 text-base rounded-full"
+                            className="w-full justify-center h-10 text-base rounded-full font-bold"
                             onClick={() => handleVote(index)}
                             disabled={isProcessing}
                         >
