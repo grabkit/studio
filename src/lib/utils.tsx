@@ -6,7 +6,7 @@ import { formatDistanceToNowStrict, isToday, isYesterday, format, isThisWeek, fr
 import { defaultAvatars } from "./avatars";
 import type { User } from "./types";
 import { adjectives, nouns } from './names';
-import { BadgeCheck } from "lucide-react";
+import { Verified } from "lucide-react";
 import React from "react";
 
 
@@ -34,7 +34,7 @@ export function formatUserId(uid: string | undefined): React.ReactNode {
     return (
       <span className="inline-flex items-center gap-1">
         <span>Blur</span>
-        <BadgeCheck className="h-4 w-4 text-amber-500 stroke-background" fill="currentColor" />
+        <Verified className="h-4 w-4 text-amber-500" fill="currentColor" stroke="white" strokeWidth={0.5} />
       </span>
     );
   }
@@ -59,7 +59,7 @@ export function formatUserId(uid: string | undefined): React.ReactNode {
   return (
     <span className="inline-flex items-center gap-1">
       <span>{`${combined}-${String(number).padStart(4, '0')}`}</span>
-      {isVerified && <BadgeCheck className="h-4 w-4 text-amber-500 stroke-background" fill="currentColor" />}
+      {isVerified && <Verified className="h-4 w-4 text-amber-500" fill="currentColor" stroke="white" strokeWidth={0.5} />}
     </span>
   );
 }
