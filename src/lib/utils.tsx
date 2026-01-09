@@ -34,7 +34,7 @@ export function formatUserId(uid: string | undefined): React.ReactNode {
     return (
       <span className="inline-flex items-center gap-1">
         <span>Blur</span>
-        <Verified className="h-4 w-4 text-amber-500" fill="currentColor" stroke="white" strokeWidth={0.5} />
+        <Verified className="h-4 w-4 text-amber-500" fill="currentColor" stroke="white" strokeWidth={1} />
       </span>
     );
   }
@@ -59,7 +59,7 @@ export function formatUserId(uid: string | undefined): React.ReactNode {
   return (
     <span className="inline-flex items-center gap-1">
       <span>{`${combined}-${String(number).padStart(4, '0')}`}</span>
-      {isVerified && <Verified className="h-4 w-4 text-amber-500" fill="currentColor" stroke="white" strokeWidth={0.5} />}
+      {isVerified && <Verified className="h-4 w-4 text-amber-500" fill="currentColor" stroke="white" strokeWidth={1} />}
     </span>
   );
 }
