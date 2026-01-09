@@ -677,7 +677,7 @@ export default function ChatPage() {
                     onStartVideoCall={handleStartVideoCall} 
                     conversation={conversation} 
                 />
-                <div className="flex-1 overflow-y-auto pt-14 pb-10">
+                <div className="flex-1 overflow-y-auto pt-14 pb-14">
                     {isLoading ? (
                         <div className="space-y-4 p-4">
                             <Skeleton className="h-10 w-3/5" />
