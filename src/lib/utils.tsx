@@ -148,7 +148,7 @@ export const getAvatar = (user: Partial<User> | string | null | undefined): stri
     const uid = typeof user === 'string' ? user : user?.id;
 
     if (uid === ADMIN_USER_ID) {
-        return 'https://blogger.googleusercontent.com/img/b/R29vZ2xl/AVvXsEhFEg9qpD8-t4t2B_jNlRQgwE1Vw2a7Q8qFp9hYn2Z-g3A9yZk7u-g2vC3iX1eA8rC6kY6c8wT5lA/s1600/blur_logo_avatar.png';
+        return 'https://blogger.googleusercontent.com/img/b/R29vZ2xl/AVvXsEhGPvFRvSSGSSTOcF45ESTNHx-z9iFQ_oZMCHDbsgRsPcztHHRUbMbD8GXNN109hzQpxLQRndngO1LoZEe2j3GkFEXrJGxfrk6UUR_dFUo5cBiz7I3tZ4n-lROEcWNLCsr3SuB_eeOh-BR8gTUUmX6B34PY_tcbf0wA35tOHa2lVDjzm2n8J6pawYy9Qm4i/s320/Blur%20Logo.PNG';
     }
     
     // Handle case where user object is passed and has a custom avatar
