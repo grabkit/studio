@@ -78,7 +78,7 @@ export default function NotificationsSettingsPage() {
             likes: true,
             comments: true,
             reposts: true,
-            upvotes: true,
+            followers: true,
             messageRequests: true,
         };
     }, [userProfile]);
@@ -153,10 +153,10 @@ export default function NotificationsSettingsPage() {
                 disabled={!!isUpdating || !settings.push}
             />
             <NotificationSettingItem 
-                id="upvotes"
-                label="Profile Upvotes"
-                description="Notify me when someone upvotes your profile."
-                isChecked={settings.upvotes}
+                id="followers"
+                label="New Followers"
+                description="Notify me when someone follows your profile."
+                isChecked={settings.followers}
                 onToggle={handleToggle}
                 disabled={!!isUpdating || !settings.push}
             />

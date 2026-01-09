@@ -30,24 +30,24 @@
             "format": "date-time",
             "description": "Timestamp indicating when the user account was created."
         },
-        "upvotes": {
+        "followersCount": {
             "type": "number",
-            "description": "Total number of upvotes the user profile has received."
+            "description": "Total number of followers the user has."
         },
-        "upvotedBy": {
+        "followedBy": {
             "type": "array",
-            "description": "An array of user IDs that have upvoted this user.",
+            "description": "An array of user IDs that are following this user.",
             "items": {
                 "type": "string"
             }
         },
-        "upvotedCount": {
+        "followingCount": {
             "type": "number",
-            "description": "The total number of upvotes this user has given to others."
+            "description": "The total number of users this user is following."
         },
-        "upvotedTo": {
+        "following": {
             "type": "array",
-            "description": "An array of user IDs that this user has upvoted.",
+            "description": "An array of user IDs that this user is following.",
             "items": {
                 "type": "string"
             }
@@ -105,7 +105,7 @@
                 "likes": { "type": "boolean" },
                 "comments": { "type": "boolean" },
                 "reposts": { "type": "boolean" },
-                "upvotes": { "type": "boolean" },
+                "followers": { "type": "boolean" },
                 "messageRequests": { "type": "boolean" }
             }
         }
@@ -310,12 +310,12 @@
             },
             "type": {
                 "type": "string",
-                "enum": ["comment", "comment_approval", "upvote", "message_request", "like", "repost", "quote", "new_post"],
+                "enum": ["comment", "comment_approval", "follow", "message_request", "like", "repost", "quote", "new_post"],
                 "description": "The type of activity."
             },
             "postId": {
                 "type": "string",
-                "description": "The ID of the post the activity is related to. Not present for upvote or message_request types."
+                "description": "The ID of the post the activity is related to. Not present for follow or message_request types."
             },
             "activityContent": {
                 "type": "string",

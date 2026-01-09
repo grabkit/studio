@@ -10,7 +10,7 @@ import type { Notification, NotificationSettings } from "@/lib/types";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import Link from "next/link";
-import { Heart, MessageCircle, AlertTriangle, ArrowUp, Mail, Repeat, MessageSquareQuote, RefreshCw, Newspaper } from "lucide-react";
+import { Heart, MessageCircle, AlertTriangle, UserPlus, Mail, Repeat, MessageSquareQuote, RefreshCw, Newspaper } from "lucide-react";
 import { cn, formatTimestamp, getAvatar, formatUserId } from "@/lib/utils.tsx";
 import { Button } from "@/components/ui/button";
 import React, { useEffect, useState, useRef, useCallback, type TouchEvent, useMemo } from "react";
@@ -34,11 +34,11 @@ const notificationInfo = {
         color: "text-amber-500",
         settingKey: 'comments', // assuming this falls under comments
     },
-    upvote: {
-        icon: ArrowUp,
-        text: "upvoted your profile",
+    follow: {
+        icon: UserPlus,
+        text: "started following you",
         color: "text-green-500",
-        settingKey: 'upvotes',
+        settingKey: 'followers',
     },
     message_request: {
         icon: Mail,
@@ -71,10 +71,10 @@ function NotificationItem({ notification }: { notification: WithId<Notification>
     const info = notificationInfo[notification.type as keyof typeof notificationInfo] || notificationInfo.comment;
     const Icon = info.icon;
     
-    const isProfileActivity = notification.type === 'upvote' || notification.type === 'message_request';
+    const isProfileActivity = notification.type === 'follow' || notification.type === 'message_request';
     const linkHref = isProfileActivity ? `/profile/${notification.fromUserId}` : `/post/${notification.postId}`;
 
-    const isFilledIcon = ['like', 'comment', 'message_request', 'repost', 'quote'].includes(notification.type);
+    const isFilledIcon = ['like', 'comment', 'message_request', 'repost', 'quote', 'follow'].includes(notification.type);
     
     const avatar = getAvatar({id: notification.fromUserId});
     const isAvatarUrl = avatar.startsWith('http');
@@ -193,7 +193,7 @@ export default function ActivityPage() {
             likes: true,
             comments: true,
             reposts: true,
-            upvotes: true,
+            followers: true,
             messageRequests: true,
         };
     }, [userProfile]);

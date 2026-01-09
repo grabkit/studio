@@ -69,7 +69,7 @@ export interface NotificationSettings {
     likes: boolean;
     comments: boolean;
     reposts: boolean;
-    upvotes: boolean;
+    followers: boolean;
     messageRequests: boolean;
 }
 
@@ -79,10 +79,10 @@ export interface User {
     email: string;
     avatar?: string;
     createdAt?: Timestamp;
-    upvotes?: number;
-    upvotedBy?: string[];
-    upvotedCount?: number;
-    upvotedTo?: string[];
+    followersCount?: number;
+    followedBy?: string[];
+    followingCount?: number;
+    following?: string[];
     status?: 'active' | 'suspended' | 'banned';
     blockedUsers?: string[];
     mutedUsers?: string[];
@@ -108,7 +108,7 @@ export interface UserPost extends Post {
 
 export interface Notification {
     id: string;
-    type: 'comment' | 'comment_approval' | 'upvote' | 'message_request' | 'like' | 'repost' | 'quote' | 'new_post';
+    type: 'comment' | 'comment_approval' | 'follow' | 'message_request' | 'like' | 'repost' | 'quote' | 'new_post';
     postId?: string;
     activityContent?: string;
     fromUserId: string;

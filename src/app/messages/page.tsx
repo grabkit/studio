@@ -25,7 +25,7 @@ import { errorEmitter } from "@/firebase/error-emitter";
 import { usePresence } from "@/hooks/usePresence";
 import { ScrollArea } from "@/components/ui/scroll-area";
 
-function UpvotedUserSkeleton() {
+function FollowedUserSkeleton() {
     return (
         <div className="flex flex-col items-center w-20">
             <Skeleton className="h-16 w-16 rounded-full" />
@@ -34,23 +34,23 @@ function UpvotedUserSkeleton() {
     )
 }
 
-function UpvotedUsers() {
+function FollowedUsers() {
     const { firestore, user: currentUser, userProfile, showVoiceStatusPlayer } = useFirebase();
 
-    const upvotedByQuery = useMemoFirebase(() => {
+    const followedByQuery = useMemoFirebase(() => {
       if (!firestore || !currentUser) return null;
       return query(
         collection(firestore, "users"),
-        where("upvotedBy", "array-contains", currentUser.uid)
+        where("followedBy", "array-contains", currentUser.uid)
       );
     }, [firestore, currentUser]);
 
-    const { data: upvotedUsersData, isLoading: upvotedUsersLoading } = useCollection<User>(upvotedByQuery);
+    const { data: followedUsersData, isLoading: followedUsersLoading } = useCollection<User>(followedByQuery);
     
-    const upvotedUsers = useMemo(() => {
+    const followedUsers = useMemo(() => {
         if (!currentUser || !userProfile) return [];
 
-        const otherUsers = upvotedUsersData?.filter(user => user.id !== currentUser.uid) || [];
+        const otherUsers = followedUsersData?.filter(user => user.id !== currentUser.uid) || [];
 
         const currentUserAsUser = {
             id: currentUser.uid,
@@ -59,33 +59,33 @@ function UpvotedUsers() {
         } as WithId<User>;
 
         return [currentUserAsUser, ...otherUsers];
-    }, [currentUser, userProfile, upvotedUsersData]);
+    }, [currentUser, userProfile, followedUsersData]);
 
 
-    if (upvotedUsersLoading && !userProfile) {
+    if (followedUsersLoading && !userProfile) {
         return (
             <div className="p-4 border-b">
-                <h2 className="text-lg font-semibold font-headline mb-3">Upvoted</h2>
+                <h2 className="text-lg font-semibold font-headline mb-3">Following</h2>
                 <div className="flex space-x-4">
-                    <UpvotedUserSkeleton />
-                    <UpvotedUserSkeleton />
-                    <UpvotedUserSkeleton />
-                    <UpvotedUserSkeleton />
+                    <FollowedUserSkeleton />
+                    <FollowedUserSkeleton />
+                    <FollowedUserSkeleton />
+                    <FollowedUserSkeleton />
                 </div>
             </div>
         );
     }
     
-    if (upvotedUsers.length === 0) {
+    if (followedUsers.length === 0) {
         return null;
     }
 
     return (
         <div className="p-4 border-b">
-            <h2 className="text-lg font-semibold font-headline mb-3">Upvoted</h2>
+            <h2 className="text-lg font-semibold font-headline mb-3">Following</h2>
              <div className="overflow-x-auto pb-2 -mb-2 no-scrollbar">
                 <div className="flex space-x-4">
-                    {upvotedUsers.map(user => {
+                    {followedUsers.map(user => {
                         const isCurrentUser = user.id === currentUser?.uid;
                         const href = isCurrentUser ? '/account' : `/profile/${user.id}`;
                         const name = isCurrentUser ? 'Your Profile' : formatUserId(user.id);
@@ -624,7 +624,7 @@ export default function MessagesPage() {
                 </div>
 
                 <div style={{ paddingTop: `${pullPosition}px` }} className="transition-all duration-300">
-                    <UpvotedUsers />
+                    <FollowedUsers />
                     
                     <div className="p-2">
                         <Tabs defaultValue="chats" className="w-full" onValueChange={handleTabChange}>
