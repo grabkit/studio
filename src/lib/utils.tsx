@@ -32,7 +32,7 @@ export function formatUserId(uid: string | undefined): React.ReactNode {
   // Special case for the admin user
   if (uid === ADMIN_USER_ID) {
     return (
-      <span className="inline-flex items-center gap-1">
+      <span className="inline-flex items-center gap-0.5">
         <span>Blur</span>
         <Verified className="h-4 w-4 text-amber-500" fill="currentColor" stroke="white" strokeWidth={2} />
       </span>
@@ -57,9 +57,9 @@ export function formatUserId(uid: string | undefined): React.ReactNode {
   const isVerified = VERIFIED_USER_IDS.includes(uid);
 
   return (
-    <span className="inline-flex items-center gap-1">
+    <span className="inline-flex items-center gap-0.5">
       <span>{`${combined}-${String(number).padStart(4, '0')}`}</span>
-      {isVerified && <Verified className="h-4 w-4 text-amber-500" fill="currentColor" stroke="white" strokeWidth={1} />}
+      {isVerified && <Verified className="h-4 w-4 text-amber-500" fill="currentColor" stroke="white" strokeWidth={2} />}
     </span>
   );
 }
