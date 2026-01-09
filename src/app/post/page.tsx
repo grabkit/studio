@@ -1,3 +1,4 @@
+
 "use client";
 
 import * as React from "react";
@@ -248,6 +249,15 @@ function PostPageComponent() {
         linkMetadata: values.linkMetadata,
         quotedPost: values.quotedPost,
       };
+
+      // Firestore doesn't accept `undefined` values.
+      if (updatedData.linkMetadata === undefined) {
+        delete updatedData.linkMetadata;
+      }
+      if (updatedData.quotedPost === undefined) {
+        delete updatedData.quotedPost;
+      }
+
       updateDoc(postRef, updatedData)
         .then(() => {
             form.reset();
