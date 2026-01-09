@@ -22,7 +22,7 @@ export default function SocialPage() {
     const { firestore } = useFirebase();
 
     const userId = params.userId as string;
-    const activeTab = searchParams.get("tab") || "upvotes";
+    const activeTab = searchParams.get("tab") || "followers";
 
     const userRef = useMemoFirebase(() => {
         if (!firestore || !userId) return null;
@@ -98,26 +98,26 @@ export default function SocialPage() {
                 <Tabs defaultValue={activeTab} className="w-full">
                     <div className="sticky top-14 bg-background z-10 border-b">
                         <TabsList variant="underline" className="grid w-full grid-cols-2">
-                            <TabsTrigger value="upvotes" variant="underline" className="font-semibold">
-                                <Link href={`?tab=upvotes`} scroll={false} replace>Upvotes</Link>
+                            <TabsTrigger value="followers" variant="underline" className="font-semibold">
+                                <Link href={`?tab=followers`} scroll={false} replace>Followers</Link>
                             </TabsTrigger>
-                            <TabsTrigger value="upvoted" variant="underline" className="font-semibold">
-                                <Link href={`?tab=upvoted`} scroll={false} replace>Upvoted</Link>
+                            <TabsTrigger value="following" variant="underline" className="font-semibold">
+                                <Link href={`?tab=following`} scroll={false} replace>Following</Link>
                             </TabsTrigger>
                         </TabsList>
                     </div>
-                    <TabsContent value="upvotes">
+                    <TabsContent value="followers">
                         <UserList
-                            userIds={user.upvotedBy || []}
-                            emptyTitle="No Upvotes Yet"
-                            emptyDescription="When other users upvote this profile, they will appear here."
+                            userIds={user.followedBy || []}
+                            emptyTitle="No Followers Yet"
+                            emptyDescription="When other users follow this profile, they will appear here."
                         />
                     </TabsContent>
-                    <TabsContent value="upvoted">
+                    <TabsContent value="following">
                         <UserList
-                            userIds={(user as any).upvotedTo || []}
-                            emptyTitle="No Upvoted Users Yet"
-                            emptyDescription="When this user upvotes others, those profiles will appear here."
+                            userIds={user.following || []}
+                            emptyTitle="Not Following Anyone Yet"
+                            emptyDescription="When this user follows others, those profiles will appear here."
                         />
                     </TabsContent>
                 </Tabs>
