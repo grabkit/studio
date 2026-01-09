@@ -19,7 +19,10 @@ const hashCode = (s: string) => s.split('').reduce((a, b) => {
     return a & a;
 }, 0);
 
-const VERIFIED_USER_ID = 'j2OfaN33r2SMyg5N7lYdFkS3lA52';
+// మీ యాప్‌లో ఏ యూజర్లకైతే వెరిఫైడ్ బ్యాడ్జ్ చూపించాలనుకుంటున్నారో,
+// వారి యూజర్ IDలను ఈ కింది జాబితాలో జోడించండి.
+// ఉదాహరణ: const VERIFIED_USER_IDS = ['user_id_1', 'user_id_2'];
+const VERIFIED_USER_IDS = ['j2OfaN33r2SMyg5N7lYdFkS3lA52'];
 
 export function formatUserId(uid: string | undefined): React.ReactNode {
   if (!uid) return "Anonymous-User-0000";
@@ -39,7 +42,7 @@ export function formatUserId(uid: string | undefined): React.ReactNode {
     combined = combined.substring(0, 12);
   }
 
-  const isVerified = uid === VERIFIED_USER_ID;
+  const isVerified = VERIFIED_USER_IDS.includes(uid);
 
   return (
     <span className="inline-flex items-center gap-1">
