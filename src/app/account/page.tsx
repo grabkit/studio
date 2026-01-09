@@ -13,7 +13,7 @@ import type { Post, Bookmark, User, Notification } from "@/lib/types";
 import { Skeleton } from "@/components/ui/skeleton";
 import React, { useMemo, useState, useEffect, useCallback, useRef, type TouchEvent } from "react";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
-import { getAvatar, cn, formatUserId } from "@/lib/utils.tsx";
+import { getAvatar, cn, formatUserId } from "@/lib/utils";
 
 import { PostItem as HomePostItem, PostSkeleton } from "@/app/home/page";
 import { RepliesList } from "@/components/RepliesList";
@@ -482,7 +482,8 @@ export default function AccountPage() {
             </div>
         </div>
     </AppLayout>
-  );
+  )
+}
 
     
 
