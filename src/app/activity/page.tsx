@@ -87,7 +87,7 @@ function NotificationItem({ notification }: { notification: WithId<Notification>
         )}>
              <div className="relative">
                 <Avatar className="h-10 w-10">
-                    <AvatarImage src={isAvatarUrl ? avatar : undefined} alt={notification.fromUserId} />
+                    <AvatarImage src={isAvatarUrl ? avatar : undefined} alt={formatUserId(notification.fromUserId)} />
                     <AvatarFallback>{!isAvatarUrl ? avatar : ''}</AvatarFallback>
                 </Avatar>
                 <div className="absolute -bottom-1 -right-1 bg-background rounded-full p-0.5">

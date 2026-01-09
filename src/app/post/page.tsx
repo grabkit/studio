@@ -192,6 +192,8 @@ function PostPageComponent() {
   const linkMetadata = form.watch("linkMetadata");
   const quotedPost = form.watch("quotedPost");
 
+  const avatar = getAvatar(userProfile);
+  const isAvatarUrl = avatar.startsWith('http');
 
   React.useEffect(() => {
     if (!isOpen) {
@@ -378,8 +380,8 @@ function PostPageComponent() {
             <div className="flex-grow overflow-y-auto px-4 pb-4 pt-[2px]">
                 <div className="flex items-start space-x-4">
                     <Avatar>
-                        <AvatarImage src={user?.photoURL || undefined} />
-                        <AvatarFallback>{getAvatar(userProfile)}</AvatarFallback>
+                        <AvatarImage src={isAvatarUrl ? avatar : undefined} alt={formatUserId(user?.uid)} />
+                        <AvatarFallback>{!isAvatarUrl ? avatar : ''}</AvatarFallback>
                     </Avatar>
                      <div className="w-full">
                         <div className="flex justify-between items-center">

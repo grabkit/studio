@@ -33,7 +33,7 @@ import { motion } from "framer-motion";
 
 import AppLayout from "@/components/AppLayout";
 import { Card, CardContent } from "@/components/ui/card";
-import { Avatar, AvatarFallback } from "@/components/ui/avatar";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Button, buttonVariants } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
@@ -117,6 +117,9 @@ function PostDetailItem({ post, updatePost }: { post: WithId<Post>, updatePost: 
   const repliesAllowed = post.commentsAllowed !== false;
 
   const hasLiked = post.likes?.includes(user?.uid || '');
+
+  const avatar = getAvatar({id: post.authorId});
+  const isAvatarUrl = avatar.startsWith('http');
 
   const handleLike = async () => {
     if (!user || !firestore || isLiking) {
@@ -257,7 +260,8 @@ function PostDetailItem({ post, updatePost }: { post: WithId<Post>, updatePost: 
       <CardContent className="p-4">
         <div className="flex space-x-3">
           <Avatar className="h-10 w-10">
-            <AvatarFallback>{getAvatar(post.authorId)}</AvatarFallback>
+            <AvatarImage src={isAvatarUrl ? avatar : undefined} alt={formatUserId(post.authorId)} />
+            <AvatarFallback>{!isAvatarUrl ? avatar : ''}</AvatarFallback>
           </Avatar>
           <div className="flex-1 space-y-2">
             <div className="flex justify-between items-start">
@@ -381,7 +385,7 @@ const CommentFormSchema = z.object({
 });
 
 function CommentForm({ post, commentsAllowed }: { post: WithId<Post>, commentsAllowed?: boolean }) {
-  const { user } = useUser();
+  const { user, userProfile } = useUser();
   const { firestore } = useFirebase();
   const { toast } = useToast();
   const form = useForm<z.infer<typeof CommentFormSchema>>({
@@ -483,6 +487,8 @@ function CommentForm({ post, commentsAllowed }: { post: WithId<Post>, commentsAl
     );
   }
 
+  const avatar = getAvatar(userProfile);
+  const isAvatarUrl = avatar.startsWith('http');
 
   return (
     <div className="fixed bottom-0 left-0 right-0 bg-background border-t z-10 max-w-2xl mx-auto sm:px-4">
@@ -490,7 +496,8 @@ function CommentForm({ post, commentsAllowed }: { post: WithId<Post>, commentsAl
             <Form {...form}>
                 <form onSubmit={form.handleSubmit(onSubmit)} className="flex items-center gap-2 rounded-full bg-secondary px-3">
                 <Avatar className="h-8 w-8">
-                    <AvatarFallback>{getAvatar(user?.uid)}</AvatarFallback>
+                    <AvatarImage src={isAvatarUrl ? avatar : undefined} alt={formatUserId(user?.uid)} />
+                    <AvatarFallback>{!isAvatarUrl ? avatar : ''}</AvatarFallback>
                 </Avatar>
                 <div className="flex-1">
                 <FormField
@@ -543,6 +550,9 @@ function CommentItem({ comment, postAuthorId }: { comment: WithId<Comment>, post
   const isCommentOwner = user && user.uid === comment.authorId;
   const canManage = isPostOwner || isCommentOwner;
   const isPendingApproval = comment.status === 'pending_approval';
+
+  const avatar = getAvatar({id: comment.authorId});
+  const isAvatarUrl = avatar.startsWith('http');
   
   const form = useForm<z.infer<typeof updateCommentSchema>>({
     resolver: zodResolver(updateCommentSchema),
@@ -646,7 +656,8 @@ function CommentItem({ comment, postAuthorId }: { comment: WithId<Comment>, post
   return (
     <div className="flex space-x-3 p-4 border-b">
       <Avatar className="h-8 w-8">
-        <AvatarFallback>{getAvatar(comment.authorId)}</AvatarFallback>
+        <AvatarImage src={isAvatarUrl ? avatar : undefined} alt={formatUserId(comment.authorId)} />
+        <AvatarFallback>{!isAvatarUrl ? avatar : ''}</AvatarFallback>
       </Avatar>
       <div className="flex-1">
         <div className="flex justify-between items-center">

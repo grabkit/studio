@@ -15,7 +15,7 @@ import { motion } from "framer-motion";
 
 
 import AppLayout from '@/components/AppLayout';
-import { Avatar, AvatarFallback } from '@/components/ui/avatar';
+import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
 import { Form, FormControl, FormField, FormItem, FormMessage } from '@/components/ui/form';
@@ -60,12 +60,16 @@ function PostPreviewCard({ postId }: { postId: string }) {
         );
     }
     
+    const avatar = getAvatar({id: post.authorId});
+    const isAvatarUrl = avatar.startsWith('http');
+
     return (
         <div className="block rounded-[10px] overflow-hidden bg-secondary/80 w-full cursor-pointer">
             <div className="p-3">
                 <div className="flex items-center gap-2 mb-2">
                     <Avatar className="h-6 w-6">
-                        <AvatarFallback className="text-xs">{getAvatar({id: post.authorId})}</AvatarFallback>
+                         <AvatarImage src={isAvatarUrl ? avatar : undefined} alt={formatUserId(post.authorId)} />
+                        <AvatarFallback className="text-xs">{!isAvatarUrl ? avatar : ''}</AvatarFallback>
                     </Avatar>
                     <span className="text-xs font-semibold text-foreground">{formatUserId(post.authorId)}</span>
                 </div>
@@ -294,6 +298,9 @@ function ChatHeader({ peerId, peerUser, onStartCall, onStartVideoCall, conversat
         return conversation?.voiceCallsDisabledBy?.includes(peerId) || false;
     }, [conversation, peerId]);
     
+    const avatar = getAvatar(peerUser);
+    const isAvatarUrl = avatar.startsWith('http');
+
     return (
         <div 
             className="fixed top-0 left-0 right-0 z-10 flex items-center p-2 bg-background/80 backdrop-blur-sm border-b h-14 max-w-2xl mx-auto sm:px-4"
@@ -304,7 +311,8 @@ function ChatHeader({ peerId, peerUser, onStartCall, onStartVideoCall, conversat
             <div className="flex-1 flex items-center gap-3 ml-2 cursor-pointer" onClick={() => router.push(`/messages/${peerId}/settings`)}>
                 <div onClick={(e) => { e.stopPropagation(); router.push(`/profile/${peerId}`); }}>
                     <Avatar className="h-8 w-8">
-                        <AvatarFallback>{isLoading ? <Skeleton className="h-8 w-8 rounded-full" /> : getAvatar(peerUser)}</AvatarFallback>
+                        <AvatarImage src={isAvatarUrl ? avatar : undefined} alt={formatUserId(peerId)} />
+                        <AvatarFallback>{isLoading ? <Skeleton className="h-8 w-8 rounded-full" /> : !isAvatarUrl ? avatar : ''}</AvatarFallback>
                     </Avatar>
                 </div>
                 <div>
@@ -740,4 +748,5 @@ export default function ChatPage() {
 
 
     
+
 

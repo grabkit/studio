@@ -105,7 +105,7 @@ export function CallView({
 
             <div className="text-center pt-20">
                 <Avatar className="h-32 w-32 mx-auto mb-6">
-                    <AvatarImage src={isAvatarUrl ? avatar : undefined} alt={otherPartyId} />
+                    <AvatarImage src={isAvatarUrl ? avatar : undefined} alt={formatUserId(otherPartyId)} />
                     <AvatarFallback className="text-5xl">{!isAvatarUrl ? avatar : ''}</AvatarFallback>
                 </Avatar>
                 <h1 className="text-3xl font-bold">{formatUserId(otherPartyId)}</h1>

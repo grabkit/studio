@@ -4,7 +4,7 @@
 
 import AppLayout from "@/components/AppLayout";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Avatar, AvatarFallback } from "@/components/ui/avatar";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { getAvatar, formatMessageTimestamp, formatUserId } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import { MessageSquare, Mail, Trash2, BellOff, CheckCircle, User as UserIcon, Bell, Mic, RefreshCw } from "lucide-react";
@@ -92,13 +92,16 @@ function UpvotedUsers() {
                         const displayName = name.length > 12 ? `${name.substring(0, 12)}...` : name;
                         
                         const hasVoiceStatus = user?.voiceStatusUrl && user?.voiceStatusTimestamp && (Date.now() - user.voiceStatusTimestamp.toMillis() < 24 * 60 * 60 * 1000);
+                        const avatar = getAvatar(user);
+                        const isAvatarUrl = avatar.startsWith('http');
 
                         return (
                          <div key={user.id} className="flex-shrink-0 flex flex-col items-center w-20">
                              <div className="relative">
                                 <Link href={href}>
                                     <Avatar className="h-16 w-16">
-                                        <AvatarFallback>{getAvatar(user)}</AvatarFallback>
+                                        <AvatarImage src={isAvatarUrl ? avatar : undefined} alt={String(name)} />
+                                        <AvatarFallback>{!isAvatarUrl ? avatar : ''}</AvatarFallback>
                                     </Avatar>
                                 </Link>
                                  {isCurrentUser ? (
@@ -169,6 +172,9 @@ function ConversationItem({ conversation, currentUser, onLongPress }: { conversa
     const hasUnread = unreadCount > 0;
     const isMuted = useMemo(() => conversation.mutedBy?.includes(currentUser.uid) || false, [conversation, currentUser]);
 
+    const avatar = getAvatar(otherUser);
+    const isAvatarUrl = avatar.startsWith('http');
+
     const getUnreadMessageText = (count: number) => {
         if (count === 1) return "1 new message";
         if (count > 1 && count < 4) return `${count} new messages`;
@@ -211,7 +217,8 @@ function ConversationItem({ conversation, currentUser, onLongPress }: { conversa
         >
             <div className="flex items-center space-x-3">
                 <Avatar className="h-12 w-12" showStatus={true} isOnline={isOnline}>
-                    <AvatarFallback>{otherUser ? getAvatar(otherUser) : '?'}</AvatarFallback>
+                    <AvatarImage src={isAvatarUrl ? avatar : undefined} alt={String(name)} />
+                    <AvatarFallback>{!isAvatarUrl ? avatar : '?'}</AvatarFallback>
                 </Avatar>
                 <div>
                     <div className="flex items-center gap-2">
@@ -251,13 +258,16 @@ function RequestItem({ request, onAccept }: { request: WithId<Conversation>, onA
 
     const { data: requesterUser } = useDoc<User>(requesterUserRef);
     const name = requesterUser ? formatUserId(requesterUser.id) : 'User';
+    const avatar = getAvatar(requesterUser);
+    const isAvatarUrl = avatar.startsWith('http');
 
 
     return (
         <div className="p-4 border-b flex justify-between items-center">
             <div className="flex items-center space-x-3">
                 <Avatar className="h-12 w-12">
-                    <AvatarFallback>{getAvatar(requesterUser)}</AvatarFallback>
+                    <AvatarImage src={isAvatarUrl ? avatar : undefined} alt={String(name)} />
+                    <AvatarFallback>{!isAvatarUrl ? avatar : ''}</AvatarFallback>
                 </Avatar>
                 <div>
                     <p className="font-semibold">{name}</p>

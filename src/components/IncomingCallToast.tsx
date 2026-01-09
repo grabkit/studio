@@ -23,7 +23,7 @@ export const showIncomingCallToast = ({ callerId, onAccept, onDecline }: Incomin
              <div className="w-full flex items-center justify-between">
                 <div className="flex items-center gap-3">
                     <Avatar>
-                        <AvatarImage src={isAvatarUrl ? avatar : undefined} alt={callerId} />
+                        <AvatarImage src={isAvatarUrl ? avatar : undefined} alt={formatUserId(callerId)} />
                         <AvatarFallback>{!isAvatarUrl ? avatar : ''}</AvatarFallback>
                     </Avatar>
                     <div>

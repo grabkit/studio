@@ -44,7 +44,7 @@ function Reply({ comment, post }: { comment: WithId<Comment>, post: WithId<Post>
 
             <div className="flex space-x-3">
                 <Avatar className="h-8 w-8">
-                    <AvatarImage src={isAvatarUrl ? avatar : undefined} alt={comment.authorId} />
+                    <AvatarImage src={isAvatarUrl ? avatar : undefined} alt={formatUserId(comment.authorId)} />
                     <AvatarFallback>{!isAvatarUrl ? avatar : ''}</AvatarFallback>
                 </Avatar>
                 <div className="flex-1">

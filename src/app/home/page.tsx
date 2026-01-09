@@ -6,7 +6,7 @@ import { useFirebase, useMemoFirebase, useUser, useDoc } from "@/firebase";
 import { collection, query, orderBy, limit, doc, updateDoc, arrayUnion, arrayRemove, increment, deleteDoc, setDoc, serverTimestamp, getDoc, runTransaction, getDocs, where } from "firebase/firestore";
 import { useCollection, type WithId } from "@/firebase/firestore/use-collection";
 import { Card, CardContent } from "@/components/ui/card";
-import { Avatar, AvatarFallback } from "@/components/ui/avatar";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Skeleton } from "@/components/ui/skeleton";
 import type { Post, Bookmark, PollOption, Notification, User, LinkMetadata, QuotedPost } from "@/lib/types";
 import { Heart, MessageCircle, Repeat, ArrowUpRight, MoreHorizontal, Edit, Trash2, Bookmark as BookmarkIcon, CheckCircle2, Slash, RefreshCw, Pin } from "lucide-react";
@@ -216,6 +216,8 @@ function InnerPostItem({ post, bookmarks, updatePost, onDelete, onPin, showPinSt
     );
 
     const finalAuthorProfile = initialAuthorProfile || authorProfile;
+    const avatar = getAvatar(finalAuthorProfile);
+    const isAvatarUrl = avatar.startsWith('http');
 
   const hasLiked = useMemo(() => {
     if (!user) return false;
@@ -400,7 +402,8 @@ function InnerPostItem({ post, bookmarks, updatePost, onDelete, onPin, showPinSt
         <div>
              <Link href={`/profile/${post.authorId}`} className="flex-shrink-0">
                 <Avatar className="h-10 w-10">
-                    <AvatarFallback>{isAuthorLoading ? '' : getAvatar(finalAuthorProfile)}</AvatarFallback>
+                    <AvatarImage src={isAvatarUrl ? avatar : undefined} alt={formatUserId(post.authorId)} />
+                    <AvatarFallback>{!isAvatarUrl ? avatar : ''}</AvatarFallback>
                 </Avatar>
             </Link>
         </div>
@@ -741,3 +744,4 @@ export default function HomePage() {
     
 
     
+
