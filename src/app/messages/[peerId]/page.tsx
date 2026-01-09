@@ -563,7 +563,7 @@ function MessageInput({ conversationId, conversation, replyingTo, onCancelReply 
                     <form onSubmit={form.handleSubmit(onSubmit)} className="flex-1 flex items-center rounded-full bg-secondary px-2">
                          <Textarea
                             placeholder="Message..."
-                            className="flex-1 bg-transparent border-none focus:ring-0 shadow-none resize-none text-base px-2 py-2.5"
+                            className="flex-1 bg-transparent border-none focus-visible:ring-0 focus-visible:ring-offset-0 shadow-none resize-none text-base px-2 py-2.5"
                             rows={1}
                             maxRows={5}
                             onPaste={handlePaste}
@@ -740,3 +740,4 @@ export default function ChatPage() {
 
 
     
+
