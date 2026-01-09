@@ -23,9 +23,21 @@ const hashCode = (s: string) => s.split('').reduce((a, b) => {
 // వారి యూజర్ IDలను ఈ కింది జాబితాలో జోడించండి.
 // ఉదాహరణ: const VERIFIED_USER_IDS = ['user_id_1', 'user_id_2'];
 const VERIFIED_USER_IDS = ['j2OfaN33r2SMyg5N7lYdFkS3lA52'];
+const ADMIN_USER_ID = 'e9ZGHMjgnmO3ueSbf1ao3Crvlr02';
+
 
 export function formatUserId(uid: string | undefined): React.ReactNode {
   if (!uid) return "Anonymous-User-0000";
+
+  // Special case for the admin user
+  if (uid === ADMIN_USER_ID) {
+    return (
+      <span className="inline-flex items-center gap-1">
+        <span>Blur</span>
+        <BadgeCheck className="h-4 w-4 text-amber-500" fill="currentColor" />
+      </span>
+    );
+  }
 
   const hash = Math.abs(hashCode(uid));
   
