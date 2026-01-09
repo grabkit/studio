@@ -17,7 +17,7 @@ import { Button, buttonVariants } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { ArrowLeft, MessageSquare, ArrowUpRight, ArrowUp, MoreHorizontal, ShieldAlert, Flag, VolumeX, Info, MinusCircle, Link as LinkIcon, QrCode, Calendar, Badge, User as UserIcon, Volume2, BarChart3, RefreshCw } from "lucide-react";
-import { getAvatar, cn, formatLastSeen, formatUserId } from "@/lib/utils";
+import { getAvatar, cn, formatLastSeen, formatUserId } from "@/lib/utils.tsx";
 import { FirestorePermissionError } from "@/firebase/errors";
 import { errorEmitter } from "@/firebase/error-emitter";
 import { PostItem as HomePostItem, PostSkeleton } from "@/app/home/page";
@@ -570,7 +570,9 @@ export default function UserProfilePage() {
             </AppLayout>
         )
     }
-
+    
+    const avatar = getAvatar(user);
+    const isAvatarUrl = avatar.startsWith('http');
     const isLoading = postsLoading || userLoading || isConversationLoading;
     
     const getMessageButton = () => {
@@ -642,11 +644,11 @@ export default function UserProfilePage() {
                                         <div className="relative inline-block">
                                             <Avatar className="h-20 w-20 md:h-24 md:w-24">
                                                 <AvatarImage
-                                                    src={undefined}
+                                                    src={isAvatarUrl ? avatar : undefined}
                                                     alt={user?.name || "User"}
                                                 />
                                                 <AvatarFallback className="text-3xl font-headline bg-secondary">
-                                                    {getAvatar(user?.id)}
+                                                    {!isAvatarUrl ? avatar : ''}
                                                 </AvatarFallback>
                                             </Avatar>
                                             {hasVoiceStatus && (
