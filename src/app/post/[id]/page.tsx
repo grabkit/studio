@@ -38,7 +38,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { Button, buttonVariants } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { Form, FormControl, FormField, FormItem, FormMessage } from "@/components/ui/form";
-import { Heart, MessageCircle, ArrowUpRight, Trash2, MoreHorizontal, Edit, ArrowLeft, Repeat, Check, AlertTriangle, Slash, Loader2 } from "lucide-react";
+import { Heart, MessageCircle, ArrowUpRight, Trash2, MoreHorizontal, Edit, ArrowLeft, Repeat, Check, AlertTriangle, Slash, Loader2, Send } from "lucide-react";
 import { cn, formatTimestamp, getAvatar, formatCount, formatUserId } from "@/lib/utils";
 import { useToast } from "@/hooks/use-toast";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -486,9 +486,9 @@ function CommentForm({ post, commentsAllowed }: { post: WithId<Post>, commentsAl
 
   return (
     <div className="fixed bottom-0 left-0 right-0 bg-background border-t z-10 max-w-2xl mx-auto sm:px-4">
-        <div className="p-4">
+        <div className="p-2">
             <Form {...form}>
-                <form onSubmit={form.handleSubmit(onSubmit)} className="flex items-center space-x-3">
+                <form onSubmit={form.handleSubmit(onSubmit)} className="flex items-center space-x-2 rounded-full bg-secondary px-3">
                 <Avatar className="h-8 w-8">
                     <AvatarFallback>{getAvatar(user?.uid)}</AvatarFallback>
                 </Avatar>
@@ -501,7 +501,7 @@ function CommentForm({ post, commentsAllowed }: { post: WithId<Post>, commentsAl
                         <FormControl>
                         <Textarea
                             placeholder="Post your reply"
-                            className="text-base border-none focus-visible:ring-0 shadow-none p-0"
+                            className="text-base border-none focus-visible:ring-0 shadow-none p-0 bg-transparent py-2.5"
                             rows={1}
                             {...field}
                         />
@@ -511,8 +511,13 @@ function CommentForm({ post, commentsAllowed }: { post: WithId<Post>, commentsAl
                     )}
                 />
                 </div>
-                <Button type="submit" disabled={form.formState.isSubmitting} size="sm">
-                    Reply
+                <Button 
+                    type="submit" 
+                    disabled={form.formState.isSubmitting} 
+                    size="icon"
+                    className="rounded-full shrink-0 h-8 w-8 bg-black hover:bg-gray-800"
+                >
+                    <Send className="h-4 w-4" fill="currentColor"/>
                 </Button>
                 </form>
             </Form>
