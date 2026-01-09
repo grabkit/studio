@@ -140,16 +140,21 @@ export const getInitials = (name: string | null | undefined) => {
 /**
  * Gets a user's avatar. If they have chosen a custom one, it's returned.
  * Otherwise, a deterministic emoji is generated from their user ID.
- * @param user The user object, which can be null or undefined.
- * @returns A single emoji string.
+ * For the admin user, it returns a specific logo URL.
+ * @param user The user object or user ID string.
+ * @returns An emoji string or an image URL.
  */
 export const getAvatar = (user: Partial<User> | string | null | undefined): string => {
-    // Handle case where user object is passed
+    const uid = typeof user === 'string' ? user : user?.id;
+
+    if (uid === ADMIN_USER_ID) {
+        return 'https://blogger.googleusercontent.com/img/b/R29vZ2xl/AVvXsEhFEg9qpD8-t4t2B_jNlRQgwE1Vw2a7Q8qFp9hYn2Z-g3A9yZk7u-g2vC3iX1eA8rC6kY6c8wT5lA/s1600/blur_logo_avatar.png';
+    }
+    
+    // Handle case where user object is passed and has a custom avatar
     if (typeof user === 'object' && user?.avatar) {
         return user.avatar;
     }
-
-    const uid = typeof user === 'string' ? user : user?.id;
 
     if (!uid) {
         // Return a generic default if no UID is available

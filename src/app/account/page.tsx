@@ -13,7 +13,7 @@ import type { Post, Bookmark, User, Notification } from "@/lib/types";
 import { Skeleton } from "@/components/ui/skeleton";
 import React, { useMemo, useState, useEffect, useCallback, useRef, type TouchEvent } from "react";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
-import { getAvatar, cn, formatUserId } from "@/lib/utils";
+import { getAvatar, cn, formatUserId } from "@/lib/utils.tsx";
 
 import { PostItem as HomePostItem, PostSkeleton } from "@/app/home/page";
 import { RepliesList } from "@/components/RepliesList";
@@ -323,6 +323,9 @@ export default function AccountPage() {
           showVoiceStatusPlayer(userProfile);
       }
   };
+  
+  const avatar = useMemo(() => getAvatar(userProfile), [userProfile]);
+  const isAvatarUrl = avatar.startsWith('http');
 
 
   return (
@@ -362,11 +365,11 @@ export default function AccountPage() {
                         <div className="relative inline-block">
                             <Avatar className="h-20 w-20 md:h-24 md:w-24">
                                 <AvatarImage
-                                    src={authUser?.photoURL || undefined}
+                                    src={isAvatarUrl ? avatar : undefined}
                                     alt={userProfile?.name || "User"}
                                 />
                                 <AvatarFallback className="text-3xl font-headline bg-secondary">
-                                    {getAvatar(userProfile)}
+                                    {!isAvatarUrl ? avatar : ''}
                                 </AvatarFallback>
                             </Avatar>
                             {hasVoiceStatus && (

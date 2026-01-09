@@ -20,8 +20,8 @@ import { errorEmitter } from './error-emitter';
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from '@/components/ui/sheet';
 import { Button } from '@/components/ui/button';
 import { Phone, Video, PhoneOff } from 'lucide-react';
-import { formatUserId, getAvatar } from '@/lib/utils';
-import { Avatar, AvatarFallback } from '@/components/ui/avatar';
+import { formatUserId, getAvatar } from '@/lib/utils.tsx';
+import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 
 
 interface CallHandlerResult extends ReturnType<typeof useCallHandler> {}
@@ -344,6 +344,7 @@ export const FirebaseProvider: React.FC<FirebaseProviderProps> = ({
                      <SheetTitle className="text-center">Call Not Answered</SheetTitle>
                  </SheetHeader>
                  <Avatar className="h-24 w-24">
+                     <AvatarImage src={getAvatar(missedCallInfo.calleeId).startsWith('http') ? getAvatar(missedCallInfo.calleeId) : undefined} alt={missedCallInfo.calleeId} />
                      <AvatarFallback className="text-4xl">{getAvatar(missedCallInfo.calleeId)}</AvatarFallback>
                  </Avatar>
                  <p className="text-muted-foreground">{formatUserId(missedCallInfo.calleeId)} did not answer.</p>

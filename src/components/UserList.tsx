@@ -11,7 +11,7 @@ import AppLayout from "@/components/AppLayout";
 import { Button } from "@/components/ui/button";
 import { ArrowLeft, UserX } from "lucide-react";
 import { useRouter } from "next/navigation";
-import { Avatar, AvatarFallback } from "@/components/ui/avatar";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { getAvatar, formatUserId } from "@/lib/utils.tsx";
 import { Skeleton } from "@/components/ui/skeleton";
 import Link from "next/link";
@@ -32,11 +32,15 @@ function UserListSkeleton() {
 }
 
 function UserItem({ user }: { user: WithId<User> }) {
+    const avatar = getAvatar(user);
+    const isAvatarUrl = avatar.startsWith('http');
+
     return (
         <Link href={`/profile/${user.id}`} className="flex items-center justify-between p-4 hover:bg-accent">
             <div className="flex items-center space-x-4">
                 <Avatar className="h-10 w-10">
-                    <AvatarFallback>{getAvatar(user)}</AvatarFallback>
+                    <AvatarImage src={isAvatarUrl ? avatar : undefined} alt={user.name} />
+                    <AvatarFallback>{!isAvatarUrl ? avatar : ''}</AvatarFallback>
                 </Avatar>
                 <div>
                     <div className="font-semibold">{formatUserId(user.id)}</div>

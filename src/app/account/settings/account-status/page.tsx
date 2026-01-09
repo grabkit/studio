@@ -6,10 +6,10 @@ import { Button } from "@/components/ui/button";
 import { useFirebase } from "@/firebase";
 import { ArrowLeft, Calendar, Globe, MapPin, User as UserIcon } from "lucide-react";
 import { useRouter } from "next/navigation";
-import React, { useRef } from "react";
+import React, { useMemo, useRef } from "react";
 import { format } from "date-fns";
-import { Avatar, AvatarFallback } from "@/components/ui/avatar";
-import { getAvatar, formatUserId } from "@/lib/utils";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { getAvatar, formatUserId } from "@/lib/utils.tsx";
 import { Skeleton } from "@/components/ui/skeleton";
 
 export default function AccountStatusPage() {
@@ -30,6 +30,8 @@ export default function AccountStatusPage() {
     };
 
     const isLoading = !userProfile || !authUser;
+    const avatar = useMemo(() => getAvatar(userProfile), [userProfile]);
+    const isAvatarUrl = avatar.startsWith('http');
     
     return (
         <AppLayout showTopBar={false} showBottomNav={false}>
@@ -60,7 +62,8 @@ export default function AccountStatusPage() {
                         <div className="space-y-6 pt-6">
                             <div className="flex items-center space-x-4">
                                 <Avatar className="h-16 w-16">
-                                    <AvatarFallback className="text-2xl">{getAvatar(userProfile)}</AvatarFallback>
+                                    <AvatarImage src={isAvatarUrl ? avatar : undefined} alt={userProfile?.name} />
+                                    <AvatarFallback className="text-2xl">{!isAvatarUrl ? avatar : ''}</AvatarFallback>
                                 </Avatar>
                                 <div>
                                     <p className="text-xl font-bold font-headline">{userProfile?.name}</p>

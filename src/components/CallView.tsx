@@ -5,8 +5,8 @@
 import React, { useEffect, useRef } from 'react';
 import { Button } from './ui/button';
 import { Phone, PhoneOff, Mic, MicOff } from 'lucide-react';
-import { Avatar, AvatarFallback } from './ui/avatar';
-import { cn, getAvatar, formatUserId } from '@/lib/utils';
+import { Avatar, AvatarFallback, AvatarImage } from './ui/avatar';
+import { cn, getAvatar, formatUserId } from '@/lib/utils.tsx';
 import type { CallStatus } from '@/lib/types';
 import { useFirebase } from '@/firebase';
 
@@ -52,6 +52,9 @@ export function CallView({
     const isRinging = status === 'ringing' && user?.uid === calleeId;
     
     const otherPartyId = user?.uid === callerId ? calleeId : callerId;
+    
+    const avatar = getAvatar({id: otherPartyId});
+    const isAvatarUrl = avatar.startsWith('http');
 
 
     useEffect(() => {
@@ -102,7 +105,8 @@ export function CallView({
 
             <div className="text-center pt-20">
                 <Avatar className="h-32 w-32 mx-auto mb-6">
-                    <AvatarFallback className="text-5xl">{getAvatar({id: otherPartyId})}</AvatarFallback>
+                    <AvatarImage src={isAvatarUrl ? avatar : undefined} alt={otherPartyId} />
+                    <AvatarFallback className="text-5xl">{!isAvatarUrl ? avatar : ''}</AvatarFallback>
                 </Avatar>
                 <h1 className="text-3xl font-bold">{formatUserId(otherPartyId)}</h1>
                 <p className="text-muted-foreground mt-2">{getStatusText()}</p>
@@ -173,5 +177,3 @@ export function CallView({
         </div>
     );
 }
-
-    

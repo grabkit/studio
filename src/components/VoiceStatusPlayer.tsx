@@ -4,9 +4,9 @@
 
 import React from 'react';
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from "@/components/ui/sheet";
-import { Avatar, AvatarFallback } from "@/components/ui/avatar";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import type { User } from '@/lib/types';
-import { getAvatar, formatUserId } from '@/lib/utils';
+import { getAvatar, formatUserId } from '@/lib/utils.tsx';
 import { WithId, useFirebase } from '@/firebase';
 import { Button } from './ui/button';
 import { Trash2 } from 'lucide-react';
@@ -20,7 +20,7 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
-import { cn } from '@/lib/utils';
+import { cn } from '@/lib/utils.tsx';
 import { buttonVariants } from './ui/button';
 
 
@@ -28,6 +28,9 @@ export function VoiceStatusPlayer({ user: voiceUser, isOpen, onOpenChange, onDel
     const { user: currentUser } = useFirebase();
 
     const isOwnStatus = currentUser?.uid === voiceUser.id;
+    
+    const avatar = getAvatar(voiceUser);
+    const isAvatarUrl = avatar.startsWith('http');
 
     const handleDeleteClick = async () => {
         await onDelete();
@@ -49,7 +52,8 @@ export function VoiceStatusPlayer({ user: voiceUser, isOpen, onOpenChange, onDel
                 
                 <div className="relative">
                     <Avatar className="h-28 w-28">
-                        <AvatarFallback className="text-5xl">{getAvatar(voiceUser)}</AvatarFallback>
+                         <AvatarImage src={isAvatarUrl ? avatar : undefined} alt={voiceUser.name} />
+                        <AvatarFallback className="text-5xl">{!isAvatarUrl ? avatar : ''}</AvatarFallback>
                     </Avatar>
                 </div>
 
@@ -70,5 +74,3 @@ export function VoiceStatusPlayer({ user: voiceUser, isOpen, onOpenChange, onDel
         </Sheet>
     )
 }
-
-    
