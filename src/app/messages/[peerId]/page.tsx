@@ -362,7 +362,7 @@ function ChatMessages({ conversationId, conversation, onSetReply, onForward }: {
 
 
     React.useEffect(() => {
-        messagesEndRef.current?.scrollIntoView();
+        setTimeout(() => messagesEndRef.current?.scrollIntoView(), 0);
     }, [messages]);
     
     if (isLoading) {
@@ -733,5 +733,6 @@ export default function ChatPage() {
     
 
     
+
 
 
