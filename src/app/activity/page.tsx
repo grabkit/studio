@@ -60,7 +60,7 @@ const notificationInfo = {
     },
     new_post: {
         icon: Newspaper,
-        text: "posted a new thread",
+        text: "shared a new thought",
         color: "text-gray-500",
         settingKey: 'reposts', // Assuming this might fall under a general "updates" or similar category. For now, let's tie it to reposts setting.
     }
@@ -199,7 +199,7 @@ export default function ActivityPage() {
         if (!settings.push) return []; // If push notifications are off, show nothing.
         
         return notifications.filter(notification => {
-             const type = notification.type;
+             const type = notification.type as keyof typeof notificationInfo;
              const info = notificationInfo[type];
              if (info && info.settingKey) {
                  return settings[info.settingKey as keyof NotificationSettings] !== false; // Show if setting is true or undefined
