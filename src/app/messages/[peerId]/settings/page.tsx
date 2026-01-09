@@ -389,15 +389,15 @@ export default function ChatSettingsPage() {
     }
 
     return (
-        <AppLayout showTopBar={false} showBottomNav={true}>
+        <AppLayout showTopBar={false} showBottomNav={false}>
+            <div className="fixed top-0 left-0 right-0 z-10 flex items-center p-2 bg-background border-b h-14 max-w-2xl mx-auto sm:px-4">
+                <Button variant="ghost" size="icon" onClick={handleBackNavigation}>
+                    <ArrowLeft />
+                </Button>
+                <h2 className="text-lg font-bold mx-auto -translate-x-4">Conversation Info</h2>
+            </div>
             <div ref={pageRef} className="h-full bg-background animate-slide-in-right">
-                <ScrollArea className="h-full">
-                    <div className="flex items-center p-2 bg-background/80 backdrop-blur-sm h-14 max-w-2xl mx-auto sm:px-4">
-                        <Button variant="ghost" size="icon" onClick={handleBackNavigation}>
-                            <ArrowLeft />
-                        </Button>
-                        <h2 className="text-lg font-bold mx-auto -translate-x-4">Conversation Info</h2>
-                    </div>
+                <ScrollArea className="h-full pt-14">
                     <div className="px-4 pt-6 flex flex-col items-center text-center">
                         <Link href={`/profile/${peerId}`}>
                             <Avatar className="h-24 w-24 mb-4">
