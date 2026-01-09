@@ -109,7 +109,7 @@ function PostDetailItem({ post, updatePost }: { post: WithId<Post>, updatePost: 
   const { user, firestore } = useFirebase();
   const { toast } = useToast();
   const router = useRouter();
-  const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
+  const [isSheetOpen, setIsSheetOpen] = useState(false);
   const [isLiking, setIsLiking] = useState(false);
   const [likeDirection, setLikeDirection] = useState<'up' | 'down'>('up');
 
@@ -253,6 +253,11 @@ function PostDetailItem({ post, updatePost }: { post: WithId<Post>, updatePost: 
       });
     }
   };
+  
+  const handleEditPost = () => {
+    setIsSheetOpen(false);
+    router.push(`/post?postId=${post.id}`);
+  };
 
   return (
     <>
@@ -260,7 +265,7 @@ function PostDetailItem({ post, updatePost }: { post: WithId<Post>, updatePost: 
       <CardContent className="p-4">
         <div className="flex space-x-3">
           <Avatar className="h-10 w-10">
-            <AvatarImage src={isAvatarUrl ? avatar : undefined} alt={formatUserId(post.authorId)} />
+            <AvatarImage src={isAvatarUrl ? avatar : undefined} alt={String(formatUserId(post.authorId))} />
             <AvatarFallback>{!isAvatarUrl ? avatar : ''}</AvatarFallback>
           </Avatar>
           <div className="flex-1 space-y-2">
@@ -277,23 +282,52 @@ function PostDetailItem({ post, updatePost }: { post: WithId<Post>, updatePost: 
                 </div>
               <div className="flex items-center">
                 {isOwner && (
-                    <DropdownMenu>
-                        <DropdownMenuTrigger asChild>
+                    <Sheet open={isSheetOpen} onOpenChange={setIsSheetOpen}>
+                        <SheetTrigger asChild>
                         <Button variant="ghost" size="icon" className="h-6 w-6">
                             <MoreHorizontal className="h-4 w-4" />
                         </Button>
-                        </DropdownMenuTrigger>
-                        <DropdownMenuContent align="end">
-                        <DropdownMenuItem>
-                            <Edit className="mr-2 h-4 w-4" />
-                            <span>Edit Post</span>
-                        </DropdownMenuItem>
-                        <DropdownMenuItem onClick={() => setIsDeleteDialogOpen(true)} className="text-destructive">
-                            <Trash2 className="mr-2 h-4 w-4" />
-                            <span>Delete Post</span>
-                        </DropdownMenuItem>
-                        </DropdownMenuContent>
-                    </DropdownMenu>
+                        </SheetTrigger>
+                        <SheetContent side="bottom" className="rounded-t-2xl">
+                             <SheetHeader className="sr-only">
+                                <SheetTitle>Options for post</SheetTitle>
+                                <SheetDescription>Manage your post.</SheetDescription>
+                            </SheetHeader>
+                            <div className="grid gap-2 py-4">
+                                 <div className="border rounded-2xl">
+                                    <Button variant="ghost" className="justify-between text-base py-6 rounded-2xl w-full" onClick={handleEditPost}>
+                                        <span className="font-semibold">Edit</span>
+                                        <Edit className="h-5 w-5" />
+                                    </Button>
+                                 </div>
+                                <div className="border rounded-2xl">
+                                    <AlertDialog>
+                                        <AlertDialogTrigger asChild>
+                                            <Button variant="ghost" className="justify-between text-base py-6 rounded-2xl w-full text-destructive hover:text-destructive">
+                                                <span className="font-semibold">Delete</span>
+                                                <Trash2 className="h-5 w-5" />
+                                            </Button>
+                                        </AlertDialogTrigger>
+                                        <AlertDialogContent>
+                                            <AlertDialogHeader>
+                                                <AlertDialogTitle>Are you sure?</AlertDialogTitle>
+                                                <AlertDialogDescription>
+                                                This action cannot be undone. This will permanently delete your
+                                                post and remove its data from our servers.
+                                                </AlertDialogDescription>
+                                            </AlertDialogHeader>
+                                            <AlertDialogFooter>
+                                                <AlertDialogCancel>Cancel</AlertDialogCancel>
+                                                <AlertDialogAction onClick={handleDeletePost} className={cn(buttonVariants({variant: 'destructive'}))}>
+                                                Delete
+                                                </AlertDialogAction>
+                                            </AlertDialogFooter>
+                                        </AlertDialogContent>
+                                    </AlertDialog>
+                                </div>
+                            </div>
+                        </SheetContent>
+                    </Sheet>
                 )}
               </div>
             </div>
@@ -359,23 +393,6 @@ function PostDetailItem({ post, updatePost }: { post: WithId<Post>, updatePost: 
         </div>
       </CardContent>
     </Card>
-    <AlertDialog open={isDeleteDialogOpen} onOpenChange={setIsDeleteDialogOpen}>
-        <AlertDialogContent>
-          <AlertDialogHeader>
-            <AlertDialogTitle>Are you sure?</AlertDialogTitle>
-            <AlertDialogDescription>
-              This action cannot be undone. This will permanently delete your
-              post and remove its data from our servers.
-            </AlertDialogDescription>
-          </AlertDialogHeader>
-          <AlertDialogFooter>
-            <AlertDialogCancel>Cancel</AlertDialogCancel>
-            <AlertDialogAction onClick={handleDeletePost} className={cn(buttonVariants({variant: 'destructive'}))}>
-              Delete
-            </AlertDialogAction>
-          </AlertDialogFooter>
-        </AlertDialogContent>
-      </AlertDialog>
     </>
   );
 }
@@ -496,7 +513,7 @@ function CommentForm({ post, commentsAllowed }: { post: WithId<Post>, commentsAl
             <Form {...form}>
                 <form onSubmit={form.handleSubmit(onSubmit)} className="flex items-center gap-2 rounded-full bg-secondary px-3">
                 <Avatar className="h-8 w-8">
-                    <AvatarImage src={isAvatarUrl ? avatar : undefined} alt={formatUserId(user?.uid)} />
+                    <AvatarImage src={isAvatarUrl ? avatar : undefined} alt={String(formatUserId(user?.uid))} />
                     <AvatarFallback>{!isAvatarUrl ? avatar : ''}</AvatarFallback>
                 </Avatar>
                 <div className="flex-1">
@@ -656,7 +673,7 @@ function CommentItem({ comment, postAuthorId }: { comment: WithId<Comment>, post
   return (
     <div className="flex space-x-3 p-4 border-b">
       <Avatar className="h-8 w-8">
-        <AvatarImage src={isAvatarUrl ? avatar : undefined} alt={formatUserId(comment.authorId)} />
+        <AvatarImage src={isAvatarUrl ? avatar : undefined} alt={String(formatUserId(comment.authorId))} />
         <AvatarFallback>{!isAvatarUrl ? avatar : ''}</AvatarFallback>
       </Avatar>
       <div className="flex-1">
