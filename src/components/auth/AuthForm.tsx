@@ -34,7 +34,7 @@ import {
 } from "@/components/ui/alert-dialog";
 import { Loader2, Mail, Lock, User as UserIcon } from "lucide-react";
 import { createUserWithEmailAndPassword, signInWithEmailAndPassword, updateProfile } from "firebase/auth";
-import { cn, getAvatar } from "@/lib/utils";
+import { cn, getAvatar } from "@/lib/utils.tsx";
 import { Checkbox } from "@/components/ui/checkbox";
 import { doc, serverTimestamp, setDoc } from "firebase/firestore";
 import type { User as UserType } from "@/lib/types";
@@ -380,3 +380,5 @@ function ForgotPasswordDialog({form, handlePasswordReset}: {form: UseFormReturn<
     </AlertDialog>
   );
 }
+
+    

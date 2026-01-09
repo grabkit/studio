@@ -1,4 +1,5 @@
 
+
 'use client';
 
 import React, { DependencyList, createContext, useContext, ReactNode, useMemo, useState, useEffect, useRef } from 'react';
@@ -317,6 +318,8 @@ export const FirebaseProvider: React.FC<FirebaseProviderProps> = ({
     }
   };
 
+  const avatar = getAvatar({id: missedCallInfo?.calleeId});
+  const isAvatarUrl = avatar.startsWith('http');
 
   return (
     <FirebaseContext.Provider value={contextValue}>
@@ -344,8 +347,8 @@ export const FirebaseProvider: React.FC<FirebaseProviderProps> = ({
                      <SheetTitle className="text-center">Call Not Answered</SheetTitle>
                  </SheetHeader>
                  <Avatar className="h-24 w-24">
-                     <AvatarImage src={getAvatar(missedCallInfo.calleeId).startsWith('http') ? getAvatar(missedCallInfo.calleeId) : undefined} alt={missedCallInfo.calleeId} />
-                     <AvatarFallback className="text-4xl">{getAvatar(missedCallInfo.calleeId)}</AvatarFallback>
+                     <AvatarImage src={isAvatarUrl ? avatar : undefined} alt={missedCallInfo.calleeId} />
+                     <AvatarFallback className="text-4xl">{!isAvatarUrl ? avatar : ''}</AvatarFallback>
                  </Avatar>
                  <p className="text-muted-foreground">{formatUserId(missedCallInfo.calleeId)} did not answer.</p>
                  <div className="w-full max-w-xs grid grid-cols-2 gap-4">
@@ -485,3 +488,5 @@ export function useMemoFirebase<T>(factory: () => T, deps: DependencyList): T | 
   
   return memoized;
 }
+
+    

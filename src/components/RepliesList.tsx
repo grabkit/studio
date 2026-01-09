@@ -9,8 +9,8 @@ import type { WithId } from '@/firebase/firestore/use-collection';
 import { useCollection } from '@/firebase/firestore/use-collection';
 import type { Comment, Post } from '@/lib/types';
 import { Skeleton } from './ui/skeleton';
-import { Avatar, AvatarFallback } from './ui/avatar';
-import { getAvatar, formatTimestamp, formatUserId } from '@/lib/utils';
+import { Avatar, AvatarFallback, AvatarImage } from './ui/avatar';
+import { getAvatar, formatTimestamp, formatUserId } from '@/lib/utils.tsx';
 import Link from 'next/link';
 
 
@@ -31,6 +31,8 @@ function ReplySkeleton() {
 
 function Reply({ comment, post }: { comment: WithId<Comment>, post: WithId<Post> | null }) {
     const { user } = useFirebase();
+    const avatar = getAvatar({id: comment.authorId});
+    const isAvatarUrl = avatar.startsWith('http');
 
     return (
          <div className="p-4 space-y-3 border-b">
@@ -42,7 +44,8 @@ function Reply({ comment, post }: { comment: WithId<Comment>, post: WithId<Post>
 
             <div className="flex space-x-3">
                 <Avatar className="h-8 w-8">
-                    <AvatarFallback>{getAvatar({id: comment.authorId})}</AvatarFallback>
+                    <AvatarImage src={isAvatarUrl ? avatar : undefined} alt={comment.authorId} />
+                    <AvatarFallback>{!isAvatarUrl ? avatar : ''}</AvatarFallback>
                 </Avatar>
                 <div className="flex-1">
                     <div className="flex justify-between items-center">
@@ -140,4 +143,5 @@ export function RepliesList({ userId }: { userId: string }) {
     );
 }
 
+    
     
