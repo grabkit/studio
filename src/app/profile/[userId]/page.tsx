@@ -415,12 +415,12 @@ export default function UserProfilePage() {
         setIsAboutSheetOpen(true);
     }
     
-    const hasUpvotedUser = useMemo(() => {
+    const isFollowing = useMemo(() => {
         if (!user || !currentUser) return false;
-        return user.upvotedBy?.includes(currentUser.uid) || false;
+        return user.followedBy?.includes(currentUser.uid) || false;
     }, [user, currentUser]);
 
-    const handleUpvoteUser = () => {
+    const handleFollowUser = () => {
         if (!currentUser || !user || !userRef || !firestore) return;
 
         const currentUserRef = doc(firestore, 'users', currentUser.uid);
@@ -434,55 +434,55 @@ export default function UserProfilePage() {
             }
             
             const targetUser = targetUserDoc.data() as User;
-            const userHasUpvoted = (targetUser.upvotedBy || []).includes(currentUser.uid);
+            const userIsFollowing = (targetUser.followedBy || []).includes(currentUser.uid);
 
-            if (userHasUpvoted) {
-                 // Un-upvote
+            if (userIsFollowing) {
+                 // Unfollow
                 transaction.update(userRef, {
-                    upvotes: increment(-1),
-                    upvotedBy: arrayRemove(currentUser.uid)
+                    followersCount: increment(-1),
+                    followedBy: arrayRemove(currentUser.uid)
                 });
                 transaction.update(currentUserRef, {
-                    upvotedCount: increment(-1),
-                    upvotedTo: arrayRemove(user.id)
+                    followingCount: increment(-1),
+                    following: arrayRemove(user.id)
                 });
             } else {
-                 // Upvote
+                 // Follow
                  transaction.update(userRef, {
-                    upvotes: increment(1),
-                    upvotedBy: arrayUnion(currentUser.uid)
+                    followersCount: increment(1),
+                    followedBy: arrayUnion(currentUser.uid)
                 });
                 transaction.update(currentUserRef, {
-                    upvotedCount: increment(1),
-                    upvotedTo: arrayUnion(user.id)
+                    followingCount: increment(1),
+                    following: arrayUnion(user.id)
                 });
             }
         }).then(() => {
-             if (!hasUpvotedUser) {
+             if (!isFollowing) {
                 const notificationRef = doc(collection(firestore, 'users', user.id, 'notifications'));
                 const notificationData: Omit<Notification, 'id'> = {
-                    type: 'upvote',
+                    type: 'follow',
                     fromUserId: currentUser.uid,
                     timestamp: serverTimestamp(),
                     read: false,
                 };
                 setDoc(notificationRef, { ...notificationData, id: notificationRef.id }).catch(serverError => {
-                    console.error("Failed to create upvote notification:", serverError);
+                    console.error("Failed to create follow notification:", serverError);
                 });
             }
         })
         .catch(err => {
-            console.error("Upvote transaction failed:", err);
+            console.error("Follow transaction failed:", err);
             const permissionError = new FirestorePermissionError({
                 path: userRef.path,
                 operation: 'update',
-                requestResourceData: { upvotes: 'transactional update'},
+                requestResourceData: { followers: 'transactional update'},
             });
             errorEmitter.emit('permission-error', permissionError);
              toast({
                 variant: "destructive",
                 title: "Error",
-                description: "Could not process upvote.",
+                description: "Could not process follow action.",
             });
         })
     };
@@ -531,11 +531,11 @@ export default function UserProfilePage() {
                                 </div>
                                 <div>
                                     <div className="font-bold text-lg"><Skeleton className="h-6 w-8 mx-auto" /></div>
-                                    <p className="text-sm text-muted-foreground">Upvotes</p>
+                                    <p className="text-sm text-muted-foreground">Followers</p>
                                 </div>
                                 <div>
                                     <div className="font-bold text-lg"><Skeleton className="h-6 w-8 mx-auto" /></div>
-                                    <p className="text-sm text-muted-foreground">Upvoted</p>
+                                    <p className="text-sm text-muted-foreground">Following</p>
                                 </div>
                             </div>
                         </div>
@@ -673,21 +673,21 @@ export default function UserProfilePage() {
                                             )}
                                             <p className="text-sm text-muted-foreground">Posts</p>
                                         </div>
-                                        <Link href={`/profile/${userId}/social?tab=upvotes`} className="cursor-pointer hover:bg-secondary/50 rounded-md p-1 -m-1">
+                                        <Link href={`/profile/${userId}/social?tab=followers`} className="cursor-pointer hover:bg-secondary/50 rounded-md p-1 -m-1">
                                             {isLoading ? (
                                             <div className="font-bold text-lg"><Skeleton className="h-6 w-8 mx-auto" /></div>
                                             ) : (
-                                            <div className="font-bold text-lg">{user?.upvotes || 0}</div>
+                                            <div className="font-bold text-lg">{user?.followersCount || 0}</div>
                                             )}
-                                            <p className="text-sm text-muted-foreground">Upvotes</p>
+                                            <p className="text-sm text-muted-foreground">Followers</p>
                                         </Link>
-                                        <Link href={`/profile/${userId}/social?tab=upvoted`} className="cursor-pointer hover:bg-secondary/50 rounded-md p-1 -m-1">
+                                        <Link href={`/profile/${userId}/social?tab=following`} className="cursor-pointer hover:bg-secondary/50 rounded-md p-1 -m-1">
                                             {isLoading ? (
                                             <div className="font-bold text-lg"><Skeleton className="h-6 w-8 mx-auto" /></div>
                                             ) : (
-                                            <div className="font-bold text-lg">{user?.upvotedCount || 0}</div>
+                                            <div className="font-bold text-lg">{user?.followingCount || 0}</div>
                                             )}
-                                            <p className="text-sm text-muted-foreground">Upvoted</p>
+                                            <p className="text-sm text-muted-foreground">Following</p>
                                         </Link>
                                     </div>
                                 </div>
@@ -702,8 +702,8 @@ export default function UserProfilePage() {
                                     )}
                                 </div>
                                 <div className="mb-4 flex items-center space-x-2">
-                                    <Button onClick={handleUpvoteUser} variant={hasUpvotedUser ? "secondary" : "default"} className="flex-1 font-bold rounded-[5px]">
-                                        {hasUpvotedUser ? "Upvoted" : "Upvote"}
+                                    <Button onClick={handleFollowUser} variant={isFollowing ? "secondary" : "default"} className="flex-1 font-bold rounded-[5px]">
+                                        {isFollowing ? "Following" : "Follow"}
                                     </Button>
                                     {getMessageButton()}
                                 </div>
