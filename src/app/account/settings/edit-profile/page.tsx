@@ -150,7 +150,7 @@ export default function EditProfilePage() {
                             </Button>
                             <h2 className="text-lg font-bold ml-2">Edit Profile</h2>
                         </div>
-                        <Button type="submit" disabled={form.formState.isSubmitting} className="font-bold rounded-[10px]">
+                        <Button type="submit" disabled={form.formState.isSubmitting} className="font-bold rounded-[25px]">
                             {form.formState.isSubmitting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
                             Save
                         </Button>
