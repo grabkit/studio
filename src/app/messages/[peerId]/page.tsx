@@ -49,19 +49,19 @@ function PostPreviewCard({ postId }: { postId: string }) {
     const { data: post, isLoading } = useDoc<Post>(postRef);
 
     if (isLoading) {
-        return <Skeleton className="h-24 w-full rounded-[10px] bg-secondary" />;
+        return <Skeleton className="h-24 w-full rounded-lg bg-secondary" />;
     }
 
     if (!post) {
         return (
-            <div className="p-3 border rounded-[10px] text-center text-sm text-muted-foreground bg-secondary/50">
+            <div className="p-3 border rounded-lg text-center text-sm text-muted-foreground bg-secondary/50">
                 This post is no longer available.
             </div>
         );
     }
     
     return (
-        <div className="block border rounded-[10px] overflow-hidden bg-secondary/80 w-full cursor-pointer">
+        <div className="block border rounded-lg overflow-hidden bg-secondary/80 w-full cursor-pointer">
             <div className="p-3">
                 <div className="flex items-center gap-2 mb-2">
                     <Avatar className="h-6 w-6">
@@ -677,7 +677,7 @@ export default function ChatPage() {
                     onStartVideoCall={handleStartVideoCall} 
                     conversation={conversation} 
                 />
-                <div className="flex-1 overflow-y-auto pt-14 pb-20">
+                <div className="flex-1 overflow-y-auto pt-14 pb-10">
                     {isLoading ? (
                         <div className="space-y-4 p-4">
                             <Skeleton className="h-10 w-3/5" />
@@ -737,3 +737,6 @@ export default function ChatPage() {
 
 
 
+
+
+    
