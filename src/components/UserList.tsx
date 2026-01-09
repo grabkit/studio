@@ -1,4 +1,5 @@
 
+
 "use client";
 
 import { useFirebase } from "@/firebase";
@@ -11,10 +12,10 @@ import { Button } from "@/components/ui/button";
 import { ArrowLeft, UserX } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
-import { getAvatar, formatUserId } from "@/lib/utils";
+import { getAvatar, formatUserId } from "@/lib/utils.tsx";
 import { Skeleton } from "@/components/ui/skeleton";
 import Link from "next/link";
-import { cn } from "@/lib/utils";
+import { cn } from "@/lib/utils.tsx";
 
 
 function UserListSkeleton() {
@@ -38,7 +39,7 @@ function UserItem({ user }: { user: WithId<User> }) {
                     <AvatarFallback>{getAvatar(user)}</AvatarFallback>
                 </Avatar>
                 <div>
-                    <p className="font-semibold">{formatUserId(user.id)}</p>
+                    <div className="font-semibold">{formatUserId(user.id)}</div>
                 </div>
             </div>
         </Link>

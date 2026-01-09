@@ -1,10 +1,13 @@
 
+
 import { clsx, type ClassValue } from "clsx"
 import { twMerge } from "tailwind-merge"
 import { formatDistanceToNowStrict, isToday, isYesterday, format, isThisWeek, fromUnixTime } from "date-fns";
 import { defaultAvatars } from "./avatars";
 import type { User } from "./types";
 import { adjectives, nouns } from './names';
+import { BadgeCheck } from "lucide-react";
+import React from "react";
 
 
 export function cn(...inputs: ClassValue[]) {
@@ -16,7 +19,9 @@ const hashCode = (s: string) => s.split('').reduce((a, b) => {
     return a & a;
 }, 0);
 
-export function formatUserId(uid: string | undefined): string {
+const VERIFIED_USER_ID = 'j2OfaN33r2SMyg5N7lYdFkS3lA52';
+
+export function formatUserId(uid: string | undefined): React.ReactNode {
   if (!uid) return "Anonymous-User-0000";
 
   const hash = Math.abs(hashCode(uid));
@@ -34,7 +39,14 @@ export function formatUserId(uid: string | undefined): string {
     combined = combined.substring(0, 12);
   }
 
-  return `${combined}-${String(number).padStart(4, '0')}`;
+  const isVerified = uid === VERIFIED_USER_ID;
+
+  return (
+    <span className="inline-flex items-center gap-1">
+      <span>{`${combined}-${String(number).padStart(4, '0')}`}</span>
+      {isVerified && <BadgeCheck className="h-4 w-4 text-amber-500" fill="currentColor" />}
+    </span>
+  );
 }
 
 
