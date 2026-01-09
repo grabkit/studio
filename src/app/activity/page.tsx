@@ -10,7 +10,7 @@ import type { Notification, NotificationSettings } from "@/lib/types";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import Link from "next/link";
-import { Heart, MessageCircle, AlertTriangle, ArrowUp, Mail, Repeat, MessageSquareQuote, RefreshCw } from "lucide-react";
+import { Heart, MessageCircle, AlertTriangle, ArrowUp, Mail, Repeat, MessageSquareQuote, RefreshCw, Newspaper } from "lucide-react";
 import { cn, formatTimestamp, getAvatar, formatUserId } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import React, { useEffect, useState, useRef, useCallback, type TouchEvent, useMemo } from "react";
@@ -57,6 +57,12 @@ const notificationInfo = {
         text: "quoted your post",
         color: "text-blue-500",
         settingKey: 'reposts', // assuming this falls under reposts
+    },
+    new_post: {
+        icon: Newspaper,
+        text: "posted a new thread",
+        color: "text-gray-500",
+        settingKey: 'reposts', // Assuming this might fall under a general "updates" or similar category. For now, let's tie it to reposts setting.
     }
 } as const;
 

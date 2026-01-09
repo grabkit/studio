@@ -310,16 +310,16 @@
             },
             "type": {
                 "type": "string",
-                "enum": ["comment", "comment_approval", "upvote", "message_request", "like", "repost", "quote"],
+                "enum": ["comment", "comment_approval", "upvote", "message_request", "like", "repost", "quote", "new_post"],
                 "description": "The type of activity."
             },
             "postId": {
                 "type": "string",
                 "description": "The ID of the post the activity is related to. Not present for upvote or message_request types."
             },
-            "postContent": {
+            "activityContent": {
                 "type": "string",
-                "description": "A snippet of the content of the post. Not present for upvote or message_request types."
+                "description": "A snippet of the content of the post or comment."
             },
             "fromUserId": {
                 "type": "string",

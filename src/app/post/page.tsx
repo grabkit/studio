@@ -6,7 +6,7 @@ import { useRouter, useSearchParams } from "next/navigation";
 import { useForm, useFieldArray } from "react-hook-form";
 import * as z from "zod";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { collection, serverTimestamp, setDoc, doc, updateDoc, getDoc } from "firebase/firestore";
+import { collection, serverTimestamp, setDoc, doc, updateDoc, getDoc, writeBatch } from "firebase/firestore";
 import { useFirebase, useDoc, useMemoFirebase } from "@/firebase";
 import type { Post, QuotedPost, Notification } from "@/lib/types";
 import { WithId } from "@/firebase/firestore/use-collection";
@@ -308,6 +308,25 @@ function PostPageComponent() {
                     console.error("Failed to create quote notification:", serverError);
                 });
             }
+
+            // Fan-out notifications to users who have upvoted the author
+            if (userProfile && userProfile.upvotedBy && userProfile.upvotedBy.length > 0) {
+              const batch = writeBatch(firestore);
+              userProfile.upvotedBy.forEach(followerId => {
+                  const notificationRef = doc(collection(firestore, 'users', followerId, 'notifications'));
+                  const notificationData: Omit<Notification, 'id' | 'timestamp'> = {
+                      type: 'new_post',
+                      postId: newPostRef.id,
+                      fromUserId: user.uid,
+                      activityContent: values.content?.substring(0, 100),
+                      read: false,
+                  };
+                  batch.set(notificationRef, { ...notificationData, id: notificationRef.id, timestamp: serverTimestamp() });
+              });
+              batch.commit().catch(err => console.error("Failed to fan-out new post notifications:", err));
+            }
+
+
             form.reset();
             setIsOpen(false);
           })
