@@ -61,13 +61,13 @@ function PostPreviewCard({ postId }: { postId: string }) {
     }
     
     return (
-        <div className="block border rounded-lg overflow-hidden bg-secondary/80 w-full cursor-pointer">
+        <div className="block rounded-[10px] overflow-hidden bg-secondary/80 w-full cursor-pointer">
             <div className="p-3">
                 <div className="flex items-center gap-2 mb-2">
                     <Avatar className="h-6 w-6">
                         <AvatarFallback className="text-xs">{getAvatar({id: post.authorId})}</AvatarFallback>
                     </Avatar>
-                    <span className="text-xs font-semibold">{formatUserId(post.authorId)}</span>
+                    <span className="text-xs font-semibold text-foreground">{formatUserId(post.authorId)}</span>
                 </div>
                 <p className="text-sm line-clamp-3 text-foreground">{post.content}</p>
 
