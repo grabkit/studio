@@ -501,7 +501,7 @@ function CommentForm({ post, commentsAllowed }: { post: WithId<Post>, commentsAl
                         <FormControl>
                         <Textarea
                             placeholder="Post your reply"
-                            className="text-base border-none focus-visible:ring-0 shadow-none p-0 bg-transparent py-2.5"
+                            className="text-base border-none focus-visible:ring-0 focus-visible:ring-offset-0 shadow-none p-0 bg-transparent py-2.5"
                             rows={1}
                             {...field}
                         />
