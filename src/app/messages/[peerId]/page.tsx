@@ -563,7 +563,7 @@ function MessageInput({ conversationId, conversation, replyingTo, onCancelReply 
                     <form onSubmit={form.handleSubmit(onSubmit)} className="flex-1 flex items-center rounded-full bg-secondary px-2">
                          <Textarea
                             placeholder="Message..."
-                            className="flex-1 bg-transparent border-none focus-visible:ring-0 shadow-none resize-none text-base px-2 py-2.5"
+                            className="flex-1 bg-transparent border-none focus:ring-0 shadow-none resize-none text-base px-2 py-2.5"
                             rows={1}
                             maxRows={5}
                             onPaste={handlePaste}
@@ -578,7 +578,7 @@ function MessageInput({ conversationId, conversation, replyingTo, onCancelReply 
                          <Button
                             type="submit"
                             size="icon"
-                            disabled={form.formState.isSubmitting || (!textValue && !linkMetadata)}
+                            disabled={!textValue && !linkMetadata}
                             className="rounded-full shrink-0 h-8 w-8 bg-black hover:bg-gray-800"
                         >
                             <Send className="h-4 w-4" fill="currentColor"/>
