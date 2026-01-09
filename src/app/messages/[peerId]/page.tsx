@@ -179,7 +179,11 @@ function MessageBubble({ message, isOwnMessage, conversation, onSetReply, onForw
 
             {isPostShare && message.postId ? (
                 <div className="w-full my-1 px-2">
-                    <PostPreviewCard postId={message.postId} />
+                    <SheetTrigger asChild>
+                         <div className="cursor-pointer">
+                            <PostPreviewCard postId={message.postId} />
+                        </div>
+                    </SheetTrigger>
                 </div>
             ) : isLinkShare && message.linkMetadata ? (
                 <div className="w-full my-1 px-2">
@@ -358,7 +362,7 @@ function ChatMessages({ conversationId, conversation, onSetReply, onForward }: {
 
 
     React.useEffect(() => {
-        messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
+        messagesEndRef.current?.scrollIntoView();
     }, [messages]);
     
     if (isLoading) {
@@ -729,4 +733,5 @@ export default function ChatPage() {
     
 
     
+
 
