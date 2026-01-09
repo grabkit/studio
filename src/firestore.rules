@@ -71,8 +71,7 @@ service cloud.firestore {
         allow delete: if isSignedIn() && (isOwner(resource.data.authorId) || isOwner(get(/databases/$(database)/documents/posts/$(postId)).data.authorId));
         allow update: if isSignedIn() && (
             (isOwner(resource.data.authorId) && request.resource.data.diff(resource.data).affectedKeys().hasAll(['content', 'lastEdited'])) ||
-            (isOwner(get(/databases/$(database)/documents/posts/$(postId)).data.authorId) && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['status'])) ||
-            (isOwner(get(/databases/$(database)/documents/posts/$(postId)).data.authorId) && request.resource.data.diff(resource.data).affectedKeys().hasAll(['content', 'lastEdited']))
+            (isOwner(get(/databases/$(database)/documents/posts/$(postId)).data.authorId) && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['status']))
         );
       }
     }
