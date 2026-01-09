@@ -26,7 +26,6 @@ import { RepliesList } from "@/components/RepliesList";
 import { Sheet, SheetContent, SheetTrigger, SheetHeader, SheetTitle, SheetDescription, SheetClose } from "@/components/ui/sheet";
 import { ReportDialog } from "@/components/ReportDialog";
 import { QrCodeDialog } from "@/components/QrCodeDialog";
-import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 
 
 function AboutProfileSheet({ user, isOpen, onOpenChange }: { user: WithId<User>, isOpen: boolean, onOpenChange: (open: boolean) => void }) {
@@ -86,6 +85,7 @@ export default function UserProfilePage() {
     const [isMoreOptionsSheetOpen, setIsMoreOptionsSheetOpen] = useState(false);
     const [isAboutSheetOpen, setIsAboutSheetOpen] = useState(false);
     const [isQrDialogOpen, setIsQrDialogOpen] = useState(false);
+    const [isUnfollowSheetOpen, setIsUnfollowSheetOpen] = useState(false);
 
     const userRef = useMemoFirebase(() => {
         if (!firestore || !userId) return null;
@@ -458,8 +458,9 @@ export default function UserProfilePage() {
                     following: arrayUnion(user.id)
                 });
             }
-        }).then(() => {
-             if (!isFollowing) {
+            return { didFollow: !userIsFollowing };
+        }).then(({ didFollow }) => {
+             if (didFollow) {
                 const notificationRef = doc(collection(firestore, 'users', user.id, 'notifications'));
                 const notificationData: Omit<Notification, 'id'> = {
                     type: 'follow',
@@ -486,6 +487,10 @@ export default function UserProfilePage() {
                 description: "Could not process follow action.",
             });
         })
+        .finally(() => {
+            // Close sheet if open
+            setIsUnfollowSheetOpen(false);
+        });
     };
     
     const hasVoiceStatus = useMemo(() => {
@@ -704,19 +709,25 @@ export default function UserProfilePage() {
                                 </div>
                                 <div className="mb-4 flex items-center space-x-2">
                                      {isFollowing ? (
-                                        <DropdownMenu>
-                                            <DropdownMenuTrigger asChild>
-                                                 <Button variant="secondary" className="flex-1 font-bold rounded-[5px]">
+                                        <Sheet open={isUnfollowSheetOpen} onOpenChange={setIsUnfollowSheetOpen}>
+                                            <SheetTrigger asChild>
+                                                 <Button variant="secondary" className="flex-1 font-bold rounded-[5px] gap-1">
                                                     Following
-                                                    <ChevronDown className="h-4 w-4 ml-1" />
+                                                    <ChevronDown className="h-4 w-4" />
                                                 </Button>
-                                            </DropdownMenuTrigger>
-                                            <DropdownMenuContent align="end" className="w-48">
-                                                <DropdownMenuItem onClick={handleFollowUser} className="text-destructive focus:text-destructive">
+                                            </SheetTrigger>
+                                            <SheetContent side="bottom" className="rounded-t-2xl">
+                                                <SheetHeader className="text-center pb-4">
+                                                    <SheetTitle>Unfollow {formatUserId(user.id)}?</SheetTitle>
+                                                </SheetHeader>
+                                                <Button onClick={handleFollowUser} variant="destructive" className="w-full">
                                                     Unfollow
-                                                </DropdownMenuItem>
-                                            </DropdownMenuContent>
-                                        </DropdownMenu>
+                                                </Button>
+                                                <SheetClose asChild>
+                                                    <Button variant="ghost" className="w-full mt-2">Cancel</Button>
+                                                </SheetClose>
+                                            </SheetContent>
+                                        </Sheet>
                                      ) : (
                                         <Button onClick={handleFollowUser} variant="default" className="flex-1 font-bold rounded-[5px]">
                                             Follow
@@ -830,3 +841,5 @@ export default function UserProfilePage() {
         </AppLayout>
     );
 }
+
+    
