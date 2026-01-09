@@ -488,7 +488,7 @@ function CommentForm({ post, commentsAllowed }: { post: WithId<Post>, commentsAl
     <div className="fixed bottom-0 left-0 right-0 bg-background border-t z-10 max-w-2xl mx-auto sm:px-4">
         <div className="p-2">
             <Form {...form}>
-                <form onSubmit={form.handleSubmit(onSubmit)} className="flex items-center space-x-2 rounded-full bg-secondary px-3">
+                <form onSubmit={form.handleSubmit(onSubmit)} className="flex items-center gap-2 rounded-full bg-secondary px-3">
                 <Avatar className="h-8 w-8">
                     <AvatarFallback>{getAvatar(user?.uid)}</AvatarFallback>
                 </Avatar>
@@ -501,7 +501,7 @@ function CommentForm({ post, commentsAllowed }: { post: WithId<Post>, commentsAl
                         <FormControl>
                         <Textarea
                             placeholder="Post your reply"
-                            className="text-base border-none focus-visible:ring-0 focus-visible:ring-offset-0 shadow-none p-0 bg-transparent py-2.5"
+                            className="text-base border-none focus-visible:ring-0 focus-visible:ring-offset-0 shadow-none p-0 bg-transparent py-2.5 px-2"
                             rows={1}
                             {...field}
                         />
