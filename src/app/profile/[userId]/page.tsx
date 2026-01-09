@@ -16,7 +16,7 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button, buttonVariants } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { ArrowLeft, MessageSquare, ArrowUpRight, ArrowUp, MoreHorizontal, ShieldAlert, Flag, VolumeX, Info, MinusCircle, Link as LinkIcon, QrCode, Calendar, Badge, User as UserIcon, Volume2, BarChart3, RefreshCw } from "lucide-react";
+import { ArrowLeft, MessageSquare, ArrowUpRight, MoreHorizontal, ShieldAlert, Flag, VolumeX, Info, MinusCircle, Link as LinkIcon, QrCode, Calendar, Badge, User as UserIcon, Volume2, BarChart3, RefreshCw, ChevronDown } from "lucide-react";
 import { getAvatar, cn, formatLastSeen, formatUserId } from "@/lib/utils.tsx";
 import { FirestorePermissionError } from "@/firebase/errors";
 import { errorEmitter } from "@/firebase/error-emitter";
@@ -26,6 +26,7 @@ import { RepliesList } from "@/components/RepliesList";
 import { Sheet, SheetContent, SheetTrigger, SheetHeader, SheetTitle, SheetDescription, SheetClose } from "@/components/ui/sheet";
 import { ReportDialog } from "@/components/ReportDialog";
 import { QrCodeDialog } from "@/components/QrCodeDialog";
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 
 
 function AboutProfileSheet({ user, isOpen, onOpenChange }: { user: WithId<User>, isOpen: boolean, onOpenChange: (open: boolean) => void }) {
@@ -702,9 +703,25 @@ export default function UserProfilePage() {
                                     )}
                                 </div>
                                 <div className="mb-4 flex items-center space-x-2">
-                                    <Button onClick={handleFollowUser} variant={isFollowing ? "secondary" : "default"} className="flex-1 font-bold rounded-[5px]">
-                                        {isFollowing ? "Following" : "Follow"}
-                                    </Button>
+                                     {isFollowing ? (
+                                        <DropdownMenu>
+                                            <DropdownMenuTrigger asChild>
+                                                 <Button variant="secondary" className="flex-1 font-bold rounded-[5px]">
+                                                    Following
+                                                    <ChevronDown className="h-4 w-4 ml-1" />
+                                                </Button>
+                                            </DropdownMenuTrigger>
+                                            <DropdownMenuContent align="end" className="w-48">
+                                                <DropdownMenuItem onClick={handleFollowUser} className="text-destructive focus:text-destructive">
+                                                    Unfollow
+                                                </DropdownMenuItem>
+                                            </DropdownMenuContent>
+                                        </DropdownMenu>
+                                     ) : (
+                                        <Button onClick={handleFollowUser} variant="default" className="flex-1 font-bold rounded-[5px]">
+                                            Follow
+                                        </Button>
+                                     )}
                                     {getMessageButton()}
                                 </div>
                             </div>
