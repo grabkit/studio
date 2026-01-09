@@ -141,7 +141,7 @@ export function PollComponent({ post, user }: { post: WithId<Post>, user: any })
                 const isUserChoice = userVoteIndex === index;
 
                 if (hasVoted) {
-                    return (
+                     return (
                         <div key={index} className="relative w-full h-10 rounded-full overflow-hidden bg-secondary">
                              <div
                                 className={cn(
@@ -150,23 +150,24 @@ export function PollComponent({ post, user }: { post: WithId<Post>, user: any })
                                 )}
                                 style={{ width: `${percentage}%` }}
                             />
+                            {/* Unfilled Text */}
                             <div className="absolute inset-0 flex items-center justify-between px-4">
-                                <div className="flex items-center gap-2">
-                                     {isUserChoice && <CheckCircle2 className="h-4 w-4 text-primary-foreground" />}
-                                    <span className={cn(
-                                        "font-medium truncate",
-                                        isUserChoice ? "text-primary-foreground" : "text-primary"
-                                    )}>
-                                        {option.option}
-                                    </span>
+                                 <div className="flex items-center gap-2">
+                                     {isUserChoice && <CheckCircle2 className="h-4 w-4 text-primary" />}
+                                    <span className="font-medium truncate text-primary">{option.option}</span>
                                 </div>
-                                <span className={cn(
-                                    "font-semibold",
-                                    isUserChoice && percentage < 99 ? "text-primary" :
-                                    isUserChoice ? "text-primary-foreground" : "text-primary"
-                                )}>
-                                    {percentage.toFixed(0)}%
-                                </span>
+                                <span className="font-semibold text-primary">{percentage.toFixed(0)}%</span>
+                            </div>
+                            {/* Filled Text - clipped */}
+                            <div
+                                className="absolute inset-0 flex items-center justify-between px-4"
+                                style={{ clipPath: `inset(0 ${100 - percentage}% 0 0)` }}
+                            >
+                               <div className="flex items-center gap-2">
+                                     {isUserChoice && <CheckCircle2 className="h-4 w-4 text-primary-foreground" />}
+                                    <span className="font-medium truncate text-primary-foreground">{option.option}</span>
+                                </div>
+                                <span className="font-semibold text-primary-foreground">{percentage.toFixed(0)}%</span>
                             </div>
                         </div>
                     );
