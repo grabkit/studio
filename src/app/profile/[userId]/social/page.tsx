@@ -110,8 +110,8 @@ export default function SocialPage() {
                     <TabsContent value="followers">
                          <motion.div
                             key="followers"
-                            initial={{ opacity: 0, y: 10 }}
-                            animate={{ opacity: 1, y: 0 }}
+                            initial={{ scale: 0.98, opacity: 0 }}
+                            animate={{ scale: 1, opacity: 1 }}
                             transition={{ duration: 0.3 }}
                         >
                             <UserList
@@ -124,8 +124,8 @@ export default function SocialPage() {
                     <TabsContent value="following">
                          <motion.div
                             key="following"
-                            initial={{ opacity: 0, y: 10 }}
-                            animate={{ opacity: 1, y: 0 }}
+                            initial={{ scale: 0.98, opacity: 0 }}
+                            animate={{ scale: 1, opacity: 1 }}
                             transition={{ duration: 0.3 }}
                         >
                             <UserList
