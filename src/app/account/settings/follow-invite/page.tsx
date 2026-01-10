@@ -13,7 +13,7 @@ export default function FollowInvitePage() {
     const { toast } = useToast();
     const pageRef = useRef<HTMLDivElement>(null);
 
-    const shareLink = "https://blur.app/join"; // Replace with your actual app link
+    const shareLink = typeof window !== 'undefined' ? window.location.origin : '';
 
     const handleBackNavigation = () => {
         if (pageRef.current) {
