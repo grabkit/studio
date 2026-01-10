@@ -82,7 +82,7 @@ function NotificationItem({ notification }: { notification: WithId<Notification>
 
     return (
         <Link href={linkHref || '#'} className={cn(
-            "flex items-start space-x-4 p-4 border-b transition-colors hover:bg-accent",
+            "flex items-start space-x-4 p-4 transition-colors hover:bg-accent",
             !notification.read && "bg-primary/5"
         )}>
              <div className="relative">
@@ -127,7 +127,7 @@ function NotificationItem({ notification }: { notification: WithId<Notification>
 
 function ActivitySkeleton() {
     return (
-        <div className="flex items-start space-x-4 p-4 border-b">
+        <div className="flex items-start space-x-4 p-4">
             <Skeleton className="h-10 w-10 rounded-full" />
             <div className="flex-1 space-y-2">
                 <Skeleton className="h-4 w-3/4" />
@@ -276,7 +276,7 @@ export default function ActivityPage() {
                     <div className="p-4 border-b">
                         <h1 className="text-2xl font-bold font-headline">Activity</h1>
                     </div>
-                    <div className="divide-y">
+                    <div>
                         {isLoading && (
                             <>
                                 <ActivitySkeleton />
