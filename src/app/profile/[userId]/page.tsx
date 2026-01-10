@@ -721,11 +721,11 @@ export default function UserProfilePage() {
                                                 <SheetHeader className="text-center pb-4">
                                                     <SheetTitle>Unfollow {formatUserId(user.id)}?</SheetTitle>
                                                 </SheetHeader>
-                                                <Button onClick={handleFollowUser} variant="destructive" className="w-full rounded-full">
+                                                <Button onClick={handleFollowUser} variant="default" className="w-full rounded-full">
                                                     Unfollow
                                                 </Button>
                                                 <SheetClose asChild>
-                                                    <Button variant="ghost" className="w-full mt-2">Cancel</Button>
+                                                    <Button variant="outline" className="w-full mt-2 rounded-full">Cancel</Button>
                                                 </SheetClose>
                                             </SheetContent>
                                         </Sheet>
