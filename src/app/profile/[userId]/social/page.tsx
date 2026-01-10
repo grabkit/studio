@@ -14,6 +14,7 @@ import type { User } from "@/lib/types";
 import UserList from "@/components/UserList";
 import { Skeleton } from "@/components/ui/skeleton";
 import { formatUserId } from "@/lib/utils";
+import { motion } from "framer-motion";
 
 export default function SocialPage() {
     const router = useRouter();
@@ -107,18 +108,32 @@ export default function SocialPage() {
                         </TabsList>
                     </div>
                     <TabsContent value="followers">
-                        <UserList
-                            userIds={user.followedBy || []}
-                            emptyTitle="No Followers Yet"
-                            emptyDescription="When other users follow this profile, they will appear here."
-                        />
+                         <motion.div
+                            key="followers"
+                            initial={{ opacity: 0, y: 10 }}
+                            animate={{ opacity: 1, y: 0 }}
+                            transition={{ duration: 0.3 }}
+                        >
+                            <UserList
+                                userIds={user.followedBy || []}
+                                emptyTitle="No Followers Yet"
+                                emptyDescription="When other users follow this profile, they will appear here."
+                            />
+                        </motion.div>
                     </TabsContent>
                     <TabsContent value="following">
-                        <UserList
-                            userIds={user.following || []}
-                            emptyTitle="Not Following Anyone Yet"
-                            emptyDescription="When this user follows others, those profiles will appear here."
-                        />
+                         <motion.div
+                            key="following"
+                            initial={{ opacity: 0, y: 10 }}
+                            animate={{ opacity: 1, y: 0 }}
+                            transition={{ duration: 0.3 }}
+                        >
+                            <UserList
+                                userIds={user.following || []}
+                                emptyTitle="Not Following Anyone Yet"
+                                emptyDescription="When this user follows others, those profiles will appear here."
+                            />
+                        </motion.div>
                     </TabsContent>
                 </Tabs>
             </div>
