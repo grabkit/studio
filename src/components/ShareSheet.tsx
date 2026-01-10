@@ -42,8 +42,8 @@ function ConversationItem({ conversation, onSend, sentStatus }: { conversation: 
                     <p className="text-xs text-muted-foreground">{conversation.lastMessage ? `Last: ${conversation.lastMessage.substring(0, 20)}...` : 'No messages yet'}</p>
                 </div>
             </div>
-            <Button size="sm" variant={sentStatus ? "secondary" : "default"} onClick={() => onSend(conversation)} disabled={sentStatus}>
-                {sentStatus ? <Check className="h-4 w-4" /> : <Send className="h-4 w-4" />}
+            <Button size="icon" variant={sentStatus ? "secondary" : "default"} onClick={() => onSend(conversation)} disabled={sentStatus} className="rounded-full">
+                {sentStatus ? <Check className="h-4 w-4" /> : <Send className="h-4 w-4" fill="currentColor" />}
             </Button>
         </div>
     )
