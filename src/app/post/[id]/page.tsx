@@ -403,8 +403,7 @@ const CommentFormSchema = z.object({
 });
 
 function CommentForm({ post, commentsAllowed }: { post: WithId<Post>, commentsAllowed?: boolean }) {
-  const { user, userProfile } = useUser();
-  const { firestore } = useFirebase();
+  const { user, userProfile, firestore } = useFirebase();
   const { toast } = useToast();
   const form = useForm<z.infer<typeof CommentFormSchema>>({
     resolver: zodResolver(CommentFormSchema),
@@ -919,3 +918,4 @@ export default function PostDetailPage() {
 }
 
     
+
