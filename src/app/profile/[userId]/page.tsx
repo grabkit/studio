@@ -375,7 +375,10 @@ export default function UserProfilePage() {
             url: window.location.href,
         };
         try {
-            if (navigator.share) {
+            const androidInterface = (window as any).Android;
+            if (androidInterface && typeof androidInterface.share === 'function') {
+                androidInterface.share(shareData.title, shareData.text, shareData.url);
+            } else if (navigator.share) {
                 await navigator.share(shareData);
             } else {
                  handleCopyLink();
@@ -842,7 +845,3 @@ export default function UserProfilePage() {
         </AppLayout>
     );
 }
-
-
-
-    

@@ -1,4 +1,5 @@
 
+
 "use client";
 
 import AppLayout from "@/components/AppLayout";
@@ -288,7 +289,10 @@ export default function AccountPage() {
     };
 
     try {
-      if (navigator.share) {
+      const androidInterface = (window as any).Android;
+      if (androidInterface && typeof androidInterface.share === 'function') {
+        androidInterface.share(shareData.title, shareData.text, shareData.url);
+      } else if (navigator.share) {
         await navigator.share(shareData);
       } else {
         await navigator.clipboard.writeText(shareData.url);
@@ -484,8 +488,3 @@ export default function AccountPage() {
     </AppLayout>
   )
 }
-
-    
-
-
-    
