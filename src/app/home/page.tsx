@@ -71,13 +71,33 @@ export function PollComponent({ post, user, onVote }: { post: WithId<Post>, user
     const { firestore } = useFirebase();
     const { toast } = useToast();
     const [isProcessing, setIsProcessing] = useState(false);
-    
+    const [animatedPercentages, setAnimatedPercentages] = useState<number[] | null>(null);
+
     const userVoteIndex = post.voters && user ? post.voters[user.uid] : undefined;
     const hasVoted = userVoteIndex !== undefined;
 
     const totalVotes = useMemo(() => {
         return post.pollOptions?.reduce((acc, option) => acc + option.votes, 0) || 0;
     }, [post.pollOptions]);
+
+    useEffect(() => {
+        if (hasVoted) {
+            const percentages = post.pollOptions?.map(option =>
+                totalVotes > 0 ? (option.votes / totalVotes) * 100 : 0
+            ) || [];
+            
+            // Set to 0 initially for the animation
+            setAnimatedPercentages(Array(percentages.length).fill(0));
+
+            // After a short delay, update to the actual percentages to trigger the transition
+            const timer = setTimeout(() => {
+                setAnimatedPercentages(percentages);
+            }, 10); // A small delay is enough
+
+            return () => clearTimeout(timer);
+        }
+    }, [hasVoted, post.pollOptions, totalVotes]);
+
 
     const handleVote = async (optionIndex: number) => {
         if (!user || !firestore) {
@@ -90,8 +110,24 @@ export function PollComponent({ post, user, onVote }: { post: WithId<Post>, user
 
         const postRef = doc(firestore, 'posts', post.id);
 
+        // Optimistic UI Update
+        const optimisticPollOptions = post.pollOptions ? post.pollOptions.map((opt, i) => {
+            if (i === optionIndex) {
+                return { ...opt, votes: opt.votes + 1 };
+            }
+            return opt;
+        }) : [];
+
+        const optimisticVoters = { ...(post.voters || {}), [user.uid]: optionIndex };
+        const optimisticPost = { ...post, pollOptions: optimisticPollOptions, voters: optimisticVoters };
+
+        if (onVote) {
+            onVote(optimisticPost);
+        }
+
+        // Firestore Transaction
         try {
-            const updatedPostData = await runTransaction(firestore, async (transaction) => {
+            await runTransaction(firestore, async (transaction) => {
                 const postDoc = await transaction.get(postRef);
                 if (!postDoc.exists()) {
                     throw "Post does not exist!";
@@ -100,8 +136,9 @@ export function PollComponent({ post, user, onVote }: { post: WithId<Post>, user
                 const currentPost = postDoc.data() as Post;
 
                 if (currentPost.voters && currentPost.voters[user.uid] !== undefined) {
-                    toast({ variant: "default", title: "You have already voted." });
-                    return currentPost; // Return current data if already voted
+                    // Another client might have already processed a vote.
+                    // The optimistic update is fine, but we don't need to toast.
+                    return;
                 }
                 
                 const newPollOptions = currentPost.pollOptions ? [...currentPost.pollOptions] : [];
@@ -111,22 +148,18 @@ export function PollComponent({ post, user, onVote }: { post: WithId<Post>, user
 
                 const newVoters = { ...(currentPost.voters || {}), [user.uid]: optionIndex };
                 
-                const updatedData = {
+                transaction.update(postRef, {
                     pollOptions: newPollOptions,
                     voters: newVoters,
-                };
-
-                transaction.update(postRef, updatedData);
-
-                return { ...currentPost, ...updatedData };
+                });
             });
-
-             if (onVote && updatedPostData) {
-                onVote(updatedPostData);
-            }
 
         } catch (e: any) {
             console.error(e);
+            // Revert optimistic update on failure
+            if (onVote) {
+                onVote(post);
+            }
             const permissionError = new FirestorePermissionError({
                 path: postRef.path,
                 operation: 'update',
@@ -146,7 +179,8 @@ export function PollComponent({ post, user, onVote }: { post: WithId<Post>, user
     return (
         <div className="mt-4 space-y-2.5">
             {post.pollOptions?.map((option, index) => {
-                const percentage = totalVotes > 0 ? (option.votes / totalVotes) * 100 : 0;
+                const originalPercentage = totalVotes > 0 ? (option.votes / totalVotes) * 100 : 0;
+                const displayPercentage = animatedPercentages ? animatedPercentages[index] : originalPercentage;
                 const isUserChoice = userVoteIndex === index;
 
                 if (hasVoted) {
@@ -157,7 +191,7 @@ export function PollComponent({ post, user, onVote }: { post: WithId<Post>, user
                                     "absolute left-0 top-0 h-full transition-all duration-500 ease-out",
                                     isUserChoice ? "bg-primary" : "bg-primary/20"
                                 )}
-                                style={{ width: `${percentage}%` }}
+                                style={{ width: `${displayPercentage}%` }}
                             />
                             {/* Unfilled Text */}
                             <div className="absolute inset-0 flex items-center justify-between px-4">
@@ -165,18 +199,18 @@ export function PollComponent({ post, user, onVote }: { post: WithId<Post>, user
                                      {isUserChoice && <CheckCircle2 className="h-4 w-4 text-primary" />}
                                     <span className="font-bold truncate text-primary">{option.option}</span>
                                 </div>
-                                <span className="font-semibold text-primary">{percentage.toFixed(0)}%</span>
+                                <span className="font-semibold text-primary">{originalPercentage.toFixed(0)}%</span>
                             </div>
                             {/* Filled Text - clipped */}
                             <div
                                 className="absolute inset-0 flex items-center justify-between px-4"
-                                style={{ clipPath: `inset(0 ${100 - percentage}% 0 0)` }}
+                                style={{ clipPath: `inset(0 ${100 - displayPercentage}% 0 0)` }}
                             >
                                <div className="flex items-center gap-2">
                                      {isUserChoice && <CheckCircle2 className="h-4 w-4 text-primary-foreground" />}
                                     <span className="font-bold truncate text-primary-foreground">{option.option}</span>
                                 </div>
-                                <span className="font-semibold text-primary-foreground">{percentage.toFixed(0)}%</span>
+                                <span className="font-semibold text-primary-foreground">{originalPercentage.toFixed(0)}%</span>
                             </div>
                         </div>
                     );
@@ -756,5 +790,7 @@ export default function HomePage() {
 
 
 
+
+    
 
     

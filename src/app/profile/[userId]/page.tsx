@@ -479,7 +479,7 @@ export default function UserProfilePage() {
             const permissionError = new FirestorePermissionError({
                 path: userRef.path,
                 operation: 'update',
-                requestResourceData: { followers: 'transactional update'},
+                requestResourceData: { followersCount: 'transactional update'},
             });
             errorEmitter.emit('permission-error', permissionError);
              toast({
@@ -843,3 +843,6 @@ export default function UserProfilePage() {
     );
 }
 
+
+
+    
