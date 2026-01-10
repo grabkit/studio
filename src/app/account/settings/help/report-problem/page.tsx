@@ -11,13 +11,14 @@ import * as z from "zod";
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
 import { Textarea } from "@/components/ui/textarea";
 import { useToast } from "@/hooks/use-toast";
-import { useState, useRef } from "react";
+import { useState } from "react";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useFirebase } from "@/firebase";
 import { collection, doc, serverTimestamp, setDoc } from "firebase/firestore";
 import { errorEmitter } from "@/firebase/error-emitter";
 import { FirestorePermissionError } from "@/firebase/errors";
 import type { ProblemReport } from "@/lib/types";
+import { motion } from "framer-motion";
 
 
 const reportProblemSchema = z.object({
@@ -30,7 +31,6 @@ export default function ReportProblemPage() {
     const { toast } = useToast();
     const { firestore, user } = useFirebase();
     const [isSubmitting, setIsSubmitting] = useState(false);
-    const pageRef = useRef<HTMLDivElement>(null);
 
     const form = useForm<z.infer<typeof reportProblemSchema>>({
         resolver: zodResolver(reportProblemSchema),
@@ -39,18 +39,6 @@ export default function ReportProblemPage() {
             description: "",
         },
     });
-
-    const handleBackNavigation = () => {
-        if (pageRef.current) {
-            pageRef.current.classList.remove('animate-slide-in-right');
-            pageRef.current.classList.add('animate-slide-out-right');
-            setTimeout(() => {
-                router.back();
-            }, 300);
-        } else {
-            router.back();
-        }
-    };
 
     const onSubmit = async (values: z.infer<typeof reportProblemSchema>) => {
         if (!firestore || !user) {
@@ -74,7 +62,7 @@ export default function ReportProblemPage() {
                 title: "Report Submitted",
                 description: "Thank you for your feedback. We'll look into it.",
             });
-            handleBackNavigation();
+            router.back();
         } catch (error) {
             console.error("Failed to submit problem report:", error);
             const permissionError = new FirestorePermissionError({
@@ -96,13 +84,18 @@ export default function ReportProblemPage() {
     return (
         <AppLayout showTopBar={false} showBottomNav={false}>
             <div className="fixed top-0 left-0 right-0 z-10 flex items-center p-2 bg-background border-b h-14 max-w-2xl mx-auto sm:px-4">
-                <Button variant="ghost" size="icon" onClick={handleBackNavigation}>
+                <Button variant="ghost" size="icon" onClick={() => router.back()}>
                     <ArrowLeft />
                 </Button>
                 <h2 className="text-lg font-bold mx-auto -translate-x-4">Report a Problem</h2>
             </div>
-            <div ref={pageRef} className="h-full bg-background animate-slide-in-right">
-                <div className="pt-14 p-4 h-full overflow-y-auto">
+            <motion.div 
+                className="pt-14 h-full"
+                initial={{ scale: 0.98, opacity: 0 }}
+                animate={{ scale: 1, opacity: 1 }}
+                transition={{ duration: 0.3 }}
+            >
+                <div className="p-4 h-full overflow-y-auto">
                     <Form {...form}>
                         <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
                             <FormField
@@ -152,7 +145,7 @@ export default function ReportProblemPage() {
                         </form>
                     </Form>
                 </div>
-            </div>
+            </motion.div>
         </AppLayout>
     )
 }

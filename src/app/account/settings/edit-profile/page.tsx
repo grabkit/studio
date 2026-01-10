@@ -1,8 +1,7 @@
 
-
 "use client";
 
-import React, { useState, useRef } from "react";
+import React, { useState } from "react";
 import { useRouter } from "next/navigation";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -25,6 +24,7 @@ import { FirestorePermissionError } from "@/firebase/errors";
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from "@/components/ui/sheet";
 import { defaultAvatars } from "@/lib/avatars";
 import { ScrollArea } from "@/components/ui/scroll-area";
+import { motion } from "framer-motion";
 
 
 const profileSchema = z.object({
@@ -39,8 +39,6 @@ export default function EditProfilePage() {
     const { user: authUser, userProfile, firestore, setUserProfile } = useFirebase();
     const { toast } = useToast();
     const [isEmojiSheetOpen, setIsEmojiSheetOpen] = useState(false);
-    const pageRef = useRef<HTMLDivElement>(null);
-
 
     const form = useForm<z.infer<typeof profileSchema>>({
         resolver: zodResolver(profileSchema),
@@ -50,19 +48,6 @@ export default function EditProfilePage() {
             gender: userProfile?.gender || "",
         },
     });
-
-    const handleBackNavigation = () => {
-        if (pageRef.current) {
-            pageRef.current.classList.remove('animate-slide-in-right');
-            pageRef.current.classList.add('animate-slide-out-right');
-            setTimeout(() => {
-                router.back();
-            }, 300);
-        } else {
-            router.back();
-        }
-    };
-
 
     const handleAvatarChange = async (emoji: string) => {
         if (!authUser || !firestore) return;
@@ -106,17 +91,15 @@ export default function EditProfilePage() {
         const userDocRef = doc(firestore, "users", authUser.uid);
         
         try {
-            // Update profile data in Firestore
             await updateDoc(userDocRef, values);
             
-            // Also optimistically update the local user profile state
             setUserProfile(currentProfile => {
               if (!currentProfile) return null;
               return { ...currentProfile, ...values };
             });
 
             toast({ title: "Profile Updated", description: "Your changes have been saved." });
-            handleBackNavigation();
+            router.back();
         } catch (error: any) {
              console.error("Error updating profile:", error);
             if (error.code === 'auth/requires-recent-login') {
@@ -145,7 +128,7 @@ export default function EditProfilePage() {
                 <form onSubmit={form.handleSubmit(onSubmit)}>
                     <div className="fixed top-0 left-0 right-0 z-10 flex items-center justify-between p-2 bg-background border-b h-14 max-w-2xl mx-auto sm:px-4">
                         <div className="flex items-center">
-                            <Button variant="ghost" size="icon" type="button" onClick={handleBackNavigation}>
+                            <Button variant="ghost" size="icon" type="button" onClick={() => router.back()}>
                                 <ArrowLeft />
                             </Button>
                             <h2 className="text-lg font-bold ml-2">Edit Profile</h2>
@@ -156,8 +139,13 @@ export default function EditProfilePage() {
                         </Button>
                     </div>
 
-                    <div ref={pageRef} className="h-full bg-background animate-slide-in-right">
-                        <div className="pt-14 h-full overflow-y-auto">
+                    <motion.div 
+                        className="pt-14 h-full"
+                        initial={{ scale: 0.98, opacity: 0 }}
+                        animate={{ scale: 1, opacity: 1 }}
+                        transition={{ duration: 0.3 }}
+                    >
+                        <div className="h-full overflow-y-auto">
                             <div className="px-4 pt-6 space-y-6">
                                 <div className="flex justify-center">
                                     <div className="relative">
@@ -248,7 +236,7 @@ export default function EditProfilePage() {
                                 </div>
                             </div>
                         </div>
-                    </div>
+                    </motion.div>
                 </form>
             </Form>
             <Sheet open={isEmojiSheetOpen} onOpenChange={setIsEmojiSheetOpen}>

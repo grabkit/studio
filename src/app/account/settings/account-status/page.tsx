@@ -6,28 +6,16 @@ import { Button } from "@/components/ui/button";
 import { useFirebase } from "@/firebase";
 import { ArrowLeft, Calendar, Globe, MapPin, User as UserIcon } from "lucide-react";
 import { useRouter } from "next/navigation";
-import React, { useMemo, useRef } from "react";
+import React, { useMemo } from "react";
 import { format } from "date-fns";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { getAvatar, formatUserId } from "@/lib/utils.tsx";
 import { Skeleton } from "@/components/ui/skeleton";
+import { motion } from "framer-motion";
 
 export default function AccountStatusPage() {
     const router = useRouter();
     const { userProfile, user: authUser } = useFirebase();
-    const pageRef = useRef<HTMLDivElement>(null);
-
-    const handleBackNavigation = () => {
-        if (pageRef.current) {
-            pageRef.current.classList.remove('animate-slide-in-right');
-            pageRef.current.classList.add('animate-slide-out-right');
-            setTimeout(() => {
-                router.back();
-            }, 300);
-        } else {
-            router.back();
-        }
-    };
 
     const isLoading = !userProfile || !authUser;
     const avatar = useMemo(() => getAvatar(userProfile), [userProfile]);
@@ -36,13 +24,18 @@ export default function AccountStatusPage() {
     return (
         <AppLayout showTopBar={false} showBottomNav={false}>
             <div className="fixed top-0 left-0 right-0 z-10 flex items-center p-2 bg-background border-b h-14 max-w-2xl mx-auto sm:px-4">
-                <Button variant="ghost" size="icon" onClick={handleBackNavigation}>
+                <Button variant="ghost" size="icon" onClick={() => router.back()}>
                     <ArrowLeft />
                 </Button>
                 <h2 className="text-lg font-bold mx-auto -translate-x-4">Account Information</h2>
             </div>
-            <div ref={pageRef} className="h-full bg-background animate-slide-in-right">
-                <div className="pt-14 px-4 h-full overflow-y-auto">
+            <motion.div 
+                className="pt-14 h-full"
+                initial={{ scale: 0.98, opacity: 0 }}
+                animate={{ scale: 1, opacity: 1 }}
+                transition={{ duration: 0.3 }}
+            >
+                <div className="px-4 h-full overflow-y-auto">
                     {isLoading ? (
                          <div className="space-y-6 pt-6">
                             <div className="flex items-center space-x-4">
@@ -89,9 +82,7 @@ export default function AccountStatusPage() {
                         </div>
                     )}
                 </div>
-            </div>
+            </motion.div>
         </AppLayout>
     )
 }
-
-    

@@ -1,7 +1,7 @@
 
 "use client";
 
-import React, { useRef } from "react";
+import React from "react";
 import AppLayout from "@/components/AppLayout";
 import { Button } from "@/components/ui/button";
 import { ArrowLeft, ChevronRight, User, Bell, UserX, HelpCircle, Info, LogOut, UserPlus, VolumeX, MinusCircle } from "lucide-react";
@@ -11,7 +11,7 @@ import { useFirebase } from "@/firebase";
 import { signOut } from "firebase/auth";
 import { useToast } from "@/hooks/use-toast";
 import { ref, serverTimestamp, set } from "firebase/database";
-import { cn } from "@/lib/utils";
+import { motion } from "framer-motion";
 
 const settingsSections = {
     "Your Account": [
@@ -47,7 +47,6 @@ export default function SettingsPage() {
     const router = useRouter();
     const { auth, database } = useFirebase();
     const { toast } = useToast();
-    const pageRef = useRef<HTMLDivElement>(null);
     
     const handleLogout = async () => {
         if (!auth || !auth.currentUser || !database) return;
@@ -76,46 +75,37 @@ export default function SettingsPage() {
         }
       };
 
-    const handleBackNavigation = () => {
-        if (pageRef.current) {
-            pageRef.current.classList.remove('animate-slide-in-right');
-            pageRef.current.classList.add('animate-slide-out-right');
-            setTimeout(() => {
-                router.back();
-            }, 300);
-        } else {
-            router.back();
-        }
-    };
-
     return (
         <AppLayout showTopBar={false} showBottomNav={false}>
             <div className="fixed top-0 left-0 right-0 z-10 flex items-center p-2 bg-background border-b h-14 max-w-2xl mx-auto sm:px-4">
-                <Button variant="ghost" size="icon" onClick={handleBackNavigation}>
+                <Button variant="ghost" size="icon" onClick={() => router.back()}>
                     <ArrowLeft />
                 </Button>
                 <h2 className="text-lg font-bold mx-auto -translate-x-4">Settings</h2>
             </div>
-            <div ref={pageRef} className="h-full bg-background animate-slide-in-right">
-                <div className="pt-14 h-full overflow-y-auto">
-                    {Object.entries(settingsSections).map(([sectionTitle, items]) => (
-                        <div key={sectionTitle} className="my-4">
-                            <h3 className="px-4 py-2 text-sm font-semibold text-muted-foreground">{sectionTitle}</h3>
-                             <div>
-                                {items.map(item => (
-                                    <SettingsItem key={item.href} {...item} />
-                                ))}
-                            </div>
+            <motion.div 
+                className="pt-14 h-full overflow-y-auto"
+                initial={{ scale: 0.98, opacity: 0 }}
+                animate={{ scale: 1, opacity: 1 }}
+                transition={{ duration: 0.3 }}
+            >
+                {Object.entries(settingsSections).map(([sectionTitle, items]) => (
+                    <div key={sectionTitle} className="my-4">
+                        <h3 className="px-4 py-2 text-sm font-semibold text-muted-foreground">{sectionTitle}</h3>
+                            <div>
+                            {items.map(item => (
+                                <SettingsItem key={item.href} {...item} />
+                            ))}
                         </div>
-                    ))}
-                    <div className="p-4 mt-4">
-                        <Button variant="outline" className="w-full text-destructive hover:text-destructive hover:bg-destructive/10" onClick={handleLogout}>
-                            <LogOut className="mr-2 h-4 w-4" />
-                            Log Out
-                        </Button>
                     </div>
+                ))}
+                <div className="p-4 mt-4">
+                    <Button variant="outline" className="w-full text-destructive hover:text-destructive hover:bg-destructive/10" onClick={handleLogout}>
+                        <LogOut className="mr-2 h-4 w-4" />
+                        Log Out
+                    </Button>
                 </div>
-            </div>
+            </motion.div>
         </AppLayout>
     );
 }

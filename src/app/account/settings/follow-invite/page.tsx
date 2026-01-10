@@ -6,26 +6,13 @@ import { Button } from "@/components/ui/button";
 import { ArrowLeft, Mail, MessageSquare, Share } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { useToast } from "@/hooks/use-toast";
-import React, { useRef } from "react";
+import React from "react";
+import { motion } from "framer-motion";
 
 export default function FollowInvitePage() {
     const router = useRouter();
     const { toast } = useToast();
-    const pageRef = useRef<HTMLDivElement>(null);
-
     const shareLink = typeof window !== 'undefined' ? window.location.origin : '';
-
-    const handleBackNavigation = () => {
-        if (pageRef.current) {
-            pageRef.current.classList.remove('animate-slide-in-right');
-            pageRef.current.classList.add('animate-slide-out-right');
-            setTimeout(() => {
-                router.back();
-            }, 300);
-        } else {
-            router.back();
-        }
-    };
 
     const handleShare = async () => {
         const shareData = {
@@ -44,7 +31,6 @@ export default function FollowInvitePage() {
                 });
             }
         } catch (error: any) {
-            // Silently ignore AbortError which occurs when the user cancels the share sheet
             if (error.name === 'AbortError') {
                 return;
             }
@@ -60,13 +46,18 @@ export default function FollowInvitePage() {
     return (
         <AppLayout showTopBar={false} showBottomNav={false}>
             <div className="fixed top-0 left-0 right-0 z-10 flex items-center p-2 bg-background border-b h-14 max-w-2xl mx-auto sm:px-4">
-                <Button variant="ghost" size="icon" onClick={handleBackNavigation}>
+                <Button variant="ghost" size="icon" onClick={() => router.back()}>
                     <ArrowLeft />
                 </Button>
                 <h2 className="text-lg font-bold mx-auto -translate-x-4">Follow and invite friends</h2>
             </div>
-            <div ref={pageRef} className="h-full bg-background animate-slide-in-right">
-                <div className="pt-14 h-full overflow-y-auto">
+            <motion.div 
+                className="pt-14 h-full"
+                initial={{ scale: 0.98, opacity: 0 }}
+                animate={{ scale: 1, opacity: 1 }}
+                transition={{ duration: 0.3 }}
+            >
+                <div className="h-full overflow-y-auto">
                     <div className="divide-y border-y">
                         <button className="w-full flex items-center justify-between p-4 transition-colors hover:bg-accent cursor-pointer" onClick={handleShare}>
                             <div className="flex items-center space-x-4">
@@ -88,7 +79,7 @@ export default function FollowInvitePage() {
                         </button>
                     </div>
                 </div>
-            </div>
+            </motion.div>
         </AppLayout>
     )
 }

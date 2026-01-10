@@ -1,12 +1,11 @@
 
-
 "use client";
 
 import { useFirebase } from "@/firebase";
 import { doc, getDoc, updateDoc, arrayRemove } from "firebase/firestore";
 import type { User } from "@/lib/types";
 import { WithId } from "@/firebase/firestore/use-collection";
-import React, { useEffect, useState, useMemo, useRef } from "react";
+import React, { useEffect, useState, useMemo } from "react";
 import AppLayout from "@/components/AppLayout";
 import { Button } from "@/components/ui/button";
 import { ArrowLeft, MinusCircle } from "lucide-react";
@@ -17,6 +16,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { useToast } from "@/hooks/use-toast";
 import { FirestorePermissionError } from "@/firebase/errors";
 import { errorEmitter } from "@/firebase/error-emitter";
+import { motion } from "framer-motion";
 
 function RestrictedUserSkeleton() {
     return (
@@ -56,24 +56,11 @@ function RestrictedUserItem({ user, onUnrestrict }: { user: WithId<User>, onUnre
 export default function RestrictedUsersPage() {
     const { user: currentUser, firestore, userProfile } = useFirebase();
     const router = useRouter();
-    const pageRef = useRef<HTMLDivElement>(null);
     const { toast } = useToast();
     const [restrictedUsers, setRestrictedUsers] = useState<WithId<User>[]>([]);
     const [isLoading, setIsLoading] = useState(true);
 
     const restrictedUserIds = useMemo(() => userProfile?.restrictedUsers || [], [userProfile]);
-
-    const handleBackNavigation = () => {
-        if (pageRef.current) {
-            pageRef.current.classList.remove('animate-slide-in-right');
-            pageRef.current.classList.add('animate-slide-out-right');
-            setTimeout(() => {
-                router.back();
-            }, 300);
-        } else {
-            router.back();
-        }
-    };
 
     useEffect(() => {
         if (!firestore || !currentUser) return;
@@ -128,13 +115,18 @@ export default function RestrictedUsersPage() {
     return (
         <AppLayout showTopBar={false} showBottomNav={false}>
             <div className="fixed top-0 left-0 right-0 z-10 flex items-center p-2 bg-background border-b h-14 max-w-2xl mx-auto sm:px-4">
-                <Button variant="ghost" size="icon" onClick={handleBackNavigation}>
+                <Button variant="ghost" size="icon" onClick={() => router.back()}>
                     <ArrowLeft />
                 </Button>
                 <h2 className="text-lg font-bold mx-auto -translate-x-4">Restricted Accounts</h2>
             </div>
-            <div ref={pageRef} className="h-full bg-background animate-slide-in-right">
-                <div className="pt-14 h-full overflow-y-auto">
+            <motion.div 
+                className="pt-14 h-full"
+                initial={{ scale: 0.98, opacity: 0 }}
+                animate={{ scale: 1, opacity: 1 }}
+                transition={{ duration: 0.3 }}
+            >
+                <div className="h-full overflow-y-auto">
                      {isLoading && (
                         <>
                             <RestrictedUserSkeleton />
@@ -158,9 +150,7 @@ export default function RestrictedUsersPage() {
                         </div>
                     )}
                 </div>
-            </div>
+            </motion.div>
         </AppLayout>
     );
 }
-
-    

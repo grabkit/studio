@@ -3,11 +3,11 @@
 
 import AppLayout from "@/components/AppLayout";
 import { Button } from "@/components/ui/button";
-import { ArrowLeft, Loader2 } from "lucide-react";
+import { ArrowLeft } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { Switch } from "@/components/ui/switch";
 import { Label } from "@/components/ui/label";
-import React, { useState, useEffect, useMemo, useRef } from "react";
+import React, { useState, useMemo } from "react";
 import { useFirebase } from "@/firebase";
 import { doc, updateDoc } from "firebase/firestore";
 import type { NotificationSettings } from "@/lib/types";
@@ -15,6 +15,7 @@ import { useToast } from "@/hooks/use-toast";
 import { Skeleton } from "@/components/ui/skeleton";
 import { FirestorePermissionError } from "@/firebase/errors";
 import { errorEmitter } from "@/firebase/error-emitter";
+import { motion } from "framer-motion";
 
 type SettingsKeys = keyof NotificationSettings;
 
@@ -54,23 +55,10 @@ function SettingsSkeleton() {
 
 export default function NotificationsSettingsPage() {
     const router = useRouter();
-    const pageRef = useRef<HTMLDivElement>(null);
     const { user, userProfile, firestore, setUserProfile } = useFirebase();
     const { toast } = useToast();
 
     const [isUpdating, setIsUpdating] = useState<SettingsKeys | null>(null);
-
-    const handleBackNavigation = () => {
-        if (pageRef.current) {
-            pageRef.current.classList.remove('animate-slide-in-right');
-            pageRef.current.classList.add('animate-slide-out-right');
-            setTimeout(() => {
-                router.back();
-            }, 300);
-        } else {
-            router.back();
-        }
-    };
 
     const settings = useMemo(() => {
         return userProfile?.notificationSettings || {
@@ -94,7 +82,6 @@ export default function NotificationsSettingsPage() {
             await updateDoc(userDocRef, {
                 notificationSettings: newSettings
             });
-            // Optimistically update local state
             setUserProfile(currentProfile => {
               if (!currentProfile) return null;
               return { ...currentProfile, notificationSettings: newSettings };
@@ -174,16 +161,21 @@ export default function NotificationsSettingsPage() {
     return (
         <AppLayout showTopBar={false} showBottomNav={false}>
             <div className="fixed top-0 left-0 right-0 z-10 flex items-center p-2 bg-background border-b h-14 max-w-2xl mx-auto sm:px-4">
-                <Button variant="ghost" size="icon" onClick={handleBackNavigation}>
+                <Button variant="ghost" size="icon" onClick={() => router.back()}>
                     <ArrowLeft />
                 </Button>
                 <h2 className="text-lg font-bold mx-auto -translate-x-4">Notifications</h2>
             </div>
-            <div ref={pageRef} className="h-full bg-background animate-slide-in-right">
-                <div className="pt-14 h-full overflow-y-auto">
+            <motion.div 
+                className="pt-14 h-full"
+                initial={{ scale: 0.98, opacity: 0 }}
+                animate={{ scale: 1, opacity: 1 }}
+                transition={{ duration: 0.3 }}
+            >
+                <div className="h-full overflow-y-auto">
                     {pageContent}
                 </div>
-            </div>
+            </motion.div>
         </AppLayout>
     )
 }
