@@ -95,7 +95,13 @@ export default function SocialPage() {
                 <h2 className="text-lg font-bold mx-auto -translate-x-4">{pageTitle}</h2>
             </div>
 
-            <div className="pt-14">
+            <motion.div
+                className="pt-14"
+                key="social-page-content"
+                initial={{ scale: 0.98, opacity: 0 }}
+                animate={{ scale: 1, opacity: 1 }}
+                transition={{ duration: 0.3 }}
+            >
                 <Tabs defaultValue={activeTab} className="w-full">
                     <div className="sticky top-14 bg-background z-10 border-b">
                         <TabsList variant="underline" className="grid w-full grid-cols-2">
@@ -108,35 +114,21 @@ export default function SocialPage() {
                         </TabsList>
                     </div>
                     <TabsContent value="followers">
-                         <motion.div
-                            key="followers"
-                            initial={{ scale: 0.98, opacity: 0 }}
-                            animate={{ scale: 1, opacity: 1 }}
-                            transition={{ duration: 0.3 }}
-                        >
-                            <UserList
-                                userIds={user.followedBy || []}
-                                emptyTitle="No Followers Yet"
-                                emptyDescription="When other users follow this profile, they will appear here."
-                            />
-                        </motion.div>
+                        <UserList
+                            userIds={user.followedBy || []}
+                            emptyTitle="No Followers Yet"
+                            emptyDescription="When other users follow this profile, they will appear here."
+                        />
                     </TabsContent>
                     <TabsContent value="following">
-                         <motion.div
-                            key="following"
-                            initial={{ scale: 0.98, opacity: 0 }}
-                            animate={{ scale: 1, opacity: 1 }}
-                            transition={{ duration: 0.3 }}
-                        >
-                            <UserList
-                                userIds={user.following || []}
-                                emptyTitle="Not Following Anyone Yet"
-                                emptyDescription="When this user follows others, those profiles will appear here."
-                            />
-                        </motion.div>
+                        <UserList
+                            userIds={user.following || []}
+                            emptyTitle="Not Following Anyone Yet"
+                            emptyDescription="When this user follows others, those profiles will appear here."
+                        />
                     </TabsContent>
                 </Tabs>
-            </div>
+            </motion.div>
         </AppLayout>
     );
 }
