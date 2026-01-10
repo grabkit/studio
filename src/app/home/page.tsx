@@ -1,4 +1,5 @@
 
+
 "use client";
 
 import AppLayout from "@/components/AppLayout";
@@ -67,7 +68,7 @@ function LinkPreview({ metadata }: { metadata: LinkMetadata }) {
     )
 }
 
-export function PollComponent({ post, user }: { post: WithId<Post>, user: any }) {
+export function PollComponent({ post, user, onVote }: { post: WithId<Post>, user: any, onVote?: (updatedPost: Partial<Post>) => void }) {
     const { firestore } = useFirebase();
     const { toast } = useToast();
     const [isProcessing, setIsProcessing] = useState(false);
@@ -91,7 +92,7 @@ export function PollComponent({ post, user }: { post: WithId<Post>, user: any })
         const postRef = doc(firestore, 'posts', post.id);
 
         try {
-            await runTransaction(firestore, async (transaction) => {
+            const updatedPostData = await runTransaction(firestore, async (transaction) => {
                 const postDoc = await transaction.get(postRef);
                 if (!postDoc.exists()) {
                     throw "Post does not exist!";
@@ -101,7 +102,7 @@ export function PollComponent({ post, user }: { post: WithId<Post>, user: any })
 
                 if (currentPost.voters && currentPost.voters[user.uid] !== undefined) {
                     toast({ variant: "default", title: "You have already voted." });
-                    return;
+                    return currentPost; // Return current data if already voted
                 }
                 
                 const newPollOptions = currentPost.pollOptions ? [...currentPost.pollOptions] : [];
@@ -111,11 +112,20 @@ export function PollComponent({ post, user }: { post: WithId<Post>, user: any })
 
                 const newVoters = { ...(currentPost.voters || {}), [user.uid]: optionIndex };
                 
-                transaction.update(postRef, {
+                const updatedData = {
                     pollOptions: newPollOptions,
                     voters: newVoters,
-                });
+                };
+
+                transaction.update(postRef, updatedData);
+
+                return { ...currentPost, ...updatedData };
             });
+
+             if (onVote && updatedPostData) {
+                onVote(updatedPostData);
+            }
+
         } catch (e: any) {
             console.error(e);
             const permissionError = new FirestorePermissionError({
@@ -468,7 +478,7 @@ function InnerPostItem({ post, bookmarks, updatePost, onDelete, onPin, showPinSt
             {post.linkMetadata && <LinkPreview metadata={post.linkMetadata} />}
 
             {post.type === 'poll' && post.pollOptions && (
-                <PollComponent post={post} user={user} />
+                <PollComponent post={post} user={user} onVote={(updatedData) => updatePost?.(post.id, updatedData)} />
             )}
 
             <div className="flex items-center justify-between pt-2 text-muted-foreground">
@@ -744,4 +754,5 @@ export default function HomePage() {
     
 
     
+
 
