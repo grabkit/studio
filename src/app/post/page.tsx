@@ -406,7 +406,7 @@ function PostPageComponent() {
                                         <FormItem>
                                             <FormControl>
                                                 <Textarea
-                                                    placeholder={isPoll ? "Ask a question..." : "What's on your mind today?"}
+                                                    placeholder={isPoll ? "Ask a question..." : "What's on your mind?"}
                                                     className="border-none focus-visible:ring-0 !outline-none text-base resize-none -ml-2"
                                                     rows={3}
                                                     onPaste={handlePaste}
@@ -536,5 +536,3 @@ export default function PostPage() {
     </Suspense>
   );
 }
-
-    
