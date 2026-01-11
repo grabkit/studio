@@ -97,7 +97,7 @@ export default function UserList({ userIds, emptyTitle, emptyDescription }: { us
                     <UserX className="h-10 w-10 text-muted-foreground" />
                 </div>
                 <h3 className="text-xl font-headline mt-4">{emptyTitle}</h3>
-                <p className="text-muted-foreground mt-2">{emptyDescription}</p>
+                
             </div>
         )
     }
