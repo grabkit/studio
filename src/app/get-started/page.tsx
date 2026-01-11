@@ -73,7 +73,7 @@ export default function GetStartedPage() {
             <div className="absolute inset-0 animate-rotate-around">
               <div className="absolute top-0 left-1/2 -translate-x-1/2 -translate-y-1/4">
                 <Image
-                  src="https://picsum.photos/seed/1/50/50"
+                  src="https://blogger.googleusercontent.com/img/b/R29vZ2xl/AVvXsEjl__yIIdDpdUqwihL8vBMfr5ioet6tuh425rGFdshYyY6Fpa6_gy7tOHWaLzkfAi45dzjPXJu6uRteAIc-Z6TQav-LRFG8-SDCAfL2wQGBM1URWSM1gglLO8MwvYkyMW4JinOcQ3WOHZ2QB3GGhIxrXwKQOomSukzxewoONh2iQAiLlyhJNwUg_i714ihv/s320/demo%20profile%205.png"
                   alt="Profile 1"
                   width={50}
                   height={50}
