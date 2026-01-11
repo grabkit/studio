@@ -71,45 +71,49 @@ export default function GetStartedPage() {
             </svg>
             {/* Outer Circle Images */}
             <div className="absolute inset-0 animate-rotate-around">
-              <div className="absolute top-0 left-1/2 -translate-x-1/2 -translate-y-1/4">
-                <Image
-                  src="https://blogger.googleusercontent.com/img/b/R29vZ2xl/AVvXsEjl__yIIdDpdUqwihL8vBMfr5ioet6tuh425rGFdshYyY6Fpa6_gy7tOHWaLzkfAi45dzjPXJu6uRteAIc-Z6TQav-LRFG8-SDCAfL2wQGBM1URWSM1gglLO8MwvYkyMW4JinOcQ3WOHZ2QB3GGhIxrXwKQOomSukzxewoONh2iQAiLlyhJNwUg_i714ihv/s320/demo%20profile%205.png"
-                  alt="Profile 1"
-                  width={50}
-                  height={50}
-                  className="rounded-full blur-[2px] object-cover"
-                />
+              <div className="absolute top-0 left-1/2 -translate-x-1/2 -translate-y-1/4 h-12 w-12">
+                <div className="relative h-full w-full rounded-full overflow-hidden blur-[2px]">
+                    <Image
+                      src="https://blogger.googleusercontent.com/img/b/R29vZ2xl/AVvXsEjl__yIIdDpdUqwihL8vBMfr5ioet6tuh425rGFdshYyY6Fpa6_gy7tOHWaLzkfAi45dzjPXJu6uRteAIc-Z6TQav-LRFG8-SDCAfL2wQGBM1URWSM1gglLO8MwvYkyMW4JinOcQ3WOHZ2QB3GGhIxrXwKQOomSukzxewoONh2iQAiLlyhJNwUg_i714ihv/s320/demo%20profile%205.png"
+                      alt="Profile 1"
+                      fill
+                      className="object-cover"
+                    />
+                </div>
               </div>
-                <div className="absolute bottom-0 left-1/2 -translate-x-1/2 translate-y-1/4">
-                  <Image
-                    src="https://picsum.photos/seed/2/50/50"
-                    alt="Profile 2"
-                    width={50}
-                    height={50}
-                    className="rounded-full blur-[2px]"
-                  />
+                <div className="absolute bottom-0 left-1/2 -translate-x-1/2 translate-y-1/4 h-12 w-12">
+                   <div className="relative h-full w-full rounded-full overflow-hidden blur-[2px]">
+                      <Image
+                        src="https://picsum.photos/seed/2/50/50"
+                        alt="Profile 2"
+                        fill
+                        className="object-cover"
+                      />
+                  </div>
                 </div>
             </div>
 
             {/* Inner Circle Images */}
             <div className="absolute inset-0 animate-rotate-around-reverse">
-                <div className="absolute top-1/2 left-[20%] -translate-y-1/2 -translate-x-1/2">
-                  <Image
-                    src="https://picsum.photos/seed/3/40/40"
-                    alt="Profile 3"
-                    width={40}
-                    height={40}
-                    className="rounded-full blur-[2px]"
-                  />
+                <div className="absolute top-1/2 left-[20%] -translate-y-1/2 -translate-x-1/2 h-10 w-10">
+                   <div className="relative h-full w-full rounded-full overflow-hidden blur-[2px]">
+                      <Image
+                        src="https://picsum.photos/seed/3/40/40"
+                        alt="Profile 3"
+                        fill
+                        className="object-cover"
+                      />
+                  </div>
                 </div>
-                <div className="absolute top-1/2 right-[20%] -translate-y-1/2 translate-x-1/2">
-                  <Image
-                    src="https://picsum.photos/seed/4/40/40"
-                    alt="Profile 4"
-                    width={40}
-                    height={40}
-                    className="rounded-full blur-[2px]"
-                  />
+                <div className="absolute top-1/2 right-[20%] -translate-y-1/2 translate-x-1/2 h-10 w-10">
+                   <div className="relative h-full w-full rounded-full overflow-hidden blur-[2px]">
+                      <Image
+                        src="https://picsum.photos/seed/4/40/40"
+                        alt="Profile 4"
+                        fill
+                        className="object-cover"
+                      />
+                  </div>
                 </div>
             </div>
 
