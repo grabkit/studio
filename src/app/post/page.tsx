@@ -387,7 +387,7 @@ function PostPageComponent() {
         </div>
         
         <div className="flex-grow flex flex-col">
-            <div className="flex-grow overflow-y-auto px-4 pb-4 pt-4">
+            <div className="flex-grow overflow-y-auto px-4 pb-4">
                 <div className="flex items-start space-x-4">
                     <Avatar>
                         <AvatarImage src={isAvatarUrl ? avatar : undefined} alt={formatUserId(user?.uid)} />
@@ -406,7 +406,7 @@ function PostPageComponent() {
                                         <FormItem>
                                             <FormControl>
                                                 <Textarea
-                                                    placeholder={isPoll ? "Ask a question..." : "Start a new thread..."}
+                                                    placeholder={isPoll ? "Ask a question..." : "What's on your mind today?"}
                                                     className="border-none focus-visible:ring-0 !outline-none text-base resize-none -ml-2"
                                                     rows={3}
                                                     onPaste={handlePaste}
@@ -536,3 +536,5 @@ export default function PostPage() {
     </Suspense>
   );
 }
+
+    
