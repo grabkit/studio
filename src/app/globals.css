@@ -107,24 +107,6 @@
     right: -100px;
   }
 
-  @keyframes rotate-around {
-    from {
-      transform: rotate(0deg);
-    }
-    to {
-      transform: rotate(360deg);
-    }
-  }
-
-  @keyframes rotate-around-reverse {
-    from {
-      transform: rotate(360deg);
-    }
-    to {
-      transform: rotate(0deg);
-    }
-  }
-
   @keyframes rotate-outer-1 {
     from { transform: rotate(0deg) translateX(150px) rotate(0deg); }
     to { transform: rotate(360deg) translateX(150px) rotate(-360deg); }
