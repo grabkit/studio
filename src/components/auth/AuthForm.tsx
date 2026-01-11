@@ -368,8 +368,8 @@ function ForgotPasswordDialog({form, handlePasswordReset}: {form: UseFormReturn<
                     )}
                 />
                 <AlertDialogFooter>
-                    <AlertDialogCancel>Cancel</AlertDialogCancel>
-                    <AlertDialogAction type="submit" disabled={loading}>
+                    <AlertDialogCancel className="rounded-[10px]">Cancel</AlertDialogCancel>
+                    <AlertDialogAction type="submit" disabled={loading} className="rounded-[10px]">
                         {loading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
                         Send Reset Link
                     </AlertDialogAction>
