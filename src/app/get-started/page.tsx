@@ -108,7 +108,7 @@ export default function GetStartedPage() {
                 <div className="absolute top-1/2 right-[20%] -translate-y-1/2 translate-x-1/2 h-10 w-10">
                    <div className="relative h-full w-full rounded-full overflow-hidden blur-[2px]">
                       <Image
-                        src="https://picsum.photos/seed/4/40/40"
+                        src="https://blogger.googleusercontent.com/img/b/R29vZ2xl/AVvXsEjuiyp3nmqkOPU38Mrqn6WhSS9ZVqUBOHCq439-DNdXxR8JdGWTDcq97V-6P1KHTO9W4F7Udoh9ja5rBw1gPsINICTlUqaadNfajnTmvxCPOfju-0cbw-dMAkvTtvMBWjC9TiI7pnFXaO2YyxP2fiRxlx9wYL20VrhBmH5tXhac7LxJsYmirLN3z7JyMW9I/s320/demo%20profile%202.webp"
                         alt="Profile 4"
                         fill
                         className="object-cover"
