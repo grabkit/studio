@@ -23,6 +23,7 @@ import {
   SheetTitle,
   SheetDescription,
   SheetClose,
+  SheetTrigger,
 } from "@/components/ui/sheet";
 import React, { useState, useMemo, useRef, TouchEvent, useEffect, useCallback } from "react";
 import { Button, buttonVariants } from "@/components/ui/button";
