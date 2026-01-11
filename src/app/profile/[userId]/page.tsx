@@ -1,4 +1,5 @@
 
+
 "use client";
 
 import { useParams, useRouter } from "next/navigation";
@@ -639,10 +640,9 @@ export default function UserProfilePage() {
                                 </Button>
                             </SheetTrigger>
                         </div>
-
-                        <PullToRefreshIndicator pullPosition={pullPosition} isRefreshing={isRefreshing} />
                         
                         <div style={{ transform: `translateY(${pullPosition}px)` }}>
+                            <PullToRefreshIndicator pullPosition={pullPosition} isRefreshing={isRefreshing} />
                             <div className="px-4 pt-4">
                                 <div className="flex items-center justify-between space-x-5 mb-4">
                                     <div className="flex-shrink-0">
