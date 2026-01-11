@@ -17,15 +17,13 @@ import { errorEmitter } from "@/firebase/error-emitter";
 import Link from "next/link";
 import Image from "next/image";
 import {
-  AlertDialog,
-  AlertDialogAction,
-  AlertDialogCancel,
-  AlertDialogContent,
-  AlertDialogDescription,
-  AlertDialogFooter,
-  AlertDialogHeader,
-  AlertDialogTitle,
-} from "@/components/ui/alert-dialog";
+  Sheet,
+  SheetContent,
+  SheetHeader,
+  SheetTitle,
+  SheetDescription,
+  SheetClose,
+} from "@/components/ui/sheet";
 import React, { useState, useMemo, useRef, TouchEvent, useEffect, useCallback } from "react";
 import { Button, buttonVariants } from "@/components/ui/button";
 import { useRouter } from "next/navigation";
@@ -33,9 +31,9 @@ import { usePresence } from "@/hooks/usePresence";
 import { ShareSheet } from "@/components/ShareSheet";
 import { RepostSheet } from "@/components/RepostSheet";
 import { QuotedPostCard } from "@/components/QuotedPostCard";
-import { Sheet, SheetContent, SheetDescription, SheetHeader, SheetTitle, SheetTrigger } from "@/components/ui/sheet";
 import { AnimatedCount } from "@/components/AnimatedCount";
 import { motion } from "framer-motion";
+import { PullToRefreshIndicator } from "@/components/PullToRefreshIndicator";
 
 
 function LinkPreview({ metadata }: { metadata: LinkMetadata }) {
@@ -753,15 +751,8 @@ export default function HomePage() {
           onTouchEnd={handleTouchEnd}
           className="relative h-full overflow-y-auto"
         >
-          <div 
-            className="absolute top-0 left-0 right-0 flex justify-center items-center h-12 text-muted-foreground transition-opacity duration-300 pointer-events-none"
-            style={{
-               opacity: isRefreshing ? 1 : (pullPosition / 70),
-            }}
-          >
-             <Loader2 className={cn("h-6 w-6", isRefreshing && "animate-spin")} />
-          </div>
-          <div className="divide-y border-b pt-12">
+          <PullToRefreshIndicator pullPosition={pullPosition} isRefreshing={isRefreshing} />
+          <div className="divide-y border-b" style={{ transform: `translateY(${pullPosition}px)` }}>
             {(isLoading || !initialPosts) && (
               <>
                 <PostSkeleton />

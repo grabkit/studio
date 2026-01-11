@@ -26,6 +26,7 @@ import { RepliesList } from "@/components/RepliesList";
 import { Sheet, SheetContent, SheetTrigger, SheetHeader, SheetTitle, SheetDescription, SheetClose } from "@/components/ui/sheet";
 import { ReportDialog } from "@/components/ReportDialog";
 import { QrCodeDialog } from "@/components/QrCodeDialog";
+import { PullToRefreshIndicator } from "@/components/PullToRefreshIndicator";
 
 
 function AboutProfileSheet({ user, isOpen, onOpenChange }: { user: WithId<User>, isOpen: boolean, onOpenChange: (open: boolean) => void }) {
@@ -639,14 +640,9 @@ export default function UserProfilePage() {
                             </SheetTrigger>
                         </div>
 
-                        <div 
-                            className="absolute top-0 left-0 right-0 flex justify-center items-center h-12 text-muted-foreground transition-opacity duration-300 z-10 pointer-events-none"
-                            style={{ opacity: isRefreshing ? 1 : pullPosition / 70 }}
-                        >
-                            <Loader2 className={cn('h-6 w-6', isRefreshing && 'animate-spin')} />
-                        </div>
+                        <PullToRefreshIndicator pullPosition={pullPosition} isRefreshing={isRefreshing} />
                         
-                        <div className="pt-12">
+                        <div style={{ transform: `translateY(${pullPosition}px)` }}>
                             <div className="px-4 pt-4">
                                 <div className="flex items-center justify-between space-x-5 mb-4">
                                     <div className="flex-shrink-0">

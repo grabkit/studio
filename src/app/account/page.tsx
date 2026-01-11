@@ -23,16 +23,15 @@ import { FirestorePermissionError } from "@/firebase/errors";
 import { errorEmitter } from "@/firebase/error-emitter";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import {
-  AlertDialog,
-  AlertDialogAction,
-  AlertDialogCancel,
-  AlertDialogContent,
-  AlertDialogDescription,
-  AlertDialogFooter,
-  AlertDialogHeader,
-  AlertDialogTitle,
-} from "@/components/ui/alert-dialog";
+  Sheet,
+  SheetContent,
+  SheetHeader,
+  SheetTitle,
+  SheetDescription,
+  SheetClose,
+} from "@/components/ui/sheet";
 import { motion } from "framer-motion";
+import { PullToRefreshIndicator } from "@/components/PullToRefreshIndicator";
 
 
 function BookmarksList({ bookmarks, bookmarksLoading }: { bookmarks: WithId<Bookmark>[] | null, bookmarksLoading: boolean }) {
@@ -347,14 +346,9 @@ export default function AccountPage() {
             onTouchEnd={handleTouchEnd}
             className="relative h-full overflow-y-auto"
         >
-            <div 
-            className="absolute top-0 left-0 right-0 flex justify-center items-center h-12 text-muted-foreground transition-opacity duration-300 z-10 pointer-events-none"
-            style={{ opacity: isRefreshing ? 1 : pullPosition / 70 }}
-            >
-            <Loader2 className={cn('h-6 w-6', isRefreshing && 'animate-spin')} />
-            </div>
+           <PullToRefreshIndicator pullPosition={pullPosition} isRefreshing={isRefreshing} />
 
-            <div>
+            <div style={{ transform: `translateY(${pullPosition}px)` }}>
                 <div className="flex items-center justify-between h-14 px-4 bg-background">
                     <Link href="/post" className={cn(buttonVariants({ variant: "ghost", size: "icon" }))}>
                         <Plus className="h-6 w-6" />
