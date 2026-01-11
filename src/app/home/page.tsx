@@ -198,9 +198,9 @@ export function PollComponent({ post, user, onVote }: { post: WithId<Post>, user
                             <div className="absolute inset-0 flex items-center justify-between px-4">
                                  <div className="flex items-center gap-2">
                                      {isUserChoice && <CheckCircle2 className="h-4 w-4 text-primary" />}
-                                    <span className="font-semibold truncate text-primary">{option.option}</span>
+                                    <span className="truncate text-primary">{option.option}</span>
                                 </div>
-                                <span className="font-semibold text-primary">{originalPercentage.toFixed(0)}%</span>
+                                <span className="text-primary">{originalPercentage.toFixed(0)}%</span>
                             </div>
                             {/* Filled Text - clipped */}
                             <div
@@ -209,9 +209,9 @@ export function PollComponent({ post, user, onVote }: { post: WithId<Post>, user
                             >
                                <div className="flex items-center gap-2">
                                      {isUserChoice && <CheckCircle2 className="h-4 w-4 text-primary-foreground" />}
-                                    <span className="font-semibold truncate text-primary-foreground">{option.option}</span>
+                                    <span className="truncate text-primary-foreground">{option.option}</span>
                                 </div>
-                                <span className="font-semibold text-primary-foreground">{originalPercentage.toFixed(0)}%</span>
+                                <span className="text-primary-foreground">{originalPercentage.toFixed(0)}%</span>
                             </div>
                         </div>
                     );
@@ -220,7 +220,7 @@ export function PollComponent({ post, user, onVote }: { post: WithId<Post>, user
                         <Button
                             key={index}
                             variant="outline"
-                            className="w-full justify-center h-10 text-base rounded-full font-bold"
+                            className="w-full justify-center h-10 text-base rounded-full"
                             onClick={() => handleVote(index)}
                             disabled={isProcessing}
                         >
