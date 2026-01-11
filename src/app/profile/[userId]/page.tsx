@@ -627,22 +627,22 @@ export default function UserProfilePage() {
                         onTouchEnd={handleTouchEnd}
                         className="relative h-full overflow-y-auto"
                     >
-                        <div className="flex items-center justify-between h-14 px-4 bg-background">
-                            <Button variant="ghost" size="icon" onClick={handleBackNavigation}>
-                                <ArrowLeft className="h-6 w-6" />
-                            </Button>
-                            <h2 className="text-lg font-semibold font-headline">
-                                {formatUserId(user.id)}
-                            </h2>
-                            <SheetTrigger asChild>
-                                <Button variant="ghost" size="icon" className="justify-self-end">
-                                    <MoreHorizontal className="h-6 w-6" />
-                                </Button>
-                            </SheetTrigger>
-                        </div>
+                         <PullToRefreshIndicator pullPosition={pullPosition} isRefreshing={isRefreshing} />
                         
                         <div style={{ transform: `translateY(${pullPosition}px)` }}>
-                            <PullToRefreshIndicator pullPosition={pullPosition} isRefreshing={isRefreshing} />
+                            <div className="flex items-center justify-between h-14 px-4 bg-background">
+                                <Button variant="ghost" size="icon" onClick={handleBackNavigation}>
+                                    <ArrowLeft className="h-6 w-6" />
+                                </Button>
+                                <h2 className="text-lg font-semibold font-headline">
+                                    {formatUserId(user.id)}
+                                </h2>
+                                <SheetTrigger asChild>
+                                    <Button variant="ghost" size="icon" className="justify-self-end">
+                                        <MoreHorizontal className="h-6 w-6" />
+                                    </Button>
+                                </SheetTrigger>
+                            </div>
                             <div className="px-4 pt-4">
                                 <div className="flex items-center justify-between space-x-5 mb-4">
                                     <div className="flex-shrink-0">
