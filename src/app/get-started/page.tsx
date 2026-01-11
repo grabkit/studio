@@ -151,7 +151,7 @@ export default function GetStartedPage() {
               ))}
           </div>
         </div>
-        <Button asChild size="lg" className="w-full font-headline text-lg rounded-full mt-24">
+        <Button asChild size="lg" className="w-full font-headline text-lg rounded-full mt-32">
           <Link href="/auth">
             Get Started
             <ArrowRight className="ml-2 h-5 w-5" />
