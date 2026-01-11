@@ -77,7 +77,7 @@ export default function GetStartedPage() {
                   alt="Profile 1"
                   width={50}
                   height={50}
-                  className="rounded-full blur-[2px]"
+                  className="rounded-full blur-[2px] object-cover"
                 />
               </div>
                 <div className="absolute bottom-0 left-1/2 -translate-x-1/2 translate-y-1/4">
