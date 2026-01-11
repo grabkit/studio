@@ -386,8 +386,8 @@ function PostPageComponent() {
           </SheetDescription>
         </div>
         
-        <div className="flex-grow flex flex-col pt-14">
-            <div className="flex-grow overflow-y-auto px-4 pb-4 pt-[2px]">
+        <div className="flex-grow flex flex-col">
+            <div className="flex-grow overflow-y-auto px-4 pb-4 pt-4">
                 <div className="flex items-start space-x-4">
                     <Avatar>
                         <AvatarImage src={isAvatarUrl ? avatar : undefined} alt={formatUserId(user?.uid)} />
