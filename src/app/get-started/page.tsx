@@ -71,44 +71,55 @@ export default function GetStartedPage() {
             </svg>
             
             {/* Avatars */}
-            <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 animate-rotate-outer-1">
-                <div className="relative h-12 w-12 rounded-full overflow-hidden blur-[2px]">
-                    <Image
-                        src="https://blogger.googleusercontent.com/img/b/R29vZ2xl/AVvXsEjl__yIIdDpdUqwihL8vBMfr5ioet6tuh425rGFdshYyY6Fpa6_gy7tOHWaLzkfAi45dzjPXJu6uRteAIc-Z6TQav-LRFG8-SDCAfL2wQGBM1URWSM1gglLO8MwvYkyMW4JinOcQ3WOHZ2QB3GGhIxrXwKQOomSukzxewoONh2iQAiLlyhJNwUg_i714ihv/s320/demo%20profile%205.png"
-                        alt="Profile 1"
-                        fill
-                        className="object-cover"
-                    />
+            {/* Outer Orbit */}
+            <div className="absolute w-[300px] h-[300px] animate-spin-slow">
+                {/* Avatar 1 (Top) */}
+                <div className="absolute top-0 left-1/2 -translate-x-1/2 -translate-y-1/2">
+                    <div className="relative h-12 w-12 rounded-full overflow-hidden blur-[2px] animate-spin-slow-reverse">
+                         <Image
+                            src="https://blogger.googleusercontent.com/img/b/R29vZ2xl/AVvXsEjl__yIIdDpdUqwihL8vBMfr5ioet6tuh425rGFdshYyY6Fpa6_gy7tOHWaLzkfAi45dzjPXJu6uRteAIc-Z6TQav-LRFG8-SDCAfL2wQGBM1URWSM1gglLO8MwvYkyMW4JinOcQ3WOHZ2QB3GGhIxrXwKQOomSukzxewoONh2iQAiLlyhJNwUg_i714ihv/s320/demo%20profile%205.png"
+                            alt="Profile 1"
+                            fill
+                            className="object-cover"
+                        />
+                    </div>
+                </div>
+                 {/* Avatar 2 (Bottom) */}
+                <div className="absolute bottom-0 left-1/2 -translate-x-1/2 translate-y-1/2">
+                   <div className="relative h-12 w-12 rounded-full overflow-hidden blur-[2px] animate-spin-slow-reverse">
+                        <Image
+                            src="https://blogger.googleusercontent.com/img/b/R29vZ2xl/AVvXsEiRFKVT6Hq5aKq8lP0EfeFTQMvGBMBD7Qcn5a347eq19vSsX3OLXIZ80Ggh9Ucw2OkMAoCNjs7kGzd5QdLbtJ5kczINsGyHt11ZRJTc7lzlPi1-etHHdZuW0xFoYMdEPk7IIqgM15h7cY-sngmh6r-59c5Itnqfx3GNthAMeIwiFMYFKNtQOO293QOnixie/s320/demo%20profile%204.jpg"
+                            alt="Profile 2"
+                            fill
+                            className="object-cover"
+                        />
+                    </div>
                 </div>
             </div>
-             <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 animate-rotate-outer-2">
-                <div className="relative h-12 w-12 rounded-full overflow-hidden blur-[2px]">
-                    <Image
-                        src="https://blogger.googleusercontent.com/img/b/R29vZ2xl/AVvXsEiRFKVT6Hq5aKq8lP0EfeFTQMvGBMBD7Qcn5a347eq19vSsX3OLXIZ80Ggh9Ucw2OkMAoCNjs7kGzd5QdLbtJ5kczINsGyHt11ZRJTc7lzlPi1-etHHdZuW0xFoYMdEPk7IIqgM15h7cY-sngmh6r-59c5Itnqfx3GNthAMeIwiFMYFKNtQOO293QOnixie/s320/demo%20profile%204.jpg"
-                        alt="Profile 2"
-                        fill
-                        className="object-cover"
-                    />
+
+            {/* Inner Orbit */}
+             <div className="absolute w-[200px] h-[200px] animate-spin-slow-reverse">
+                 {/* Avatar 3 (Left) */}
+                <div className="absolute top-1/2 left-0 -translate-x-1/2 -translate-y-1/2">
+                     <div className="relative h-10 w-10 rounded-full overflow-hidden blur-[2px] animate-spin-slow">
+                        <Image
+                            src="https://blogger.googleusercontent.com/img/b/R29vZ2xl/AVvXsEjBmZb3uykpKpaW3VGWkJdOMssZrbME9MvIYmfluO0aTDa9QAOdimTBQOm8fwQDawffB2sUJKPN2W5xaSzVWTtVBFCWEbbPkuHz9cFBZum8tx8aEyHakc0GLme-QvLwyJyJnokU1Ozb2dLwZuZPddj2w25s38yepCYzfGuaK14cFcA1JLPHz1tTJQxs5Tv8/s320/demo%20profile%203.jpg"
+                            alt="Profile 3"
+                            fill
+                            className="object-cover"
+                        />
+                    </div>
                 </div>
-            </div>
-            <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 animate-rotate-inner-1">
-                <div className="relative h-10 w-10 rounded-full overflow-hidden blur-[2px]">
-                    <Image
-                        src="https://blogger.googleusercontent.com/img/b/R29vZ2xl/AVvXsEjBmZb3uykpKpaW3VGWkJdOMssZrbME9MvIYmfluO0aTDa9QAOdimTBQOm8fwQDawffB2sUJKPN2W5xaSzVWTtVBFCWEbbPkuHz9cFBZum8tx8aEyHakc0GLme-QvLwyJyJnokU1Ozb2dLwZuZPddj2w25s38yepCYzfGuaK14cFcA1JLPHz1tTJQxs5Tv8/s320/demo%20profile%203.jpg"
-                        alt="Profile 3"
-                        fill
-                        className="object-cover"
-                    />
-                </div>
-            </div>
-             <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 animate-rotate-inner-2">
-                <div className="relative h-10 w-10 rounded-full overflow-hidden blur-[2px]">
-                    <Image
-                        src="https://blogger.googleusercontent.com/img/b/R29vZ2xl/AVvXsEjuiyp3nmqkOPU38Mrqn6WhSS9ZVqUBOHCq439-DNdXxR8JdGWTDcq97V-6P1KHTO9W4F7Udoh9ja5rBw1gPsINICTlUqaadNfajnTmvxCPOfju-0cbw-dMAkvTtvMBWjC9TiI7pnFXaO2YyxP2fiRxlx9wYL20VrhBmH5tXhac7LxJsYmirLN3z7JyMW9I/s320/demo%20profile%202.webp"
-                        alt="Profile 4"
-                        fill
-                        className="object-cover"
-                    />
+                {/* Avatar 4 (Right) */}
+                <div className="absolute top-1/2 right-0 translate-x-1/2 -translate-y-1/2">
+                   <div className="relative h-10 w-10 rounded-full overflow-hidden blur-[2px] animate-spin-slow">
+                        <Image
+                            src="https://blogger.googleusercontent.com/img/b/R29vZ2xl/AVvXsEjuiyp3nmqkOPU38Mrqn6WhSS9ZVqUBOHCq439-DNdXxR8JdGWTDcq97V-6P1KHTO9W4F7Udoh9ja5rBw1gPsINICTlUqaadNfajnTmvxCPOfju-0cbw-dMAkvTtvMBWjC9TiI7pnFXaO2YyxP2fiRxlx9wYL20VrhBmH5tXhac7LxJsYmirLN3z7JyMW9I/s320/demo%20profile%202.webp"
+                            alt="Profile 4"
+                            fill
+                            className="object-cover"
+                        />
+                    </div>
                 </div>
             </div>
 
