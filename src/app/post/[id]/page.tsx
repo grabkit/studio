@@ -289,22 +289,22 @@ function PostDetailItem({ post, updatePost }: { post: WithId<Post>, updatePost: 
                             <MoreHorizontal className="h-4 w-4" />
                         </Button>
                         </SheetTrigger>
-                        <SheetContent side="bottom" className="rounded-t-2xl">
+                        <SheetContent side="bottom" className="rounded-t-[10px]">
                              <SheetHeader className="sr-only">
                                 <SheetTitle>Options for post</SheetTitle>
                                 <SheetDescription>Manage your post.</SheetDescription>
                             </SheetHeader>
                             <div className="grid gap-2 py-4">
-                                 <div className="border rounded-2xl">
-                                    <Button variant="ghost" className="justify-between text-base py-6 rounded-2xl w-full" onClick={handleEditPost}>
+                                 <div className="border rounded-[10px]">
+                                    <Button variant="ghost" className="justify-between text-base py-6 rounded-[10px] w-full" onClick={handleEditPost}>
                                         <span className="font-semibold">Edit</span>
                                         <Edit className="h-5 w-5" />
                                     </Button>
                                  </div>
-                                <div className="border rounded-2xl">
+                                <div className="border rounded-[10px]">
                                     <AlertDialog>
                                         <AlertDialogTrigger asChild>
-                                            <Button variant="ghost" className="justify-between text-base py-6 rounded-2xl w-full text-destructive hover:text-destructive">
+                                            <Button variant="ghost" className="justify-between text-base py-6 rounded-[10px] w-full text-destructive hover:text-destructive">
                                                 <span className="font-semibold">Delete</span>
                                                 <Trash2 className="h-5 w-5" />
                                             </Button>
@@ -318,8 +318,8 @@ function PostDetailItem({ post, updatePost }: { post: WithId<Post>, updatePost: 
                                                 </AlertDialogDescription>
                                             </AlertDialogHeader>
                                             <AlertDialogFooter>
-                                                <AlertDialogCancel>Cancel</AlertDialogCancel>
-                                                <AlertDialogAction onClick={handleDeletePost} className={cn(buttonVariants({variant: 'destructive'}))}>
+                                                <AlertDialogCancel className="rounded-[10px]">Cancel</AlertDialogCancel>
+                                                <AlertDialogAction onClick={handleDeletePost} className={cn(buttonVariants({variant: 'destructive'}), "rounded-[10px]")}>
                                                 Delete
                                                 </AlertDialogAction>
                                             </AlertDialogFooter>
@@ -702,22 +702,22 @@ function CommentItem({ comment, postAuthorId }: { comment: WithId<Comment>, post
                             <MoreHorizontal className="h-4 w-4" />
                         </Button>
                     </SheetTrigger>
-                    <SheetContent side="bottom" className="rounded-t-2xl">
+                    <SheetContent side="bottom" className="rounded-t-[10px]">
                         <SheetHeader className="text-left">
                             <SheetTitle>Options for reply</SheetTitle>
                             <SheetDescription>Manage your reply.</SheetDescription>
                         </SheetHeader>
                         <div className="grid gap-2 py-4">
                              {isCommentOwner && (
-                                <div className="border rounded-2xl">
-                                    <Button variant="ghost" className="justify-between text-base py-6 rounded-2xl w-full" onClick={handleEdit}>
+                                <div className="border rounded-[10px]">
+                                    <Button variant="ghost" className="justify-between text-base py-6 rounded-[10px] w-full" onClick={handleEdit}>
                                         <span className="font-semibold">Edit</span>
                                         <Edit className="h-5 w-5" />
                                     </Button>
                                 </div>
                              )}
-                            <div className="border rounded-2xl">
-                                <Button variant="ghost" className="justify-between text-base py-6 rounded-2xl w-full text-destructive hover:text-destructive" onClick={handleDelete}>
+                            <div className="border rounded-[10px]">
+                                <Button variant="ghost" className="justify-between text-base py-6 rounded-[10px] w-full text-destructive hover:text-destructive" onClick={handleDelete}>
                                     <span className="font-semibold">Delete</span>
                                     <Trash2 className="h-5 w-5" />
                                 </Button>
@@ -918,4 +918,3 @@ export default function PostDetailPage() {
 }
 
     
-
