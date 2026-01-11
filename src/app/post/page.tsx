@@ -387,7 +387,7 @@ function PostPageComponent() {
         </div>
         
         <div className="flex-grow flex flex-col">
-            <div className="flex-grow overflow-y-auto px-4 pb-4">
+            <div className="flex-grow overflow-y-auto px-4">
                 <div className="flex items-start space-x-4">
                     <Avatar>
                         <AvatarImage src={isAvatarUrl ? avatar : undefined} alt={formatUserId(user?.uid)} />
@@ -514,7 +514,13 @@ function PostPageComponent() {
                                                 />
                                         </div>
                                         <Button type="submit" disabled={form.formState.isSubmitting} className="rounded-full w-32 font-bold">
-                                            {form.formState.isSubmitting ? <Loader2 className="h-4 w-4 animate-spin" /> : (isEditMode ? 'Save Changes' : 'Publish')}
+                                            {form.formState.isSubmitting ? (
+                                                <Loader2 className="h-4 w-4 animate-spin" />
+                                            ) : isEditMode ? (
+                                                'Save Changes'
+                                            ) : (
+                                                'Publish'
+                                            )}
                                         </Button>
                                     </div>
                                 </div>
@@ -536,3 +542,5 @@ export default function PostPage() {
     </Suspense>
   );
 }
+
+    
