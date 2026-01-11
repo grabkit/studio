@@ -23,6 +23,7 @@ import { FirestorePermissionError } from "@/firebase/errors";
 import { errorEmitter } from "@/firebase/error-emitter";
 import { usePresence } from "@/hooks/usePresence";
 import { ScrollArea } from "@/components/ui/scroll-area";
+import { motion } from "framer-motion";
 
 function FollowedUserSkeleton() {
     return (
@@ -606,12 +607,15 @@ export default function MessagesPage() {
 
     return (
         <AppLayout showTopBar={false}>
-             <div
+             <motion.div
                 ref={containerRef}
                 onTouchStart={handleTouchStart}
                 onTouchMove={handleTouchMove}
                 onTouchEnd={handleTouchEnd}
                 className="relative h-full overflow-y-auto"
+                initial={{ scale: 0.98, opacity: 0 }}
+                animate={{ scale: 1, opacity: 1 }}
+                transition={{ duration: 0.3 }}
             >
                 <div
                     className="absolute top-0 left-0 right-0 flex justify-center items-center h-12 text-muted-foreground transition-opacity duration-300 z-10"
@@ -664,7 +668,7 @@ export default function MessagesPage() {
                         </Tabs>
                     </div>
                 </div>
-            </div>
+            </motion.div>
             
             <Sheet open={isSheetOpen} onOpenChange={setIsSheetOpen}>
                 <SheetContent side="bottom" className="rounded-t-2xl">
@@ -692,5 +696,7 @@ export default function MessagesPage() {
         </AppLayout>
     )
 }
+
+    
 
     

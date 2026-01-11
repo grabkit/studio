@@ -33,6 +33,7 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
+import { motion } from "framer-motion";
 
 
 function BookmarksList({ bookmarks, bookmarksLoading }: { bookmarks: WithId<Bookmark>[] | null, bookmarksLoading: boolean }) {
@@ -202,7 +203,7 @@ export default function AccountPage() {
     const handleTouchMove = (e: TouchEvent) => {
         const touchY = e.targetTouches[0].clientY;
         const pullDistance = touchY - touchStartRef.current;
-        if (window.scrollY === 0 && pullDistance > 0 && !isRefreshing) {
+        if (window.scrollY === 0 && !isRefreshing) {
             e.preventDefault();
             const newPullPosition = Math.min(pullDistance, 120);
             if (pullPosition <= 70 && newPullPosition > 70) {
@@ -334,11 +335,14 @@ export default function AccountPage() {
 
   return (
     <AppLayout showTopBar={false}>
-       <div
+       <motion.div
         ref={containerRef}
         onTouchStart={handleTouchStart}
         onTouchMove={handleTouchMove}
         onTouchEnd={handleTouchEnd}
+        initial={{ scale: 0.98, opacity: 0 }}
+        animate={{ scale: 1, opacity: 1 }}
+        transition={{ duration: 0.3 }}
       >
          <div 
           className="absolute top-0 left-0 right-0 flex justify-center items-center h-12 text-muted-foreground transition-opacity duration-300 z-10 pointer-events-none"
@@ -484,7 +488,9 @@ export default function AccountPage() {
                     </TabsContent>
                 </Tabs>
             </div>
-        </div>
+        </motion.div>
     </AppLayout>
   )
 }
+
+    

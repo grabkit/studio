@@ -14,6 +14,7 @@ import { Heart, MessageCircle, AlertTriangle, UserPlus, Mail, Repeat, MessageSqu
 import { cn, formatTimestamp, getAvatar, formatUserId } from "@/lib/utils.tsx";
 import { Button } from "@/components/ui/button";
 import React, { useEffect, useState, useRef, useCallback, type TouchEvent, useMemo } from "react";
+import { motion } from "framer-motion";
 
 const notificationInfo = {
     like: {
@@ -256,12 +257,15 @@ export default function ActivityPage() {
 
     return (
         <AppLayout showTopBar={false}>
-             <div 
+             <motion.div
                 ref={containerRef}
                 onTouchStart={handleTouchStart}
                 onTouchMove={handleTouchMove}
                 onTouchEnd={handleTouchEnd}
                 className="relative h-full overflow-y-auto"
+                initial={{ scale: 0.98, opacity: 0 }}
+                animate={{ scale: 1, opacity: 1 }}
+                transition={{ duration: 0.3 }}
             >
                 <div 
                     className="absolute top-0 left-0 right-0 flex justify-center items-center h-12 text-muted-foreground transition-opacity duration-300"
@@ -296,9 +300,11 @@ export default function ActivityPage() {
                         ))}
                     </div>
                 </div>
-            </div>
+            </motion.div>
         </AppLayout>
     )
 }
+
+    
 
     

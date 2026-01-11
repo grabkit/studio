@@ -35,6 +35,7 @@ import { RepostSheet } from "@/components/RepostSheet";
 import { QuotedPostCard } from "@/components/QuotedPostCard";
 import { Sheet, SheetContent, SheetDescription, SheetHeader, SheetTitle, SheetTrigger } from "@/components/ui/sheet";
 import { AnimatedCount } from "@/components/AnimatedCount";
+import { motion } from "framer-motion";
 
 
 function LinkPreview({ metadata }: { metadata: LinkMetadata }) {
@@ -739,13 +740,16 @@ export default function HomePage() {
 
   return (
     <AppLayout>
-       <div 
+      <motion.div
         ref={containerRef}
         onTouchStart={handleTouchStart}
         onTouchMove={handleTouchMove}
         onTouchEnd={handleTouchEnd}
         className="relative h-full overflow-y-auto"
-       >
+        initial={{ scale: 0.98, opacity: 0 }}
+        animate={{ scale: 1, opacity: 1 }}
+        transition={{ duration: 0.3 }}
+      >
         <div 
           className="absolute top-0 left-0 right-0 flex justify-center items-center h-12 text-muted-foreground transition-opacity duration-300"
           style={{
@@ -779,7 +783,7 @@ export default function HomePage() {
             ))
           }
         </div>
-      </div>
+      </motion.div>
     </AppLayout>
   );
 }
@@ -790,6 +794,8 @@ export default function HomePage() {
 
 
 
+
+    
 
     
 
