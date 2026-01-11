@@ -198,7 +198,7 @@ export function PollComponent({ post, user, onVote }: { post: WithId<Post>, user
                             <div className="absolute inset-0 flex items-center justify-between px-4">
                                  <div className="flex items-center gap-2">
                                      {isUserChoice && <CheckCircle2 className="h-4 w-4 text-primary" />}
-                                    <span className="font-bold truncate text-primary">{option.option}</span>
+                                    <span className="font-semibold truncate text-primary">{option.option}</span>
                                 </div>
                                 <span className="font-semibold text-primary">{originalPercentage.toFixed(0)}%</span>
                             </div>
@@ -209,7 +209,7 @@ export function PollComponent({ post, user, onVote }: { post: WithId<Post>, user
                             >
                                <div className="flex items-center gap-2">
                                      {isUserChoice && <CheckCircle2 className="h-4 w-4 text-primary-foreground" />}
-                                    <span className="font-bold truncate text-primary-foreground">{option.option}</span>
+                                    <span className="font-semibold truncate text-primary-foreground">{option.option}</span>
                                 </div>
                                 <span className="font-semibold text-primary-foreground">{originalPercentage.toFixed(0)}%</span>
                             </div>
@@ -787,16 +787,3 @@ export default function HomePage() {
     </AppLayout>
   );
 }
-
-    
-
-    
-
-
-
-
-    
-
-    
-
-    
