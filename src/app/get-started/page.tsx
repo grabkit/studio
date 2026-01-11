@@ -70,7 +70,6 @@ export default function GetStartedPage() {
               />
             </svg>
             
-            {/* Avatars */}
             {/* Outer Orbit */}
             <div className="absolute w-[300px] h-[300px] animate-spin-slow">
                 {/* Avatar 1 (Top) */}
@@ -162,7 +161,7 @@ export default function GetStartedPage() {
               ))}
           </div>
         </div>
-        <Button asChild size="lg" className="w-full font-headline text-lg rounded-full mt-32">
+        <Button asChild size="lg" className="w-full text-lg rounded-full mt-32">
           <Link href="/auth">
             Get Started
             <ArrowRight className="ml-2 h-5 w-5" />
