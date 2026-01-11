@@ -86,6 +86,7 @@ export default function AppLayout({
       <main
         className={cn(
           "mx-auto max-w-2xl w-full flex-1",
+          showTopBar ? "pt-12" : "",
           showBottomNav ? "pb-14" : ""
         )}
       >
