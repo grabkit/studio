@@ -42,10 +42,9 @@ export default function GetStartedPage() {
 
   return (
     <motion.div
-      initial={{ x: 300, opacity: 0 }}
-      animate={{ x: 0, opacity: 1 }}
-      exit={{ x: -300, opacity: 0 }}
-      transition={{ duration: 0.3, ease: "easeOut" }}
+      initial={{ scale: 0.98, opacity: 0 }}
+      animate={{ scale: 1, opacity: 1 }}
+      transition={{ duration: 0.3 }}
       className="relative flex h-screen flex-col items-center justify-center bg-background p-8 text-center overflow-hidden"
     >
        <div className="background-grid"></div>
