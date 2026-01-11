@@ -275,6 +275,36 @@ export const FirebaseProvider: React.FC<FirebaseProviderProps> = ({
     return () => unsubscribe(); // Cleanup
   }, [auth, database, firestore]);
   
+   const requestAndStartCall = async (calleeId: string) => {
+    try {
+        await navigator.mediaDevices.getUserMedia({ audio: true });
+        callHandler.startCall(calleeId);
+    } catch (error) {
+        console.error("Microphone permission denied:", error);
+        toast({
+            variant: "destructive",
+            title: "Permission Required",
+            description: "Microphone access is needed to make voice calls. Please enable it in your device settings.",
+            duration: 9000,
+        });
+    }
+  };
+
+  const requestAndStartVideoCall = async (calleeId: string) => {
+      try {
+          await navigator.mediaDevices.getUserMedia({ video: true, audio: true });
+          videoCallHandler.startVideoCall(calleeId);
+      } catch (error) {
+          console.error("Camera/Microphone permission denied:", error);
+          toast({
+              variant: "destructive",
+              title: "Permissions Required",
+              description: "Camera and microphone access are needed for video calls. Please enable them in your device settings.",
+              duration: 9000,
+          });
+      }
+  };
+
 
   // Memoize the context value
   const contextValue = useMemo((): FirebaseContextState => {
@@ -296,7 +326,9 @@ export const FirebaseProvider: React.FC<FirebaseProviderProps> = ({
       isVoicePlayerPlaying,
       handleDeleteVoiceStatus,
       ...callHandler,
+      startCall: requestAndStartCall,
       ...videoCallHandler,
+      startVideoCall: requestAndStartVideoCall,
       missedCallInfo,
       setMissedCallInfo,
     };
@@ -312,9 +344,9 @@ export const FirebaseProvider: React.FC<FirebaseProviderProps> = ({
     const { calleeId, type } = missedCallInfo;
     setMissedCallInfo(null);
     if (type === 'voice') {
-      callHandler.startCall(calleeId);
+      requestAndStartCall(calleeId);
     } else {
-      videoCallHandler.startVideoCall(calleeId);
+      requestAndStartVideoCall(calleeId);
     }
   };
 
