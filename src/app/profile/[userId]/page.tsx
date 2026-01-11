@@ -180,7 +180,7 @@ export default function UserProfilePage() {
     const handleTouchMove = (e: TouchEvent) => {
         const touchY = e.targetTouches[0].clientY;
         const pullDistance = touchY - touchStartRef.current;
-        if (window.scrollY === 0 && pullDistance > 0 && !isRefreshing) {
+        if (containerRef.current && containerRef.current.scrollTop === 0 && pullDistance > 0 && !isRefreshing) {
             e.preventDefault();
             const newPullPosition = Math.min(pullDistance, 120);
             if (pullPosition <= 70 && newPullPosition > 70) {
@@ -612,16 +612,18 @@ export default function UserProfilePage() {
     return (
         <AppLayout showTopBar={false} showBottomNav={true}>
             <motion.div
+                className="h-full"
                 initial={{ scale: 0.98, opacity: 0 }}
                 animate={{ scale: 1, opacity: 1 }}
                 transition={{ duration: 0.3 }}
             >
                 <Sheet open={isMoreOptionsSheetOpen} onOpenChange={setIsMoreOptionsSheetOpen}>
-                    <div 
+                    <div
                         ref={containerRef}
                         onTouchStart={handleTouchStart}
                         onTouchMove={handleTouchMove}
                         onTouchEnd={handleTouchEnd}
+                        className="relative h-full overflow-y-auto"
                     >
                         <div className="flex items-center justify-between h-14 px-4 bg-background">
                             <Button variant="ghost" size="icon" onClick={handleBackNavigation}>
@@ -644,7 +646,7 @@ export default function UserProfilePage() {
                             <Loader2 className={cn('h-6 w-6', isRefreshing && 'animate-spin')} />
                         </div>
                         
-                        <div style={{ transform: `translateY(${pullPosition}px)` }} className="transition-transform duration-300 bg-background">
+                        <div className="pt-12">
                             <div className="px-4 pt-4">
                                 <div className="flex items-center justify-between space-x-5 mb-4">
                                     <div className="flex-shrink-0">

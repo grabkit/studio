@@ -257,51 +257,51 @@ export default function ActivityPage() {
     return (
         <AppLayout showTopBar={false}>
              <motion.div
-                ref={containerRef}
-                onTouchStart={handleTouchStart}
-                onTouchMove={handleTouchMove}
-                onTouchEnd={handleTouchEnd}
-                className="relative h-full overflow-y-auto"
+                className="h-full"
                 initial={{ scale: 0.98, opacity: 0 }}
                 animate={{ scale: 1, opacity: 1 }}
                 transition={{ duration: 0.3 }}
             >
-                <div 
-                    className="absolute top-0 left-0 right-0 flex justify-center items-center h-12 text-muted-foreground transition-opacity duration-300"
-                    style={{ opacity: isRefreshing ? 1 : (pullPosition / 70) }}
+                <div
+                    ref={containerRef}
+                    onTouchStart={handleTouchStart}
+                    onTouchMove={handleTouchMove}
+                    onTouchEnd={handleTouchEnd}
+                    className="relative h-full overflow-y-auto"
                 >
-                    <Loader2 className={cn("h-6 w-6", isRefreshing && "animate-spin")} />
-                </div>
-
-                <div style={{ paddingTop: `${pullPosition}px` }} className="transition-all duration-300">
-                    <div className="p-4 border-b">
-                        <h1 className="text-2xl font-bold font-headline">Activity</h1>
+                    <div 
+                        className="absolute top-0 left-0 right-0 flex justify-center items-center h-12 text-muted-foreground transition-opacity duration-300 pointer-events-none"
+                        style={{ opacity: isRefreshing ? 1 : (pullPosition / 70) }}
+                    >
+                        <Loader2 className={cn("h-6 w-6", isRefreshing && "animate-spin")} />
                     </div>
-                    <div>
-                        {isLoading && (
-                            <>
-                                <ActivitySkeleton />
-                                <ActivitySkeleton />
-                                <ActivitySkeleton />
-                                <ActivitySkeleton />
-                            </>
-                        )}
-                        {!isLoading && filteredNotifications?.length === 0 && (
-                            <div className="text-center py-20">
-                                <h2 className="text-2xl font-headline text-primary">No Activity Yet</h2>
-                                <p className="text-muted-foreground mt-2">Likes and comments on your posts will appear here.</p>
-                            </div>
-                        )}
-                        {filteredNotifications?.map(notification => (
-                            <NotificationItem key={notification.id} notification={notification} />
-                        ))}
+
+                    <div className="pt-12">
+                        <div className="p-4 border-b">
+                            <h1 className="text-2xl font-bold font-headline">Activity</h1>
+                        </div>
+                        <div>
+                            {isLoading && (
+                                <>
+                                    <ActivitySkeleton />
+                                    <ActivitySkeleton />
+                                    <ActivitySkeleton />
+                                    <ActivitySkeleton />
+                                </>
+                            )}
+                            {!isLoading && filteredNotifications?.length === 0 && (
+                                <div className="text-center py-20">
+                                    <h2 className="text-2xl font-headline text-primary">No Activity Yet</h2>
+                                    <p className="text-muted-foreground mt-2">Likes and comments on your posts will appear here.</p>
+                                </div>
+                            )}
+                            {filteredNotifications?.map(notification => (
+                                <NotificationItem key={notification.id} notification={notification} />
+                            ))}
+                        </div>
                     </div>
                 </div>
             </motion.div>
         </AppLayout>
     )
 }
-
-    
-
-    

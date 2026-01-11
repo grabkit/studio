@@ -608,62 +608,66 @@ export default function MessagesPage() {
     return (
         <AppLayout showTopBar={false}>
              <motion.div
-                ref={containerRef}
-                onTouchStart={handleTouchStart}
-                onTouchMove={handleTouchMove}
-                onTouchEnd={handleTouchEnd}
-                className="relative h-full overflow-y-auto"
+                className="h-full"
                 initial={{ scale: 0.98, opacity: 0 }}
                 animate={{ scale: 1, opacity: 1 }}
                 transition={{ duration: 0.3 }}
             >
                 <div
-                    className="absolute top-0 left-0 right-0 flex justify-center items-center h-12 text-muted-foreground transition-opacity duration-300 z-10"
-                    style={{ opacity: isRefreshing ? 1 : pullPosition / 70 }}
+                    ref={containerRef}
+                    onTouchStart={handleTouchStart}
+                    onTouchMove={handleTouchMove}
+                    onTouchEnd={handleTouchEnd}
+                    className="relative h-full overflow-y-auto"
                 >
-                    <Loader2 className={cn('h-6 w-6', isRefreshing && 'animate-spin')} />
-                </div>
+                    <div
+                        className="absolute top-0 left-0 right-0 flex justify-center items-center h-12 text-muted-foreground transition-opacity duration-300 z-10 pointer-events-none"
+                        style={{ opacity: isRefreshing ? 1 : pullPosition / 70 }}
+                    >
+                        <Loader2 className={cn('h-6 w-6', isRefreshing && 'animate-spin')} />
+                    </div>
 
-                <div style={{ paddingTop: `${pullPosition}px` }} className="transition-all duration-300">
-                    <FollowedUsers />
-                    
-                    <div className="p-2">
-                        <Tabs defaultValue="chats" className="w-full" onValueChange={handleTabChange}>
-                            <TabsList className="grid w-full grid-cols-2 rounded-full">
-                                <TabsTrigger value="chats" className="relative flex items-center justify-center gap-2 rounded-full font-bold">
-                                    {hasUnreadChats && (
-                                        <div className="w-2 h-2 rounded-full bg-destructive"></div>
-                                    )}
-                                    Chats
-                                </TabsTrigger>
-                                <TabsTrigger value="requests" className="relative flex items-center justify-center gap-2 rounded-full font-bold">
-                                    {hasNewRequests && (
-                                        <div className="w-2 h-2 rounded-full bg-destructive"></div>
-                                    )}
-                                    Requests
-                                </TabsTrigger>
-                            </TabsList>
-                            <TabsContent value="chats">
-                                <ConversationsList 
-                                    conversations={chats}
-                                    isLoading={isLoading}
-                                    type="chats"
-                                    currentUser={user}
-                                    onAcceptRequest={handleAcceptRequest}
-                                    onLongPress={handleLongPress}
-                                />
-                            </TabsContent>
-                            <TabsContent value="requests">
-                                <ConversationsList
-                                    conversations={requests}
-                                    isLoading={isLoading}
-                                    type="requests"
-                                    currentUser={user}
-                                    onAcceptRequest={handleAcceptRequest}
-                                    onLongPress={handleLongPress}
-                                />
-                            </TabsContent>
-                        </Tabs>
+                    <div className="pt-12">
+                        <FollowedUsers />
+                        
+                        <div className="p-2">
+                            <Tabs defaultValue="chats" className="w-full" onValueChange={handleTabChange}>
+                                <TabsList className="grid w-full grid-cols-2 rounded-full">
+                                    <TabsTrigger value="chats" className="relative flex items-center justify-center gap-2 rounded-full font-bold">
+                                        {hasUnreadChats && (
+                                            <div className="w-2 h-2 rounded-full bg-destructive"></div>
+                                        )}
+                                        Chats
+                                    </TabsTrigger>
+                                    <TabsTrigger value="requests" className="relative flex items-center justify-center gap-2 rounded-full font-bold">
+                                        {hasNewRequests && (
+                                            <div className="w-2 h-2 rounded-full bg-destructive"></div>
+                                        )}
+                                        Requests
+                                    </TabsTrigger>
+                                </TabsList>
+                                <TabsContent value="chats">
+                                    <ConversationsList 
+                                        conversations={chats}
+                                        isLoading={isLoading}
+                                        type="chats"
+                                        currentUser={user}
+                                        onAcceptRequest={handleAcceptRequest}
+                                        onLongPress={handleLongPress}
+                                    />
+                                </TabsContent>
+                                <TabsContent value="requests">
+                                    <ConversationsList
+                                        conversations={requests}
+                                        isLoading={isLoading}
+                                        type="requests"
+                                        currentUser={user}
+                                        onAcceptRequest={handleAcceptRequest}
+                                        onLongPress={handleLongPress}
+                                    />
+                                </TabsContent>
+                            </Tabs>
+                        </div>
                     </div>
                 </div>
             </motion.div>
@@ -694,7 +698,3 @@ export default function MessagesPage() {
         </AppLayout>
     )
 }
-
-    
-
-    

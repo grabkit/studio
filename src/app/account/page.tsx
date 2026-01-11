@@ -202,7 +202,7 @@ export default function AccountPage() {
     const handleTouchMove = (e: TouchEvent) => {
         const touchY = e.targetTouches[0].clientY;
         const pullDistance = touchY - touchStartRef.current;
-        if (window.scrollY === 0 && !isRefreshing) {
+        if (containerRef.current && containerRef.current.scrollTop === 0 && pullDistance > 0 && !isRefreshing) {
             e.preventDefault();
             const newPullPosition = Math.min(pullDistance, 120);
             if (pullPosition <= 70 && newPullPosition > 70) {
@@ -335,159 +335,162 @@ export default function AccountPage() {
   return (
     <AppLayout showTopBar={false}>
        <motion.div
-        ref={containerRef}
-        onTouchStart={handleTouchStart}
-        onTouchMove={handleTouchMove}
-        onTouchEnd={handleTouchEnd}
+        className="h-full"
         initial={{ scale: 0.98, opacity: 0 }}
         animate={{ scale: 1, opacity: 1 }}
         transition={{ duration: 0.3 }}
       >
-         <div 
-          className="absolute top-0 left-0 right-0 flex justify-center items-center h-12 text-muted-foreground transition-opacity duration-300 z-10 pointer-events-none"
-          style={{ opacity: isRefreshing ? 1 : pullPosition / 70 }}
+        <div
+            ref={containerRef}
+            onTouchStart={handleTouchStart}
+            onTouchMove={handleTouchMove}
+            onTouchEnd={handleTouchEnd}
+            className="relative h-full overflow-y-auto"
         >
-          <Loader2 className={cn('h-6 w-6', isRefreshing && 'animate-spin')} />
-        </div>
+            <div 
+            className="absolute top-0 left-0 right-0 flex justify-center items-center h-12 text-muted-foreground transition-opacity duration-300 z-10 pointer-events-none"
+            style={{ opacity: isRefreshing ? 1 : pullPosition / 70 }}
+            >
+            <Loader2 className={cn('h-6 w-6', isRefreshing && 'animate-spin')} />
+            </div>
 
-        <div style={{ transform: `translateY(${pullPosition}px)` }} className="transition-transform duration-300 bg-background">
-            <div className="flex items-center justify-between h-14 px-4 bg-background">
-                <Link href="/post" className={cn(buttonVariants({ variant: "ghost", size: "icon" }))}>
-                    <Plus className="h-6 w-6" />
-                </Link>
-                <h2 className="text-lg font-bold font-headline">
-                    {formatUserId(authUser?.uid)}
-                </h2>
-                <div className="flex items-center space-x-2">
-                    <Link href="/account/settings" className={cn(buttonVariants({ variant: 'ghost', size: 'icon' }))}>
-                    <Menu className="h-6 w-6" />
+            <div className="pt-12">
+                <div className="flex items-center justify-between h-14 px-4 bg-background">
+                    <Link href="/post" className={cn(buttonVariants({ variant: "ghost", size: "icon" }))}>
+                        <Plus className="h-6 w-6" />
                     </Link>
+                    <h2 className="text-lg font-bold font-headline">
+                        {formatUserId(authUser?.uid)}
+                    </h2>
+                    <div className="flex items-center space-x-2">
+                        <Link href="/account/settings" className={cn(buttonVariants({ variant: 'ghost', size: 'icon' }))}>
+                        <Menu className="h-6 w-6" />
+                        </Link>
+                    </div>
                 </div>
-            </div>
-            <div className="px-4 pt-4">
-                <div className="flex items-center justify-between space-x-5 mb-4">
-                    <div className="flex-shrink-0">
-                        <div className="relative inline-block">
-                            <Avatar className="h-20 w-20 md:h-24 md:w-24">
-                                <AvatarImage
-                                    src={isAvatarUrl ? avatar : undefined}
-                                    alt={userProfile?.name || "User"}
-                                />
-                                <AvatarFallback className="text-3xl font-headline bg-secondary">
-                                    {!isAvatarUrl ? avatar : ''}
-                                </AvatarFallback>
-                            </Avatar>
-                            {hasVoiceStatus && (
-                                <div className="absolute bottom-0 right-0 bg-background p-1 rounded-full border-2 cursor-pointer" onClick={handleAvatarClick} role="button">
-                                    <div className="flex items-center justify-center h-4 w-4 gap-0.5">
-                                        <div className="audio-wave-bar-avatar" />
-                                        <div className="audio-wave-bar-avatar" />
-                                        <div className="audio-wave-bar-avatar" />
-                                        <div className="audio-wave-bar-avatar" />
-                                        <div className="audio-wave-bar-avatar" />
+                <div className="px-4 pt-4">
+                    <div className="flex items-center justify-between space-x-5 mb-4">
+                        <div className="flex-shrink-0">
+                            <div className="relative inline-block">
+                                <Avatar className="h-20 w-20 md:h-24 md:w-24">
+                                    <AvatarImage
+                                        src={isAvatarUrl ? avatar : undefined}
+                                        alt={userProfile?.name || "User"}
+                                    />
+                                    <AvatarFallback className="text-3xl font-headline bg-secondary">
+                                        {!isAvatarUrl ? avatar : ''}
+                                    </AvatarFallback>
+                                </Avatar>
+                                {hasVoiceStatus && (
+                                    <div className="absolute bottom-0 right-0 bg-background p-1 rounded-full border-2 cursor-pointer" onClick={handleAvatarClick} role="button">
+                                        <div className="flex items-center justify-center h-4 w-4 gap-0.5">
+                                            <div className="audio-wave-bar-avatar" />
+                                            <div className="audio-wave-bar-avatar" />
+                                            <div className="audio-wave-bar-avatar" />
+                                            <div className="audio-wave-bar-avatar" />
+                                            <div className="audio-wave-bar-avatar" />
+                                        </div>
                                     </div>
-                                </div>
-                            )}
+                                )}
+                            </div>
+                        </div>
+                        <div className="flex-1 flex justify-around text-center">
+                            <div>
+                                {isLoading ? (
+                                    <div className="font-bold text-lg"><Skeleton className="h-6 w-8 mx-auto" /></div>
+                                ) : (
+                                    <div className="font-bold text-lg">{posts?.length ?? 0}</div>
+                                )}
+                                <p className="text-sm text-muted-foreground">Posts</p>
+                            </div>
+                            <Link href={`/profile/${authUser?.uid}/social?tab=followers`} className="cursor-pointer hover:bg-secondary/50 rounded-md p-1 -m-1">
+                                {isLoading ? (
+                                    <div className="font-bold text-lg"><Skeleton className="h-6 w-8 mx-auto" /></div>
+                                ) : (
+                                    <div className="font-bold text-lg">{userProfile?.followersCount || 0}</div>
+                                )}
+                                <p className="text-sm text-muted-foreground">Followers</p>
+                            </Link>
+                            <Link href={`/profile/${authUser?.uid}/social?tab=following`} className="cursor-pointer hover:bg-secondary/50 rounded-md p-1 -m-1">
+                                {isLoading ? (
+                                    <div className="font-bold text-lg"><Skeleton className="h-6 w-8 mx-auto" /></div>
+                                ) : (
+                                    <div className="font-bold text-lg">{userProfile?.followingCount || 0}</div>
+                                )}
+                                <p className="text-sm text-muted-foreground">Following</p>
+                            </Link>
                         </div>
                     </div>
-                    <div className="flex-1 flex justify-around text-center">
-                        <div>
-                            {isLoading ? (
-                                <div className="font-bold text-lg"><Skeleton className="h-6 w-8 mx-auto" /></div>
-                            ) : (
-                                <div className="font-bold text-lg">{posts?.length ?? 0}</div>
-                            )}
-                            <p className="text-sm text-muted-foreground">Posts</p>
-                        </div>
-                        <Link href={`/profile/${authUser?.uid}/social?tab=followers`} className="cursor-pointer hover:bg-secondary/50 rounded-md p-1 -m-1">
-                            {isLoading ? (
-                                <div className="font-bold text-lg"><Skeleton className="h-6 w-8 mx-auto" /></div>
-                            ) : (
-                                <div className="font-bold text-lg">{userProfile?.followersCount || 0}</div>
-                            )}
-                            <p className="text-sm text-muted-foreground">Followers</p>
-                        </Link>
-                        <Link href={`/profile/${authUser?.uid}/social?tab=following`} className="cursor-pointer hover:bg-secondary/50 rounded-md p-1 -m-1">
-                            {isLoading ? (
-                                <div className="font-bold text-lg"><Skeleton className="h-6 w-8 mx-auto" /></div>
-                            ) : (
-                                <div className="font-bold text-lg">{userProfile?.followingCount || 0}</div>
-                            )}
-                            <p className="text-sm text-muted-foreground">Following</p>
-                        </Link>
+                    
+                    <div className="mb-4 space-y-1">
+                        <p className="font-semibold font-headline">{formatUserId(authUser?.uid)}</p>
+                        {userProfile?.bio && <p className="text-sm">{userProfile.bio}</p>}
+                        {userProfile?.website && (
+                            <a href={userProfile.website} target="_blank" rel="noopener noreferrer" className="flex items-center gap-2 text-sm text-blue-500 hover:underline">
+                                <LinkIcon className="h-4 w-4" />
+                                <span>{userProfile.website.replace(/^(https?:\/\/)?(www\.)?/, '')}</span>
+                            </a>
+                        )}
                     </div>
-                </div>
-                
-                <div className="mb-4 space-y-1">
-                    <p className="font-semibold font-headline">{formatUserId(authUser?.uid)}</p>
-                    {userProfile?.bio && <p className="text-sm">{userProfile.bio}</p>}
-                    {userProfile?.website && (
-                        <a href={userProfile.website} target="_blank" rel="noopener noreferrer" className="flex items-center gap-2 text-sm text-blue-500 hover:underline">
-                            <LinkIcon className="h-4 w-4" />
-                            <span>{userProfile.website.replace(/^(https?:\/\/)?(www\.)?/, '')}</span>
-                        </a>
-                    )}
-                </div>
 
 
-                <div className="mb-4 flex items-center space-x-2">
-                    <Button variant="secondary" size="sm" className="flex-1 font-bold rounded-[5px]" asChild>
-                    <Link href="/account/settings/edit-profile">Edit Profile</Link>
-                    </Button>
-                    <Button variant="secondary" size="sm" className="flex-1 font-bold rounded-[5px]" onClick={handleShareProfile}>
-                        Share Profile
-                    </Button>
-                </div>
-
-            </div>
-
-                <Tabs defaultValue="posts" className="w-full">
-                    <div className="sticky top-0 bg-background z-10">
-                    <TabsList variant="underline" className="grid w-full grid-cols-3">
-                        <TabsTrigger value="posts" variant="underline" className="font-semibold">Posts</TabsTrigger>
-                        <TabsTrigger value="replies" variant="underline" className="font-semibold">Replies</TabsTrigger>
-                        <TabsTrigger value="bookmarks" variant="underline" className="font-semibold">Bookmarks</TabsTrigger>
-                    </TabsList>
+                    <div className="mb-4 flex items-center space-x-2">
+                        <Button variant="secondary" size="sm" className="flex-1 font-bold rounded-[5px]" asChild>
+                        <Link href="/account/settings/edit-profile">Edit Profile</Link>
+                        </Button>
+                        <Button variant="secondary" size="sm" className="flex-1 font-bold rounded-[5px]" onClick={handleShareProfile}>
+                            Share Profile
+                        </Button>
                     </div>
-                    <TabsContent value="posts" className="mt-0">
-                        <div className="divide-y border-b">
-                            {(postsLoading || bookmarksLoading) && (
-                                <>
-                                    <PostSkeleton />
-                                    <PostSkeleton />
-                                </>
-                            )}
-                            {!(postsLoading || bookmarksLoading) && posts?.length === 0 && (
-                                <div className="col-span-3 text-center py-16">
-                                    <h3 className="text-xl font-headline text-primary">No Posts Yet</h3>
-                                    <p className="text-muted-foreground">Start sharing your thoughts!</p>
-                                </div>
-                            )}
-                            {posts?.map((post) => (
-                                <HomePostItem 
-                                key={post.id} 
-                                post={post} 
-                                bookmarks={bookmarks} 
-                                updatePost={updatePostState}
-                                onDelete={handleDeletePost} 
-                                onPin={handlePinPost} 
-                                showPinStatus={true}
-                                authorProfile={userProfile}
-                                />
-                            ))}
+
+                </div>
+
+                    <Tabs defaultValue="posts" className="w-full">
+                        <div className="sticky top-0 bg-background z-10">
+                        <TabsList variant="underline" className="grid w-full grid-cols-3">
+                            <TabsTrigger value="posts" variant="underline" className="font-semibold">Posts</TabsTrigger>
+                            <TabsTrigger value="replies" variant="underline" className="font-semibold">Replies</TabsTrigger>
+                            <TabsTrigger value="bookmarks" variant="underline" className="font-semibold">Bookmarks</TabsTrigger>
+                        </TabsList>
                         </div>
-                    </TabsContent>
-                    <TabsContent value="replies" className="mt-0">
-                        {authUser?.uid && <RepliesList userId={authUser.uid} />}
-                    </TabsContent>
-                    <TabsContent value="bookmarks" className="mt-0">
-                        <BookmarksList bookmarks={bookmarks} bookmarksLoading={bookmarksLoading} />
-                    </TabsContent>
-                </Tabs>
+                        <TabsContent value="posts" className="mt-0">
+                            <div className="divide-y border-b">
+                                {(postsLoading || bookmarksLoading) && (
+                                    <>
+                                        <PostSkeleton />
+                                        <PostSkeleton />
+                                    </>
+                                )}
+                                {!(postsLoading || bookmarksLoading) && posts?.length === 0 && (
+                                    <div className="col-span-3 text-center py-16">
+                                        <h3 className="text-xl font-headline text-primary">No Posts Yet</h3>
+                                        <p className="text-muted-foreground">Start sharing your thoughts!</p>
+                                    </div>
+                                )}
+                                {posts?.map((post) => (
+                                    <HomePostItem 
+                                    key={post.id} 
+                                    post={post} 
+                                    bookmarks={bookmarks} 
+                                    updatePost={updatePostState}
+                                    onDelete={handleDeletePost} 
+                                    onPin={handlePinPost} 
+                                    showPinStatus={true}
+                                    authorProfile={userProfile}
+                                    />
+                                ))}
+                            </div>
+                        </TabsContent>
+                        <TabsContent value="replies" className="mt-0">
+                            {authUser?.uid && <RepliesList userId={authUser.uid} />}
+                        </TabsContent>
+                        <TabsContent value="bookmarks" className="mt-0">
+                            <BookmarksList bookmarks={bookmarks} bookmarksLoading={bookmarksLoading} />
+                        </TabsContent>
+                    </Tabs>
+                </div>
             </div>
         </motion.div>
     </AppLayout>
   )
 }
-
-    

@@ -741,45 +741,49 @@ export default function HomePage() {
   return (
     <AppLayout>
       <motion.div
-        ref={containerRef}
-        onTouchStart={handleTouchStart}
-        onTouchMove={handleTouchMove}
-        onTouchEnd={handleTouchEnd}
-        className="relative h-full overflow-y-auto"
+        className="h-full"
         initial={{ scale: 0.98, opacity: 0 }}
         animate={{ scale: 1, opacity: 1 }}
         transition={{ duration: 0.3 }}
       >
-        <div 
-          className="absolute top-0 left-0 right-0 flex justify-center items-center h-12 text-muted-foreground transition-opacity duration-300"
-          style={{
-             opacity: isRefreshing ? 1 : (pullPosition / 70),
-          }}
+        <div
+          ref={containerRef}
+          onTouchStart={handleTouchStart}
+          onTouchMove={handleTouchMove}
+          onTouchEnd={handleTouchEnd}
+          className="relative h-full overflow-y-auto"
         >
-           <Loader2 className={cn("h-6 w-6", isRefreshing && "animate-spin")} />
-        </div>
-        <div className="divide-y border-b pt-12">
-          {(isLoading || !initialPosts) && (
-            <>
-              <PostSkeleton />
-              <PostSkeleton />
-              <PostSkeleton />
-              <PostSkeleton />
-              <PostSkeleton />
-            </>
-          )}
+          <div 
+            className="absolute top-0 left-0 right-0 flex justify-center items-center h-12 text-muted-foreground transition-opacity duration-300 pointer-events-none"
+            style={{
+               opacity: isRefreshing ? 1 : (pullPosition / 70),
+            }}
+          >
+             <Loader2 className={cn("h-6 w-6", isRefreshing && "animate-spin")} />
+          </div>
+          <div className="divide-y border-b pt-12">
+            {(isLoading || !initialPosts) && (
+              <>
+                <PostSkeleton />
+                <PostSkeleton />
+                <PostSkeleton />
+                <PostSkeleton />
+                <PostSkeleton />
+              </>
+            )}
 
-          {!isLoading && initialPosts && filteredPosts.length === 0 && (
-            <div className="text-center py-10 h-screen">
-              <h2 className="text-2xl font-headline text-primary">No posts yet!</h2>
-              <p className="text-muted-foreground mt-2">Be the first to post something.</p>
-            </div>
-          )}
-          
-          {!isLoading && initialPosts && filteredPosts.map((post) => (
-              <PostItem key={post.id} post={post} bookmarks={bookmarks} updatePost={updatePost} onDelete={handleDeletePostOptimistic} />
-            ))
-          }
+            {!isLoading && initialPosts && filteredPosts.length === 0 && (
+              <div className="text-center py-10 h-screen">
+                <h2 className="text-2xl font-headline text-primary">No posts yet!</h2>
+                <p className="text-muted-foreground mt-2">Be the first to post something.</p>
+              </div>
+            )}
+            
+            {!isLoading && initialPosts && filteredPosts.map((post) => (
+                <PostItem key={post.id} post={post} bookmarks={bookmarks} updatePost={updatePost} onDelete={handleDeletePostOptimistic} />
+              ))
+            }
+          </div>
         </div>
       </motion.div>
     </AppLayout>
