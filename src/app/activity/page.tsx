@@ -1,5 +1,4 @@
 
-
 "use client";
 
 import AppLayout from "@/components/AppLayout";
@@ -10,7 +9,7 @@ import type { Notification, NotificationSettings } from "@/lib/types";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import Link from "next/link";
-import { Heart, MessageCircle, AlertTriangle, UserPlus, Mail, Repeat, MessageSquareQuote, RefreshCw, Newspaper } from "lucide-react";
+import { Heart, MessageCircle, AlertTriangle, UserPlus, Mail, Repeat, MessageSquareQuote, Newspaper, Loader2 } from "lucide-react";
 import { cn, formatTimestamp, getAvatar, formatUserId } from "@/lib/utils.tsx";
 import { Button } from "@/components/ui/button";
 import React, { useEffect, useState, useRef, useCallback, type TouchEvent, useMemo } from "react";
@@ -271,9 +270,7 @@ export default function ActivityPage() {
                     className="absolute top-0 left-0 right-0 flex justify-center items-center h-12 text-muted-foreground transition-opacity duration-300"
                     style={{ opacity: isRefreshing ? 1 : (pullPosition / 70) }}
                 >
-                    <div style={{ transform: `rotate(${isRefreshing ? 0 : pullPosition * 3}deg)` }}>
-                        <RefreshCw className={cn("h-5 w-5", isRefreshing && "animate-spin")} />
-                    </div>
+                    <Loader2 className={cn("h-6 w-6", isRefreshing && "animate-spin")} />
                 </div>
 
                 <div style={{ paddingTop: `${pullPosition}px` }} className="transition-all duration-300">

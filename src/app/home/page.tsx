@@ -9,7 +9,7 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Skeleton } from "@/components/ui/skeleton";
 import type { Post, Bookmark, PollOption, Notification, User, LinkMetadata, QuotedPost } from "@/lib/types";
-import { Heart, MessageCircle, Repeat, ArrowUpRight, MoreHorizontal, Edit, Trash2, Bookmark as BookmarkIcon, CheckCircle2, Slash, RefreshCw, Pin } from "lucide-react";
+import { Heart, MessageCircle, Repeat, ArrowUpRight, MoreHorizontal, Edit, Trash2, Bookmark as BookmarkIcon, CheckCircle2, Slash, Pin, Loader2 } from "lucide-react";
 import { cn, formatTimestamp, getAvatar, formatCount, formatUserId } from "@/lib/utils";
 import { useToast } from "@/hooks/use-toast";
 import { FirestorePermissionError } from "@/firebase/errors";
@@ -756,9 +756,7 @@ export default function HomePage() {
              opacity: isRefreshing ? 1 : (pullPosition / 70),
           }}
         >
-           <div style={{ transform: `rotate(${isRefreshing ? 0 : pullPosition * 3}deg)` }}>
-             <RefreshCw className={cn("h-5 w-5", isRefreshing && "animate-spin")} />
-           </div>
+           <Loader2 className={cn("h-6 w-6", isRefreshing && "animate-spin")} />
         </div>
         <div className="divide-y border-b pt-12">
           {(isLoading || !initialPosts) && (

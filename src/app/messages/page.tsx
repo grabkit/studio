@@ -6,7 +6,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { getAvatar, formatMessageTimestamp, formatUserId } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
-import { MessageSquare, Mail, Trash2, BellOff, CheckCircle, User as UserIcon, Bell, Mic, RefreshCw } from "lucide-react";
+import { MessageSquare, Mail, Trash2, BellOff, CheckCircle, User as UserIcon, Bell, Mic, Loader2 } from "lucide-react";
 import { useFirebase, useMemoFirebase } from "@/firebase";
 import { collection, query, where, doc, updateDoc, deleteDoc, arrayUnion, arrayRemove, getDocs } from "firebase/firestore";
 import { useCollection, type WithId } from "@/firebase/firestore/use-collection";
@@ -621,9 +621,7 @@ export default function MessagesPage() {
                     className="absolute top-0 left-0 right-0 flex justify-center items-center h-12 text-muted-foreground transition-opacity duration-300 z-10"
                     style={{ opacity: isRefreshing ? 1 : pullPosition / 70 }}
                 >
-                    <div style={{ transform: `rotate(${isRefreshing ? 0 : pullPosition * 3}deg)` }}>
-                        <RefreshCw className={cn('h-5 w-5', isRefreshing && 'animate-spin')} />
-                    </div>
+                    <Loader2 className={cn('h-6 w-6', isRefreshing && 'animate-spin')} />
                 </div>
 
                 <div style={{ paddingTop: `${pullPosition}px` }} className="transition-all duration-300">

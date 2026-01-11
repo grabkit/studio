@@ -1,5 +1,4 @@
 
-
 "use client";
 
 import AppLayout from "@/components/AppLayout";
@@ -9,7 +8,7 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button, buttonVariants } from "@/components/ui/button";
 import { collection, query, where, getDocs, getDoc, doc, updateDoc, arrayUnion, arrayRemove, increment, setDoc, serverTimestamp, deleteField, runTransaction, deleteDoc } from "firebase/firestore";
 import { useCollection, type WithId } from "@/firebase/firestore/use-collection";
-import { Menu, Share2, Link as LinkIcon, Plus, BarChart3, Trash2, RefreshCw, Settings } from "lucide-react";
+import { Menu, Share2, Link as LinkIcon, Plus, BarChart3, Trash2, Settings, Loader2 } from "lucide-react";
 import type { Post, Bookmark, User, Notification } from "@/lib/types";
 import { Skeleton } from "@/components/ui/skeleton";
 import React, { useMemo, useState, useEffect, useCallback, useRef, type TouchEvent } from "react";
@@ -348,9 +347,7 @@ export default function AccountPage() {
           className="absolute top-0 left-0 right-0 flex justify-center items-center h-12 text-muted-foreground transition-opacity duration-300 z-10 pointer-events-none"
           style={{ opacity: isRefreshing ? 1 : pullPosition / 70 }}
         >
-          <div style={{ transform: `rotate(${isRefreshing ? 0 : pullPosition * 3}deg)` }}>
-            <RefreshCw className={cn('h-5 w-5', isRefreshing && 'animate-spin')} />
-          </div>
+          <Loader2 className={cn('h-6 w-6', isRefreshing && 'animate-spin')} />
         </div>
 
         <div style={{ transform: `translateY(${pullPosition}px)` }} className="transition-transform duration-300 bg-background">

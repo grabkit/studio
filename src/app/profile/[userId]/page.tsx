@@ -1,5 +1,4 @@
 
-
 "use client";
 
 import { useParams, useRouter } from "next/navigation";
@@ -17,7 +16,7 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button, buttonVariants } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { ArrowLeft, MessageSquare, ArrowUpRight, MoreHorizontal, ShieldAlert, Flag, VolumeX, Info, MinusCircle, Link as LinkIcon, QrCode, Calendar, Badge, User as UserIcon, Volume2, BarChart3, RefreshCw, ChevronDown } from "lucide-react";
+import { ArrowLeft, MessageSquare, ArrowUpRight, MoreHorizontal, ShieldAlert, Flag, VolumeX, Info, MinusCircle, Link as LinkIcon, QrCode, Calendar, Badge, User as UserIcon, Volume2, BarChart3, ChevronDown, Loader2 } from "lucide-react";
 import { getAvatar, cn, formatLastSeen, formatUserId } from "@/lib/utils.tsx";
 import { FirestorePermissionError } from "@/firebase/errors";
 import { errorEmitter } from "@/firebase/error-emitter";
@@ -642,9 +641,7 @@ export default function UserProfilePage() {
                             className="absolute top-0 left-0 right-0 flex justify-center items-center h-12 text-muted-foreground transition-opacity duration-300 z-10 pointer-events-none"
                             style={{ opacity: isRefreshing ? 1 : pullPosition / 70 }}
                         >
-                            <div style={{ transform: `rotate(${isRefreshing ? 0 : pullPosition * 3}deg)` }}>
-                                <RefreshCw className={cn('h-5 w-5', isRefreshing && 'animate-spin')} />
-                            </div>
+                            <Loader2 className={cn('h-6 w-6', isRefreshing && 'animate-spin')} />
                         </div>
                         
                         <div style={{ transform: `translateY(${pullPosition}px)` }} className="transition-transform duration-300 bg-background">
