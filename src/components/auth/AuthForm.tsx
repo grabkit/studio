@@ -1,4 +1,5 @@
 
+
 "use client";
 
 import { useState } from "react";
@@ -21,17 +22,6 @@ import {
   FormMessage,
 } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
-import {
-  AlertDialog,
-  AlertDialogAction,
-  AlertDialogCancel,
-  AlertDialogContent,
-  AlertDialogDescription,
-  AlertDialogFooter,
-  AlertDialogHeader,
-  AlertDialogTitle,
-  AlertDialogTrigger,
-} from "@/components/ui/alert-dialog";
 import { Loader2, Mail, Lock, User as UserIcon } from "lucide-react";
 import { createUserWithEmailAndPassword, signInWithEmailAndPassword, updateProfile } from "firebase/auth";
 import { cn, getAvatar } from "@/lib/utils.tsx";
@@ -39,6 +29,7 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { doc, serverTimestamp, setDoc } from "firebase/firestore";
 import type { User as UserType } from "@/lib/types";
 import { defaultAvatars } from "@/lib/avatars";
+import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetDescription, SheetTrigger, SheetClose } from "@/components/ui/sheet";
 
 const signUpSchema = z.object({
   name: z.string().min(2, { message: "Name must be at least 2 characters." }),
@@ -310,7 +301,7 @@ export default function AuthForm() {
                         </Button>
                     </div>
                     <div>
-                        <ForgotPasswordDialog form={forgotPasswordForm} handlePasswordReset={handlePasswordReset} />
+                        <ForgotPasswordSheet form={forgotPasswordForm} handlePasswordReset={handlePasswordReset} />
                     </div>
                 </div>
             ) : (
@@ -327,7 +318,7 @@ export default function AuthForm() {
 }
 
 
-function ForgotPasswordDialog({form, handlePasswordReset}: {form: UseFormReturn<any>, handlePasswordReset: (values: any) => Promise<boolean>}) {
+function ForgotPasswordSheet({form, handlePasswordReset}: {form: UseFormReturn<any>, handlePasswordReset: (values: any) => Promise<boolean>}) {
   const [isOpen, setIsOpen] = useState(false);
   const [loading, setLoading] = useState(false);
 
@@ -341,17 +332,18 @@ function ForgotPasswordDialog({form, handlePasswordReset}: {form: UseFormReturn<
   };
 
   return (
-    <AlertDialog open={isOpen} onOpenChange={setIsOpen}>
-      <AlertDialogTrigger asChild>
+    <Sheet open={isOpen} onOpenChange={setIsOpen}>
+      <SheetTrigger asChild>
         <Button variant="link" className="p-0 h-auto">Forgot Password?</Button>
-      </AlertDialogTrigger>
-      <AlertDialogContent>
-        <AlertDialogHeader>
-          <AlertDialogTitle>Forgot Password?</AlertDialogTitle>
-          <AlertDialogDescription>
+      </SheetTrigger>
+      <SheetContent side="bottom" className="rounded-t-[10px]">
+        <SheetHeader className="text-center">
+          <SheetTitle>Forgot Password?</SheetTitle>
+          <SheetDescription>
             Enter your email address and we'll send you a link to reset your password.
-          </AlertDialogDescription>
-        </AlertDialogHeader>
+          </SheetDescription>
+        </SheetHeader>
+        <div className="p-4">
         <Form {...form}>
             <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
                  <FormField
@@ -367,18 +359,19 @@ function ForgotPasswordDialog({form, handlePasswordReset}: {form: UseFormReturn<
                     </FormItem>
                     )}
                 />
-                <AlertDialogFooter>
-                    <AlertDialogCancel className="rounded-[10px]">Cancel</AlertDialogCancel>
-                    <AlertDialogAction type="submit" disabled={loading} className="rounded-[10px]">
+                <div className="flex flex-col gap-2 pt-2">
+                    <Button type="submit" disabled={loading} className="w-full rounded-full">
                         {loading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
                         Send Reset Link
-                    </AlertDialogAction>
-                </AlertDialogFooter>
+                    </Button>
+                    <SheetClose asChild>
+                         <Button type="button" variant="outline" className="w-full rounded-full">Cancel</Button>
+                    </SheetClose>
+                </div>
             </form>
         </Form>
-      </AlertDialogContent>
-    </AlertDialog>
+        </div>
+      </SheetContent>
+    </Sheet>
   );
 }
-
-    

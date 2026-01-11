@@ -3,12 +3,12 @@
 "use client";
 
 import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-  DialogFooter
-} from "@/components/ui/dialog";
+  Sheet,
+  SheetContent,
+  SheetHeader,
+  SheetTitle,
+  SheetFooter
+} from "@/components/ui/sheet";
 import { Button } from "@/components/ui/button";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import Image from 'next/image';
@@ -24,11 +24,11 @@ export function QrCodeDialog({ isOpen, onOpenChange, user }: { isOpen: boolean, 
 
 
     return (
-        <Dialog open={isOpen} onOpenChange={onOpenChange}>
-            <DialogContent className="sm:max-w-xs">
-                <DialogHeader>
-                    <DialogTitle className="text-center">Share Profile</DialogTitle>
-                </DialogHeader>
+        <Sheet open={isOpen} onOpenChange={onOpenChange}>
+            <SheetContent side="bottom" className="sm:max-w-xs rounded-t-[10px]">
+                <SheetHeader>
+                    <SheetTitle className="text-center">Share Profile</SheetTitle>
+                </SheetHeader>
                 <div className="flex flex-col items-center justify-center p-4 space-y-4">
                     <Avatar className="h-16 w-16">
                         <AvatarFallback className="text-2xl">{getAvatar(user)}</AvatarFallback>
@@ -60,14 +60,12 @@ export function QrCodeDialog({ isOpen, onOpenChange, user }: { isOpen: boolean, 
                     </p>
 
                 </div>
-                <DialogFooter>
-                    <Button type="button" variant="secondary" onClick={() => onOpenChange(false)} className="w-full">
+                <SheetFooter className="p-4">
+                    <Button type="button" variant="outline" onClick={() => onOpenChange(false)} className="w-full rounded-full">
                         Close
                     </Button>
-                </DialogFooter>
-            </DialogContent>
-        </Dialog>
+                </SheetFooter>
+            </SheetContent>
+        </Sheet>
     )
 }
-
-    

@@ -14,22 +14,12 @@ import { ArrowLeft, BellOff, ShieldAlert, MicOff, VideoOff, ChevronRight, PhoneC
 import { getAvatar, formatUserId } from '@/lib/utils';
 import type { Conversation, User, Message, Post, Bookmark } from '@/lib/types';
 import { useToast } from '@/hooks/use-toast';
-import {
-  AlertDialog,
-  AlertDialogAction,
-  AlertDialogCancel,
-  AlertDialogContent,
-  AlertDialogDescription,
-  AlertDialogFooter,
-  AlertDialogHeader,
-  AlertDialogTitle,
-} from "@/components/ui/alert-dialog";
 import { Skeleton } from '@/components/ui/skeleton';
 import { FirestorePermissionError } from '@/firebase/errors';
 import { errorEmitter } from '@/firebase/error-emitter';
 import { Label } from '@/components/ui/label';
 import { Switch } from '@/components/ui/switch';
-import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from '@/components/ui/sheet';
+import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetDescription, SheetTrigger, SheetClose } from '@/components/ui/sheet';
 import Link from 'next/link';
 import { ReportDialog } from '@/components/ReportDialog';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
@@ -40,7 +30,8 @@ import { ScrollArea } from '@/components/ui/scroll-area';
 import { format } from 'date-fns';
 import { QrCodeDialog } from '@/components/QrCodeDialog';
 import { Calendar, Badge } from 'lucide-react';
-
+import { cn } from '@/lib/utils';
+import { buttonVariants } from '@/components/ui/button';
 
 function SettingsPageSkeleton() {
     return (
@@ -165,7 +156,7 @@ function AboutProfileSheet({ user, isOpen, onOpenChange }: { user: WithId<User>,
 
     return (
         <Sheet open={isOpen} onOpenChange={onOpenChange}>
-            <SheetContent side="bottom" className="rounded-t-2xl">
+            <SheetContent side="bottom" className="rounded-t-[10px]">
                 <SheetHeader className="text-left mb-4">
                     <SheetTitle>About this account</SheetTitle>
                 </SheetHeader>
@@ -208,8 +199,8 @@ export default function ChatSettingsPage() {
 
     const peerId = params.peerId as string;
 
-    const [isBlockConfirmOpen, setIsBlockConfirmOpen] = useState(false);
-    const [isClearConfirmOpen, setIsClearConfirmOpen] = useState(false);
+    const [isBlockSheetOpen, setIsBlockSheetOpen] = useState(false);
+    const [isClearSheetOpen, setIsClearSheetOpen] = useState(false);
     const [isCallControlsSheetOpen, setIsCallControlsSheetOpen] = useState(false);
     const [isAboutSheetOpen, setIsAboutSheetOpen] = useState(false);
     const [isQrDialogOpen, setIsQrDialogOpen] = useState(false);
@@ -328,7 +319,7 @@ export default function ChatSettingsPage() {
             errorEmitter.emit('permission-error', permissionError);
             toast({ variant: 'destructive', title: 'Error', description: `Could not ${isBlocked ? 'unblock' : 'block'} user.`})
         } finally {
-            setIsBlockConfirmOpen(false);
+            setIsBlockSheetOpen(false);
         }
     };
 
@@ -365,7 +356,7 @@ export default function ChatSettingsPage() {
             errorEmitter.emit('permission-error', permissionError);
             toast({ variant: 'destructive', title: "Error", description: "Could not clear the chat history." });
         } finally {
-            setIsClearConfirmOpen(false);
+            setIsClearSheetOpen(false);
         }
     }
 
@@ -433,7 +424,7 @@ export default function ChatSettingsPage() {
                                     <ChevronRight className="h-5 w-5 text-muted-foreground" />
                                 </Button>
                             </SheetTrigger>
-                            <SheetContent side="bottom" className="rounded-t-2xl">
+                            <SheetContent side="bottom" className="rounded-t-[10px]">
                                 <SheetHeader>
                                     <SheetTitle>Call Controls</SheetTitle>
                                 </SheetHeader>
@@ -454,18 +445,18 @@ export default function ChatSettingsPage() {
                             </SheetContent>
                         </Sheet>
                         
-                        <Button variant="ghost" className="w-full justify-start text-base h-12 px-4 gap-3" onClick={() => setIsClearConfirmOpen(true)}>
+                        <Button variant="ghost" className="w-full justify-start text-base h-12 px-4 gap-3" onClick={() => setIsClearSheetOpen(true)}>
                             <MessageCircleX className="h-5 w-5" />
                             Clear Chat
                         </Button>
 
-                        <ReportDialog reportedUserId={peerUser.id} reportedUserName={formatUserId(peerUser.id)}>
+                        <ReportDialog reportedUserId={peerUser.id} reportedUserName={formatUserId(peerUser.id).toString()}>
                             <Button variant="ghost" className="w-full justify-start text-base h-12 text-destructive hover:text-destructive px-4 gap-3">
                                 <Flag className="h-5 w-5" />
                                 Report
                             </Button>
                         </ReportDialog>
-                        <Button variant="ghost" className="w-full justify-start text-base h-12 text-destructive hover:text-destructive px-4 gap-3" onClick={() => setIsBlockConfirmOpen(true)}>
+                        <Button variant="ghost" className="w-full justify-start text-base h-12 text-destructive hover:text-destructive px-4 gap-3" onClick={() => setIsBlockSheetOpen(true)}>
                             <ShieldAlert className="h-5 w-5" />
                             {isBlocked ? 'Unblock User' : 'Block User'}
                         </Button>
@@ -476,38 +467,42 @@ export default function ChatSettingsPage() {
                 </ScrollArea>
             </div>
 
-            <AlertDialog open={isBlockConfirmOpen} onOpenChange={setIsBlockConfirmOpen}>
-                <AlertDialogContent>
-                    <AlertDialogHeader>
-                        <AlertDialogTitle>{isBlocked ? 'Unblock' : 'Block'} {formatUserId(peerUser.id)}?</AlertDialogTitle>
-                        <AlertDialogDescription>
+            <Sheet open={isBlockSheetOpen} onOpenChange={setIsBlockSheetOpen}>
+                <SheetContent side="bottom" className="rounded-t-[10px]">
+                    <SheetHeader className="text-center">
+                        <SheetTitle>{isBlocked ? 'Unblock' : 'Block'} {formatUserId(peerUser.id)}?</SheetTitle>
+                        <SheetDescription>
                         {isBlocked 
                             ? "You will now be able to see this user's content and they will be able to message and call you."
                             : "Blocked users will not be able to call you or send you messages. They will not be notified that you've blocked them."
                         }
-                        </AlertDialogDescription>
-                    </AlertDialogHeader>
-                    <AlertDialogFooter>
-                        <AlertDialogCancel>Cancel</AlertDialogCancel>
-                        <AlertDialogAction onClick={handleBlock}>{isBlocked ? 'Unblock' : 'Block'}</AlertDialogAction>
-                    </AlertDialogFooter>
-                </AlertDialogContent>
-            </AlertDialog>
+                        </SheetDescription>
+                    </SheetHeader>
+                    <div className="p-4 flex flex-col gap-2">
+                        <Button onClick={handleBlock} className={cn(buttonVariants({variant: isBlocked ? 'default' : 'destructive'}), "w-full rounded-full")}>{isBlocked ? 'Unblock' : 'Block'}</Button>
+                        <SheetClose asChild>
+                             <Button variant="outline" className="w-full rounded-full">Cancel</Button>
+                        </SheetClose>
+                    </div>
+                </SheetContent>
+            </Sheet>
             
-            <AlertDialog open={isClearConfirmOpen} onOpenChange={setIsClearConfirmOpen}>
-                <AlertDialogContent>
-                    <AlertDialogHeader>
-                        <AlertDialogTitle>Clear this chat?</AlertDialogTitle>
-                        <AlertDialogDescription>
+            <Sheet open={isClearSheetOpen} onOpenChange={setIsClearSheetOpen}>
+                 <SheetContent side="bottom" className="rounded-t-[10px]">
+                    <SheetHeader className="text-center">
+                        <SheetTitle>Clear this chat?</SheetTitle>
+                        <SheetDescription>
                         This will permanently delete all messages in this conversation on your device. This action cannot be undone.
-                        </AlertDialogDescription>
-                    </AlertDialogHeader>
-                    <AlertDialogFooter>
-                        <AlertDialogCancel>Cancel</AlertDialogCancel>
-                        <AlertDialogAction onClick={handleClearChat}>Clear Chat</AlertDialogAction>
-                    </AlertDialogFooter>
-                </AlertDialogContent>
-            </AlertDialog>
+                        </SheetDescription>
+                    </SheetHeader>
+                    <div className="p-4 flex flex-col gap-2">
+                         <Button onClick={handleClearChat} className={cn(buttonVariants({variant: 'destructive'}), "w-full rounded-full")}>Clear Chat</Button>
+                        <SheetClose asChild>
+                             <Button variant="outline" className="w-full rounded-full">Cancel</Button>
+                        </SheetClose>
+                    </div>
+                </SheetContent>
+            </Sheet>
             {peerUser && <AboutProfileSheet user={peerUser} isOpen={isAboutSheetOpen} onOpenChange={setIsAboutSheetOpen} />}
             <QrCodeDialog
                 isOpen={isQrDialogOpen}

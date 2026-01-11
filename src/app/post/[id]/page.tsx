@@ -55,23 +55,6 @@ import {
   SheetTrigger,
   SheetClose,
 } from "@/components/ui/sheet";
-import {
-  AlertDialog,
-  AlertDialogAction,
-  AlertDialogCancel,
-  AlertDialogContent,
-  AlertDialogDescription,
-  AlertDialogFooter,
-  AlertDialogHeader,
-  AlertDialogTitle,
-  AlertDialogTrigger,
-} from "@/components/ui/alert-dialog";
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu";
 import { QuotedPostCard } from "@/components/QuotedPostCard";
 import { AnimatedCount } from "@/components/AnimatedCount";
 
@@ -110,7 +93,8 @@ function PostDetailItem({ post, updatePost }: { post: WithId<Post>, updatePost: 
   const { user, firestore } = useFirebase();
   const { toast } = useToast();
   const router = useRouter();
-  const [isSheetOpen, setIsSheetOpen] = useState(false);
+  const [isMoreOptionsSheetOpen, setIsMoreOptionsSheetOpen] = useState(false);
+  const [isDeleteSheetOpen, setIsDeleteSheetOpen] = useState(false);
   const [isLiking, setIsLiking] = useState(false);
   const [likeDirection, setLikeDirection] = useState<'up' | 'down'>('up');
 
@@ -256,7 +240,7 @@ function PostDetailItem({ post, updatePost }: { post: WithId<Post>, updatePost: 
   };
   
   const handleEditPost = () => {
-    setIsSheetOpen(false);
+    setIsMoreOptionsSheetOpen(false);
     router.push(`/post?postId=${post.id}`);
   };
 
@@ -283,7 +267,7 @@ function PostDetailItem({ post, updatePost }: { post: WithId<Post>, updatePost: 
                 </div>
               <div className="flex items-center">
                 {isOwner && (
-                    <Sheet open={isSheetOpen} onOpenChange={setIsSheetOpen}>
+                    <Sheet open={isMoreOptionsSheetOpen} onOpenChange={setIsMoreOptionsSheetOpen}>
                         <SheetTrigger asChild>
                         <Button variant="ghost" size="icon" className="h-6 w-6">
                             <MoreHorizontal className="h-4 w-4" />
@@ -302,29 +286,10 @@ function PostDetailItem({ post, updatePost }: { post: WithId<Post>, updatePost: 
                                     </Button>
                                  </div>
                                 <div className="border rounded-[10px]">
-                                    <AlertDialog>
-                                        <AlertDialogTrigger asChild>
-                                            <Button variant="ghost" className="justify-between text-base py-6 rounded-[10px] w-full text-destructive hover:text-destructive">
-                                                <span className="font-semibold">Delete</span>
-                                                <Trash2 className="h-5 w-5" />
-                                            </Button>
-                                        </AlertDialogTrigger>
-                                        <AlertDialogContent>
-                                            <AlertDialogHeader>
-                                                <AlertDialogTitle>Are you sure?</AlertDialogTitle>
-                                                <AlertDialogDescription>
-                                                This action cannot be undone. This will permanently delete your
-                                                post and remove its data from our servers.
-                                                </AlertDialogDescription>
-                                            </AlertDialogHeader>
-                                            <AlertDialogFooter>
-                                                <AlertDialogCancel className="rounded-[10px]">Cancel</AlertDialogCancel>
-                                                <AlertDialogAction onClick={handleDeletePost} className={cn(buttonVariants({variant: 'destructive'}), "rounded-[10px]")}>
-                                                Delete
-                                                </AlertDialogAction>
-                                            </AlertDialogFooter>
-                                        </AlertDialogContent>
-                                    </AlertDialog>
+                                    <Button variant="ghost" className="justify-between text-base py-6 rounded-[10px] w-full text-destructive hover:text-destructive" onClick={() => { setIsMoreOptionsSheetOpen(false); setIsDeleteSheetOpen(true); }}>
+                                        <span className="font-semibold">Delete</span>
+                                        <Trash2 className="h-5 w-5" />
+                                    </Button>
                                 </div>
                             </div>
                         </SheetContent>
@@ -394,6 +359,25 @@ function PostDetailItem({ post, updatePost }: { post: WithId<Post>, updatePost: 
         </div>
       </CardContent>
     </Card>
+    <Sheet open={isDeleteSheetOpen} onOpenChange={setIsDeleteSheetOpen}>
+        <SheetContent side="bottom" className="rounded-t-[10px]">
+            <SheetHeader className="text-center">
+                <SheetTitle>Are you sure?</SheetTitle>
+                <SheetDescription>
+                This action cannot be undone. This will permanently delete your
+                post and remove its data from our servers.
+                </SheetDescription>
+            </SheetHeader>
+            <div className="p-4 flex flex-col gap-2">
+                 <Button onClick={handleDeletePost} className={cn(buttonVariants({variant: 'destructive'}), "w-full rounded-full")}>
+                    Delete
+                </Button>
+                <SheetClose asChild>
+                    <Button variant="outline" className="w-full rounded-full">Cancel</Button>
+                </SheetClose>
+            </div>
+        </SheetContent>
+    </Sheet>
     </>
   );
 }
