@@ -270,13 +270,13 @@ export default function ActivityPage() {
                     className="relative h-full overflow-y-auto"
                 >
                     <div 
-                        className="absolute top-0 left-0 right-0 flex justify-center items-center h-12 text-muted-foreground transition-opacity duration-300 pointer-events-none"
+                        className="absolute top-0 left-0 right-0 flex justify-center items-center h-12 text-muted-foreground transition-opacity duration-300 z-10 pointer-events-none"
                         style={{ opacity: isRefreshing ? 1 : (pullPosition / 70) }}
                     >
                         <Loader2 className={cn("h-6 w-6", isRefreshing && "animate-spin")} />
                     </div>
 
-                    <div className="pt-12">
+                    <div>
                         <div className="p-4 border-b">
                             <h1 className="text-2xl font-bold font-headline">Activity</h1>
                         </div>

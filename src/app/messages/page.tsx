@@ -627,7 +627,7 @@ export default function MessagesPage() {
                         <Loader2 className={cn('h-6 w-6', isRefreshing && 'animate-spin')} />
                     </div>
 
-                    <div className="pt-12">
+                    <div>
                         <FollowedUsers />
                         
                         <div className="p-2">

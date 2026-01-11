@@ -354,7 +354,7 @@ export default function AccountPage() {
             <Loader2 className={cn('h-6 w-6', isRefreshing && 'animate-spin')} />
             </div>
 
-            <div className="pt-12">
+            <div>
                 <div className="flex items-center justify-between h-14 px-4 bg-background">
                     <Link href="/post" className={cn(buttonVariants({ variant: "ghost", size: "icon" }))}>
                         <Plus className="h-6 w-6" />
