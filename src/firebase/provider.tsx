@@ -23,6 +23,16 @@ import { Button } from '@/components/ui/button';
 import { Phone, Video, PhoneOff } from 'lucide-react';
 import { formatUserId, getAvatar } from '@/lib/utils.tsx';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 
 
 interface CallHandlerResult extends ReturnType<typeof useCallHandler> {}
@@ -47,6 +57,11 @@ interface UserAuthState {
   isUserLoading: boolean;
   userError: Error | null;
 }
+
+type PermissionRequest = {
+  type: 'voice' | 'video';
+  calleeId: string;
+};
 
 // Combined state for the Firebase context
 export interface FirebaseContextState extends CallHandlerResult, VideoCallHandlerResult {
@@ -119,6 +134,7 @@ export const FirebaseProvider: React.FC<FirebaseProviderProps> = ({
   });
   
   const [missedCallInfo, setMissedCallInfo] = useState<MissedCallInfo | null>(null);
+  const [permissionRequest, setPermissionRequest] = useState<PermissionRequest | null>(null);
 
   const callHandler = useCallHandler(firestore, userAuthState.user, setMissedCallInfo);
   const videoCallHandler = useVideoCallHandler(firestore, userAuthState.user, setMissedCallInfo);
@@ -276,44 +292,42 @@ export const FirebaseProvider: React.FC<FirebaseProviderProps> = ({
   }, [auth, database, firestore]);
   
    const requestAndStartCall = async (calleeId: string) => {
-    try {
-        await navigator.mediaDevices.getUserMedia({ audio: true });
-        callHandler.startCall(calleeId);
-    } catch (error) {
-        console.error("Microphone permission denied:", error);
-        const androidInterface = (window as any).Android;
-        if (androidInterface && typeof androidInterface.openAppSettings === 'function') {
-            androidInterface.openAppSettings();
-        } else {
-            toast({
-                variant: "destructive",
-                title: "Permission Required",
-                description: "To make voice calls, please go to your Phone Settings > Apps > Blur and grant Microphone access.",
-                duration: 9000,
-            });
+        try {
+            await navigator.mediaDevices.getUserMedia({ audio: true });
+            callHandler.startCall(calleeId);
+        } catch (error: any) {
+            console.error("Microphone permission denied:", error.name);
+             if (error.name === 'NotAllowedError' || error.name === 'PermissionDeniedError') {
+                setPermissionRequest({ type: 'voice', calleeId });
+            } else {
+                 toast({
+                    variant: "destructive",
+                    title: "Error",
+                    description: "Could not access microphone. Please check your device.",
+                    duration: 9000,
+                });
+            }
         }
-    }
-  };
-
-  const requestAndStartVideoCall = async (calleeId: string) => {
-      try {
-          await navigator.mediaDevices.getUserMedia({ video: true, audio: true });
-          videoCallHandler.startVideoCall(calleeId);
-      } catch (error) {
-          console.error("Camera/Microphone permission denied:", error);
-           const androidInterface = (window as any).Android;
-          if (androidInterface && typeof androidInterface.openAppSettings === 'function') {
-              androidInterface.openAppSettings();
-          } else {
-            toast({
-                variant: "destructive",
-                title: "Permissions Required",
-                description: "For video calls, please go to your Phone Settings > Apps > Blur and grant Camera and Microphone access.",
-                duration: 9000,
-            });
-          }
-      }
-  };
+    };
+    
+    const requestAndStartVideoCall = async (calleeId: string) => {
+        try {
+            await navigator.mediaDevices.getUserMedia({ video: true, audio: true });
+            videoCallHandler.startVideoCall(calleeId);
+        } catch (error: any) {
+            console.error("Camera/Microphone permission denied:", error.name);
+            if (error.name === 'NotAllowedError' || error.name === 'PermissionDeniedError') {
+                 setPermissionRequest({ type: 'video', calleeId });
+            } else {
+                 toast({
+                    variant: "destructive",
+                    title: "Error",
+                    description: "Could not access camera or microphone. Please check your device.",
+                    duration: 9000,
+                });
+            }
+        }
+    };
 
 
   // Memoize the context value
@@ -359,6 +373,23 @@ export const FirebaseProvider: React.FC<FirebaseProviderProps> = ({
       requestAndStartVideoCall(calleeId);
     }
   };
+
+  const openNativeAppSettings = () => {
+    const androidInterface = (window as any).Android;
+    if (androidInterface && typeof androidInterface.openAppSettings === 'function') {
+        androidInterface.openAppSettings();
+    } else {
+        // Fallback for non-Android environments or if the interface is not available
+        toast({
+            variant: "destructive",
+            title: "Manual Action Required",
+            description: "Please go to your Phone Settings > Apps > Blur and grant the required permissions.",
+            duration: 9000,
+        });
+    }
+    setPermissionRequest(null);
+  }
+
 
   const avatar = getAvatar({id: missedCallInfo?.calleeId});
   const isAvatarUrl = avatar.startsWith('http');
@@ -406,6 +437,21 @@ export const FirebaseProvider: React.FC<FirebaseProviderProps> = ({
              </SheetContent>
          </Sheet>
       )}
+      <AlertDialog open={!!permissionRequest} onOpenChange={(open) => !open && setPermissionRequest(null)}>
+        <AlertDialogContent>
+            <AlertDialogHeader>
+            <AlertDialogTitle>Permission Required</AlertDialogTitle>
+            <AlertDialogDescription>
+                To make {permissionRequest?.type} calls, Blur needs access to your {permissionRequest?.type === 'video' ? 'camera and microphone' : 'microphone'}. Please go to settings to enable this permission.
+            </AlertDialogDescription>
+            </AlertDialogHeader>
+            <AlertDialogFooter>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogAction onClick={openNativeAppSettings}>Open Settings</AlertDialogAction>
+            </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
       {showVideoCallUI ? (
         <VideoCallView
             status={videoCallHandler.videoCallStatus}
@@ -534,3 +580,4 @@ export function useMemoFirebase<T>(factory: () => T, deps: DependencyList): T | 
     
 
     
+
