@@ -94,6 +94,7 @@ export interface User {
     voiceStatusUrl?: string;
     voiceStatusTimestamp?: Timestamp;
     notificationSettings?: NotificationSettings;
+    fcmTokens?: string[];
 }
 
 export interface Bookmark {

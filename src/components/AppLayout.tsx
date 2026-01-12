@@ -10,6 +10,7 @@ import { Loader2, ShieldAlert } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Button } from "./ui/button";
 import { signOut } from "firebase/auth";
+import { NotificationPermissionGate } from "@/components/NotificationPermissionGate";
 
 function AccountStatusScreen({ status, onLogout }: { status: 'suspended' | 'banned', onLogout: () => void }) {
     const title = status === 'suspended' ? 'Account Suspended' : 'Account Banned';
@@ -90,11 +91,10 @@ export default function AppLayout({
           showBottomNav ? "pb-14" : ""
         )}
       >
+        <NotificationPermissionGate />
         {children}
       </main>
       {showBottomNav && <BottomNav />}
     </div>
   );
 }
-
-    

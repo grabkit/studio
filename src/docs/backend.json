@@ -108,6 +108,13 @@
                 "followers": { "type": "boolean" },
                 "messageRequests": { "type": "boolean" }
             }
+        },
+        "fcmTokens": {
+            "type": "array",
+            "description": "An array of Firebase Cloud Messaging tokens for push notifications.",
+            "items": {
+                "type": "string"
+            }
         }
       },
       "required": [
