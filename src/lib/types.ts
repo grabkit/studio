@@ -93,8 +93,6 @@ export interface User {
     gender?: 'male' | 'female' | 'other' | 'prefer_not_to_say' | '';
     voiceStatusUrl?: string;
     voiceStatusTimestamp?: Timestamp;
-    notificationSettings?: NotificationSettings;
-    fcmTokens?: string[];
 }
 
 export interface Bookmark {
