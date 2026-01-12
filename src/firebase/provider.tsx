@@ -303,7 +303,7 @@ export const FirebaseProvider: React.FC<FirebaseProviderProps> = ({
                  toast({
                     variant: "destructive",
                     title: "Error",
-                    description: "Could not access microphone. Please check your device.",
+                    description: "Could not access microphone. Please check your device settings.",
                     duration: 9000,
                 });
             }
@@ -322,7 +322,7 @@ export const FirebaseProvider: React.FC<FirebaseProviderProps> = ({
                  toast({
                     variant: "destructive",
                     title: "Error",
-                    description: "Could not access camera or microphone. Please check your device.",
+                    description: "Could not access camera or microphone. Please check your device settings.",
                     duration: 9000,
                 });
             }
@@ -379,7 +379,6 @@ export const FirebaseProvider: React.FC<FirebaseProviderProps> = ({
     if (androidInterface && typeof androidInterface.openAppSettings === 'function') {
         androidInterface.openAppSettings();
     } else {
-        // Fallback for non-Android environments or if the interface is not available
         toast({
             variant: "destructive",
             title: "Manual Action Required",
@@ -582,3 +581,6 @@ export function useMemoFirebase<T>(factory: () => T, deps: DependencyList): T | 
     
 
 
+
+
+    
