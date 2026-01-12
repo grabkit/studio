@@ -442,6 +442,24 @@ export default function UserProfilePage() {
         if (!currentUser || !user || !userRef || !firestore) return;
 
         const currentUserRef = doc(firestore, 'users', currentUser.uid);
+        
+        // Optimistic Update
+        const originalUser = { ...user };
+        const currentlyFollowing = originalUser.followedBy?.includes(currentUser.uid) ?? false;
+        
+        const updatedFollowedBy = currentlyFollowing
+            ? originalUser.followedBy?.filter(id => id !== currentUser.uid)
+            : [...(originalUser.followedBy || []), currentUser.uid];
+            
+        const updatedFollowersCount = currentlyFollowing
+            ? (originalUser.followersCount ?? 1) - 1
+            : (originalUser.followersCount ?? 0) + 1;
+
+        setFetchedUser({
+            ...originalUser,
+            followedBy: updatedFollowedBy,
+            followersCount: updatedFollowersCount
+        } as WithId<User>);
 
         runTransaction(firestore, async (transaction) => {
             const targetUserDoc = await transaction.get(userRef);
@@ -451,10 +469,7 @@ export default function UserProfilePage() {
                 throw "One of the user documents does not exist!";
             }
             
-            const targetUser = targetUserDoc.data() as User;
-            const userIsFollowing = (targetUser.followedBy || []).includes(currentUser.uid);
-
-            if (userIsFollowing) {
+            if (currentlyFollowing) {
                  // Unfollow
                 transaction.update(userRef, {
                     followersCount: increment(-1),
@@ -475,7 +490,7 @@ export default function UserProfilePage() {
                     following: arrayUnion(user.id)
                 });
             }
-            return { didFollow: !userIsFollowing };
+            return { didFollow: !currentlyFollowing };
         }).then(({ didFollow }) => {
              if (didFollow) {
                 const notificationRef = doc(collection(firestore, 'users', user.id, 'notifications'));
@@ -491,6 +506,9 @@ export default function UserProfilePage() {
             }
         })
         .catch(err => {
+            // Revert optimistic update on failure
+            setFetchedUser(originalUser as WithId<User>);
+
             console.error("Follow transaction failed:", err);
             const permissionError = new FirestorePermissionError({
                 path: userRef.path,
