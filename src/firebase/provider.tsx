@@ -281,12 +281,18 @@ export const FirebaseProvider: React.FC<FirebaseProviderProps> = ({
         callHandler.startCall(calleeId);
     } catch (error) {
         console.error("Microphone permission denied:", error);
-        toast({
-            variant: "destructive",
-            title: "Permission Required",
-            description: "Microphone access is needed to make voice calls. Please enable it in your device settings.",
-            duration: 9000,
-        });
+        // Check for AndroidInterface and open settings if available
+        const androidInterface = (window as any).Android;
+        if (androidInterface && typeof androidInterface.openAppSettings === 'function') {
+            androidInterface.openAppSettings();
+        } else {
+            toast({
+                variant: "destructive",
+                title: "Permission Required",
+                description: "To make voice calls, please go to your Phone Settings > Apps > Blur and grant Microphone access.",
+                duration: 9000,
+            });
+        }
     }
   };
 
@@ -296,12 +302,18 @@ export const FirebaseProvider: React.FC<FirebaseProviderProps> = ({
           videoCallHandler.startVideoCall(calleeId);
       } catch (error) {
           console.error("Camera/Microphone permission denied:", error);
-          toast({
-              variant: "destructive",
-              title: "Permissions Required",
-              description: "Camera and microphone access are needed for video calls. Please enable them in your device settings.",
-              duration: 9000,
-          });
+           // Check for AndroidInterface and open settings if available
+          const androidInterface = (window as any).Android;
+          if (androidInterface && typeof androidInterface.openAppSettings === 'function') {
+              androidInterface.openAppSettings();
+          } else {
+            toast({
+                variant: "destructive",
+                title: "Permissions Required",
+                description: "For video calls, please go to your Phone Settings > Apps > Blur and grant Camera and Microphone access.",
+                duration: 9000,
+            });
+          }
       }
   };
 
@@ -520,5 +532,7 @@ export function useMemoFirebase<T>(factory: () => T, deps: DependencyList): T | 
   
   return memoized;
 }
+
+    
 
     
