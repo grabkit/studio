@@ -91,12 +91,6 @@ function FollowedUsers() {
                         const href = isCurrentUser ? '/account' : `/profile/${user.id}`;
                         const name = isCurrentUser ? 'Your Profile' : formatUserId(user.id);
                         
-                        let displayName: React.ReactNode = name;
-                        const nameString = (typeof name === 'object' && name?.props?.children) ? name.props.children[0] : name;
-                        if (typeof nameString === 'string' && nameString.length > 12) {
-                            displayName = `${nameString.substring(0, 10)}...`;
-                        }
-
                         const hasVoiceStatus = user?.voiceStatusUrl && user?.voiceStatusTimestamp && (Date.now() - user.voiceStatusTimestamp.toMillis() < 24 * 60 * 60 * 1000);
                         const avatar = getAvatar(user);
                         const isAvatarUrl = avatar.startsWith('http');
@@ -136,8 +130,8 @@ function FollowedUsers() {
                                     </div>
                                 )}
                             </div>
-                            <Link href={href}>
-                                <p className="text-xs font-semibold w-full text-center mt-2">{displayName}</p>
+                            <Link href={href} className="w-full">
+                                <p className="text-xs font-semibold text-center mt-2 truncate max-w-full">{name}</p>
                             </Link>
                         </div>
                         )
