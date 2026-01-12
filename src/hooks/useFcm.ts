@@ -75,6 +75,7 @@ export function useFcm() {
         // Use your VAPID key from the Firebase console
         const fcmToken = await getToken(messaging, {
           vapidKey: 'BMroAQzePSAUnxmZhwcHRUd9YF7PYT4r2EnPRCbAvTMqh2LDNQApHLlH1sVtZqQxxjc5dhZ5n9HPFAHc9MU0a2o',
+          serviceWorkerRegistration: await navigator.serviceWorker.register('/sw.js'),
         });
 
         if (fcmToken) {
