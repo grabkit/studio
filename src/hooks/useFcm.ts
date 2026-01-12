@@ -74,7 +74,7 @@ export function useFcm() {
         const messaging = getMessaging(firebaseApp);
         // Use your VAPID key from the Firebase console
         const fcmToken = await getToken(messaging, {
-          vapidKey: 'YOUR_VAPID_KEY_FROM_FIREBASE_CONSOLE',
+          vapidKey: 'BMroAQzePSAUnxmZhwcHRUd9YF7PYT4r2EnPRCbAvTMqh2LDNQApHLlH1sVtZqQxxjc5dhZ5n9HPFAHc9MU0a2o',
         });
 
         if (fcmToken) {
