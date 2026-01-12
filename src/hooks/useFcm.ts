@@ -61,7 +61,7 @@ export function useFcm() {
   );
 
   const requestPermission = useCallback(async () => {
-    if (!firebaseApp || !('Notification' in window)) {
+    if (!firebaseApp || !('Notification' in window) || !(await isSupported())) {
       console.log('Notifications not supported.');
       return;
     }

@@ -1,5 +1,6 @@
 
 import type {NextConfig} from 'next';
+import path from 'path';
 
 const nextConfig: NextConfig = {
   /* config options here */
@@ -67,6 +68,25 @@ const nextConfig: NextConfig = {
         hostname: '**.githubusercontent.com',
       },
     ],
+  },
+   webpack: (config, { isServer }) => {
+    if (!isServer) {
+      const workboxWebpackPlugin = require('workbox-webpack-plugin');
+
+      config.plugins.push(
+        new workboxWebpackPlugin.InjectManifest({
+          swSrc: path.join(__dirname, 'public', 'firebase-messaging-sw.js'),
+          swDest: path.join(__dirname, 'public', 'sw.js'),
+          // Ensure the service worker is loaded correctly.
+          exclude: [
+            /\.map$/,
+            /manifest\.json$/,
+             /firebase-messaging-sw\.js$/, // Exclude the source sw file itself
+          ],
+        })
+      );
+    }
+    return config;
   },
 };
 
