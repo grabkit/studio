@@ -631,11 +631,12 @@ export default function HomePage() {
   const { firestore, userProfile } = useFirebase();
   const { user } = useUser();
   
-  // Pull to refresh state
   const [isRefreshing, setIsRefreshing] = useState(false);
   const [pullPosition, setPullPosition] = useState(0);
   const touchStartRef = useRef(0);
   const containerRef = useRef<HTMLDivElement>(null);
+  const isPulling = useRef(false);
+  const pullTimeout = useRef<NodeJS.Timeout | null>(null);
 
 
   const postsQuery = useMemoFirebase(() => {
@@ -669,7 +670,6 @@ export default function HomePage() {
         const querySnapshot = await getDocs(postsCollectionQuery);
         let fetchedPosts = querySnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as WithId<Post>));
         
-        // Shuffle the posts for a dynamic feed feel on refresh
         fetchedPosts.sort(() => Math.random() - 0.5);
         setData(fetchedPosts);
 
@@ -681,41 +681,47 @@ export default function HomePage() {
   const handleRefresh = async () => {
     if (isRefreshing) return;
     setIsRefreshing(true);
-    // Vibrate when refresh is triggered
     window.navigator.vibrate?.(50);
     await fetchPostsAndShuffle();
     setTimeout(() => {
       setIsRefreshing(false);
       setPullPosition(0);
-      // Vibrate when refresh is complete
       window.navigator.vibrate?.(50);
-    }, 500); // Animation delay
+    }, 500); 
   };
 
   const handleTouchStart = (e: TouchEvent) => {
       touchStartRef.current = e.targetTouches[0].clientY;
+      if (pullTimeout.current) clearTimeout(pullTimeout.current);
+      
+      pullTimeout.current = setTimeout(() => {
+        isPulling.current = true;
+      }, 100);
   };
 
   const handleTouchMove = (e: TouchEvent) => {
     const touchY = e.targetTouches[0].clientY;
     const pullDistance = touchY - touchStartRef.current;
     
-    // Only allow pulling when scrolled to the top
-    if (containerRef.current && containerRef.current.scrollTop === 0 && pullDistance > 0 && !isRefreshing) {
-      // Prevent browser's default pull-to-refresh action
+    if (containerRef.current && containerRef.current.scrollTop === 0 && pullDistance > 0 && isPulling.current && !isRefreshing) {
       e.preventDefault();
       const newPullPosition = Math.min(pullDistance, 120);
       
-      // Trigger haptic feedback when threshold is passed
       if (pullPosition <= 70 && newPullPosition > 70) {
         window.navigator.vibrate?.(50);
       }
 
-      setPullPosition(newPullPosition); // Max pull
+      setPullPosition(newPullPosition);
     }
   };
 
   const handleTouchEnd = () => {
+    if (pullTimeout.current) {
+        clearTimeout(pullTimeout.current);
+        pullTimeout.current = null;
+    }
+    isPulling.current = false;
+
     if (pullPosition > 70) {
       handleRefresh();
     } else {
@@ -729,8 +735,7 @@ export default function HomePage() {
   const filteredPosts = useMemo(() => {
     if (!initialPosts || !user) return initialPosts || [];
     const mutedUsers = userProfile?.mutedUsers || [];
-    // Filter out muted users' posts and user's own posts
-    return initialPosts.filter(post => !mutedUsers.includes(post.authorId) && post.authorId !== user.uid);
+    return initialPosts.filter(post => !mutedUsers.includes(post.authorId));
   }, [initialPosts, userProfile, user]);
 
   const handleDeletePostOptimistic = (postId: string) => {
@@ -767,7 +772,7 @@ export default function HomePage() {
             {!isLoading && initialPosts && filteredPosts.length === 0 && (
               <div className="text-center py-10 h-screen">
                 <h2 className="text-2xl font-headline text-primary">No posts yet!</h2>
-                <p className="text-muted-foreground mt-2">Be the first to post something.</p>
+                <p className="text-muted-foreground mt-2">Start following people to see their posts here.</p>
               </div>
             )}
             

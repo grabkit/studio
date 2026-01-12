@@ -1,5 +1,4 @@
 
-
 "use client";
 
 import { useParams, useRouter } from "next/navigation";
@@ -81,6 +80,8 @@ export default function UserProfilePage() {
     const [pullPosition, setPullPosition] = useState(0);
     const touchStartRef = useRef(0);
     const containerRef = useRef<HTMLDivElement>(null);
+    const isPulling = useRef(false);
+    const pullTimeout = useRef<NodeJS.Timeout | null>(null);
 
     const [posts, setPosts] = useState<WithId<Post>[]>([]);
     const [postsLoading, setPostsLoading] = useState(true);
@@ -177,12 +178,17 @@ export default function UserProfilePage() {
 
     const handleTouchStart = (e: TouchEvent) => {
         touchStartRef.current = e.targetTouches[0].clientY;
+        if (pullTimeout.current) clearTimeout(pullTimeout.current);
+        
+        pullTimeout.current = setTimeout(() => {
+          isPulling.current = true;
+        }, 100);
     };
 
     const handleTouchMove = (e: TouchEvent) => {
         const touchY = e.targetTouches[0].clientY;
         const pullDistance = touchY - touchStartRef.current;
-        if (containerRef.current && containerRef.current.scrollTop === 0 && pullDistance > 0 && !isRefreshing) {
+        if (containerRef.current && containerRef.current.scrollTop === 0 && pullDistance > 0 && isPulling.current && !isRefreshing) {
             e.preventDefault();
             const newPullPosition = Math.min(pullDistance, 120);
             if (pullPosition <= 70 && newPullPosition > 70) {
@@ -193,6 +199,12 @@ export default function UserProfilePage() {
     };
 
     const handleTouchEnd = () => {
+        if (pullTimeout.current) {
+            clearTimeout(pullTimeout.current);
+            pullTimeout.current = null;
+        }
+        isPulling.current = false;
+    
         if (pullPosition > 70) {
             handleRefresh();
         } else {
