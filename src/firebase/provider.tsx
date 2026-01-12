@@ -387,7 +387,7 @@ export const FirebaseProvider: React.FC<FirebaseProviderProps> = ({
         });
     }
     setPermissionRequest(null);
-  }
+  };
 
 
   const avatar = getAvatar({id: missedCallInfo?.calleeId});
