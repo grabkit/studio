@@ -71,11 +71,14 @@ export function useFcm() {
       setPermission(currentPermission);
 
       if (currentPermission === 'granted') {
+        // Ensure the service worker is registered before getting the token.
+        const swRegistration = await navigator.serviceWorker.register('/sw.js');
+        
         const messaging = getMessaging(firebaseApp);
         // Use your VAPID key from the Firebase console
         const fcmToken = await getToken(messaging, {
           vapidKey: 'BMroAQzePSAUnxmZhwcHRUd9YF7PYT4r2EnPRCbAvTMqh2LDNQApHLlH1sVtZqQxxjc5dhZ5n9HPFAHc9MU0a2o',
-          serviceWorkerRegistration: await navigator.serviceWorker.register('/sw.js'),
+          serviceWorkerRegistration: swRegistration,
         });
 
         if (fcmToken) {

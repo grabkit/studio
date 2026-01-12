@@ -7,15 +7,21 @@ import { Button } from '@/components/ui/button';
 import { Bell, X } from 'lucide-react';
 import { AnimatePresence, motion } from 'framer-motion';
 
+const BANNER_DISMISSED_KEY = 'notification_banner_dismissed';
+
 export function NotificationPermissionGate() {
   const { permission, requestPermission } = useFcm();
   const [showBanner, setShowBanner] = useState(false);
 
   useEffect(() => {
-    // Show banner only if permission is 'default' (not yet granted or denied)
-    // and after a short delay to not overwhelm the user on first load.
+    // Only run on the client
+    if (typeof window === 'undefined') return;
+
+    const bannerDismissed = localStorage.getItem(BANNER_DISMISSED_KEY);
+
+    // Show banner only if permission is 'default' and it hasn't been dismissed before.
     const timer = setTimeout(() => {
-      if (permission === 'default') {
+      if (permission === 'default' && !bannerDismissed) {
         setShowBanner(true);
       }
     }, 3000); // 3-second delay
@@ -24,11 +30,13 @@ export function NotificationPermissionGate() {
   }, [permission]);
 
   const handleRequestPermission = () => {
+    localStorage.setItem(BANNER_DISMISSED_KEY, 'true');
+    setShowBanner(false);
     requestPermission();
-    setShowBanner(false); // Hide banner after interaction
   };
 
   const handleDismiss = () => {
+    localStorage.setItem(BANNER_DISMISSED_KEY, 'true');
     setShowBanner(false);
   };
 
