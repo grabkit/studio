@@ -1,11 +1,13 @@
-// This file must be in the public folder.
 
-// Scripts for firebase and firebase messaging
-importScripts('https://www.gstatic.com/firebasejs/9.0.0/firebase-app-compat.js');
-importScripts('https://www.gstatic.com/firebasejs/9.0.0/firebase-messaging-compat.js');
+import { precacheAndRoute } from 'workbox-precaching';
+import { initializeApp } from 'firebase/app';
+import { getMessaging, onBackgroundMessage } from 'firebase/messaging/sw';
 
-// Your web app's Firebase configuration
-const firebaseConfig = {
+// This line is crucial for Workbox to inject the precache manifest.
+precacheAndRoute(self.__WB_MANIFEST);
+
+// Initialize the Firebase app in the service worker.
+const firebaseApp = initializeApp({
   "projectId": "studio-3055449916-97578",
   "appId": "1:931224557936:web:948c0817d47b474cd317b5",
   "apiKey": "AIzaSyC0GNapq-TrgTv8aOmKMoVY7pDJMZ_twnw",
@@ -13,21 +15,17 @@ const firebaseConfig = {
   "measurementId": "",
   "messagingSenderId": "931224557936",
   "databaseURL": "https://studio-3055449916-97578-default-rtdb.firebaseio.com"
-};
+});
 
-// Initialize Firebase
-firebase.initializeApp(firebaseConfig);
+const messaging = getMessaging(firebaseApp);
 
-// Retrieve an instance of Firebase Messaging so that it can handle background messages.
-const messaging = firebase.messaging();
-
-messaging.onBackgroundMessage((payload) => {
+onBackgroundMessage(messaging, (payload) => {
   console.log('[firebase-messaging-sw.js] Received background message ', payload);
-  
+
   const notificationTitle = payload.notification.title;
   const notificationOptions = {
     body: payload.notification.body,
-    icon: payload.notification.icon || '/blur-logo.png' 
+    icon: payload.notification.icon || '/blur-logo.png'
   };
 
   self.registration.showNotification(notificationTitle, notificationOptions);
