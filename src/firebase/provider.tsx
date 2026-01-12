@@ -299,13 +299,6 @@ export const FirebaseProvider: React.FC<FirebaseProviderProps> = ({
             console.error("Microphone permission denied:", error.name);
              if (error.name === 'NotAllowedError' || error.name === 'PermissionDeniedError') {
                 setPermissionRequest({ type: 'voice', calleeId });
-            } else {
-                 toast({
-                    variant: "destructive",
-                    title: "Error",
-                    description: "Could not access microphone. Please check your device settings.",
-                    duration: 9000,
-                });
             }
         }
     };
@@ -318,13 +311,6 @@ export const FirebaseProvider: React.FC<FirebaseProviderProps> = ({
             console.error("Camera/Microphone permission denied:", error.name);
             if (error.name === 'NotAllowedError' || error.name === 'PermissionDeniedError') {
                  setPermissionRequest({ type: 'video', calleeId });
-            } else {
-                 toast({
-                    variant: "destructive",
-                    title: "Error",
-                    description: "Could not access camera or microphone. Please check your device settings.",
-                    duration: 9000,
-                });
             }
         }
     };
@@ -380,9 +366,8 @@ export const FirebaseProvider: React.FC<FirebaseProviderProps> = ({
         androidInterface.openAppSettings();
     } else {
         toast({
-            variant: "destructive",
-            title: "Manual Action Required",
-            description: "Please go to your Phone Settings > Apps > Blur and grant the required permissions.",
+            title: "Please Enable Permissions",
+            description: "Go to your device settings to enable camera/microphone permissions for this app.",
             duration: 9000,
         });
     }
@@ -584,3 +569,4 @@ export function useMemoFirebase<T>(factory: () => T, deps: DependencyList): T | 
 
 
     
+
