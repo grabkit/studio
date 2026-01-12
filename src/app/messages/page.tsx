@@ -90,8 +90,13 @@ function FollowedUsers() {
                         const isCurrentUser = user.id === currentUser?.uid;
                         const href = isCurrentUser ? '/account' : `/profile/${user.id}`;
                         const name = isCurrentUser ? 'Your Profile' : formatUserId(user.id);
-                        const displayName = name.length > 12 ? `${name.substring(0, 12)}...` : name;
                         
+                        let displayName: React.ReactNode = name;
+                        const nameString = (typeof name === 'object' && name?.props?.children) ? name.props.children[0] : name;
+                        if (typeof nameString === 'string' && nameString.length > 12) {
+                            displayName = `${nameString.substring(0, 10)}...`;
+                        }
+
                         const hasVoiceStatus = user?.voiceStatusUrl && user?.voiceStatusTimestamp && (Date.now() - user.voiceStatusTimestamp.toMillis() < 24 * 60 * 60 * 1000);
                         const avatar = getAvatar(user);
                         const isAvatarUrl = avatar.startsWith('http');
@@ -388,6 +393,8 @@ export default function MessagesPage() {
     const [pullPosition, setPullPosition] = useState(0);
     const touchStartRef = useRef(0);
     const containerRef = useRef<HTMLDivElement>(null);
+    const isPulling = useRef(false);
+    const pullTimeout = useRef<NodeJS.Timeout | null>(null);
 
 
     const conversationsQuery = useMemoFirebase(() => {
@@ -466,13 +473,18 @@ export default function MessagesPage() {
 
     const handleTouchStart = (e: TouchEvent) => {
         touchStartRef.current = e.targetTouches[0].clientY;
+        if (pullTimeout.current) clearTimeout(pullTimeout.current);
+        
+        pullTimeout.current = setTimeout(() => {
+          isPulling.current = true;
+        }, 100);
     };
 
     const handleTouchMove = (e: TouchEvent) => {
         const touchY = e.targetTouches[0].clientY;
         const pullDistance = touchY - touchStartRef.current;
         
-        if (containerRef.current && containerRef.current.scrollTop === 0 && pullDistance > 0 && !isRefreshing) {
+        if (containerRef.current && containerRef.current.scrollTop === 0 && pullDistance > 0 && isPulling.current && !isRefreshing) {
             e.preventDefault();
             const newPullPosition = Math.min(pullDistance, 120);
             
@@ -484,6 +496,12 @@ export default function MessagesPage() {
     };
 
     const handleTouchEnd = () => {
+        if (pullTimeout.current) {
+            clearTimeout(pullTimeout.current);
+            pullTimeout.current = null;
+        }
+        isPulling.current = false;
+    
         if (pullPosition > 70) {
             handleRefresh();
         } else {
