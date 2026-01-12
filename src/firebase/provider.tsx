@@ -281,7 +281,6 @@ export const FirebaseProvider: React.FC<FirebaseProviderProps> = ({
         callHandler.startCall(calleeId);
     } catch (error) {
         console.error("Microphone permission denied:", error);
-        // Check for AndroidInterface and open settings if available
         const androidInterface = (window as any).Android;
         if (androidInterface && typeof androidInterface.openAppSettings === 'function') {
             androidInterface.openAppSettings();
@@ -302,8 +301,7 @@ export const FirebaseProvider: React.FC<FirebaseProviderProps> = ({
           videoCallHandler.startVideoCall(calleeId);
       } catch (error) {
           console.error("Camera/Microphone permission denied:", error);
-           // Check for AndroidInterface and open settings if available
-          const androidInterface = (window as any).Android;
+           const androidInterface = (window as any).Android;
           if (androidInterface && typeof androidInterface.openAppSettings === 'function') {
               androidInterface.openAppSettings();
           } else {
