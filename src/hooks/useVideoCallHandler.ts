@@ -86,14 +86,15 @@ export function useVideoCallHandler(
   }, [firestore, activeCall, cleanupCall]);
 
 
-  const answerCall = useCallback(async (stream: MediaStream) => {
+  const answerCall = useCallback(async () => {
     if (!firestore || !user || !activeCall || activeCall.status !== 'ringing' || !activeCall.offer) return;
     
     if (ringTimeoutRef.current) {
         clearTimeout(ringTimeoutRef.current);
         ringTimeoutRef.current = null;
     }
-
+    
+    const stream = await navigator.mediaDevices.getUserMedia({ video: true, audio: true });
     setLocalStream(stream);
 
     const peer = new Peer({
@@ -277,7 +278,6 @@ export function useVideoCallHandler(
         
         if (incomingCallData.status === 'offering') {
             try {
-                const stream = await navigator.mediaDevices.getUserMedia({ video: true, audio: true });
                 const callRef = doc(firestore, 'videoCalls', incomingCallData.id);
                 await updateDoc(callRef, { status: 'ringing' });
                 setActiveCall({ ...incomingCallData, status: 'ringing' });
@@ -367,3 +367,5 @@ export function useVideoCallHandler(
     videoCallDuration: callDuration,
   };
 }
+
+    

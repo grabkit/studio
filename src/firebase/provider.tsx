@@ -58,11 +58,6 @@ interface UserAuthState {
   userError: Error | null;
 }
 
-type PermissionRequest = {
-  type: 'voice' | 'video';
-  calleeId: string;
-};
-
 // Combined state for the Firebase context
 export interface FirebaseContextState extends CallHandlerResult, VideoCallHandlerResult {
   areServicesAvailable: boolean; // True if core services (app, firestore, auth instance) are provided
@@ -134,7 +129,6 @@ export const FirebaseProvider: React.FC<FirebaseProviderProps> = ({
   });
   
   const [missedCallInfo, setMissedCallInfo] = useState<MissedCallInfo | null>(null);
-  const [permissionRequest, setPermissionRequest] = useState<PermissionRequest | null>(null);
 
   const callHandler = useCallHandler(firestore, userAuthState.user, setMissedCallInfo);
   const videoCallHandler = useVideoCallHandler(firestore, userAuthState.user, setMissedCallInfo);
@@ -290,31 +284,6 @@ export const FirebaseProvider: React.FC<FirebaseProviderProps> = ({
     );
     return () => unsubscribe(); // Cleanup
   }, [auth, database, firestore]);
-  
-   const requestAndStartCall = async (calleeId: string) => {
-        try {
-            const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
-            callHandler.startCall(calleeId, stream);
-        } catch (error: any) {
-            console.error("Microphone permission denied:", error.name);
-             if (error.name === 'NotAllowedError' || error.name === 'PermissionDeniedError') {
-                setPermissionRequest({ type: 'voice', calleeId });
-            }
-        }
-    };
-    
-    const requestAndStartVideoCall = async (calleeId: string) => {
-        try {
-            const stream = await navigator.mediaDevices.getUserMedia({ video: true, audio: true });
-            videoCallHandler.startVideoCall(calleeId, stream);
-        } catch (error: any) {
-            console.error("Camera/Microphone permission denied:", error.name);
-            if (error.name === 'NotAllowedError' || error.name === 'PermissionDeniedError') {
-                 setPermissionRequest({ type: 'video', calleeId });
-            }
-        }
-    };
-
 
   // Memoize the context value
   const contextValue = useMemo((): FirebaseContextState => {
@@ -336,9 +305,7 @@ export const FirebaseProvider: React.FC<FirebaseProviderProps> = ({
       isVoicePlayerPlaying,
       handleDeleteVoiceStatus,
       ...callHandler,
-      startCall: requestAndStartCall,
       ...videoCallHandler,
-      startVideoCall: requestAndStartVideoCall,
       missedCallInfo,
       setMissedCallInfo,
     };
@@ -353,25 +320,17 @@ export const FirebaseProvider: React.FC<FirebaseProviderProps> = ({
     if (!missedCallInfo) return;
     const { calleeId, type } = missedCallInfo;
     setMissedCallInfo(null);
-    if (type === 'voice') {
-      requestAndStartCall(calleeId);
-    } else {
-      requestAndStartVideoCall(calleeId);
-    }
-  };
 
-  const openNativeAppSettings = () => {
-    const androidInterface = (window as any).Android;
-    if (androidInterface && typeof androidInterface.openAppSettings === 'function') {
-        androidInterface.openAppSettings();
-    } else {
-        toast({
-            title: "Please Enable Permissions",
-            description: "Go to your device settings to enable camera/microphone permissions for this app.",
-            duration: 9000,
-        });
-    }
-    setPermissionRequest(null);
+    const startFunction = type === 'voice' ? callHandler.startCall : videoCallHandler.startVideoCall;
+
+    navigator.mediaDevices.getUserMedia({ audio: true, video: type === 'video' })
+      .then(stream => {
+          startFunction(calleeId, stream);
+      })
+      .catch(err => {
+          console.error("Permission denied on call again:", err);
+          toast({ variant: 'destructive', title: "Permission Denied", description: "Could not get permissions to call again."});
+      })
   };
 
 
@@ -421,20 +380,6 @@ export const FirebaseProvider: React.FC<FirebaseProviderProps> = ({
              </SheetContent>
          </Sheet>
       )}
-      <AlertDialog open={!!permissionRequest} onOpenChange={(open) => !open && setPermissionRequest(null)}>
-        <AlertDialogContent>
-            <AlertDialogHeader>
-            <AlertDialogTitle>Permission Required</AlertDialogTitle>
-            <AlertDialogDescription>
-                To make {permissionRequest?.type} calls, Blur needs access to your {permissionRequest?.type === 'video' ? 'camera and microphone' : 'microphone'}. Please go to settings to enable this permission.
-            </AlertDialogDescription>
-            </AlertDialogHeader>
-            <AlertDialogFooter>
-            <AlertDialogCancel>Cancel</AlertDialogCancel>
-            <AlertDialogAction onClick={openNativeAppSettings}>Open Settings</AlertDialogAction>
-            </AlertDialogFooter>
-        </AlertDialogContent>
-      </AlertDialog>
 
       {showVideoCallUI ? (
         <VideoCallView
@@ -447,7 +392,7 @@ export const FirebaseProvider: React.FC<FirebaseProviderProps> = ({
             remoteStream={videoCallHandler.remoteVideoStream}
             onToggleMute={videoCallHandler.toggleVideoMute}
             onToggleVideo={videoCallHandler.toggleVideo}
-            onAccept={videoCallHandler.answerVideoCall}
+            onAccept={() => videoCallHandler.answerVideoCall()}
             onDecline={videoCallHandler.declineVideoCall}
             onHangUp={videoCallHandler.hangUpVideoCall}
             callDuration={videoCallHandler.videoCallDuration}
@@ -461,7 +406,7 @@ export const FirebaseProvider: React.FC<FirebaseProviderProps> = ({
             localStream={callHandler.localStream}
             remoteStream={callHandler.remoteStream}
             onToggleMute={callHandler.toggleMute}
-            onAccept={callHandler.answerCall}
+            onAccept={() => callHandler.answerCall()}
             onDecline={callHandler.declineCall}
             onHangUp={callHandler.hangUp}
             callDuration={callHandler.callDuration}
@@ -571,3 +516,6 @@ export function useMemoFirebase<T>(factory: () => T, deps: DependencyList): T | 
     
 
 
+
+
+    

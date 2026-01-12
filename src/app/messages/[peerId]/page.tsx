@@ -32,6 +32,16 @@ import Link from 'next/link';
 import { ForwardSheet } from '@/components/ForwardSheet';
 import { LinkPreviewCard } from '@/components/LinkPreviewCard';
 import { Sheet, SheetContent, SheetTrigger, SheetHeader, SheetTitle } from '@/components/ui/sheet';
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 
 
 const messageFormSchema = z.object({
@@ -606,9 +616,12 @@ export default function ChatPage() {
     const { firestore, user, startCall, startVideoCall } = useFirebase();
     const params = useParams();
     const router = useRouter();
+    const { toast } = useToast();
+
     const [replyingTo, setReplyingTo] = useState<WithId<Message> | null>(null);
     const [forwardingMessage, setForwardingMessage] = useState<WithId<Message> | null>(null);
     const [isForwardSheetOpen, setIsForwardSheetOpen] = useState(false);
+    const [permissionRequest, setPermissionRequest] = useState<'voice' | 'video' | null>(null);
     
     const peerId = params.peerId as string;
 
@@ -631,15 +644,50 @@ export default function ChatPage() {
         setIsForwardSheetOpen(true);
     };
 
-    const handleStartCall = () => {
+    const handleStartCall = async () => {
         if (!peerId) return;
-        startCall(peerId);
-    }
+        try {
+            const stream = await navigator.mediaDevices.getUserMedia({ audio: true, video: false });
+            startCall(peerId, stream);
+        } catch (error: any) {
+            console.error("Microphone permission denied:", error.name);
+            if (error.name === 'NotAllowedError' || error.name === 'PermissionDeniedError') {
+                setPermissionRequest('voice');
+            } else {
+                 toast({ variant: 'destructive', title: "Call Failed", description: "Could not access microphone. Please check your device settings."});
+            }
+        }
+    };
     
-    const handleStartVideoCall = () => {
+    const handleStartVideoCall = async () => {
         if (!peerId) return;
-        startVideoCall(peerId);
-    }
+        try {
+            const stream = await navigator.mediaDevices.getUserMedia({ video: true, audio: true });
+            startVideoCall(peerId, stream);
+        } catch (error: any) {
+            console.error("Camera/Microphone permission denied:", error.name);
+            if (error.name === 'NotAllowedError' || error.name === 'PermissionDeniedError') {
+                setPermissionRequest('video');
+            } else {
+                toast({ variant: 'destructive', title: "Video Call Failed", description: "Could not access camera/microphone. Please check your device settings."});
+            }
+        }
+    };
+    
+    const openNativeAppSettings = () => {
+        const androidInterface = (window as any).Android;
+        if (androidInterface && typeof androidInterface.openAppSettings === 'function') {
+            androidInterface.openAppSettings();
+        } else {
+            toast({
+                title: "Please Enable Permissions",
+                description: "Go to your phone settings, find the Blur app, and grant the required permissions.",
+                duration: 9000,
+            });
+        }
+        setPermissionRequest(null);
+    };
+
 
     const conversationRef = useMemoFirebase(() => {
         if (!firestore || !conversationId) return null;
@@ -721,6 +769,21 @@ export default function ChatPage() {
                     onOpenChange={setIsForwardSheetOpen}
                     message={forwardingMessage}
                 />
+                
+                 <AlertDialog open={!!permissionRequest} onOpenChange={(open) => !open && setPermissionRequest(null)}>
+                    <AlertDialogContent>
+                        <AlertDialogHeader>
+                        <AlertDialogTitle>Permission Required</AlertDialogTitle>
+                        <AlertDialogDescription>
+                            To make {permissionRequest} calls, Blur needs access to your {permissionRequest === 'video' ? 'camera and microphone' : 'microphone'}. Please go to settings to enable this permission.
+                        </AlertDialogDescription>
+                        </AlertDialogHeader>
+                        <AlertDialogFooter>
+                        <AlertDialogCancel>Cancel</AlertDialogCancel>
+                        <AlertDialogAction onClick={openNativeAppSettings}>Open Settings</AlertDialogAction>
+                        </AlertDialogFooter>
+                    </AlertDialogContent>
+                </AlertDialog>
             </motion.div>
         </AppLayout>
     )
@@ -755,3 +818,6 @@ export default function ChatPage() {
 
 
 
+
+
+    
