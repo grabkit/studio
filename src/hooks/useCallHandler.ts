@@ -1,4 +1,5 @@
 
+
 'use client';
 
 import { useState, useEffect, useCallback, useRef } from 'react';
@@ -83,7 +84,7 @@ export function useCallHandler(
   }, [firestore, activeCall, cleanupCall]);
 
 
-  const answerCall = useCallback(async () => {
+  const answerCall = useCallback(async (stream: MediaStream) => {
     if (!firestore || !user || !activeCall || activeCall.status !== 'ringing' || !activeCall.offer) return;
 
      if (ringTimeoutRef.current) {
@@ -91,172 +92,147 @@ export function useCallHandler(
       ringTimeoutRef.current = null;
     }
     
-    try {
-        const stream = await navigator.mediaDevices.getUserMedia({ video: false, audio: true });
-        setLocalStream(stream);
+    setLocalStream(stream);
 
-        const peer = new Peer({
-            initiator: false,
-            trickle: true,
-            stream: stream,
-        });
-        peerRef.current = peer;
-        
-        const callRef = doc(firestore, 'calls', activeCall.id);
-        const answerCandidatesCol = collection(callRef, 'answerCandidates');
-        const callerCandidatesCol = collection(callRef, 'callerCandidates');
+    const peer = new Peer({
+        initiator: false,
+        trickle: true,
+        stream: stream,
+    });
+    peerRef.current = peer;
+    
+    const callRef = doc(firestore, 'calls', activeCall.id);
+    const answerCandidatesCol = collection(callRef, 'answerCandidates');
+    const callerCandidatesCol = collection(callRef, 'callerCandidates');
 
-        peer.on('signal', async (data) => {
-            if (data.type === 'answer') {
-                await updateDoc(callRef, { answer: data });
-            } else if (data.candidate) {
-                 await addDoc(answerCandidatesCol, data);
-            }
-        });
-        
-        peer.on('connect', () => {
-            setCallStatus('answered');
-        });
-
-        peer.on('stream', (remoteStream) => {
-            setRemoteStream(remoteStream);
-        });
-
-        onSnapshot(callerCandidatesCol, (snapshot) => {
-            snapshot.docChanges().forEach((change) => {
-                if (change.type === 'added') {
-                    if (peerRef.current && !peerRef.current.destroyed) {
-                        peerRef.current.signal(change.doc.data() as any);
-                    }
-                }
-            });
-        });
-
-        peer.signal(activeCall.offer);
-
-        peer.on('close', cleanupCall);
-        peer.on('error', (err) => {
-             // This error is expected when one user hangs up, so we can ignore it.
-            if (err.message.includes('reason=Close called')) {
-                return;
-            }
-            console.error("Peer error:", err);
-            cleanupCall();
-        });
-
-    } catch (err) {
-        console.error("Error answering call:", err);
-        toast({
-            variant: 'destructive',
-            title: "Could not answer call",
-            description: "Please ensure you have microphone permissions enabled."
-        });
-        if (activeCall) {
-            declineCall();
+    peer.on('signal', async (data) => {
+        if (data.type === 'answer') {
+            await updateDoc(callRef, { answer: data });
+        } else if (data.candidate) {
+             await addDoc(answerCandidatesCol, data);
         }
-    }
-  }, [firestore, user, activeCall, toast, cleanupCall, declineCall]);
+    });
+    
+    peer.on('connect', () => {
+        setCallStatus('answered');
+    });
 
-  const startCall = useCallback(async (calleeId: string) => {
+    peer.on('stream', (remoteStream) => {
+        setRemoteStream(remoteStream);
+    });
+
+    onSnapshot(callerCandidatesCol, (snapshot) => {
+        snapshot.docChanges().forEach((change) => {
+            if (change.type === 'added') {
+                if (peerRef.current && !peerRef.current.destroyed) {
+                    peerRef.current.signal(change.doc.data() as any);
+                }
+            }
+        });
+    });
+
+    peer.signal(activeCall.offer);
+
+    peer.on('close', cleanupCall);
+    peer.on('error', (err) => {
+         // This error is expected when one user hangs up, so we can ignore it.
+        if (err.message.includes('reason=Close called')) {
+            return;
+        }
+        console.error("Peer error:", err);
+        cleanupCall();
+    });
+  }, [firestore, user, activeCall, cleanupCall]);
+
+  const startCall = useCallback(async (calleeId: string, stream: MediaStream) => {
     if (!firestore || !user) return;
+    
+    setLocalStream(stream);
+    
+    const callDocRef = doc(collection(firestore, 'calls'));
 
-    try {
-        const stream = await navigator.mediaDevices.getUserMedia({ video: false, audio: true });
-        setLocalStream(stream);
-        
-        const callDocRef = doc(collection(firestore, 'calls'));
+    const peer = new Peer({
+        initiator: true,
+        trickle: true,
+        stream: stream
+    });
+    peerRef.current = peer;
+    
+    const callerCandidatesCol = collection(callDocRef, 'callerCandidates');
 
-        const peer = new Peer({
-            initiator: true,
-            trickle: true,
-            stream: stream
-        });
-        peerRef.current = peer;
-        
-        const callerCandidatesCol = collection(callDocRef, 'callerCandidates');
+    peer.on('signal', async (data) => {
+        if (data.type === 'offer') {
+            const newCallData: Omit<Call, 'id'> = {
+                callerId: user.uid,
+                calleeId: calleeId,
+                status: 'offering',
+                offer: data,
+                createdAt: serverTimestamp() as any,
+            };
+            await setDoc(callDocRef, newCallData);
+            setActiveCall({ id: callDocRef.id, ...newCallData } as Call);
+            setCallStatus('offering');
 
-        peer.on('signal', async (data) => {
-            if (data.type === 'offer') {
-                const newCallData: Omit<Call, 'id'> = {
-                    callerId: user.uid,
-                    calleeId: calleeId,
-                    status: 'offering',
-                    offer: data,
-                    createdAt: serverTimestamp() as any,
-                };
-                await setDoc(callDocRef, newCallData);
-                setActiveCall({ id: callDocRef.id, ...newCallData } as Call);
-                setCallStatus('offering');
+            ringTimeoutRef.current = setTimeout(async () => {
+                await updateDoc(callDocRef, { status: 'missed' });
+                setMissedCallInfo({ calleeId, type: 'voice' });
+                cleanupCall();
+            }, 60000);
+        } else if (data.candidate) {
+            await addDoc(callerCandidatesCol, data);
+        }
+    });
 
-                ringTimeoutRef.current = setTimeout(async () => {
-                    await updateDoc(callDocRef, { status: 'missed' });
-                    setMissedCallInfo({ calleeId, type: 'voice' });
-                    cleanupCall();
-                }, 60000);
-            } else if (data.candidate) {
-                await addDoc(callerCandidatesCol, data);
+    peer.on('connect', () => {
+         setCallStatus('answered');
+    });
+    
+    peer.on('stream', (remoteStream) => {
+        setRemoteStream(remoteStream);
+    });
+
+    const unsubscribe = onSnapshot(callDocRef, (docSnap) => {
+         const updatedCall = docSnap.data() as Call;
+         if (updatedCall?.answer && peerRef.current && !peerRef.current.destroyed) {
+             if(!peerRef.current.destroyed) peerRef.current.signal(updatedCall.answer);
+         }
+         if (updatedCall?.status && updatedCall.status !== callStatus) {
+            if (ringTimeoutRef.current && (updatedCall.status === 'answered' || updatedCall.status === 'declined' || updatedCall.status === 'ended')) {
+                clearTimeout(ringTimeoutRef.current);
+                ringTimeoutRef.current = null;
+            }
+            if (updatedCall.status === 'answered') {
+                setActiveCall(prev => prev ? { ...prev, status: 'answered' } : null);
+            }
+            setCallStatus(updatedCall.status);
+         }
+         if (updatedCall?.status === 'ended' || updatedCall?.status === 'declined' || updatedCall?.status === 'missed') {
+             toast({ title: `Call ${updatedCall.status}` });
+             cleanupCall();
+             unsubscribe();
+         }
+    });
+    
+    const answerCandidatesCol = collection(callDocRef, 'answerCandidates');
+    onSnapshot(answerCandidatesCol, (snapshot) => {
+        snapshot.docChanges().forEach((change) => {
+            if (change.type === 'added') {
+                if (peerRef.current && !peerRef.current.destroyed) {
+                    peerRef.current.signal(change.doc.data() as any);
+                }
             }
         });
+    });
 
-        peer.on('connect', () => {
-             setCallStatus('answered');
-        });
-        
-        peer.on('stream', (remoteStream) => {
-            setRemoteStream(remoteStream);
-        });
-
-        const unsubscribe = onSnapshot(callDocRef, (docSnap) => {
-             const updatedCall = docSnap.data() as Call;
-             if (updatedCall?.answer && peerRef.current && !peerRef.current.destroyed) {
-                 if(!peerRef.current.destroyed) peerRef.current.signal(updatedCall.answer);
-             }
-             if (updatedCall?.status && updatedCall.status !== callStatus) {
-                if (ringTimeoutRef.current && (updatedCall.status === 'answered' || updatedCall.status === 'declined' || updatedCall.status === 'ended')) {
-                    clearTimeout(ringTimeoutRef.current);
-                    ringTimeoutRef.current = null;
-                }
-                if (updatedCall.status === 'answered') {
-                    setActiveCall(prev => prev ? { ...prev, status: 'answered' } : null);
-                }
-                setCallStatus(updatedCall.status);
-             }
-             if (updatedCall?.status === 'ended' || updatedCall?.status === 'declined' || updatedCall?.status === 'missed') {
-                 toast({ title: `Call ${updatedCall.status}` });
-                 cleanupCall();
-                 unsubscribe();
-             }
-        });
-        
-        const answerCandidatesCol = collection(callDocRef, 'answerCandidates');
-        onSnapshot(answerCandidatesCol, (snapshot) => {
-            snapshot.docChanges().forEach((change) => {
-                if (change.type === 'added') {
-                    if (peerRef.current && !peerRef.current.destroyed) {
-                        peerRef.current.signal(change.doc.data() as any);
-                    }
-                }
-            });
-        });
-
-         peer.on('close', cleanupCall);
-         peer.on('error', (err) => {
-             // This error is expected when one user hangs up, so we can ignore it.
-            if (err.message.includes('reason=Close called')) {
-                return;
-            }
-            console.error("Peer error:", err);
-            cleanupCall();
-         });
-
-    } catch (err) {
-        console.error("Error starting call:", err);
-        toast({
-            variant: 'destructive',
-            title: "Could not start call",
-            description: "Please ensure you have microphone permissions enabled."
-        });
-    }
+     peer.on('close', cleanupCall);
+     peer.on('error', (err) => {
+         // This error is expected when one user hangs up, so we can ignore it.
+        if (err.message.includes('reason=Close called')) {
+            return;
+        }
+        console.error("Peer error:", err);
+        cleanupCall();
+     });
   }, [firestore, user, toast, cleanupCall, callStatus, setMissedCallInfo]);
 
   const hangUp = useCallback(async () => {
@@ -300,10 +276,17 @@ export function useCallHandler(
         }
         
         if (incomingCallData.status === 'offering') {
-            const callRef = doc(firestore, 'calls', incomingCallData.id);
-            await updateDoc(callRef, { status: 'ringing' });
-            setActiveCall({ ...incomingCallData, status: 'ringing' });
-            setCallStatus('ringing');
+            try {
+                const stream = await navigator.mediaDevices.getUserMedia({ video: false, audio: true });
+                const callRef = doc(firestore, 'calls', incomingCallData.id);
+                await updateDoc(callRef, { status: 'ringing' });
+                setActiveCall({ ...incomingCallData, status: 'ringing' });
+                setCallStatus('ringing');
+            } catch (err) {
+                 console.error("Could not get media for incoming call:", err);
+                 const callRef = doc(firestore, 'calls', incomingCallData.id);
+                 await updateDoc(callRef, { status: 'declined' });
+            }
         } else {
             setActiveCall(incomingCallData);
             setCallStatus(incomingCallData.status);

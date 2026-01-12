@@ -293,8 +293,8 @@ export const FirebaseProvider: React.FC<FirebaseProviderProps> = ({
   
    const requestAndStartCall = async (calleeId: string) => {
         try {
-            await navigator.mediaDevices.getUserMedia({ audio: true });
-            callHandler.startCall(calleeId);
+            const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+            callHandler.startCall(calleeId, stream);
         } catch (error: any) {
             console.error("Microphone permission denied:", error.name);
              if (error.name === 'NotAllowedError' || error.name === 'PermissionDeniedError') {
@@ -305,8 +305,8 @@ export const FirebaseProvider: React.FC<FirebaseProviderProps> = ({
     
     const requestAndStartVideoCall = async (calleeId: string) => {
         try {
-            await navigator.mediaDevices.getUserMedia({ video: true, audio: true });
-            videoCallHandler.startVideoCall(calleeId);
+            const stream = await navigator.mediaDevices.getUserMedia({ video: true, audio: true });
+            videoCallHandler.startVideoCall(calleeId, stream);
         } catch (error: any) {
             console.error("Camera/Microphone permission denied:", error.name);
             if (error.name === 'NotAllowedError' || error.name === 'PermissionDeniedError') {
@@ -569,4 +569,5 @@ export function useMemoFirebase<T>(factory: () => T, deps: DependencyList): T | 
 
 
     
+
 
