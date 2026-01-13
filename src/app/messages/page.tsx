@@ -1,4 +1,3 @@
-
 "use client";
 
 import AppLayout from "@/components/AppLayout";
@@ -386,9 +385,8 @@ export default function MessagesPage() {
     const [isRefreshing, setIsRefreshing] = useState(false);
     const [pullPosition, setPullPosition] = useState(0);
     const touchStartRef = useRef(0);
+    const initialScrollTop = useRef(0);
     const containerRef = useRef<HTMLDivElement>(null);
-    const isPulling = useRef(false);
-    const pullTimeout = useRef<NodeJS.Timeout | null>(null);
 
 
     const conversationsQuery = useMemoFirebase(() => {
@@ -466,20 +464,20 @@ export default function MessagesPage() {
     };
 
     const handleTouchStart = (e: TouchEvent) => {
+        if (containerRef.current) {
+            initialScrollTop.current = containerRef.current.scrollTop;
+        }
         touchStartRef.current = e.targetTouches[0].clientY;
-        if (pullTimeout.current) clearTimeout(pullTimeout.current);
-        
-        pullTimeout.current = setTimeout(() => {
-          isPulling.current = true;
-        }, 100);
     };
 
     const handleTouchMove = (e: TouchEvent) => {
         const touchY = e.targetTouches[0].clientY;
         const pullDistance = touchY - touchStartRef.current;
         
-        if (containerRef.current && containerRef.current.scrollTop === 0 && pullDistance > 0 && isPulling.current && !isRefreshing) {
-            e.preventDefault();
+        if (initialScrollTop.current === 0 && pullDistance > 0 && !isRefreshing) {
+            if (pullDistance > 10) {
+                 e.preventDefault();
+            }
             const newPullPosition = Math.min(pullDistance, 120);
             
             if (pullPosition <= 70 && newPullPosition > 70) {
@@ -490,12 +488,6 @@ export default function MessagesPage() {
     };
 
     const handleTouchEnd = () => {
-        if (pullTimeout.current) {
-            clearTimeout(pullTimeout.current);
-            pullTimeout.current = null;
-        }
-        isPulling.current = false;
-    
         if (pullPosition > 70) {
             handleRefresh();
         } else {
