@@ -80,10 +80,10 @@ export function PollComponent({ post, user, onVote }: { post: WithId<Post>, user
     }, [post.pollOptions]);
 
     const pollColors = useMemo(() => [
-        { light: 'bg-sky-500/20', dark: 'text-sky-600', border: 'border-sky-600' },
-        { light: 'bg-emerald-500/20', dark: 'text-emerald-600', border: 'border-emerald-600' },
-        { light: 'bg-amber-500/20', dark: 'text-amber-600', border: 'border-amber-600' },
-        { light: 'bg-fuchsia-500/20', dark: 'text-fuchsia-600', border: 'border-fuchsia-600' }
+        { light: 'bg-sky-500/20', dark: 'border-sky-600', text: 'text-sky-600' },
+        { light: 'bg-emerald-500/20', dark: 'border-emerald-600', text: 'text-emerald-600' },
+        { light: 'bg-amber-500/20', dark: 'border-amber-600', text: 'text-amber-600' },
+        { light: 'bg-fuchsia-500/20', dark: 'border-fuchsia-600', text: 'text-fuchsia-600' }
     ], []);
 
 
@@ -172,9 +172,9 @@ export function PollComponent({ post, user, onVote }: { post: WithId<Post>, user
                      const colorSet = pollColors[index % pollColors.length];
                      
                      const bgClass = isUserChoice ? colorSet.light : 'bg-secondary';
-                     const borderClass = isUserChoice ? colorSet.border : 'border-border';
+                     const borderClass = isUserChoice ? colorSet.dark : 'border-border';
                      const fontWeight = isUserChoice ? 'font-bold' : 'font-medium';
-                     const textColorClass = isUserChoice ? colorSet.dark : 'text-muted-foreground';
+                     const textColorClass = isUserChoice ? colorSet.text : 'text-muted-foreground';
 
 
                      return (
@@ -720,12 +720,13 @@ export default function HomePage() {
   const isLoading = postsLoading || bookmarksLoading;
 
   const filteredPosts = useMemo(() => {
-    if (!initialPosts) return [];
+    if (!initialPosts || !user) return [];
     const mutedUsers = userProfile?.mutedUsers || [];
     return initialPosts.filter(post => 
+      post.authorId !== user.uid &&
       !mutedUsers.includes(post.authorId)
     );
-  }, [initialPosts, userProfile]);
+  }, [initialPosts, userProfile, user]);
 
   const handleDeletePostOptimistic = (postId: string) => {
     setData(currentPosts => currentPosts?.filter(p => p.id !== postId) ?? []);
@@ -794,6 +795,8 @@ export default function HomePage() {
     </AppLayout>
   );
 }
+    
+
     
 
     
