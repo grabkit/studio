@@ -211,15 +211,24 @@ function MessageBubble({ message, isOwnMessage, conversation, onSetReply, onForw
             ) : null}
 
             {message.text && (
-                 <p className="px-3 py-1.5 text-base break-words whitespace-pre-wrap max-w-full">{message.text}</p>
+                 <div className="flex flex-col">
+                    <p className="px-3 py-1.5 text-base break-words whitespace-pre-wrap max-w-full">
+                        {message.text}
+                    </p>
+                    <p className={cn("text-[11px] self-end px-3 pb-1.5", isOwnMessage ? "text-white/70" : "text-muted-foreground")}>
+                        {message.timestamp?.toDate ? formatMessageTimestamp(message.timestamp.toDate()) : '...'}
+                    </p>
+                </div>
             )}
-
-             <p className={cn(
-                "text-[11px] self-end px-3 pb-1.5", 
-                isOwnMessage ? "text-white/70" : "text-muted-foreground"
-             )}>
-                {message.timestamp?.toDate ? formatMessageTimestamp(message.timestamp.toDate()) : '...'}
-             </p>
+            
+            { !message.text &&
+                <p className={cn(
+                    "text-[11px] self-end px-3 pb-1.5", 
+                    isOwnMessage ? "text-white/70" : "text-muted-foreground"
+                )}>
+                    {message.timestamp?.toDate ? formatMessageTimestamp(message.timestamp.toDate()) : '...'}
+                </p>
+            }
         </>
     );
 
@@ -826,3 +835,4 @@ export default function ChatPage() {
     
 
     
+
