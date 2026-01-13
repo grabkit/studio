@@ -164,7 +164,7 @@ export function PollComponent({ post, user, onVote }: { post: WithId<Post>, user
 
                 if (hasVoted) {
                      return (
-                        <div key={index} className="relative w-full h-10 overflow-hidden rounded-full group">
+                        <div key={index} className="relative w-full h-10 overflow-hidden rounded-full group bg-secondary">
                             <motion.div
                                 className="absolute inset-0 bg-primary h-full rounded-full"
                                 initial={{ width: '0%' }}
@@ -173,20 +173,37 @@ export function PollComponent({ post, user, onVote }: { post: WithId<Post>, user
                             />
                             <div className="absolute inset-0 flex items-center justify-between px-4">
                                 <div className="flex items-center gap-2 overflow-hidden">
-                                    <motion.div
-                                        initial={{ opacity: 0 }}
-                                        animate={{ opacity: 1 }}
+                                     <motion.div
+                                        initial={{ opacity: 0, scale: 0.5 }}
+                                        animate={{ opacity: 1, scale: 1 }}
                                         transition={{ delay: 0.3 }}
+                                        className="text-primary-foreground"
                                     >
-                                        {isUserChoice && <CheckCircle2 className="h-4 w-4 text-primary-foreground shrink-0" />}
+                                        {isUserChoice && <CheckCircle2 className="h-4 w-4 shrink-0" />}
                                     </motion.div>
-                                    <span className="truncate text-primary-foreground text-sm font-medium">{option.option}</span>
+                                    <span 
+                                        className="truncate text-sm font-medium"
+                                        style={{
+                                            color: 'transparent',
+                                            background: `linear-gradient(to right, hsl(var(--primary-foreground)) ${percentage}%, hsl(var(--foreground)) ${percentage}%)`,
+                                            WebkitBackgroundClip: 'text',
+                                            backgroundClip: 'text',
+                                        }}
+                                    >
+                                        {option.option}
+                                    </span>
                                 </div>
                                 <motion.span 
-                                    className="text-primary-foreground text-sm font-medium"
+                                    className="text-sm font-medium"
                                     initial={{ opacity: 0 }}
                                     animate={{ opacity: 1 }}
                                     transition={{ delay: 0.3 }}
+                                     style={{
+                                        color: 'transparent',
+                                        background: `linear-gradient(to right, hsl(var(--primary-foreground)) ${percentage}%, hsl(var(--foreground)) ${percentage}%)`,
+                                        WebkitBackgroundClip: 'text',
+                                        backgroundClip: 'text',
+                                    }}
                                 >
                                     {percentage.toFixed(0)}%
                                 </motion.span>
@@ -718,7 +735,7 @@ export default function HomePage() {
     if (!initialPosts || !user) return initialPosts || [];
     const mutedUsers = userProfile?.mutedUsers || [];
     return initialPosts.filter(post => 
-        !mutedUsers.includes(post.authorId) && post.authorId !== user.uid
+        !mutedUsers.includes(post.authorId)
     );
   }, [initialPosts, userProfile, user]);
 

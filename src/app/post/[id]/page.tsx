@@ -28,7 +28,6 @@ import { useParams, useRouter } from "next/navigation";
 import React, { useState } from "react";
 import Link from 'next/link';
 import Image from "next/image";
-import { PollComponent } from "@/app/home/page";
 import { motion } from "framer-motion";
 
 import AppLayout from "@/components/AppLayout";
@@ -38,7 +37,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { Button, buttonVariants } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { Form, FormControl, FormField, FormItem, FormMessage } from "@/components/ui/form";
-import { Heart, MessageCircle, ArrowUpRight, Trash2, MoreHorizontal, Edit, ArrowLeft, Repeat, Check, AlertTriangle, Slash, Loader2, Send } from "lucide-react";
+import { Heart, MessageCircle, ArrowUpRight, Trash2, MoreHorizontal, Edit, ArrowLeft, Repeat, Check, AlertTriangle, Slash, Loader2, Send, CheckCircle2 } from "lucide-react";
 import { cn, formatTimestamp, getAvatar, formatCount, formatUserId } from "@/lib/utils";
 import { useToast } from "@/hooks/use-toast";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -57,7 +56,12 @@ import {
 } from "@/components/ui/sheet";
 import { QuotedPostCard } from "@/components/QuotedPostCard";
 import { AnimatedCount } from "@/components/AnimatedCount";
+import { PollComponent as HomePollComponent } from "@/app/home/page";
 
+function PollComponent({ post, user, onVote }: { post: WithId<Post>, user: any, onVote?: (updatedPost: Partial<Post>) => void }) {
+  // Since the logic is identical, we can just reuse the component from the home page
+  return <HomePollComponent post={post} user={user} onVote={onVote} />;
+}
 
 function LinkPreview({ metadata }: { metadata: LinkMetadata }) {
     const getDomainName = (url: string) => {
