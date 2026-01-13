@@ -25,7 +25,7 @@ import { useCollection, type WithId } from "@/firebase/firestore/use-collection"
 import { useDoc } from "@/firebase/firestore/use-doc";
 import type { Post, Comment, Notification, User as UserProfile, LinkMetadata, PollOption } from "@/lib/types";
 import { useParams, useRouter } from "next/navigation";
-import React, { useState } from "react";
+import React, { useState, useMemo } from "react";
 import Link from 'next/link';
 import Image from "next/image";
 import { motion } from "framer-motion";
@@ -56,11 +56,171 @@ import {
 } from "@/components/ui/sheet";
 import { QuotedPostCard } from "@/components/QuotedPostCard";
 import { AnimatedCount } from "@/components/AnimatedCount";
-import { PollComponent as HomePollComponent } from "@/app/home/page";
 
 function PollComponent({ post, user, onVote }: { post: WithId<Post>, user: any, onVote?: (updatedPost: Partial<Post>) => void }) {
-  // Since the logic is identical, we can just reuse the component from the home page
-  return <HomePollComponent post={post} user={user} onVote={onVote} />;
+    const { firestore } = useFirebase();
+    const { toast } = useToast();
+    const [isProcessing, setIsProcessing] = useState(false);
+    
+    const userVoteIndex = post.voters && user ? post.voters[user.uid] : undefined;
+    const hasVoted = userVoteIndex !== undefined;
+
+    const totalVotes = useMemo(() => {
+        return post.pollOptions?.reduce((acc, option) => acc + option.votes, 0) || 0;
+    }, [post.pollOptions]);
+
+    const pollColors = useMemo(() => [
+        'bg-sky-200 text-sky-800', 
+        'bg-emerald-200 text-emerald-800', 
+        'bg-amber-200 text-amber-800', 
+        'bg-fuchsia-200 text-fuchsia-800'
+    ], []);
+
+
+    const handleVote = async (optionIndex: number) => {
+        if (!user || !firestore) {
+            toast({ variant: "destructive", title: "You must be logged in to vote." });
+            return;
+        }
+        if (hasVoted || isProcessing) return;
+
+        setIsProcessing(true);
+
+        const postRef = doc(firestore, 'posts', post.id);
+
+        // Optimistic UI Update
+        const optimisticPollOptions = post.pollOptions ? post.pollOptions.map((opt, i) => {
+            if (i === optionIndex) {
+                return { ...opt, votes: opt.votes + 1 };
+            }
+            return opt;
+        }) : [];
+
+        const optimisticVoters = { ...(post.voters || {}), [user.uid]: optionIndex };
+        const optimisticPost = { ...post, pollOptions: optimisticPollOptions, voters: optimisticVoters };
+
+        if (onVote) {
+            onVote(optimisticPost);
+        }
+
+        // Firestore Transaction
+        try {
+            await runTransaction(firestore, async (transaction) => {
+                const postDoc = await transaction.get(postRef);
+                if (!postDoc.exists()) {
+                    throw "Post does not exist!";
+                }
+
+                const currentPost = postDoc.data() as Post;
+
+                if (currentPost.voters && currentPost.voters[user.uid] !== undefined) {
+                    return;
+                }
+                
+                const newPollOptions = currentPost.pollOptions ? [...currentPost.pollOptions] : [];
+                if (newPollOptions.length > optionIndex) {
+                    newPollOptions[optionIndex].votes += 1;
+                }
+
+                const newVoters = { ...(currentPost.voters || {}), [user.uid]: optionIndex };
+                
+                transaction.update(postRef, {
+                    pollOptions: newPollOptions,
+                    voters: newVoters,
+                });
+            });
+
+        } catch (e: any) {
+            console.error(e);
+            // Revert optimistic update on failure
+            if (onVote) {
+                onVote(post);
+            }
+            const permissionError = new FirestorePermissionError({
+                path: postRef.path,
+                operation: 'update',
+                requestResourceData: { vote: `Transaction on pollOptions and voters` },
+            });
+            errorEmitter.emit('permission-error', permissionError);
+            toast({
+                variant: 'destructive',
+                title: 'Vote Failed',
+                description: 'Could not process your vote due to a permissions issue.'
+            })
+        } finally {
+            setIsProcessing(false);
+        }
+    };
+
+    return (
+        <div className="mt-4 space-y-2.5">
+            {post.pollOptions?.map((option, index) => {
+                const percentage = totalVotes > 0 ? (option.votes / totalVotes) * 100 : 0;
+                const isUserChoice = userVoteIndex === index;
+                const [bgColor, textColor] = pollColors[index % pollColors.length].split(' ');
+
+
+                if (hasVoted) {
+                     return (
+                        <div key={index} className={cn(
+                            "relative w-full h-10 overflow-hidden rounded-full group bg-secondary transition-opacity",
+                            !isUserChoice && "opacity-70"
+                        )}>
+                            <motion.div
+                                className={cn("absolute inset-0 h-full rounded-full", bgColor)}
+                                initial={{ width: '0%' }}
+                                animate={{ width: `${percentage}%` }}
+                                transition={{ duration: 0.8, ease: [0.25, 1, 0.5, 1] }}
+                            />
+                            <div className="absolute inset-0 flex items-center justify-between px-4">
+                                <motion.div 
+                                    className="flex items-center gap-2 overflow-hidden"
+                                    initial={{ opacity: 0 }}
+                                    animate={{ opacity: 1 }}
+                                    transition={{ delay: 0.3 }}
+                                >
+                                    {isUserChoice && <CheckCircle2 className={cn("h-4 w-4 shrink-0", textColor)} />}
+                                    <span 
+                                        className={cn("truncate text-sm font-medium text-foreground", textColor)}
+                                        style={{
+                                            clipPath: `inset(0 ${100 - (percentage + 5)}% 0 0)` // Animate text with the bar
+                                        }}
+                                    >
+                                        {option.option}
+                                    </span>
+                                </motion.div>
+                                <motion.span 
+                                    className="text-sm font-medium text-foreground"
+                                    initial={{ opacity: 0 }}
+                                    animate={{ opacity: 1 }}
+                                    transition={{ delay: 0.3 }}
+                                >
+                                    {percentage.toFixed(0)}%
+                                </motion.span>
+                            </div>
+                        </div>
+                    );
+                } else {
+                    return (
+                        <Button
+                            key={index}
+                            variant="outline"
+                            className="w-full justify-center h-10 text-base rounded-full"
+                            onClick={() => handleVote(index)}
+                            disabled={isProcessing}
+                        >
+                            {option.option}
+                        </Button>
+                    );
+                }
+            })}
+             {hasVoted && (
+                <p className="text-xs text-muted-foreground pt-2 text-right">
+                    {totalVotes} {totalVotes === 1 ? 'vote' : 'votes'}
+                </p>
+            )}
+        </div>
+    );
 }
 
 function LinkPreview({ metadata }: { metadata: LinkMetadata }) {

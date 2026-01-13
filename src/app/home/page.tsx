@@ -78,6 +78,14 @@ export function PollComponent({ post, user, onVote }: { post: WithId<Post>, user
         return post.pollOptions?.reduce((acc, option) => acc + option.votes, 0) || 0;
     }, [post.pollOptions]);
 
+    const pollColors = useMemo(() => [
+        'bg-sky-200 text-sky-800', 
+        'bg-emerald-200 text-emerald-800', 
+        'bg-amber-200 text-amber-800', 
+        'bg-fuchsia-200 text-fuchsia-800'
+    ], []);
+
+
     const handleVote = async (optionIndex: number) => {
         if (!user || !firestore) {
             toast({ variant: "destructive", title: "You must be logged in to vote." });
@@ -115,8 +123,6 @@ export function PollComponent({ post, user, onVote }: { post: WithId<Post>, user
                 const currentPost = postDoc.data() as Post;
 
                 if (currentPost.voters && currentPost.voters[user.uid] !== undefined) {
-                    // Another client might have already processed a vote.
-                    // The optimistic update is fine, but we don't need to toast.
                     return;
                 }
                 
@@ -160,48 +166,43 @@ export function PollComponent({ post, user, onVote }: { post: WithId<Post>, user
             {post.pollOptions?.map((option, index) => {
                 const percentage = totalVotes > 0 ? (option.votes / totalVotes) * 100 : 0;
                 const isUserChoice = userVoteIndex === index;
+                const [bgColor, textColor] = pollColors[index % pollColors.length].split(' ');
+
 
                 if (hasVoted) {
                      return (
-                        <div key={index} className="relative w-full h-10 overflow-hidden rounded-full group bg-secondary">
+                        <div key={index} className={cn(
+                            "relative w-full h-10 overflow-hidden rounded-full group bg-secondary transition-opacity",
+                            !isUserChoice && "opacity-70"
+                        )}>
                             <motion.div
-                                className="absolute inset-0 bg-primary h-full rounded-full"
+                                className={cn("absolute inset-0 h-full rounded-full", bgColor)}
                                 initial={{ width: '0%' }}
                                 animate={{ width: `${percentage}%` }}
-                                transition={{ duration: 0.5, ease: "easeInOut" }}
+                                transition={{ duration: 0.8, ease: [0.25, 1, 0.5, 1] }}
                             />
                             <div className="absolute inset-0 flex items-center justify-between px-4">
-                                <div className="flex items-center gap-2 overflow-hidden">
-                                     <motion.div
-                                        initial={{ opacity: 0, scale: 0.5 }}
-                                        animate={{ opacity: 1, scale: 1 }}
-                                        transition={{ delay: 0.3 }}
-                                    >
-                                        {isUserChoice && <CheckCircle2 className="h-4 w-4 shrink-0 text-primary-foreground" />}
-                                    </motion.div>
+                                <motion.div 
+                                    className="flex items-center gap-2 overflow-hidden"
+                                    initial={{ opacity: 0 }}
+                                    animate={{ opacity: 1 }}
+                                    transition={{ delay: 0.3 }}
+                                >
+                                    {isUserChoice && <CheckCircle2 className={cn("h-4 w-4 shrink-0", textColor)} />}
                                     <span 
-                                        className="truncate text-sm font-medium"
+                                        className={cn("truncate text-sm font-medium text-foreground", textColor)}
                                         style={{
-                                            color: 'transparent',
-                                            WebkitBackgroundClip: 'text',
-                                            backgroundClip: 'text',
-                                            backgroundImage: `linear-gradient(to right, hsl(var(--primary-foreground)), hsl(var(--primary-foreground)) ${percentage}%, hsl(var(--foreground)) ${percentage}%, hsl(var(--foreground)))`
+                                            clipPath: `inset(0 ${100 - (percentage + 5)}% 0 0)` // Animate text with the bar
                                         }}
                                     >
                                         {option.option}
                                     </span>
-                                </div>
+                                </motion.div>
                                 <motion.span 
-                                    className="text-sm font-medium"
+                                    className="text-sm font-medium text-foreground"
                                     initial={{ opacity: 0 }}
                                     animate={{ opacity: 1 }}
                                     transition={{ delay: 0.3 }}
-                                     style={{
-                                        color: 'transparent',
-                                        WebkitBackgroundClip: 'text',
-                                        backgroundClip: 'text',
-                                        backgroundImage: `linear-gradient(to right, hsl(var(--primary-foreground)), hsl(var(--primary-foreground)) ${percentage}%, hsl(var(--foreground)) ${percentage}%, hsl(var(--foreground)))`
-                                    }}
                                 >
                                     {percentage.toFixed(0)}%
                                 </motion.span>
@@ -624,6 +625,11 @@ export function PostSkeleton() {
 export default function HomePage() {
   const { firestore, userProfile } = useFirebase();
   const { user } = useUser();
+  const containerRef = useRef<HTMLDivElement>(null);
+  const scrollStartY = useRef(0);
+  const touchStartRef = useRef(0);
+  const [pullPosition, setPullPosition] = useState(0);
+  const [isRefreshing, setIsRefreshing] = useState(false);
   
   const postsQuery = useMemoFirebase(() => {
     if (!firestore) return null;
@@ -631,6 +637,61 @@ export default function HomePage() {
   }, [firestore]);
 
   const { data: initialPosts, isLoading: postsLoading, setData } = useCollection<Post>(postsQuery);
+  
+  const fetchPosts = useCallback(async () => {
+    if (!postsQuery) return;
+    const querySnapshot = await getDocs(postsQuery);
+    const posts = querySnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as WithId<Post>));
+    setData(posts);
+  }, [postsQuery, setData]);
+
+  const handleRefresh = useCallback(async () => {
+    if (isRefreshing) return;
+    setIsRefreshing(true);
+    window.navigator.vibrate?.(50);
+    await fetchPosts();
+    
+    // Artificial delay to show the spinner
+    setTimeout(() => {
+        setIsRefreshing(false);
+        setPullPosition(0);
+        window.navigator.vibrate?.(50);
+    }, 500);
+  }, [isRefreshing, fetchPosts]);
+
+  const handleTouchStart = (e: TouchEvent) => {
+    if (containerRef.current) {
+        scrollStartY.current = containerRef.current.scrollTop;
+    }
+    touchStartRef.current = e.targetTouches[0].clientY;
+  };
+
+  const handleTouchMove = (e: TouchEvent) => {
+      const touchY = e.targetTouches[0].clientY;
+      const pullDistance = touchY - touchStartRef.current;
+
+      // Only allow pull-to-refresh if the user started touching at the very top.
+      if (scrollStartY.current === 0 && pullDistance > 0 && !isRefreshing) {
+          e.preventDefault(); // Prevent browser's default pull-to-refresh
+          const newPullPosition = Math.min(pullDistance, 120);
+          
+          if (pullPosition <= 70 && newPullPosition > 70) {
+              window.navigator.vibrate?.(50); // Haptic feedback
+          }
+          setPullPosition(newPullPosition);
+      }
+  };
+
+  const handleTouchEnd = () => {
+      if (isRefreshing) return;
+
+      if (pullPosition > 70) {
+          handleRefresh();
+      } else {
+          // Snap back if not pulled enough
+          setPullPosition(0);
+      }
+  };
   
   const updatePost = useCallback((postId: string, updatedData: Partial<Post>) => {
     setData(currentPosts => {
@@ -651,7 +712,8 @@ export default function HomePage() {
   const isLoading = postsLoading || bookmarksLoading;
 
   const filteredPosts = useMemo(() => {
-    if (!initialPosts || !user) return initialPosts || [];
+    if (!initialPosts) return [];
+    if (!user || !userProfile) return initialPosts;
     const mutedUsers = userProfile?.mutedUsers || [];
     return initialPosts.filter(post => 
         !mutedUsers.includes(post.authorId) && post.authorId !== user.uid
@@ -671,9 +733,20 @@ export default function HomePage() {
         transition={{ duration: 0.3 }}
       >
         <div
+          ref={containerRef}
+          onTouchStart={handleTouchStart}
+          onTouchMove={handleTouchMove}
+          onTouchEnd={handleTouchEnd}
           className="relative h-full overflow-y-auto"
         >
-          <div>
+          <div
+            className="absolute top-0 left-0 right-0 flex justify-center items-center h-16 text-muted-foreground pointer-events-none z-0"
+            style={{ transform: `translateY(${pullPosition - 64}px)` }}
+          >
+              {isRefreshing && <Loader2 className="h-6 w-6 animate-spin text-primary" />}
+          </div>
+
+          <div style={{ transform: `translateY(${pullPosition}px)` }} className="transition-transform duration-300 ease-out">
             <div className="divide-y border-b">
               {(isLoading || !initialPosts) && (
                 <>
