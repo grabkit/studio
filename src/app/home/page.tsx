@@ -696,21 +696,14 @@ export default function HomePage() {
     };
 
     const handleTouchMove = (e: TouchEvent) => {
-        if (isRefreshing) return;
-
-        // Only allow pull-to-refresh if the user started at the top.
-        if (scrollStartY.current !== 0) {
-            return;
-        }
-
         const touchY = e.targetTouches[0].clientY;
         const pullDistance = touchY - touchStartRef.current;
         
-        if (pullDistance > 0) {
-            if (pullDistance > 10) {
-                e.preventDefault();
-            }
+        // Only consider pull-to-refresh if the user is at the top of the scroll container
+        if (scrollStartY.current === 0 && pullDistance > 0 && !isRefreshing) {
+            e.preventDefault(); // Prevent default browser scroll behavior
             const newPullPosition = Math.min(pullDistance, 120);
+            
             if (pullPosition <= 70 && newPullPosition > 70) {
                 window.navigator.vibrate?.(50);
             }
