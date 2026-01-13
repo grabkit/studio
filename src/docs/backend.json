@@ -101,7 +101,6 @@
             "type": "object",
             "description": "User preferences for receiving notifications.",
             "properties": {
-                "push": { "type": "boolean" },
                 "likes": { "type": "boolean" },
                 "comments": { "type": "boolean" },
                 "reposts": { "type": "boolean" },

@@ -191,7 +191,6 @@ export default function ActivityPage() {
     
     const settings = useMemo(() => {
         return userProfile?.notificationSettings || {
-            push: true,
             likes: true,
             comments: true,
             reposts: true,
@@ -202,7 +201,6 @@ export default function ActivityPage() {
 
     const filteredNotifications = useMemo(() => {
         if (!notifications) return [];
-        if (!settings.push) return []; // If push notifications are off, show nothing.
         
         return notifications.filter(notification => {
              const type = notification.type as keyof typeof notificationInfo;

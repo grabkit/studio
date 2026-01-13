@@ -22,14 +22,12 @@ function NotificationToggle({
     icon: Icon,
     checked,
     onCheckedChange,
-    isSubscribedToPush,
 }: {
     id: keyof Omit<NotificationSettings, 'push'>;
     label: string;
     icon: React.ElementType;
     checked: boolean;
     onCheckedChange: (id: keyof Omit<NotificationSettings, 'push'>, checked: boolean) => void;
-    isSubscribedToPush: boolean;
 }) {
     return (
         <div className="flex items-center justify-between px-4 py-3 transition-colors hover:bg-accent">
@@ -41,7 +39,6 @@ function NotificationToggle({
                 id={`notif-${id}`}
                 checked={checked}
                 onCheckedChange={(newChecked) => onCheckedChange(id, newChecked)}
-                disabled={!isSubscribedToPush}
             />
         </div>
     )
@@ -54,7 +51,6 @@ export default function NotificationsSettingsPage() {
 
     const settings = useMemo(() => {
         return userProfile?.notificationSettings || {
-            push: true,
             likes: true,
             comments: true,
             reposts: true,
@@ -115,20 +111,6 @@ export default function NotificationsSettingsPage() {
                 transition={{ duration: 0.3 }}
             >
                 <div className="h-full overflow-y-auto">
-                    <div className="p-4 border-b">
-                        <div className="flex items-center justify-between">
-                            <Label htmlFor="push-notifications" className="text-base font-semibold">Push Notifications</Label>
-                            <Switch 
-                                id="push-notifications"
-                                checked={settings.push}
-                                onCheckedChange={(checked) => handleSettingChange('push', checked)}
-                            />
-                        </div>
-                         <p className="text-sm text-muted-foreground mt-1">
-                            Receive push notifications from Blur. To completely turn off notifications, manage them in your device settings.
-                        </p>
-                    </div>
-
                     <div className="mt-4">
                          <h3 className="px-4 py-2 text-sm font-semibold text-muted-foreground">From people you follow</h3>
                          <NotificationToggle
@@ -137,7 +119,6 @@ export default function NotificationsSettingsPage() {
                             icon={Heart}
                             checked={settings.likes}
                             onCheckedChange={handleSettingChange}
-                            isSubscribedToPush={settings.push}
                         />
                         <NotificationToggle
                             id="comments"
@@ -145,7 +126,6 @@ export default function NotificationsSettingsPage() {
                             icon={MessageCircle}
                             checked={settings.comments}
                             onCheckedChange={handleSettingChange}
-                            isSubscribedToPush={settings.push}
                         />
                         <NotificationToggle
                             id="reposts"
@@ -153,7 +133,6 @@ export default function NotificationsSettingsPage() {
                             icon={Repeat}
                             checked={settings.reposts}
                             onCheckedChange={handleSettingChange}
-                            isSubscribedToPush={settings.push}
                         />
                          <NotificationToggle
                             id="followers"
@@ -161,7 +140,6 @@ export default function NotificationsSettingsPage() {
                             icon={UserPlus}
                             checked={settings.followers}
                             onCheckedChange={handleSettingChange}
-                            isSubscribedToPush={settings.push}
                         />
                     </div>
                 </div>
