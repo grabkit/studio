@@ -144,6 +144,7 @@ export default function ActivityPage() {
     const [isRefreshing, setIsRefreshing] = useState(false);
     const [pullPosition, setPullPosition] = useState(0);
     const touchStartRef = useRef(0);
+    const scrollStartY = useRef(0);
     const containerRef = useRef<HTMLDivElement>(null);
 
     const notificationsQuery = useMemoFirebase(() => {
@@ -227,28 +228,37 @@ export default function ActivityPage() {
     };
 
     const handleTouchStart = (e: TouchEvent) => {
+        if (isRefreshing) return;
         touchStartRef.current = e.targetTouches[0].clientY;
+        scrollStartY.current = containerRef.current?.scrollTop ?? 0;
     };
 
     const handleTouchMove = (e: TouchEvent) => {
-        if (containerRef.current?.scrollTop === 0) {
-            const touchY = e.targetTouches[0].clientY;
-            const pullDistance = touchY - touchStartRef.current;
+        if (isRefreshing || scrollStartY.current !== 0) {
+            return;
+        }
 
-            if (pullDistance > 0 && !isRefreshing) {
-                // Prevent default scroll behavior only when pulling
+        const touchY = e.targetTouches[0].clientY;
+        const pullDistance = touchY - touchStartRef.current;
+        
+        if (pullDistance > 0) {
+            // Only prevent default if we are actually pulling down
+            if (pullDistance > 10) {
                 e.preventDefault(); 
-                
-                const newPullPosition = Math.min(pullDistance, 120);
-                if (pullPosition <= 70 && newPullPosition > 70) {
-                    window.navigator.vibrate?.(50);
-                }
-                setPullPosition(newPullPosition);
             }
+            
+            const newPullPosition = Math.min(pullDistance, 120);
+            
+            if (pullPosition <= 70 && newPullPosition > 70) {
+                window.navigator.vibrate?.(50);
+            }
+            setPullPosition(newPullPosition);
         }
     };
 
     const handleTouchEnd = () => {
+        if (isRefreshing) return;
+
         if (pullPosition > 70) {
             handleRefresh();
         } else {
