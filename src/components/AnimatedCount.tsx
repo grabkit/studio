@@ -32,7 +32,7 @@ export function AnimatedCount({ count, direction }: AnimatedCountProps) {
   }
   
   return (
-    <div className="relative h-4 w-4 overflow-hidden text-left">
+    <div className="relative h-4 w-4 overflow-hidden text-left flex items-center">
       <AnimatePresence initial={false} custom={direction}>
         <motion.span
           key={count}
