@@ -69,11 +69,11 @@ function PollComponent({ post, user, onVote }: { post: WithId<Post>, user: any, 
         return post.pollOptions?.reduce((acc, option) => acc + option.votes, 0) || 0;
     }, [post.pollOptions]);
 
-     const pollColors = useMemo(() => [
-        { light: 'bg-sky-500/20 border-sky-500 text-sky-700', dark: 'bg-sky-500 border-sky-500 text-white' },
-        { light: 'bg-emerald-500/20 border-emerald-500 text-emerald-700', dark: 'bg-emerald-500 border-emerald-500 text-white' },
-        { light: 'bg-amber-500/20 border-amber-500 text-amber-700', dark: 'bg-amber-500 border-amber-500 text-white' },
-        { light: 'bg-fuchsia-500/20 border-fuchsia-500 text-fuchsia-700', dark: 'bg-fuchsia-500 border-fuchsia-500 text-white' }
+    const pollColors = useMemo(() => [
+        { light: 'bg-sky-500/20', dark: 'border-sky-500' },
+        { light: 'bg-emerald-500/20', dark: 'border-emerald-500' },
+        { light: 'bg-amber-500/20', dark: 'border-amber-500' },
+        { light: 'bg-fuchsia-500/20', dark: 'border-fuchsia-500' }
     ], []);
 
 
@@ -162,11 +162,13 @@ function PollComponent({ post, user, onVote }: { post: WithId<Post>, user: any, 
                      const colorSet = pollColors[index % pollColors.length];
                      
                      const bgClass = isUserChoice ? colorSet.light : 'bg-secondary';
-                     const textClass = isUserChoice ? 'text-primary' : 'text-muted-foreground';
+                     const borderClass = isUserChoice ? colorSet.dark : 'border-border';
                      const fontWeight = isUserChoice ? 'font-bold' : 'font-medium';
+                     const textColor = isUserChoice ? 'text-primary' : 'text-muted-foreground';
+
 
                      return (
-                        <div key={index} className={cn("relative w-full h-10 overflow-hidden rounded-full border", isUserChoice ? colorSet.light.split(' ')[1] : 'border-border')}>
+                        <div key={index} className={cn("relative w-full h-10 overflow-hidden rounded-full border", borderClass)}>
                             <motion.div
                                 className={cn("absolute inset-y-0 left-0 h-full", bgClass)}
                                 initial={{ width: '0%' }}
@@ -180,10 +182,10 @@ function PollComponent({ post, user, onVote }: { post: WithId<Post>, user: any, 
                                     animate={{ opacity: 1 }}
                                     transition={{ delay: 0.3 }}
                                 >
-                                    {isUserChoice && <CheckCircle2 className={cn("h-4 w-4 shrink-0", textClass)} />}
+                                    {isUserChoice && <CheckCircle2 className={cn("h-4 w-4 shrink-0", textColor)} />}
                                     <span className={cn(
                                         "truncate text-sm", 
-                                        textClass,
+                                        textColor,
                                         fontWeight
                                     )}>
                                         {option.option}
@@ -192,7 +194,7 @@ function PollComponent({ post, user, onVote }: { post: WithId<Post>, user: any, 
                                 <motion.span 
                                     className={cn(
                                         "text-sm", 
-                                        textClass,
+                                        textColor,
                                         fontWeight
                                     )}
                                     initial={{ opacity: 0 }}
@@ -1068,3 +1070,4 @@ export default function PostDetailPage() {
     </AppLayout>
   );
 }
+

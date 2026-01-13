@@ -80,10 +80,10 @@ export function PollComponent({ post, user, onVote }: { post: WithId<Post>, user
     }, [post.pollOptions]);
 
     const pollColors = useMemo(() => [
-        { light: 'bg-sky-500/20 border-sky-500 text-sky-700', dark: 'bg-sky-500 border-sky-500 text-white' },
-        { light: 'bg-emerald-500/20 border-emerald-500 text-emerald-700', dark: 'bg-emerald-500 border-emerald-500 text-white' },
-        { light: 'bg-amber-500/20 border-amber-500 text-amber-700', dark: 'bg-amber-500 border-amber-500 text-white' },
-        { light: 'bg-fuchsia-500/20 border-fuchsia-500 text-fuchsia-700', dark: 'bg-fuchsia-500 border-fuchsia-500 text-white' }
+        { light: 'bg-sky-500/20', dark: 'border-sky-500' },
+        { light: 'bg-emerald-500/20', dark: 'border-emerald-500' },
+        { light: 'bg-amber-500/20', dark: 'border-amber-500' },
+        { light: 'bg-fuchsia-500/20', dark: 'border-fuchsia-500' }
     ], []);
 
 
@@ -172,11 +172,13 @@ export function PollComponent({ post, user, onVote }: { post: WithId<Post>, user
                      const colorSet = pollColors[index % pollColors.length];
                      
                      const bgClass = isUserChoice ? colorSet.light : 'bg-secondary';
-                     const textClass = isUserChoice ? 'text-primary' : 'text-muted-foreground';
+                     const borderClass = isUserChoice ? colorSet.dark : 'border-border';
                      const fontWeight = isUserChoice ? 'font-bold' : 'font-medium';
+                     const textColor = isUserChoice ? 'text-primary' : 'text-muted-foreground';
+
 
                      return (
-                        <div key={index} className={cn("relative w-full h-10 overflow-hidden rounded-full border", isUserChoice ? colorSet.light.split(' ')[1] : 'border-border')}>
+                        <div key={index} className={cn("relative w-full h-10 overflow-hidden rounded-full border", borderClass)}>
                             <motion.div
                                 className={cn("absolute inset-y-0 left-0 h-full", bgClass)}
                                 initial={{ width: '0%' }}
@@ -190,10 +192,10 @@ export function PollComponent({ post, user, onVote }: { post: WithId<Post>, user
                                     animate={{ opacity: 1 }}
                                     transition={{ delay: 0.3 }}
                                 >
-                                    {isUserChoice && <CheckCircle2 className={cn("h-4 w-4 shrink-0", textClass)} />}
+                                    {isUserChoice && <CheckCircle2 className={cn("h-4 w-4 shrink-0", textColor)} />}
                                     <span className={cn(
                                         "truncate text-sm", 
-                                        textClass,
+                                        textColor,
                                         fontWeight
                                     )}>
                                         {option.option}
@@ -202,7 +204,7 @@ export function PollComponent({ post, user, onVote }: { post: WithId<Post>, user
                                 <motion.span 
                                     className={cn(
                                         "text-sm", 
-                                        textClass,
+                                        textColor,
                                         fontWeight
                                     )}
                                     initial={{ opacity: 0 }}
@@ -651,49 +653,19 @@ export default function HomePage() {
   }, [postsQuery, setData]);
 
   const handleRefresh = useCallback(async () => {
-    if (isRefreshing) return;
-    setIsRefreshing(true);
-    window.navigator.vibrate?.(50);
-    await fetchPosts();
-    
-    // Artificial delay to show the spinner
-    setTimeout(() => {
-        setIsRefreshing(false);
-        setPullPosition(0);
-        window.navigator.vibrate?.(50);
-    }, 500);
-  }, [isRefreshing, fetchPosts]);
+    // This function will be empty as pull-to-refresh is removed
+  }, []);
 
   const handleTouchStart = (e: TouchEvent) => {
-    if (containerRef.current) {
-        scrollStartY.current = containerRef.current.scrollTop;
-    }
-    touchStartRef.current = e.targetTouches[0].clientY;
+    // This function will be empty as pull-to-refresh is removed
   };
 
   const handleTouchMove = (e: TouchEvent) => {
-      const touchY = e.targetTouches[0].clientY;
-      const pullDistance = touchY - touchStartRef.current;
-
-      if (scrollStartY.current === 0 && pullDistance > 0 && !isRefreshing) {
-          e.preventDefault(); 
-          const newPullPosition = Math.min(pullDistance, 120);
-          
-          if (pullPosition <= 70 && newPullPosition > 70) {
-              window.navigator.vibrate?.(50); 
-          }
-          setPullPosition(newPullPosition);
-      }
+      // This function will be empty as pull-to-refresh is removed
   };
 
   const handleTouchEnd = () => {
-      if (isRefreshing) return;
-
-      if (pullPosition > 70 && scrollStartY.current === 0) {
-          handleRefresh();
-      } else {
-          setPullPosition(0);
-      }
+      // This function will be empty as pull-to-refresh is removed
   };
   
   const updatePost = useCallback((postId: string, updatedData: Partial<Post>) => {
@@ -741,14 +713,7 @@ export default function HomePage() {
           onTouchEnd={handleTouchEnd}
           className="relative h-full overflow-y-auto"
         >
-          <div
-            className="absolute top-0 left-0 right-0 flex justify-center items-center h-16 text-muted-foreground pointer-events-none z-0"
-            style={{ transform: `translateY(${pullPosition - 64}px)` }}
-          >
-              {isRefreshing && <Loader2 className="h-6 w-6 animate-spin text-primary" />}
-          </div>
-
-          <div style={{ transform: `translateY(${pullPosition}px)` }} className="transition-transform duration-300 ease-out">
+          <div>
             <div className="divide-y border-b">
               {(isLoading || !initialPosts) && (
                 <>
@@ -778,3 +743,4 @@ export default function HomePage() {
     </AppLayout>
   );
 }
+
