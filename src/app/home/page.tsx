@@ -35,6 +35,7 @@ import { QuotedPostCard } from "@/components/QuotedPostCard";
 import { AnimatedCount } from "@/components/AnimatedCount";
 import { motion } from "framer-motion";
 import { PullToRefreshIndicator } from "@/components/PullToRefreshIndicator";
+import { Progress } from "@/components/ui/progress";
 
 
 function LinkPreview({ metadata }: { metadata: LinkMetadata }) {
@@ -71,33 +72,13 @@ export function PollComponent({ post, user, onVote }: { post: WithId<Post>, user
     const { firestore } = useFirebase();
     const { toast } = useToast();
     const [isProcessing, setIsProcessing] = useState(false);
-    const [animatedPercentages, setAnimatedPercentages] = useState<number[] | null>(null);
-
+    
     const userVoteIndex = post.voters && user ? post.voters[user.uid] : undefined;
     const hasVoted = userVoteIndex !== undefined;
 
     const totalVotes = useMemo(() => {
         return post.pollOptions?.reduce((acc, option) => acc + option.votes, 0) || 0;
     }, [post.pollOptions]);
-
-    useEffect(() => {
-        if (hasVoted) {
-            const percentages = post.pollOptions?.map(option =>
-                totalVotes > 0 ? (option.votes / totalVotes) * 100 : 0
-            ) || [];
-            
-            // Set to 0 initially for the animation
-            setAnimatedPercentages(Array(percentages.length).fill(0));
-
-            // After a short delay, update to the actual percentages to trigger the transition
-            const timer = setTimeout(() => {
-                setAnimatedPercentages(percentages);
-            }, 10); // A small delay is enough
-
-            return () => clearTimeout(timer);
-        }
-    }, [hasVoted, post.pollOptions, totalVotes]);
-
 
     const handleVote = async (optionIndex: number) => {
         if (!user || !firestore) {
@@ -179,39 +160,20 @@ export function PollComponent({ post, user, onVote }: { post: WithId<Post>, user
     return (
         <div className="mt-4 space-y-2.5">
             {post.pollOptions?.map((option, index) => {
-                const originalPercentage = totalVotes > 0 ? (option.votes / totalVotes) * 100 : 0;
-                const displayPercentage = animatedPercentages ? animatedPercentages[index] : originalPercentage;
+                const percentage = totalVotes > 0 ? (option.votes / totalVotes) * 100 : 0;
                 const isUserChoice = userVoteIndex === index;
 
                 if (hasVoted) {
                      return (
-                        <div key={index} className="relative w-full h-10 overflow-hidden bg-secondary rounded-full">
-                             <div
-                                className={cn(
-                                    "absolute left-0 top-0 h-full transition-all duration-500 ease-out",
-                                    isUserChoice ? "bg-primary" : "bg-primary/20"
-                                )}
-                                style={{ width: `${displayPercentage}%` }}
-                            />
-                            {/* Unfilled Text */}
-                            <div className="absolute inset-0 flex items-center justify-between px-4">
-                                 <div className="flex items-center gap-2">
-                                     {isUserChoice && <CheckCircle2 className="h-4 w-4 text-primary" />}
-                                    <span className="truncate text-primary">{option.option}</span>
-                                </div>
-                                <span className="text-primary">{originalPercentage.toFixed(0)}%</span>
-                            </div>
-                            {/* Filled Text - clipped */}
-                            <div
-                                className="absolute inset-0 flex items-center justify-between px-4 overflow-hidden"
-                                style={{ clipPath: `inset(0 ${100 - displayPercentage}% 0 0)` }}
-                            >
-                               <div className="flex items-center gap-2">
+                        <div key={index} className="relative w-full h-10 overflow-hidden">
+                           <Progress value={percentage} className="absolute inset-0 h-full w-full rounded-full" />
+                           <div className="absolute inset-0 flex items-center justify-between px-4">
+                                <div className="flex items-center gap-2">
                                      {isUserChoice && <CheckCircle2 className="h-4 w-4 text-primary-foreground" />}
                                     <span className="truncate text-primary-foreground">{option.option}</span>
                                 </div>
-                                <span className="text-primary-foreground">{originalPercentage.toFixed(0)}%</span>
-                            </div>
+                                <span className="text-primary-foreground">{percentage.toFixed(0)}%</span>
+                           </div>
                         </div>
                     );
                 } else {
