@@ -1,3 +1,4 @@
+
 "use client";
 
 import AppLayout from "@/components/AppLayout";
@@ -195,22 +196,27 @@ export default function AccountPage() {
     };
 
     const handleTouchStart = (e: TouchEvent) => {
-        touchStartRef.current = e.targetTouches[0].clientY;
         if (containerRef.current) {
             scrollStartY.current = containerRef.current.scrollTop;
         }
+        touchStartRef.current = e.targetTouches[0].clientY;
     };
 
     const handleTouchMove = (e: TouchEvent) => {
-        if (isRefreshing || scrollStartY.current > 0) {
+        if (isRefreshing) return;
+
+        // Only allow pull-to-refresh if the user started at the top.
+        if (scrollStartY.current !== 0) {
             return;
         }
-        
+
         const touchY = e.targetTouches[0].clientY;
         const pullDistance = touchY - touchStartRef.current;
         
         if (pullDistance > 0) {
-            e.preventDefault();
+            if (pullDistance > 10) {
+                e.preventDefault();
+            }
             const newPullPosition = Math.min(pullDistance, 120);
             if (pullPosition <= 70 && newPullPosition > 70) {
                 window.navigator.vibrate?.(50);
@@ -220,7 +226,7 @@ export default function AccountPage() {
     };
 
     const handleTouchEnd = () => {
-        if (isRefreshing || scrollStartY.current > 0) {
+        if (isRefreshing || scrollStartY.current !== 0) {
             setPullPosition(0);
             return;
         }
