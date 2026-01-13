@@ -1,6 +1,6 @@
 
 
-import { type Timestamp } from "firestore";
+import { type Timestamp } from "firebase/firestore";
 
 export interface LinkMetadata {
     url: string;
@@ -93,6 +93,7 @@ export interface User {
     gender?: 'male' | 'female' | 'other' | 'prefer_not_to_say' | '';
     voiceStatusUrl?: string;
     voiceStatusTimestamp?: Timestamp;
+    notificationSettings?: NotificationSettings;
 }
 
 export interface Bookmark {
