@@ -189,17 +189,12 @@ export function PollComponent({ post, user, onVote }: { post: WithId<Post>, user
                                     transition={{ delay: 0.3 }}
                                 >
                                     {isUserChoice && <CheckCircle2 className={cn("h-4 w-4 shrink-0", textColor)} />}
-                                    <span 
-                                        className={cn("truncate text-sm font-medium text-foreground", textColor)}
-                                        style={{
-                                            clipPath: `inset(0 ${100 - (percentage + 5)}% 0 0)` // Animate text with the bar
-                                        }}
-                                    >
+                                    <span className={cn("truncate text-sm font-medium", textColor)}>
                                         {option.option}
                                     </span>
                                 </motion.div>
                                 <motion.span 
-                                    className="text-sm font-medium text-foreground"
+                                    className={cn("text-sm font-medium", textColor)}
                                     initial={{ opacity: 0 }}
                                     animate={{ opacity: 1 }}
                                     transition={{ delay: 0.3 }}
@@ -713,10 +708,9 @@ export default function HomePage() {
 
   const filteredPosts = useMemo(() => {
     if (!initialPosts) return [];
-    if (!user || !userProfile) return initialPosts;
     const mutedUsers = userProfile?.mutedUsers || [];
     return initialPosts.filter(post => 
-        !mutedUsers.includes(post.authorId) && post.authorId !== user.uid
+      !mutedUsers.includes(post.authorId) && post.authorId !== user?.uid
     );
   }, [initialPosts, userProfile, user]);
 
