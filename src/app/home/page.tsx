@@ -1,3 +1,4 @@
+
 "use client";
 
 import AppLayout from "@/components/AppLayout";
@@ -79,10 +80,10 @@ export function PollComponent({ post, user, onVote }: { post: WithId<Post>, user
     }, [post.pollOptions]);
 
     const pollColors = useMemo(() => [
-        { light: 'bg-sky-200 text-sky-800', dark: 'bg-sky-500 text-white' },
-        { light: 'bg-emerald-200 text-emerald-800', dark: 'bg-emerald-500 text-white' },
-        { light: 'bg-amber-200 text-amber-800', dark: 'bg-amber-500 text-white' },
-        { light: 'bg-fuchsia-200 text-fuchsia-800', dark: 'bg-fuchsia-500 text-white' }
+        { dark: 'bg-sky-500 text-white' },
+        { dark: 'bg-emerald-500 text-white' },
+        { dark: 'bg-amber-500 text-white' },
+        { dark: 'bg-fuchsia-500 text-white' }
     ], []);
 
 
@@ -165,18 +166,24 @@ export function PollComponent({ post, user, onVote }: { post: WithId<Post>, user
         <div className="mt-4 space-y-2.5">
             {post.pollOptions?.map((option, index) => {
                 const percentage = totalVotes > 0 ? (option.votes / totalVotes) * 100 : 0;
-                const isUserChoice = userVoteIndex === index;
-                const colorSet = pollColors[index % pollColors.length];
-                const [bgColor, textColor] = (isUserChoice ? colorSet.dark : colorSet.light).split(' ');
-
+                
                 if (hasVoted) {
+                     const isUserChoice = userVoteIndex === index;
+                     const colorSet = pollColors[index % pollColors.length];
+
+                     let bgColor, textColor;
+
+                     if (isUserChoice) {
+                         [bgColor, textColor] = colorSet.dark.split(' ');
+                     } else {
+                         bgColor = 'bg-secondary';
+                         textColor = 'text-muted-foreground';
+                     }
+
                      return (
-                        <div key={index} className={cn(
-                            "relative w-full h-10 overflow-hidden rounded-full group bg-secondary transition-opacity",
-                            !isUserChoice && "opacity-70"
-                        )}>
+                        <div key={index} className="relative w-full h-10 overflow-hidden rounded-full border">
                             <motion.div
-                                className={cn("absolute inset-0 h-full rounded-full", bgColor)}
+                                className={cn("absolute inset-0 h-full", bgColor)}
                                 initial={{ width: '0%' }}
                                 animate={{ width: `${percentage}%` }}
                                 transition={{ duration: 0.8, ease: [0.25, 1, 0.5, 1] }}
@@ -201,7 +208,7 @@ export function PollComponent({ post, user, onVote }: { post: WithId<Post>, user
                                     className={cn(
                                         "text-sm", 
                                         textColor,
-                                        isUserChoice ? 'font-bold' : 'font-medium'
+                                         isUserChoice ? 'font-bold' : 'font-medium'
                                     )}
                                     initial={{ opacity: 0 }}
                                     animate={{ opacity: 1 }}
@@ -673,13 +680,12 @@ export default function HomePage() {
       const touchY = e.targetTouches[0].clientY;
       const pullDistance = touchY - touchStartRef.current;
 
-      // Only allow pull-to-refresh if the user started touching at the very top.
       if (scrollStartY.current === 0 && pullDistance > 0 && !isRefreshing) {
-          e.preventDefault(); // Prevent browser's default pull-to-refresh
+          e.preventDefault(); 
           const newPullPosition = Math.min(pullDistance, 120);
           
           if (pullPosition <= 70 && newPullPosition > 70) {
-              window.navigator.vibrate?.(50); // Haptic feedback
+              window.navigator.vibrate?.(50); 
           }
           setPullPosition(newPullPosition);
       }
@@ -691,7 +697,6 @@ export default function HomePage() {
       if (pullPosition > 70 && scrollStartY.current === 0) {
           handleRefresh();
       } else {
-          // Snap back if not pulled enough
           setPullPosition(0);
       }
   };
