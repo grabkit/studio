@@ -3,7 +3,7 @@
 
 import AppLayout from "@/components/AppLayout";
 import { Button } from "@/components/ui/button";
-import { ArrowLeft, ChevronRight, FileText, Shield, Library } from "lucide-react";
+import { ArrowLeft, ChevronRight, FileText, Shield, Library, Info } from "lucide-react";
 import { useRouter } from "next/navigation";
 import Link from 'next/link';
 import { motion } from "framer-motion";
@@ -42,6 +42,7 @@ export default function AboutPage() {
                         <SettingsItem href="/account/settings/terms" label="Terms of Service" icon={FileText} />
                         <SettingsItem href="/account/settings/privacy" label="Privacy Policy" icon={Shield} />
                         <SettingsItem href="/account/settings/licenses" label="Open Source Licenses" icon={Library} />
+                        <SettingsItem href="/account/settings/about-blur" label="About Blur" icon={Info} />
                     </div>
                     <div className="text-center mt-auto pb-4">
                         <h1 className="text-2xl font-bold font-headline">Blur</h1>
