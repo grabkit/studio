@@ -181,12 +181,13 @@ function MessageBubble({ message, isOwnMessage, conversation, onSetReply, onForw
             )}
 
             {message.replyToMessageText && (
-                <div className={cn(
-                    "p-2 rounded-lg mb-1 mx-2 mt-1 w-auto",
-                    !isOwnMessage ? "bg-gray-200 dark:bg-gray-700" :
-                    "bg-blue-400"
+                 <div className={cn(
+                    "relative pl-3 pr-2 py-1.5 rounded-lg mb-1 mx-2 mt-1 w-auto border-l-4",
+                    !isOwnMessage 
+                        ? "bg-gray-200 dark:bg-gray-700 border-gray-400 dark:border-gray-500" 
+                        : "bg-blue-400 border-blue-300"
                 )}>
-                    <p className="text-xs font-semibold truncate text-primary">{formatUserId(message.replyToMessageId === message.senderId ? message.senderId : undefined)}</p>
+                    <p className="text-xs font-semibold truncate">{formatUserId(message.replyToMessageId === message.senderId ? message.senderId : undefined)}</p>
                     <p className="text-sm opacity-80 line-clamp-2">{message.replyToMessageText}</p>
                 </div>
             )}
