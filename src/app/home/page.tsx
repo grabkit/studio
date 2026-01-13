@@ -203,7 +203,7 @@ export function PollComponent({ post, user, onVote }: { post: WithId<Post>, user
                             </div>
                             {/* Filled Text - clipped */}
                             <div
-                                className="absolute inset-0 flex items-center justify-between px-4"
+                                className="absolute inset-0 flex items-center justify-between px-4 overflow-hidden"
                                 style={{ clipPath: `inset(0 ${100 - displayPercentage}% 0 0)` }}
                             >
                                <div className="flex items-center gap-2">
@@ -797,11 +797,3 @@ export default function HomePage() {
     </AppLayout>
   );
 }
-
-    
-
-    
-
-    
-
-    

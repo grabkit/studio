@@ -309,7 +309,7 @@ function PostDetailItem({ post, updatePost }: { post: WithId<Post>, updatePost: 
             {post.linkMetadata && <LinkPreview metadata={post.linkMetadata} />}
             
             {post.type === 'poll' && post.pollOptions && (
-              <PollComponent post={post} user={user} />
+              <PollComponent post={post} user={user} onVote={(updatedData) => updatePost(updatedData)} />
             )}
 
 
@@ -900,5 +900,3 @@ export default function PostDetailPage() {
     </AppLayout>
   );
 }
-
-    
