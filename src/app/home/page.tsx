@@ -517,7 +517,7 @@ function InnerPostItem({ post, bookmarks, updatePost, onDelete, onPin, showPinSt
             <div className="flex items-center justify-between pt-2 text-muted-foreground">
                 <div className="flex items-center space-x-6">
                   <button onClick={handleLike} disabled={isLiking} className={cn("flex items-center space-x-1 w-8", hasLiked && "text-pink-500")}>
-                    <Heart className="h-5 w-5" fill={hasLiked ? 'currentColor' : 'none'} />
+                    <Heart className="h-5 w-5 shrink-0" fill={hasLiked ? 'currentColor' : 'none'} />
                     <AnimatedCount count={post.likeCount} direction={likeDirection} />
                   </button>
                   <CommentButtonWrapper
@@ -528,20 +528,20 @@ function InnerPostItem({ post, bookmarks, updatePost, onDelete, onPin, showPinSt
                     )}
                   >
                     <div className="relative">
-                      <MessageCircle className="h-5 w-5" />
+                      <MessageCircle className="h-5 w-5 shrink-0" />
                       {!repliesAllowed && <Slash className="absolute top-0 left-0 h-5 w-5 stroke-[2.5px]" />}
                     </div>
                     <AnimatedCount count={post.commentCount} direction="up" />
                   </CommentButtonWrapper>
                   <button onClick={handleRepost} className="flex items-center space-x-1 w-8 hover:text-green-500">
-                    <Repeat className={cn("h-5 w-5")} />
+                    <Repeat className={cn("h-5 w-5 shrink-0")} />
                     <AnimatedCount count={post.repostCount} direction="up" />
                   </button>
                   <button onClick={() => setIsShareSheetOpen(true)} className="flex items-center space-x-1 hover:text-primary">
-                    <ArrowUpRight className="h-5 w-5" />
+                    <ArrowUpRight className="h-5 w-5 shrink-0" />
                   </button>
                    <button onClick={handleBookmark} className="flex items-center space-x-1 hover:text-foreground">
-                    <BookmarkIcon className={cn("h-5 w-5", isBookmarked && "text-foreground fill-foreground")} />
+                    <BookmarkIcon className={cn("h-5 w-5 shrink-0", isBookmarked && "text-foreground fill-foreground")} />
                   </button>
                 </div>
             </div>

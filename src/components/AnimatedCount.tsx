@@ -36,7 +36,7 @@ export function AnimatedCount({ count, direction }: AnimatedCountProps) {
       <AnimatePresence initial={false} custom={direction}>
         <motion.span
           key={count}
-          className="absolute w-full h-full text-xs"
+          className="absolute w-full h-full text-xs leading-none"
           custom={direction}
           variants={variants}
           initial="enter"
