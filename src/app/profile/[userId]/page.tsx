@@ -175,27 +175,23 @@ export default function UserProfilePage() {
     };
 
     const handleTouchStart = (e: TouchEvent) => {
-        if (isRefreshing) return;
         touchStartRef.current = e.targetTouches[0].clientY;
-        scrollStartY.current = containerRef.current?.scrollTop ?? 0;
+        if (containerRef.current) {
+            scrollStartY.current = containerRef.current.scrollTop;
+        }
     };
 
     const handleTouchMove = (e: TouchEvent) => {
-        if (isRefreshing || scrollStartY.current !== 0) {
+        if (isRefreshing || scrollStartY.current > 0) {
             return;
         }
-
+        
         const touchY = e.targetTouches[0].clientY;
         const pullDistance = touchY - touchStartRef.current;
         
         if (pullDistance > 0) {
-            // Only prevent default if we are actually pulling down
-            if (pullDistance > 10) {
-                e.preventDefault(); 
-            }
-            
+            e.preventDefault();
             const newPullPosition = Math.min(pullDistance, 120);
-            
             if (pullPosition <= 70 && newPullPosition > 70) {
                 window.navigator.vibrate?.(50);
             }
@@ -204,8 +200,10 @@ export default function UserProfilePage() {
     };
 
     const handleTouchEnd = () => {
-        if (isRefreshing) return;
-
+        if (isRefreshing || scrollStartY.current > 0) {
+            setPullPosition(0);
+            return;
+        }
         if (pullPosition > 70) {
             handleRefresh();
         } else {
@@ -846,7 +844,7 @@ export default function UserProfilePage() {
                                 </Button>
                             </div>
                             <div className="border rounded-2xl">
-                                <ReportDialog reportedUserId={user.id} reportedUserName={formatUserId(user.id)}>
+                                <ReportDialog reportedUserId={user.id} reportedUserName={formatUserId(user.id).toString()}>
                                     <Button variant="ghost" className="justify-between text-base py-6 rounded-2xl w-full text-destructive hover:text-destructive">
                                         <span>Report</span>
                                         <Flag className="h-5 w-5" />
