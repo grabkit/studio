@@ -560,47 +560,45 @@ export default function MessagesPage() {
                 <div
                     className="relative h-full overflow-y-auto"
                 >
-                    <div>
-                        <FollowedUsers />
-                        
-                        <div className="p-2">
-                            <Tabs defaultValue="chats" className="w-full" onValueChange={handleTabChange}>
-                                <TabsList className="grid w-full grid-cols-2 rounded-full">
-                                    <TabsTrigger value="chats" className="relative flex items-center justify-center gap-2 rounded-full font-bold">
-                                        {hasUnreadChats && (
-                                            <div className="w-2 h-2 rounded-full bg-destructive"></div>
-                                        )}
-                                        Chats
-                                    </TabsTrigger>
-                                    <TabsTrigger value="requests" className="relative flex items-center justify-center gap-2 rounded-full font-bold">
-                                        {hasNewRequests && (
-                                            <div className="w-2 h-2 rounded-full bg-destructive"></div>
-                                        )}
-                                        Requests
-                                    </TabsTrigger>
-                                </TabsList>
-                                <TabsContent value="chats">
-                                    <ConversationsList 
-                                        conversations={chats}
-                                        isLoading={isLoading}
-                                        type="chats"
-                                        currentUser={user}
-                                        onAcceptRequest={handleAcceptRequest}
-                                        onLongPress={handleLongPress}
-                                    />
-                                </TabsContent>
-                                <TabsContent value="requests">
-                                    <ConversationsList
-                                        conversations={requests}
-                                        isLoading={isLoading}
-                                        type="requests"
-                                        currentUser={user}
-                                        onAcceptRequest={handleAcceptRequest}
-                                        onLongPress={handleLongPress}
-                                    />
-                                </TabsContent>
-                            </Tabs>
-                        </div>
+                    <FollowedUsers />
+                    
+                    <div className="p-2">
+                        <Tabs defaultValue="chats" className="w-full" onValueChange={handleTabChange}>
+                            <TabsList className="grid w-full grid-cols-2 rounded-full">
+                                <TabsTrigger value="chats" className="relative flex items-center justify-center gap-2 rounded-full font-bold">
+                                    {hasUnreadChats && (
+                                        <div className="w-2 h-2 rounded-full bg-destructive"></div>
+                                    )}
+                                    Chats
+                                </TabsTrigger>
+                                <TabsTrigger value="requests" className="relative flex items-center justify-center gap-2 rounded-full font-bold">
+                                    {hasNewRequests && (
+                                        <div className="w-2 h-2 rounded-full bg-destructive"></div>
+                                    )}
+                                    Requests
+                                </TabsTrigger>
+                            </TabsList>
+                            <TabsContent value="chats">
+                                <ConversationsList 
+                                    conversations={chats}
+                                    isLoading={isLoading}
+                                    type="chats"
+                                    currentUser={user}
+                                    onAcceptRequest={handleAcceptRequest}
+                                    onLongPress={handleLongPress}
+                                />
+                            </TabsContent>
+                            <TabsContent value="requests">
+                                <ConversationsList
+                                    conversations={requests}
+                                    isLoading={isLoading}
+                                    type="requests"
+                                    currentUser={user}
+                                    onAcceptRequest={handleAcceptRequest}
+                                    onLongPress={handleLongPress}
+                                />
+                            </TabsContent>
+                        </Tabs>
                     </div>
                 </div>
             </motion.div>
