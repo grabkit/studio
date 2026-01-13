@@ -741,7 +741,9 @@ export default function HomePage() {
   const filteredPosts = useMemo(() => {
     if (!initialPosts || !user) return initialPosts || [];
     const mutedUsers = userProfile?.mutedUsers || [];
-    return initialPosts.filter(post => !mutedUsers.includes(post.authorId));
+    return initialPosts.filter(post => 
+        !mutedUsers.includes(post.authorId) && post.authorId !== user.uid
+    );
   }, [initialPosts, userProfile, user]);
 
   const handleDeletePostOptimistic = (postId: string) => {
@@ -795,6 +797,8 @@ export default function HomePage() {
     </AppLayout>
   );
 }
+
+    
 
     
 
