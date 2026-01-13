@@ -1,4 +1,3 @@
-
 "use client";
 
 import AppLayout from "@/components/AppLayout";
@@ -165,15 +164,33 @@ export function PollComponent({ post, user, onVote }: { post: WithId<Post>, user
 
                 if (hasVoted) {
                      return (
-                        <div key={index} className="relative w-full h-10 overflow-hidden">
-                           <Progress value={percentage} className="absolute inset-0 h-full w-full rounded-full" />
-                           <div className="absolute inset-0 flex items-center justify-between px-4">
-                                <div className="flex items-center gap-2">
-                                     {isUserChoice && <CheckCircle2 className="h-4 w-4 text-primary-foreground" />}
-                                    <span className="truncate text-primary-foreground">{option.option}</span>
+                        <div key={index} className="relative w-full h-10 overflow-hidden rounded-full group">
+                            <motion.div
+                                className="absolute inset-0 bg-primary h-full rounded-full"
+                                initial={{ width: '0%' }}
+                                animate={{ width: `${percentage}%` }}
+                                transition={{ duration: 0.5, ease: "easeInOut" }}
+                            />
+                            <div className="absolute inset-0 flex items-center justify-between px-4">
+                                <div className="flex items-center gap-2 overflow-hidden">
+                                    <motion.div
+                                        initial={{ opacity: 0 }}
+                                        animate={{ opacity: 1 }}
+                                        transition={{ delay: 0.3 }}
+                                    >
+                                        {isUserChoice && <CheckCircle2 className="h-4 w-4 text-primary-foreground shrink-0" />}
+                                    </motion.div>
+                                    <span className="truncate text-primary-foreground text-sm font-medium">{option.option}</span>
                                 </div>
-                                <span className="text-primary-foreground">{percentage.toFixed(0)}%</span>
-                           </div>
+                                <motion.span 
+                                    className="text-primary-foreground text-sm font-medium"
+                                    initial={{ opacity: 0 }}
+                                    animate={{ opacity: 1 }}
+                                    transition={{ delay: 0.3 }}
+                                >
+                                    {percentage.toFixed(0)}%
+                                </motion.span>
+                            </div>
                         </div>
                     );
                 } else {
@@ -595,11 +612,10 @@ export default function HomePage() {
   
   const [isRefreshing, setIsRefreshing] = useState(false);
   const [pullPosition, setPullPosition] = useState(0);
-  const [canRefresh, setCanRefresh] = useState(false);
   
   const touchStartRef = useRef(0);
+  const scrollStartY = useRef(0);
   const containerRef = useRef<HTMLDivElement>(null);
-  const sentinelRef = useRef<HTMLDivElement>(null);
 
   const postsQuery = useMemoFirebase(() => {
     if (!firestore) return null;
@@ -651,28 +667,20 @@ export default function HomePage() {
     }, 500); 
   }, [isRefreshing]);
 
-  useEffect(() => {
-    if (!sentinelRef.current) return;
-  
-    const observer = new IntersectionObserver(
-      ([entry]) => {
-        setCanRefresh(entry.isIntersecting);
-      },
-      { threshold: 1.0 }
-    );
-  
-    observer.observe(sentinelRef.current);
-  
-    return () => observer.disconnect();
-  }, []);
-
   const handleTouchStart = (e: TouchEvent) => {
-    if (!canRefresh) return;
+    if (containerRef.current) {
+        scrollStartY.current = containerRef.current.scrollTop;
+    }
     touchStartRef.current = e.targetTouches[0].clientY;
   };
 
   const handleTouchMove = (e: TouchEvent) => {
-      if (!canRefresh || isRefreshing) return;
+      if (isRefreshing) return;
+
+      // Only allow pull-to-refresh if the user started at the top.
+      if (scrollStartY.current !== 0) {
+          return;
+      }
 
       const touchY = e.targetTouches[0].clientY;
       const pullDistance = touchY - touchStartRef.current;
@@ -692,7 +700,10 @@ export default function HomePage() {
   };
 
   const handleTouchEnd = () => {
-      if (!canRefresh || isRefreshing) return;
+      if (isRefreshing || scrollStartY.current !== 0) {
+          setPullPosition(0);
+          return;
+      }
       
       if (pullPosition > 70) {
           handleRefresh();
@@ -732,7 +743,6 @@ export default function HomePage() {
         >
           <PullToRefreshIndicator pullPosition={pullPosition} isRefreshing={isRefreshing} />
           <div style={{ transform: `translateY(${pullPosition}px)` }}>
-            <div ref={sentinelRef} className="h-[1px] absolute top-[-1px] w-full" />
             <div className="divide-y border-b">
               {(isLoading || !initialPosts) && (
                 <>
