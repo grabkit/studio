@@ -687,7 +687,7 @@ export default function HomePage() {
       setPullPosition(0);
       window.navigator.vibrate?.(50);
     }, 500); 
-  }, [isRefreshing, fetchPostsAndShuffle]);
+  }, [isRefreshing]);
 
   useEffect(() => {
     if (!sentinelRef.current) return;
@@ -716,7 +716,10 @@ export default function HomePage() {
       const pullDistance = touchY - touchStartRef.current;
       
       if (pullDistance > 0) {
-          e.preventDefault(); 
+          // Prevent default scroll behavior only when we are actively pulling down
+          if (pullDistance > 10) {
+             e.preventDefault(); 
+          }
           const newPullPosition = Math.min(pullDistance, 120);
           
           if (pullPosition <= 70 && newPullPosition > 70) {
