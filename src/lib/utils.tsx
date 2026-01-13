@@ -123,7 +123,7 @@ export function formatLastSeen(timestamp: number | null): string {
     if (isYesterday(date)) {
         return `Last seen yesterday at ${format(date, "p")}`;
     }
-    return `Last seen on ${format(date, "P")} at ${format(date, "p")}`;
+    return `Last seen on ${format(date, "P")}`;
 }
 
 
