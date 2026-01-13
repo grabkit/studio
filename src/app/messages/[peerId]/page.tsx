@@ -215,7 +215,7 @@ function MessageBubble({ message, isOwnMessage, conversation, onSetReply, onForw
             )}
 
              <p className={cn(
-                "text-[11px] mt-1 self-end px-3 pb-1.5", 
+                "text-[11px] self-end px-3 pb-1.5", 
                 isOwnMessage ? "text-white/70" : "text-muted-foreground"
              )}>
                 {message.timestamp?.toDate ? formatMessageTimestamp(message.timestamp.toDate()) : '...'}
