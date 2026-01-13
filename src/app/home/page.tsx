@@ -690,44 +690,44 @@ export default function HomePage() {
     }, 500); 
   };
 
-  const handleTouchStart = (e: TouchEvent) => {
-      touchStartRef.current = e.targetTouches[0].clientY;
-      if (pullTimeout.current) clearTimeout(pullTimeout.current);
-      
-      pullTimeout.current = setTimeout(() => {
-        isPulling.current = true;
-      }, 100);
-  };
+    const handleTouchStart = (e: TouchEvent) => {
+        touchStartRef.current = e.targetTouches[0].clientY;
+        if (pullTimeout.current) clearTimeout(pullTimeout.current);
+        
+        // Only set isPulling after a short delay to distinguish from a scroll
+        pullTimeout.current = setTimeout(() => {
+          isPulling.current = true;
+        }, 100);
+    };
 
-  const handleTouchMove = (e: TouchEvent) => {
-    const touchY = e.targetTouches[0].clientY;
-    const pullDistance = touchY - touchStartRef.current;
+    const handleTouchMove = (e: TouchEvent) => {
+        const touchY = e.targetTouches[0].clientY;
+        const pullDistance = touchY - touchStartRef.current;
+        
+        if (containerRef.current && containerRef.current.scrollTop === 0 && pullDistance > 0 && isPulling.current && !isRefreshing) {
+            e.preventDefault();
+            const newPullPosition = Math.min(pullDistance, 120);
+            
+            if (pullPosition <= 70 && newPullPosition > 70) {
+                window.navigator.vibrate?.(50);
+            }
+            setPullPosition(newPullPosition);
+        }
+    };
+
+    const handleTouchEnd = () => {
+        if (pullTimeout.current) {
+            clearTimeout(pullTimeout.current);
+            pullTimeout.current = null;
+        }
+        isPulling.current = false;
     
-    if (containerRef.current && containerRef.current.scrollTop === 0 && pullDistance > 0 && isPulling.current && !isRefreshing) {
-      e.preventDefault();
-      const newPullPosition = Math.min(pullDistance, 120);
-      
-      if (pullPosition <= 70 && newPullPosition > 70) {
-        window.navigator.vibrate?.(50);
-      }
-
-      setPullPosition(newPullPosition);
-    }
-  };
-
-  const handleTouchEnd = () => {
-    if (pullTimeout.current) {
-        clearTimeout(pullTimeout.current);
-        pullTimeout.current = null;
-    }
-    isPulling.current = false;
-
-    if (pullPosition > 70) {
-      handleRefresh();
-    } else {
-      setPullPosition(0);
-    }
-  };
+        if (pullPosition > 70) {
+            handleRefresh();
+        } else {
+            setPullPosition(0);
+        }
+    };
 
 
   const isLoading = postsLoading || bookmarksLoading;
