@@ -9,7 +9,7 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Skeleton } from "@/components/ui/skeleton";
 import type { Post, Bookmark, PollOption, Notification, User, LinkMetadata, QuotedPost } from "@/lib/types";
-import { Heart, MessageCircle, Repeat, ArrowUpRight, MoreHorizontal, Edit, Trash2, Bookmark as BookmarkIcon, CheckCircle2, Slash, Pin, Loader2 } from "lucide-react";
+import { Heart, MessageCircle, Repeat, ArrowUpRight, MoreHorizontal, Edit, Trash2, Bookmark as BookmarkIcon, CheckCircle2, Slash, Pin, Loader2, ArrowDown } from "lucide-react";
 import { cn, formatTimestamp, getAvatar, formatCount, formatUserId } from "@/lib/utils";
 import { useToast } from "@/hooks/use-toast";
 import { FirestorePermissionError } from "@/firebase/errors";
@@ -80,10 +80,10 @@ export function PollComponent({ post, user, onVote }: { post: WithId<Post>, user
     }, [post.pollOptions]);
 
     const pollColors = useMemo(() => [
-        { light: 'bg-sky-500/20', dark: 'border-sky-500', text: 'text-sky-500' },
-        { light: 'bg-emerald-500/20', dark: 'border-emerald-500', text: 'text-emerald-500' },
-        { light: 'bg-amber-500/20', dark: 'border-amber-500', text: 'text-amber-500' },
-        { light: 'bg-fuchsia-500/20', dark: 'border-fuchsia-500', text: 'text-fuchsia-500' }
+        { light: 'bg-sky-500/20', dark: 'text-sky-600', border: 'border-sky-600' },
+        { light: 'bg-emerald-500/20', dark: 'text-emerald-600', border: 'border-emerald-600' },
+        { light: 'bg-amber-500/20', dark: 'text-amber-600', border: 'border-amber-600' },
+        { light: 'bg-fuchsia-500/20', dark: 'text-fuchsia-600', border: 'border-fuchsia-600' }
     ], []);
 
 
@@ -172,9 +172,9 @@ export function PollComponent({ post, user, onVote }: { post: WithId<Post>, user
                      const colorSet = pollColors[index % pollColors.length];
                      
                      const bgClass = isUserChoice ? colorSet.light : 'bg-secondary';
-                     const borderClass = isUserChoice ? colorSet.dark : 'border-border';
+                     const borderClass = isUserChoice ? colorSet.border : 'border-border';
                      const fontWeight = isUserChoice ? 'font-bold' : 'font-medium';
-                     const textColor = isUserChoice ? colorSet.text : 'text-muted-foreground';
+                     const textColorClass = isUserChoice ? colorSet.dark : 'text-muted-foreground';
 
 
                      return (
@@ -203,10 +203,10 @@ export function PollComponent({ post, user, onVote }: { post: WithId<Post>, user
                                         transition={{ delay: 0.3 }}
                                         className="flex items-center gap-2"
                                     >
-                                        {isUserChoice && <CheckCircle2 className={cn("h-4 w-4 shrink-0", textColor)} />}
+                                        {isUserChoice && <CheckCircle2 className={cn("h-4 w-4 shrink-0", textColorClass)} />}
                                         <span className={cn(
                                             "truncate text-sm", 
-                                            textColor,
+                                            textColorClass,
                                             fontWeight
                                         )}>
                                             {option.option}
@@ -216,7 +216,7 @@ export function PollComponent({ post, user, onVote }: { post: WithId<Post>, user
                                 <motion.span 
                                     className={cn(
                                         "text-sm", 
-                                        textColor,
+                                        textColorClass,
                                         fontWeight
                                     )}
                                     initial={{ opacity: 0 }}
@@ -794,7 +794,6 @@ export default function HomePage() {
     </AppLayout>
   );
 }
-
-
+    
 
     
