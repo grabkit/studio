@@ -69,11 +69,11 @@ function PollComponent({ post, user, onVote }: { post: WithId<Post>, user: any, 
         return post.pollOptions?.reduce((acc, option) => acc + option.votes, 0) || 0;
     }, [post.pollOptions]);
 
-    const pollColors = useMemo(() => [
-        { dark: 'bg-sky-500 text-white' },
-        { dark: 'bg-emerald-500 text-white' },
-        { dark: 'bg-amber-500 text-white' },
-        { dark: 'bg-fuchsia-500 text-white' }
+     const pollColors = useMemo(() => [
+        { light: 'bg-sky-500/20 border-sky-500 text-sky-700', dark: 'bg-sky-500 border-sky-500 text-white' },
+        { light: 'bg-emerald-500/20 border-emerald-500 text-emerald-700', dark: 'bg-emerald-500 border-emerald-500 text-white' },
+        { light: 'bg-amber-500/20 border-amber-500 text-amber-700', dark: 'bg-amber-500 border-amber-500 text-white' },
+        { light: 'bg-fuchsia-500/20 border-fuchsia-500 text-fuchsia-700', dark: 'bg-fuchsia-500 border-fuchsia-500 text-white' }
     ], []);
 
 
@@ -160,20 +160,15 @@ function PollComponent({ post, user, onVote }: { post: WithId<Post>, user: any, 
                 if (hasVoted) {
                      const isUserChoice = userVoteIndex === index;
                      const colorSet = pollColors[index % pollColors.length];
-
-                     let bgColor, textColor;
-
-                     if (isUserChoice) {
-                         [bgColor, textColor] = colorSet.dark.split(' ');
-                     } else {
-                         bgColor = 'bg-secondary';
-                         textColor = 'text-muted-foreground';
-                     }
+                     
+                     const bgClass = isUserChoice ? colorSet.light : 'bg-secondary';
+                     const textClass = isUserChoice ? 'text-primary' : 'text-muted-foreground';
+                     const fontWeight = isUserChoice ? 'font-bold' : 'font-medium';
 
                      return (
-                        <div key={index} className="relative w-full h-10 overflow-hidden rounded-full border">
+                        <div key={index} className={cn("relative w-full h-10 overflow-hidden rounded-full border", isUserChoice ? colorSet.light.split(' ')[1] : 'border-border')}>
                             <motion.div
-                                className={cn("absolute inset-0 h-full", bgColor)}
+                                className={cn("absolute inset-y-0 left-0 h-full", bgClass)}
                                 initial={{ width: '0%' }}
                                 animate={{ width: `${percentage}%` }}
                                 transition={{ duration: 0.8, ease: [0.25, 1, 0.5, 1] }}
@@ -185,11 +180,11 @@ function PollComponent({ post, user, onVote }: { post: WithId<Post>, user: any, 
                                     animate={{ opacity: 1 }}
                                     transition={{ delay: 0.3 }}
                                 >
-                                    {isUserChoice && <CheckCircle2 className={cn("h-4 w-4 shrink-0", textColor)} />}
+                                    {isUserChoice && <CheckCircle2 className={cn("h-4 w-4 shrink-0", textClass)} />}
                                     <span className={cn(
                                         "truncate text-sm", 
-                                        textColor,
-                                        isUserChoice ? 'font-bold' : 'font-medium'
+                                        textClass,
+                                        fontWeight
                                     )}>
                                         {option.option}
                                     </span>
@@ -197,8 +192,8 @@ function PollComponent({ post, user, onVote }: { post: WithId<Post>, user: any, 
                                 <motion.span 
                                     className={cn(
                                         "text-sm", 
-                                        textColor,
-                                         isUserChoice ? 'font-bold' : 'font-medium'
+                                        textClass,
+                                        fontWeight
                                     )}
                                     initial={{ opacity: 0 }}
                                     animate={{ opacity: 1 }}
