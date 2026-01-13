@@ -1,5 +1,4 @@
 
-
 "use client";
 
 import { useFirebase, useMemoFirebase, useUser } from "@/firebase";
@@ -70,10 +69,10 @@ function PollComponent({ post, user, onVote }: { post: WithId<Post>, user: any, 
     }, [post.pollOptions]);
 
     const pollColors = useMemo(() => [
-        { light: 'bg-sky-500/20', dark: 'border-sky-500' },
-        { light: 'bg-emerald-500/20', dark: 'border-emerald-500' },
-        { light: 'bg-amber-500/20', dark: 'border-amber-500' },
-        { light: 'bg-fuchsia-500/20', dark: 'border-fuchsia-500' }
+        { light: 'bg-sky-500/20', dark: 'border-sky-500', text: 'text-sky-500' },
+        { light: 'bg-emerald-500/20', dark: 'border-emerald-500', text: 'text-emerald-500' },
+        { light: 'bg-amber-500/20', dark: 'border-amber-500', text: 'text-amber-500' },
+        { light: 'bg-fuchsia-500/20', dark: 'border-fuchsia-500', text: 'text-fuchsia-500' }
     ], []);
 
 
@@ -164,7 +163,7 @@ function PollComponent({ post, user, onVote }: { post: WithId<Post>, user: any, 
                      const bgClass = isUserChoice ? colorSet.light : 'bg-secondary';
                      const borderClass = isUserChoice ? colorSet.dark : 'border-border';
                      const fontWeight = isUserChoice ? 'font-bold' : 'font-medium';
-                     const textColor = isUserChoice ? 'text-primary' : 'text-muted-foreground';
+                     const textColor = isUserChoice ? colorSet.text : 'text-muted-foreground';
 
 
                      return (
@@ -175,21 +174,33 @@ function PollComponent({ post, user, onVote }: { post: WithId<Post>, user: any, 
                                 animate={{ width: `${percentage}%` }}
                                 transition={{ duration: 0.8, ease: [0.25, 1, 0.5, 1] }}
                             />
-                            <div className="absolute inset-0 flex items-center justify-between px-4">
-                                <motion.div 
+                             <motion.div
+                                className="absolute inset-0 flex items-center justify-between px-4"
+                                initial={{ justifyContent: 'center' }}
+                                animate={{ justifyContent: 'space-between' }}
+                                transition={{ duration: 0.5, ease: 'easeOut' }}
+                            >
+                                <motion.div
                                     className="flex items-center gap-2 overflow-hidden"
-                                    initial={{ opacity: 0 }}
-                                    animate={{ opacity: 1 }}
-                                    transition={{ delay: 0.3 }}
+                                    initial={{ x: '50%', transform: 'translateX(-50%)' }}
+                                    animate={{ x: 0, transform: 'translateX(0%)' }}
+                                    transition={{ duration: 0.5, ease: 'easeOut' }}
                                 >
-                                    {isUserChoice && <CheckCircle2 className={cn("h-4 w-4 shrink-0", textColor)} />}
-                                    <span className={cn(
-                                        "truncate text-sm", 
-                                        textColor,
-                                        fontWeight
-                                    )}>
-                                        {option.option}
-                                    </span>
+                                     <motion.div
+                                        initial={{ opacity: 0 }}
+                                        animate={{ opacity: 1 }}
+                                        transition={{ delay: 0.3 }}
+                                        className="flex items-center gap-2"
+                                    >
+                                        {isUserChoice && <CheckCircle2 className={cn("h-4 w-4 shrink-0", textColor)} />}
+                                        <span className={cn(
+                                            "truncate text-sm", 
+                                            textColor,
+                                            fontWeight
+                                        )}>
+                                            {option.option}
+                                        </span>
+                                    </motion.div>
                                 </motion.div>
                                 <motion.span 
                                     className={cn(
@@ -203,7 +214,7 @@ function PollComponent({ post, user, onVote }: { post: WithId<Post>, user: any, 
                                 >
                                     {percentage.toFixed(0)}%
                                 </motion.span>
-                            </div>
+                            </motion.div>
                         </div>
                     );
                 } else {
@@ -1071,3 +1082,6 @@ export default function PostDetailPage() {
   );
 }
 
+
+
+    

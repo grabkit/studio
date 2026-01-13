@@ -80,10 +80,10 @@ export function PollComponent({ post, user, onVote }: { post: WithId<Post>, user
     }, [post.pollOptions]);
 
     const pollColors = useMemo(() => [
-        { light: 'bg-sky-500/20', dark: 'border-sky-500' },
-        { light: 'bg-emerald-500/20', dark: 'border-emerald-500' },
-        { light: 'bg-amber-500/20', dark: 'border-amber-500' },
-        { light: 'bg-fuchsia-500/20', dark: 'border-fuchsia-500' }
+        { light: 'bg-sky-500/20', dark: 'border-sky-500', text: 'text-sky-500' },
+        { light: 'bg-emerald-500/20', dark: 'border-emerald-500', text: 'text-emerald-500' },
+        { light: 'bg-amber-500/20', dark: 'border-amber-500', text: 'text-amber-500' },
+        { light: 'bg-fuchsia-500/20', dark: 'border-fuchsia-500', text: 'text-fuchsia-500' }
     ], []);
 
 
@@ -174,7 +174,7 @@ export function PollComponent({ post, user, onVote }: { post: WithId<Post>, user
                      const bgClass = isUserChoice ? colorSet.light : 'bg-secondary';
                      const borderClass = isUserChoice ? colorSet.dark : 'border-border';
                      const fontWeight = isUserChoice ? 'font-bold' : 'font-medium';
-                     const textColor = isUserChoice ? 'text-primary' : 'text-muted-foreground';
+                     const textColor = isUserChoice ? colorSet.text : 'text-muted-foreground';
 
 
                      return (
@@ -185,21 +185,33 @@ export function PollComponent({ post, user, onVote }: { post: WithId<Post>, user
                                 animate={{ width: `${percentage}%` }}
                                 transition={{ duration: 0.8, ease: [0.25, 1, 0.5, 1] }}
                             />
-                            <div className="absolute inset-0 flex items-center justify-between px-4">
-                                <motion.div 
+                            <motion.div
+                                className="absolute inset-0 flex items-center justify-between px-4"
+                                initial={{ justifyContent: 'center' }}
+                                animate={{ justifyContent: 'space-between' }}
+                                transition={{ duration: 0.5, ease: 'easeOut' }}
+                            >
+                                <motion.div
                                     className="flex items-center gap-2 overflow-hidden"
-                                    initial={{ opacity: 0 }}
-                                    animate={{ opacity: 1 }}
-                                    transition={{ delay: 0.3 }}
+                                    initial={{ x: '50%', transform: 'translateX(-50%)' }}
+                                    animate={{ x: 0, transform: 'translateX(0%)' }}
+                                    transition={{ duration: 0.5, ease: 'easeOut' }}
                                 >
-                                    {isUserChoice && <CheckCircle2 className={cn("h-4 w-4 shrink-0", textColor)} />}
-                                    <span className={cn(
-                                        "truncate text-sm", 
-                                        textColor,
-                                        fontWeight
-                                    )}>
-                                        {option.option}
-                                    </span>
+                                     <motion.div
+                                        initial={{ opacity: 0 }}
+                                        animate={{ opacity: 1 }}
+                                        transition={{ delay: 0.3 }}
+                                        className="flex items-center gap-2"
+                                    >
+                                        {isUserChoice && <CheckCircle2 className={cn("h-4 w-4 shrink-0", textColor)} />}
+                                        <span className={cn(
+                                            "truncate text-sm", 
+                                            textColor,
+                                            fontWeight
+                                        )}>
+                                            {option.option}
+                                        </span>
+                                    </motion.div>
                                 </motion.div>
                                 <motion.span 
                                     className={cn(
@@ -213,7 +225,7 @@ export function PollComponent({ post, user, onVote }: { post: WithId<Post>, user
                                 >
                                     {percentage.toFixed(0)}%
                                 </motion.span>
-                            </div>
+                            </motion.div>
                         </div>
                     );
                 } else {
@@ -653,19 +665,40 @@ export default function HomePage() {
   }, [postsQuery, setData]);
 
   const handleRefresh = useCallback(async () => {
-    // This function will be empty as pull-to-refresh is removed
-  }, []);
+    if (isRefreshing) return;
+    setIsRefreshing(true);
+    await fetchPosts();
+    // Simulate a delay for visual feedback
+    setTimeout(() => {
+        setIsRefreshing(false);
+        setPullPosition(0);
+    }, 500);
+  }, [isRefreshing, fetchPosts]);
+
 
   const handleTouchStart = (e: TouchEvent) => {
-    // This function will be empty as pull-to-refresh is removed
+    scrollStartY.current = containerRef.current?.scrollTop || 0;
+    touchStartRef.current = e.targetTouches[0].clientY;
   };
 
   const handleTouchMove = (e: TouchEvent) => {
-      // This function will be empty as pull-to-refresh is removed
+      const touchY = e.targetTouches[0].clientY;
+      const pullDistance = touchY - touchStartRef.current;
+
+      // Only allow pull-to-refresh if the user is at the top of the scroll container
+      if (scrollStartY.current === 0 && pullDistance > 0) {
+        // Prevent the browser's default pull-to-refresh action
+        e.preventDefault();
+        setPullPosition(pullDistance);
+      }
   };
 
   const handleTouchEnd = () => {
-      // This function will be empty as pull-to-refresh is removed
+      if (pullPosition > 80) { // Threshold to trigger refresh
+        handleRefresh();
+      } else {
+        setPullPosition(0);
+      }
   };
   
   const updatePost = useCallback((postId: string, updatedData: Partial<Post>) => {
@@ -690,9 +723,9 @@ export default function HomePage() {
     if (!initialPosts) return [];
     const mutedUsers = userProfile?.mutedUsers || [];
     return initialPosts.filter(post => 
-      !mutedUsers.includes(post.authorId) && post.authorId !== user?.uid
+      !mutedUsers.includes(post.authorId)
     );
-  }, [initialPosts, userProfile, user]);
+  }, [initialPosts, userProfile]);
 
   const handleDeletePostOptimistic = (postId: string) => {
     setData(currentPosts => currentPosts?.filter(p => p.id !== postId) ?? []);
@@ -713,7 +746,25 @@ export default function HomePage() {
           onTouchEnd={handleTouchEnd}
           className="relative h-full overflow-y-auto"
         >
-          <div>
+          {isRefreshing ? (
+             <div className="absolute top-0 left-0 right-0 flex justify-center items-center h-16 pointer-events-none">
+                <Loader2 className="h-6 w-6 animate-spin text-primary" />
+            </div>
+          ) : (
+             <div
+                className="absolute top-0 left-0 right-0 flex justify-center items-center h-16 pointer-events-none"
+                style={{ opacity: Math.min(pullPosition / 80, 1) }}
+            >
+               <div
+                    className="h-8 w-8 rounded-full flex items-center justify-center bg-secondary"
+                    style={{ transform: `rotate(${pullPosition}deg)` }}
+                >
+                    <ArrowDown className="h-5 w-5 text-muted-foreground" />
+                </div>
+            </div>
+          )}
+          
+          <div style={{ transform: `translateY(${isRefreshing ? '4rem' : '0px'})`, transition: 'transform 0.3s' }}>
             <div className="divide-y border-b">
               {(isLoading || !initialPosts) && (
                 <>
@@ -744,3 +795,6 @@ export default function HomePage() {
   );
 }
 
+
+
+    
