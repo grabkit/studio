@@ -34,7 +34,7 @@ export default function ContactPage() {
                          <Mail className="h-6 w-6 text-primary"/>
                         <div>
                              <p className="font-semibold">Email Us</p>
-                             <a href="mailto:support@blurapp.in" className="text-primary hover:underline not-prose">support@blurapp.in</a>
+                             <a href="mailto:blur.workspace@gmail.com" className="text-primary hover:underline not-prose">blur.workspace@gmail.com</a>
                         </div>
                     </div>
 
