@@ -182,7 +182,7 @@ function MessageBubble({ message, isOwnMessage, conversation, onSetReply, onForw
 
             {message.replyToMessageText && (
                  <div className={cn(
-                    "relative pl-3 pr-2 py-1.5 rounded-lg mb-1 mx-2 mt-1 w-auto border-l-4",
+                    "relative pl-3 pr-2 py-1.5 rounded-[5px] mb-1 mx-2 mt-1 w-auto border-l-4",
                     !isOwnMessage 
                         ? "bg-gray-200 dark:bg-gray-700 border-gray-400 dark:border-gray-500" 
                         : "bg-blue-400 border-blue-300"
@@ -820,6 +820,8 @@ export default function ChatPage() {
 
 
 
+
+    
 
     
 
