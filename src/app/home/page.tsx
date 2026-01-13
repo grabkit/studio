@@ -687,7 +687,7 @@ export default function HomePage() {
       setPullPosition(0);
       window.navigator.vibrate?.(50);
     }, 500); 
-  }, [isRefreshing]);
+  }, [isRefreshing, fetchPostsAndShuffle]);
 
   useEffect(() => {
     if (!sentinelRef.current) return;
@@ -710,12 +710,12 @@ export default function HomePage() {
   };
 
   const handleTouchMove = (e: TouchEvent) => {
-      if (!canRefresh) return;
+      if (!canRefresh || isRefreshing) return;
 
       const touchY = e.targetTouches[0].clientY;
       const pullDistance = touchY - touchStartRef.current;
       
-      if (pullDistance > 0 && !isRefreshing) {
+      if (pullDistance > 0) {
           e.preventDefault(); 
           const newPullPosition = Math.min(pullDistance, 120);
           
@@ -727,12 +727,8 @@ export default function HomePage() {
   };
 
   const handleTouchEnd = () => {
-      if (!canRefresh) return;
+      if (!canRefresh || isRefreshing) return;
       
-      if (isRefreshing) {
-          setPullPosition(0);
-          return;
-      }
       if (pullPosition > 70) {
           handleRefresh();
       } else {
@@ -799,6 +795,8 @@ export default function HomePage() {
     </AppLayout>
   );
 }
+
+    
 
     
 
