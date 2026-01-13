@@ -91,9 +91,7 @@ export default function PrivacyPolicyPage() {
                     </p>
 
                     <h4 className="font-semibold">Contact Us</h4>
-                    <p>
-                        If you have any questions about this Privacy Policy, you can contact us at [మీ కాంటాక్ట్ ఇమెయిల్/విధానాన్ని ఇక్కడ చేర్చండి].
-                    </p>
+                    <p>If you have any questions about this Privacy Policy, you can contact us at <a href="mailto:support@blurapp.in" className="text-primary hover:underline">support@blurapp.in</a>.</p>
                 </div>
             </motion.div>
         </AppLayout>
