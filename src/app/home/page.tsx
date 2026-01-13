@@ -1,3 +1,4 @@
+
 "use client";
 
 import AppLayout from "@/components/AppLayout";
@@ -632,10 +633,11 @@ export default function HomePage() {
   
   const [isRefreshing, setIsRefreshing] = useState(false);
   const [pullPosition, setPullPosition] = useState(0);
+  const [canRefresh, setCanRefresh] = useState(false);
+  
   const touchStartRef = useRef(0);
-  const scrollStartY = useRef(0);
   const containerRef = useRef<HTMLDivElement>(null);
-
+  const sentinelRef = useRef<HTMLDivElement>(null);
 
   const postsQuery = useMemoFirebase(() => {
     if (!firestore) return null;
@@ -652,7 +654,6 @@ export default function HomePage() {
         );
     });
   }, [setData]);
-
 
   const bookmarksQuery = useMemoFirebase(() => {
     if (!firestore || !user) return null;
@@ -676,7 +677,7 @@ export default function HomePage() {
     }
   };
 
-  const handleRefresh = async () => {
+  const handleRefresh = useCallback(async () => {
     if (isRefreshing) return;
     setIsRefreshing(true);
     window.navigator.vibrate?.(50);
@@ -686,43 +687,58 @@ export default function HomePage() {
       setPullPosition(0);
       window.navigator.vibrate?.(50);
     }, 500); 
+  }, [isRefreshing]);
+
+  useEffect(() => {
+    if (!sentinelRef.current) return;
+  
+    const observer = new IntersectionObserver(
+      ([entry]) => {
+        setCanRefresh(entry.isIntersecting);
+      },
+      { threshold: 1.0 }
+    );
+  
+    observer.observe(sentinelRef.current);
+  
+    return () => observer.disconnect();
+  }, []);
+
+  const handleTouchStart = (e: TouchEvent) => {
+    if (!canRefresh) return;
+    touchStartRef.current = e.targetTouches[0].clientY;
   };
 
-    const handleTouchStart = (e: TouchEvent) => {
-        if (containerRef.current) {
-            scrollStartY.current = containerRef.current.scrollTop;
-        }
-        touchStartRef.current = e.targetTouches[0].clientY;
-    };
+  const handleTouchMove = (e: TouchEvent) => {
+      if (!canRefresh) return;
 
-    const handleTouchMove = (e: TouchEvent) => {
-        const touchY = e.targetTouches[0].clientY;
-        const pullDistance = touchY - touchStartRef.current;
-        
-        // Only consider pull-to-refresh if the user is at the top of the scroll container
-        if (scrollStartY.current === 0 && pullDistance > 0 && !isRefreshing) {
-            e.preventDefault(); // Prevent default browser scroll behavior
-            const newPullPosition = Math.min(pullDistance, 120);
-            
-            if (pullPosition <= 70 && newPullPosition > 70) {
-                window.navigator.vibrate?.(50);
-            }
-            setPullPosition(newPullPosition);
-        }
-    };
+      const touchY = e.targetTouches[0].clientY;
+      const pullDistance = touchY - touchStartRef.current;
+      
+      if (pullDistance > 0 && !isRefreshing) {
+          e.preventDefault(); 
+          const newPullPosition = Math.min(pullDistance, 120);
+          
+          if (pullPosition <= 70 && newPullPosition > 70) {
+              window.navigator.vibrate?.(50);
+          }
+          setPullPosition(newPullPosition);
+      }
+  };
 
-    const handleTouchEnd = () => {
-        if (isRefreshing || scrollStartY.current !== 0) {
-             setPullPosition(0);
-            return;
-        }
-        if (pullPosition > 70) {
-            handleRefresh();
-        } else {
-            setPullPosition(0);
-        }
-    };
-
+  const handleTouchEnd = () => {
+      if (!canRefresh) return;
+      
+      if (isRefreshing) {
+          setPullPosition(0);
+          return;
+      }
+      if (pullPosition > 70) {
+          handleRefresh();
+      } else {
+          setPullPosition(0);
+      }
+  };
 
   const isLoading = postsLoading || bookmarksLoading;
 
@@ -752,31 +768,36 @@ export default function HomePage() {
           className="relative h-full overflow-y-auto"
         >
           <PullToRefreshIndicator pullPosition={pullPosition} isRefreshing={isRefreshing} />
-          <div className="divide-y border-b" style={{ transform: `translateY(${pullPosition}px)` }}>
-            {(isLoading || !initialPosts) && (
-              <>
-                <PostSkeleton />
-                <PostSkeleton />
-                <PostSkeleton />
-                <PostSkeleton />
-                <PostSkeleton />
-              </>
-            )}
+          <div style={{ transform: `translateY(${pullPosition}px)` }}>
+            <div ref={sentinelRef} className="h-[1px] absolute top-[-1px] w-full" />
+            <div className="divide-y border-b">
+              {(isLoading || !initialPosts) && (
+                <>
+                  <PostSkeleton />
+                  <PostSkeleton />
+                  <PostSkeleton />
+                  <PostSkeleton />
+                  <PostSkeleton />
+                </>
+              )}
 
-            {!isLoading && initialPosts && filteredPosts.length === 0 && (
-              <div className="text-center py-10 h-screen">
-                <h2 className="text-2xl font-headline text-primary">No posts yet!</h2>
-                <p className="text-muted-foreground mt-2">Start following people to see their posts here.</p>
-              </div>
-            )}
-            
-            {!isLoading && initialPosts && filteredPosts.map((post) => (
-                <PostItem key={post.id} post={post} bookmarks={bookmarks} updatePost={updatePost} onDelete={handleDeletePostOptimistic} />
-              ))
-            }
+              {!isLoading && initialPosts && filteredPosts.length === 0 && (
+                <div className="text-center py-10 h-screen">
+                  <h2 className="text-2xl font-headline text-primary">No posts yet!</h2>
+                  <p className="text-muted-foreground mt-2">Start following people to see their posts here.</p>
+                </div>
+              )}
+              
+              {!isLoading && initialPosts && filteredPosts.map((post) => (
+                  <PostItem key={post.id} post={post} bookmarks={bookmarks} updatePost={updatePost} onDelete={handleDeletePostOptimistic} />
+                ))
+              }
+            </div>
           </div>
         </div>
       </motion.div>
     </AppLayout>
   );
 }
+
+    
