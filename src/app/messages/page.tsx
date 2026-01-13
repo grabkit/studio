@@ -8,7 +8,7 @@ import { getAvatar, formatMessageTimestamp, formatUserId } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import { MessageSquare, Mail, Trash2, BellOff, CheckCircle, User as UserIcon, Bell, Mic, Loader2 } from "lucide-react";
 import { useFirebase, useMemoFirebase } from "@/firebase";
-import { collection, query, where, doc, updateDoc, deleteDoc, arrayUnion, arrayRemove, getDocs } from "firebase/firestore";
+import { collection, query, where, doc, updateDoc, deleteDoc, arrayUnion, arrayRemove, getDocs, documentId } from "firebase/firestore";
 import { useCollection, type WithId } from "@/firebase/firestore/use-collection";
 import { useDoc } from "@/firebase/firestore/use-doc";
 import type { Conversation, User } from "@/lib/types";
@@ -36,33 +36,56 @@ function FollowedUserSkeleton() {
 
 function FollowedUsers() {
     const { firestore, user: currentUser, userProfile, showVoiceStatusPlayer } = useFirebase();
+    const [followedUsers, setFollowedUsers] = useState<WithId<User>[]>([]);
+    const [isLoading, setIsLoading] = useState(true);
 
-    const followedByQuery = useMemoFirebase(() => {
-      if (!firestore || !currentUser) return null;
-      return query(
-        collection(firestore, "users"),
-        where("followedBy", "array-contains", currentUser.uid)
-      );
-    }, [firestore, currentUser]);
+    const followingIds = useMemo(() => userProfile?.following || [], [userProfile]);
 
-    const { data: followedUsersData, isLoading: followedUsersLoading } = useCollection<User>(followedByQuery);
-    
-    const followedUsers = useMemo(() => {
-        if (!currentUser || !userProfile) return [];
+    useEffect(() => {
+        if (!firestore) return;
 
-        const otherUsers = followedUsersData?.filter(user => user.id !== currentUser.uid) || [];
+        const fetchFollowedUsers = async () => {
+            setIsLoading(true);
+            const usersToFetch = [...followingIds];
+            const fetchedUsers: WithId<User>[] = [];
 
-        const currentUserAsUser = {
-            id: currentUser.uid,
-            name: userProfile?.name || currentUser.displayName || 'You',
-            ...userProfile
-        } as WithId<User>;
+            if (userProfile) {
+                const currentUserAsUser = {
+                    id: userProfile.id,
+                    ...userProfile
+                } as WithId<User>;
+                fetchedUsers.push(currentUserAsUser);
+            }
+            
+            if (usersToFetch.length > 0) {
+                 // Firestore 'in' query is limited to 30 items, batch if needed.
+                const userQuery = query(collection(firestore, "users"), where(documentId(), 'in', usersToFetch.slice(0,30)));
+                try {
+                    const querySnapshot = await getDocs(userQuery);
+                    querySnapshot.forEach(doc => {
+                        fetchedUsers.push({ id: doc.id, ...doc.data() } as WithId<User>);
+                    });
+                } catch (error) {
+                    console.error("Error fetching followed users:", error);
+                }
+            }
+            
+            // Put current user at the front if they exist
+            const finalUsers = fetchedUsers.sort((a, b) => {
+                if (a.id === currentUser?.uid) return -1;
+                if (b.id === currentUser?.uid) return 1;
+                return 0;
+            });
 
-        return [currentUserAsUser, ...otherUsers];
-    }, [currentUser, userProfile, followedUsersData]);
+            setFollowedUsers(finalUsers);
+            setIsLoading(false);
+        };
+
+        fetchFollowedUsers();
+    }, [firestore, followingIds, userProfile, currentUser]);
 
 
-    if (followedUsersLoading && !userProfile) {
+    if (isLoading) {
         return (
             <div className="p-4 border-b">
                 <h2 className="text-lg font-semibold font-headline mb-3">Following</h2>
@@ -552,32 +575,32 @@ export default function MessagesPage() {
     return (
         <AppLayout showTopBar={false}>
              <motion.div
-                className="h-full"
+                className="h-full flex flex-col"
                 initial={{ scale: 0.98, opacity: 0 }}
                 animate={{ scale: 1, opacity: 1 }}
                 transition={{ duration: 0.3 }}
             >
-                <div
-                    className="relative h-full overflow-y-auto"
-                >
+                <div className="flex-shrink-0">
                     <FollowedUsers />
-                    
-                    <div className="p-2">
-                        <Tabs defaultValue="chats" className="w-full" onValueChange={handleTabChange}>
-                            <TabsList className="grid w-full grid-cols-2 rounded-full">
-                                <TabsTrigger value="chats" className="relative flex items-center justify-center gap-2 rounded-full font-bold">
-                                    {hasUnreadChats && (
-                                        <div className="w-2 h-2 rounded-full bg-destructive"></div>
-                                    )}
-                                    Chats
-                                </TabsTrigger>
-                                <TabsTrigger value="requests" className="relative flex items-center justify-center gap-2 rounded-full font-bold">
-                                    {hasNewRequests && (
-                                        <div className="w-2 h-2 rounded-full bg-destructive"></div>
-                                    )}
-                                    Requests
-                                </TabsTrigger>
-                            </TabsList>
+                </div>
+                
+                <div className="flex-grow flex flex-col p-2 overflow-hidden">
+                    <Tabs defaultValue="chats" className="w-full flex flex-col flex-grow" onValueChange={handleTabChange}>
+                        <TabsList className="grid w-full grid-cols-2 rounded-full flex-shrink-0">
+                            <TabsTrigger value="chats" className="relative flex items-center justify-center gap-2 rounded-full font-bold">
+                                {hasUnreadChats && (
+                                    <div className="w-2 h-2 rounded-full bg-destructive"></div>
+                                )}
+                                Chats
+                            </TabsTrigger>
+                            <TabsTrigger value="requests" className="relative flex items-center justify-center gap-2 rounded-full font-bold">
+                                {hasNewRequests && (
+                                    <div className="w-2 h-2 rounded-full bg-destructive"></div>
+                                )}
+                                Requests
+                            </TabsTrigger>
+                        </TabsList>
+                        <div className="flex-grow overflow-y-auto">
                             <TabsContent value="chats">
                                 <ConversationsList 
                                     conversations={chats}
@@ -598,8 +621,8 @@ export default function MessagesPage() {
                                     onLongPress={handleLongPress}
                                 />
                             </TabsContent>
-                        </Tabs>
-                    </div>
+                        </div>
+                    </Tabs>
                 </div>
             </motion.div>
             
