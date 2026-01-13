@@ -26,7 +26,6 @@ import { RepliesList } from "@/components/RepliesList";
 import { Sheet, SheetContent, SheetTrigger, SheetHeader, SheetTitle, SheetDescription, SheetClose } from "@/components/ui/sheet";
 import { ReportDialog } from "@/components/ReportDialog";
 import { QrCodeDialog } from "@/components/QrCodeDialog";
-import { PullToRefreshIndicator } from "@/components/PullToRefreshIndicator";
 
 
 function AboutProfileSheet({ user, isOpen, onOpenChange }: { user: WithId<User>, isOpen: boolean, onOpenChange: (open: boolean) => void }) {
@@ -76,12 +75,6 @@ export default function UserProfilePage() {
     const { firestore, user: currentUser, userProfile: currentUserProfile, showVoiceStatusPlayer, setUserProfile: setCurrentUserProfile, setActiveUserProfile, userProfile } = useFirebase();
     const user = userProfile;
     
-    const [isRefreshing, setIsRefreshing] = useState(false);
-    const [pullPosition, setPullPosition] = useState(0);
-    const touchStartRef = useRef(0);
-    const scrollStartY = useRef(0);
-    const containerRef = useRef<HTMLDivElement>(null);
-
     const [posts, setPosts] = useState<WithId<Post>[]>([]);
     const [postsLoading, setPostsLoading] = useState(true);
     const [isMoreOptionsSheetOpen, setIsMoreOptionsSheetOpen] = useState(false);
@@ -154,68 +147,6 @@ export default function UserProfilePage() {
     useEffect(() => {
       fetchPosts();
     }, [fetchPosts]);
-
-    const fetchProfile = useCallback(async () => {
-        if (!userRef) return;
-        const userDoc = await getDoc(userRef);
-        if (userDoc.exists()) {
-            setFetchedUser({ id: userDoc.id, ...userDoc.data() } as WithId<User>);
-        }
-    }, [userRef, setFetchedUser]);
-
-    const handleRefresh = async () => {
-        if (isRefreshing) return;
-        setIsRefreshing(true);
-        window.navigator.vibrate?.(50);
-        await Promise.all([fetchPosts(), fetchProfile()]);
-        setTimeout(() => {
-            setIsRefreshing(false);
-            setPullPosition(0);
-            window.navigator.vibrate?.(50);
-        }, 500);
-    };
-
-    const handleTouchStart = (e: TouchEvent) => {
-        if (containerRef.current) {
-            scrollStartY.current = containerRef.current.scrollTop;
-        }
-        touchStartRef.current = e.targetTouches[0].clientY;
-    };
-
-    const handleTouchMove = (e: TouchEvent) => {
-        if (isRefreshing) return;
-
-        // Only allow pull-to-refresh if the user started at the top.
-        if (scrollStartY.current !== 0) {
-            return;
-        }
-
-        const touchY = e.targetTouches[0].clientY;
-        const pullDistance = touchY - touchStartRef.current;
-        
-        if (pullDistance > 0) {
-            if (pullDistance > 10) {
-                e.preventDefault();
-            }
-            const newPullPosition = Math.min(pullDistance, 120);
-            if (pullPosition <= 70 && newPullPosition > 70) {
-                window.navigator.vibrate?.(50);
-            }
-            setPullPosition(newPullPosition);
-        }
-    };
-
-    const handleTouchEnd = () => {
-        if (isRefreshing || scrollStartY.current !== 0) {
-            setPullPosition(0);
-            return;
-        }
-        if (pullPosition > 70) {
-            handleRefresh();
-        } else {
-            setPullPosition(0);
-        }
-    };
 
     const updatePostState = useCallback((postId: string, updatedData: Partial<Post>) => {
         setPosts(currentPosts => {
@@ -656,15 +587,9 @@ export default function UserProfilePage() {
             >
                 <Sheet open={isMoreOptionsSheetOpen} onOpenChange={setIsMoreOptionsSheetOpen}>
                     <div
-                        ref={containerRef}
-                        onTouchStart={handleTouchStart}
-                        onTouchMove={handleTouchMove}
-                        onTouchEnd={handleTouchEnd}
                         className="relative h-full overflow-y-auto"
                     >
-                         <PullToRefreshIndicator pullPosition={pullPosition} isRefreshing={isRefreshing} />
-                        
-                        <div style={{ transform: `translateY(${pullPosition}px)` }}>
+                        <div>
                             <div className="flex items-center justify-between h-14 px-4 bg-background">
                                 <Button variant="ghost" size="icon" onClick={handleBackNavigation}>
                                     <ArrowLeft className="h-6 w-6" />

@@ -33,7 +33,6 @@ import { RepostSheet } from "@/components/RepostSheet";
 import { QuotedPostCard } from "@/components/QuotedPostCard";
 import { AnimatedCount } from "@/components/AnimatedCount";
 import { motion } from "framer-motion";
-import { PullToRefreshIndicator } from "@/components/PullToRefreshIndicator";
 import { Progress } from "@/components/ui/progress";
 
 
@@ -177,17 +176,16 @@ export function PollComponent({ post, user, onVote }: { post: WithId<Post>, user
                                         initial={{ opacity: 0, scale: 0.5 }}
                                         animate={{ opacity: 1, scale: 1 }}
                                         transition={{ delay: 0.3 }}
-                                        className="text-primary-foreground"
                                     >
-                                        {isUserChoice && <CheckCircle2 className="h-4 w-4 shrink-0" />}
+                                        {isUserChoice && <CheckCircle2 className="h-4 w-4 shrink-0 text-primary-foreground" />}
                                     </motion.div>
                                     <span 
                                         className="truncate text-sm font-medium"
                                         style={{
                                             color: 'transparent',
-                                            background: `linear-gradient(to right, hsl(var(--primary-foreground)) ${percentage}%, hsl(var(--foreground)) ${percentage}%)`,
                                             WebkitBackgroundClip: 'text',
                                             backgroundClip: 'text',
+                                            backgroundImage: `linear-gradient(to right, hsl(var(--primary-foreground)), hsl(var(--primary-foreground)) ${percentage}%, hsl(var(--foreground)) ${percentage}%, hsl(var(--foreground)))`
                                         }}
                                     >
                                         {option.option}
@@ -200,9 +198,9 @@ export function PollComponent({ post, user, onVote }: { post: WithId<Post>, user
                                     transition={{ delay: 0.3 }}
                                      style={{
                                         color: 'transparent',
-                                        background: `linear-gradient(to right, hsl(var(--primary-foreground)) ${percentage}%, hsl(var(--foreground)) ${percentage}%)`,
                                         WebkitBackgroundClip: 'text',
                                         backgroundClip: 'text',
+                                        backgroundImage: `linear-gradient(to right, hsl(var(--primary-foreground)), hsl(var(--primary-foreground)) ${percentage}%, hsl(var(--foreground)) ${percentage}%, hsl(var(--foreground)))`
                                     }}
                                 >
                                     {percentage.toFixed(0)}%
@@ -627,13 +625,6 @@ export default function HomePage() {
   const { firestore, userProfile } = useFirebase();
   const { user } = useUser();
   
-  const [isRefreshing, setIsRefreshing] = useState(false);
-  const [pullPosition, setPullPosition] = useState(0);
-  
-  const touchStartRef = useRef(0);
-  const scrollStartY = useRef(0);
-  const containerRef = useRef<HTMLDivElement>(null);
-
   const postsQuery = useMemoFirebase(() => {
     if (!firestore) return null;
     return query(collection(firestore, 'posts'), orderBy("timestamp", "desc"), limit(50));
@@ -657,85 +648,13 @@ export default function HomePage() {
 
   const { data: bookmarks, isLoading: bookmarksLoading } = useCollection<Bookmark>(bookmarksQuery);
 
-  const fetchPostsAndShuffle = async () => {
-    if (!firestore) return;
-    try {
-        const postsCollectionQuery = query(collection(firestore, 'posts'), orderBy("timestamp", "desc"), limit(50));
-        const querySnapshot = await getDocs(postsCollectionQuery);
-        let fetchedPosts = querySnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as WithId<Post>));
-        
-        fetchedPosts.sort(() => Math.random() - 0.5);
-        setData(fetchedPosts);
-
-    } catch (error) {
-        console.error("Error fetching posts:", error);
-    }
-  };
-
-  const handleRefresh = useCallback(async () => {
-    if (isRefreshing) return;
-    setIsRefreshing(true);
-    window.navigator.vibrate?.(50);
-    await fetchPostsAndShuffle();
-    setTimeout(() => {
-      setIsRefreshing(false);
-      setPullPosition(0);
-      window.navigator.vibrate?.(50);
-    }, 500); 
-  }, [isRefreshing]);
-
-  const handleTouchStart = (e: TouchEvent) => {
-    if (containerRef.current) {
-        scrollStartY.current = containerRef.current.scrollTop;
-    }
-    touchStartRef.current = e.targetTouches[0].clientY;
-  };
-
-  const handleTouchMove = (e: TouchEvent) => {
-      if (isRefreshing) return;
-
-      // Only allow pull-to-refresh if the user started at the top.
-      if (scrollStartY.current !== 0) {
-          return;
-      }
-
-      const touchY = e.targetTouches[0].clientY;
-      const pullDistance = touchY - touchStartRef.current;
-      
-      if (pullDistance > 0) {
-          // Prevent default scroll behavior only when we are actively pulling down
-          if (pullDistance > 10) {
-             e.preventDefault(); 
-          }
-          const newPullPosition = Math.min(pullDistance, 120);
-          
-          if (pullPosition <= 70 && newPullPosition > 70) {
-              window.navigator.vibrate?.(50);
-          }
-          setPullPosition(newPullPosition);
-      }
-  };
-
-  const handleTouchEnd = () => {
-      if (isRefreshing || scrollStartY.current !== 0) {
-          setPullPosition(0);
-          return;
-      }
-      
-      if (pullPosition > 70) {
-          handleRefresh();
-      } else {
-          setPullPosition(0);
-      }
-  };
-
   const isLoading = postsLoading || bookmarksLoading;
 
   const filteredPosts = useMemo(() => {
     if (!initialPosts || !user) return initialPosts || [];
     const mutedUsers = userProfile?.mutedUsers || [];
     return initialPosts.filter(post => 
-        !mutedUsers.includes(post.authorId)
+        !mutedUsers.includes(post.authorId) && post.authorId !== user.uid
     );
   }, [initialPosts, userProfile, user]);
 
@@ -752,14 +671,9 @@ export default function HomePage() {
         transition={{ duration: 0.3 }}
       >
         <div
-          ref={containerRef}
-          onTouchStart={handleTouchStart}
-          onTouchMove={handleTouchMove}
-          onTouchEnd={handleTouchEnd}
           className="relative h-full overflow-y-auto"
         >
-          <PullToRefreshIndicator pullPosition={pullPosition} isRefreshing={isRefreshing} />
-          <div style={{ transform: `translateY(${pullPosition}px)` }}>
+          <div>
             <div className="divide-y border-b">
               {(isLoading || !initialPosts) && (
                 <>

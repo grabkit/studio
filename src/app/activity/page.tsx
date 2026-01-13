@@ -14,7 +14,6 @@ import { cn, formatTimestamp, getAvatar, formatUserId } from "@/lib/utils.tsx";
 import { Button } from "@/components/ui/button";
 import React, { useEffect, useState, useRef, useCallback, type TouchEvent, useMemo } from "react";
 import { motion } from "framer-motion";
-import { PullToRefreshIndicator } from "@/components/PullToRefreshIndicator";
 
 const notificationInfo = {
     like: {
@@ -142,12 +141,6 @@ function ActivitySkeleton() {
 export default function ActivityPage() {
     const { firestore, user, userProfile } = useFirebase();
 
-    const [isRefreshing, setIsRefreshing] = useState(false);
-    const [pullPosition, setPullPosition] = useState(0);
-    const touchStartRef = useRef(0);
-    const scrollStartY = useRef(0);
-    const containerRef = useRef<HTMLDivElement>(null);
-
     const notificationsQuery = useMemoFirebase(() => {
         if (!firestore || !user) return null;
         return query(
@@ -177,17 +170,6 @@ export default function ActivityPage() {
         });
 
     }, [notifications, firestore, user]);
-
-    const fetchNotifications = async () => {
-        if (!notificationsQuery) return;
-        try {
-            const querySnapshot = await getDocs(notificationsQuery);
-            const fetchedNotifications = querySnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as WithId<Notification>));
-            setNotifications(fetchedNotifications);
-        } catch (error) {
-            console.error("Error fetching notifications:", error);
-        }
-    };
     
     const settings = useMemo(() => {
         return userProfile?.notificationSettings || {
@@ -214,62 +196,6 @@ export default function ActivityPage() {
     }, [notifications, settings]);
 
 
-    const handleRefresh = async () => {
-        if (isRefreshing) return;
-        setIsRefreshing(true);
-        window.navigator.vibrate?.(50);
-        await fetchNotifications();
-        setTimeout(() => {
-            setIsRefreshing(false);
-            setPullPosition(0);
-            window.navigator.vibrate?.(50);
-        }, 500);
-    };
-
-    const handleTouchStart = (e: TouchEvent) => {
-        if (containerRef.current) {
-            scrollStartY.current = containerRef.current.scrollTop;
-        }
-        touchStartRef.current = e.targetTouches[0].clientY;
-    };
-
-    const handleTouchMove = (e: TouchEvent) => {
-        if (isRefreshing) return;
-        
-        // Only allow pull-to-refresh if the user started at the top.
-        if (scrollStartY.current !== 0) {
-            return;
-        }
-
-        const touchY = e.targetTouches[0].clientY;
-        const pullDistance = touchY - touchStartRef.current;
-        
-        if (pullDistance > 0) {
-            // Prevent default scroll behavior only when we are actively pulling down
-            if (pullDistance > 10) { // Small threshold to avoid preventing accidental taps
-                e.preventDefault();
-            }
-            const newPullPosition = Math.min(pullDistance, 120);
-            if (pullPosition <= 70 && newPullPosition > 70) {
-                window.navigator.vibrate?.(50);
-            }
-            setPullPosition(newPullPosition);
-        }
-    };
-
-    const handleTouchEnd = () => {
-        if (isRefreshing || scrollStartY.current !== 0) {
-            setPullPosition(0);
-            return;
-        }
-        if (pullPosition > 70) {
-            handleRefresh();
-        } else {
-            setPullPosition(0);
-        }
-    };
-
-
     return (
         <AppLayout showTopBar={false}>
              <motion.div
@@ -279,15 +205,9 @@ export default function ActivityPage() {
                 transition={{ duration: 0.3 }}
             >
                 <div
-                    ref={containerRef}
-                    onTouchStart={handleTouchStart}
-                    onTouchMove={handleTouchMove}
-                    onTouchEnd={handleTouchEnd}
                     className="relative h-full overflow-y-auto"
                 >
-                    <PullToRefreshIndicator pullPosition={pullPosition} isRefreshing={isRefreshing} />
-
-                    <div style={{ transform: `translateY(${pullPosition}px)` }}>
+                    <div>
                         <div className="p-4 border-b">
                             <h1 className="text-2xl font-bold font-headline">Activity</h1>
                         </div>

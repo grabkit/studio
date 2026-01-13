@@ -24,7 +24,6 @@ import { errorEmitter } from "@/firebase/error-emitter";
 import { usePresence } from "@/hooks/usePresence";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { motion } from "framer-motion";
-import { PullToRefreshIndicator } from "@/components/PullToRefreshIndicator";
 
 function FollowedUserSkeleton() {
     return (
@@ -383,12 +382,6 @@ export default function MessagesPage() {
     const [isSheetOpen, setIsSheetOpen] = useState(false);
     const [selectedConvo, setSelectedConvo] = useState<WithId<Conversation> | null>(null);
     
-    const [isRefreshing, setIsRefreshing] = useState(false);
-    const [pullPosition, setPullPosition] = useState(0);
-    const touchStartRef = useRef(0);
-    const scrollStartY = useRef(0);
-    const containerRef = useRef<HTMLDivElement>(null);
-
 
     const conversationsQuery = useMemoFirebase(() => {
         if (!user || !firestore) return null;
@@ -438,72 +431,6 @@ export default function MessagesPage() {
         if (value === 'requests') {
             localStorage.setItem(storageKey, Date.now().toString());
             setHasNewRequests(false);
-        }
-    };
-
-    const fetchConversations = async () => {
-        if (!conversationsQuery) return;
-        try {
-            const querySnapshot = await getDocs(conversationsQuery);
-            const fetchedConversations = querySnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as WithId<Conversation>));
-            setConversations(fetchedConversations);
-        } catch (error) {
-            console.error("Error fetching conversations:", error);
-        }
-    };
-
-    const handleRefresh = async () => {
-        if (isRefreshing) return;
-        setIsRefreshing(true);
-        window.navigator.vibrate?.(50);
-        await fetchConversations();
-        setTimeout(() => {
-            setIsRefreshing(false);
-            setPullPosition(0);
-            window.navigator.vibrate?.(50);
-        }, 500);
-    };
-
-    const handleTouchStart = (e: TouchEvent) => {
-        if (containerRef.current) {
-            scrollStartY.current = containerRef.current.scrollTop;
-        }
-        touchStartRef.current = e.targetTouches[0].clientY;
-    };
-
-    const handleTouchMove = (e: TouchEvent) => {
-        if (isRefreshing) return;
-        
-        // Only allow pull-to-refresh if the user started at the top.
-        if (scrollStartY.current !== 0) {
-            return;
-        }
-
-        const touchY = e.targetTouches[0].clientY;
-        const pullDistance = touchY - touchStartRef.current;
-        
-        if (pullDistance > 0) {
-            // Prevent default scroll behavior only when we are actively pulling down
-            if (pullDistance > 10) { // Small threshold to avoid preventing accidental taps
-                e.preventDefault();
-            }
-            const newPullPosition = Math.min(pullDistance, 120);
-            if (pullPosition <= 70 && newPullPosition > 70) {
-                window.navigator.vibrate?.(50);
-            }
-            setPullPosition(newPullPosition);
-        }
-    };
-
-    const handleTouchEnd = () => {
-        if (isRefreshing || scrollStartY.current !== 0) {
-            setPullPosition(0);
-            return;
-        }
-        if (pullPosition > 70) {
-            handleRefresh();
-        } else {
-            setPullPosition(0);
         }
     };
 
@@ -631,15 +558,9 @@ export default function MessagesPage() {
                 transition={{ duration: 0.3 }}
             >
                 <div
-                    ref={containerRef}
-                    onTouchStart={handleTouchStart}
-                    onTouchMove={handleTouchMove}
-                    onTouchEnd={handleTouchEnd}
                     className="relative h-full overflow-y-auto"
                 >
-                   <PullToRefreshIndicator pullPosition={pullPosition} isRefreshing={isRefreshing} />
-
-                    <div style={{ transform: `translateY(${pullPosition}px)` }}>
+                    <div>
                         <FollowedUsers />
                         
                         <div className="p-2">
