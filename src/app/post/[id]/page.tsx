@@ -335,7 +335,7 @@ function PostDetailItem({ post, updatePost }: { post: WithId<Post>, updatePost: 
                     className={cn("flex items-center space-x-1", hasLiked && "text-pink-500")}
                 >
                     <Heart
-                    className="h-5 w-5"
+                    className="h-4 w-4"
                     fill={hasLiked ? 'currentColor' : 'none'}
                     />
                 </button>
@@ -344,15 +344,15 @@ function PostDetailItem({ post, updatePost }: { post: WithId<Post>, updatePost: 
                     repliesAllowed ? "hover:text-primary" : "opacity-50"
                 )}>
                     <div className="relative">
-                        <MessageCircle className="h-5 w-5" />
-                        {!repliesAllowed && <Slash className="absolute top-0 left-0 h-5 w-5 stroke-[2.5px]" />}
+                        <MessageCircle className="h-4 w-4" />
+                        {!repliesAllowed && <Slash className="absolute top-0 left-0 h-4 w-4 stroke-[2.5px]" />}
                     </div>
                 </button>
                 <button className="flex items-center space-x-1 hover:text-green-500">
-                    <Repeat className={cn("h-5 w-5")} />
+                    <Repeat className={cn("h-4 w-4")} />
                 </button>
                  <button onClick={handleShare} className="flex items-center space-x-1 hover:text-primary">
-                    <ArrowUpRight className="h-5 w-5" />
+                    <ArrowUpRight className="h-4 w-4" />
                   </button>
             </div>
           </div>
