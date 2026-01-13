@@ -78,7 +78,6 @@ export default function UserProfilePage() {
     const [isRefreshing, setIsRefreshing] = useState(false);
     const [pullPosition, setPullPosition] = useState(0);
     const touchStartRef = useRef(0);
-    const initialScrollTop = useRef(0);
     const containerRef = useRef<HTMLDivElement>(null);
 
     const [posts, setPosts] = useState<WithId<Post>[]>([]);
@@ -175,24 +174,22 @@ export default function UserProfilePage() {
     };
 
     const handleTouchStart = (e: TouchEvent) => {
-        if (containerRef.current) {
-            initialScrollTop.current = containerRef.current.scrollTop;
-        }
         touchStartRef.current = e.targetTouches[0].clientY;
     };
 
     const handleTouchMove = (e: TouchEvent) => {
-        const touchY = e.targetTouches[0].clientY;
-        const pullDistance = touchY - touchStartRef.current;
-        if (initialScrollTop.current === 0 && pullDistance > 0 && !isRefreshing) {
-            if (pullDistance > 10) {
+        if (containerRef.current?.scrollTop === 0) {
+            const touchY = e.targetTouches[0].clientY;
+            const pullDistance = touchY - touchStartRef.current;
+
+            if (pullDistance > 0 && !isRefreshing) {
                  e.preventDefault();
+                const newPullPosition = Math.min(pullDistance, 120);
+                if (pullPosition <= 70 && newPullPosition > 70) {
+                    window.navigator.vibrate?.(50);
+                }
+                setPullPosition(newPullPosition);
             }
-            const newPullPosition = Math.min(pullDistance, 120);
-            if (pullPosition <= 70 && newPullPosition > 70) {
-                window.navigator.vibrate?.(50);
-            }
-            setPullPosition(newPullPosition);
         }
     };
 

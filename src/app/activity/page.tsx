@@ -144,7 +144,6 @@ export default function ActivityPage() {
     const [isRefreshing, setIsRefreshing] = useState(false);
     const [pullPosition, setPullPosition] = useState(0);
     const touchStartRef = useRef(0);
-    const initialScrollTop = useRef(0);
     const containerRef = useRef<HTMLDivElement>(null);
 
     const notificationsQuery = useMemoFirebase(() => {
@@ -228,26 +227,24 @@ export default function ActivityPage() {
     };
 
     const handleTouchStart = (e: TouchEvent) => {
-        if (containerRef.current) {
-            initialScrollTop.current = containerRef.current.scrollTop;
-        }
         touchStartRef.current = e.targetTouches[0].clientY;
     };
 
     const handleTouchMove = (e: TouchEvent) => {
-        const touchY = e.targetTouches[0].clientY;
-        const pullDistance = touchY - touchStartRef.current;
-        
-        if (initialScrollTop.current === 0 && pullDistance > 0 && !isRefreshing) {
-            if (pullDistance > 10) {
-                 e.preventDefault();
+        if (containerRef.current?.scrollTop === 0) {
+            const touchY = e.targetTouches[0].clientY;
+            const pullDistance = touchY - touchStartRef.current;
+
+            if (pullDistance > 0 && !isRefreshing) {
+                // Prevent default scroll behavior only when pulling
+                e.preventDefault(); 
+                
+                const newPullPosition = Math.min(pullDistance, 120);
+                if (pullPosition <= 70 && newPullPosition > 70) {
+                    window.navigator.vibrate?.(50);
+                }
+                setPullPosition(newPullPosition);
             }
-            const newPullPosition = Math.min(pullDistance, 120);
-            
-            if (pullPosition <= 70 && newPullPosition > 70) {
-                window.navigator.vibrate?.(50);
-            }
-            setPullPosition(newPullPosition);
         }
     };
 
