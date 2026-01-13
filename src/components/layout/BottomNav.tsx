@@ -7,7 +7,7 @@ import { Home, HomeIcon, Plus, Heart as HeartIcon, Send, User } from "lucide-rea
 import { cn } from "@/lib/utils";
 import { useFirebase, useMemoFirebase } from "@/firebase";
 import { collection, query, where, limit } from "firebase/firestore";
-import type { Notification, Conversation } from "@/lib/types";
+import type { Notification, Conversation, NotificationSettings } from "@/lib/types";
 import { useCollection } from "@/firebase/firestore/use-collection";
 import { useMemo } from "react";
 
@@ -18,6 +18,18 @@ const navItems = [
   { href: "/messages", label: "Messages", icon: Send, activeIcon: Send },
   { href: "/account", label: "Account", icon: User, activeIcon: User },
 ];
+
+// This needs to be consistent with the definition in activity/page.tsx
+const notificationInfo: Record<string, { settingKey?: keyof Omit<NotificationSettings, 'push'> }> = {
+    like: { settingKey: 'likes' },
+    comment: { settingKey: 'comments' },
+    comment_approval: { settingKey: 'comments' },
+    follow: { settingKey: 'followers' },
+    message_request: { settingKey: 'messageRequests' },
+    repost: { settingKey: 'reposts' },
+    quote: { settingKey: 'reposts' },
+    new_post: { settingKey: 'reposts' }, // Assuming this might fall under a general "updates" or similar category. For now, let's tie it to reposts setting.
+};
 
 
 export default function BottomNav() {
@@ -43,11 +55,35 @@ export default function BottomNav() {
   const { data: unreadNotifications } = useCollection<Notification>(unreadNotifsQuery);
   const { data: conversations } = useCollection<Conversation>(conversationsQuery);
 
+  const notificationSettings = useMemo(() => {
+    return userProfile?.notificationSettings || {
+        likes: true,
+        comments: true,
+        reposts: true,
+        followers: true,
+        messageRequests: true,
+    };
+  }, [userProfile]);
 
   const hasUnreadActivity = useMemo(() => {
     if (!unreadNotifications || unreadNotifications.length === 0) return false;
-    return unreadNotifications.length > 0;
-  }, [unreadNotifications]);
+
+    // Filter unread notifications based on settings before determining if the dot should show
+    const visibleUnread = unreadNotifications.filter(notification => {
+        const type = notification.type as keyof typeof notificationInfo;
+        const info = notificationInfo[type];
+        
+        // If the notification type has a setting key, check if that setting is enabled.
+        if (info && info.settingKey) {
+            return notificationSettings[info.settingKey as keyof NotificationSettings] !== false; // Show if setting is true or undefined
+        }
+
+        // If no specific setting is found for this notification type, default to showing it.
+        return true; 
+    });
+
+    return visibleUnread.length > 0;
+  }, [unreadNotifications, notificationSettings]);
   
   const hasUnreadMessagesOrRequests = useMemo(() => {
     if (!conversations || !user) return false;
