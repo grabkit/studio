@@ -79,10 +79,10 @@ export function PollComponent({ post, user, onVote }: { post: WithId<Post>, user
     }, [post.pollOptions]);
 
     const pollColors = useMemo(() => [
-        'bg-sky-200 text-sky-800', 
-        'bg-emerald-200 text-emerald-800', 
-        'bg-amber-200 text-amber-800', 
-        'bg-fuchsia-200 text-fuchsia-800'
+        { light: 'bg-sky-200 text-sky-800', dark: 'bg-sky-500 text-white' },
+        { light: 'bg-emerald-200 text-emerald-800', dark: 'bg-emerald-500 text-white' },
+        { light: 'bg-amber-200 text-amber-800', dark: 'bg-amber-500 text-white' },
+        { light: 'bg-fuchsia-200 text-fuchsia-800', dark: 'bg-fuchsia-500 text-white' }
     ], []);
 
 
@@ -166,8 +166,8 @@ export function PollComponent({ post, user, onVote }: { post: WithId<Post>, user
             {post.pollOptions?.map((option, index) => {
                 const percentage = totalVotes > 0 ? (option.votes / totalVotes) * 100 : 0;
                 const isUserChoice = userVoteIndex === index;
-                const [bgColor, textColor] = pollColors[index % pollColors.length].split(' ');
-
+                const colorSet = pollColors[index % pollColors.length];
+                const [bgColor, textColor] = (isUserChoice ? colorSet.dark : colorSet.light).split(' ');
 
                 if (hasVoted) {
                      return (
@@ -189,12 +189,20 @@ export function PollComponent({ post, user, onVote }: { post: WithId<Post>, user
                                     transition={{ delay: 0.3 }}
                                 >
                                     {isUserChoice && <CheckCircle2 className={cn("h-4 w-4 shrink-0", textColor)} />}
-                                    <span className={cn("truncate text-sm font-medium", textColor)}>
+                                    <span className={cn(
+                                        "truncate text-sm", 
+                                        textColor,
+                                        isUserChoice ? 'font-bold' : 'font-medium'
+                                    )}>
                                         {option.option}
                                     </span>
                                 </motion.div>
                                 <motion.span 
-                                    className={cn("text-sm font-medium", textColor)}
+                                    className={cn(
+                                        "text-sm", 
+                                        textColor,
+                                        isUserChoice ? 'font-bold' : 'font-medium'
+                                    )}
                                     initial={{ opacity: 0 }}
                                     animate={{ opacity: 1 }}
                                     transition={{ delay: 0.3 }}
@@ -680,7 +688,7 @@ export default function HomePage() {
   const handleTouchEnd = () => {
       if (isRefreshing) return;
 
-      if (pullPosition > 70) {
+      if (pullPosition > 70 && scrollStartY.current === 0) {
           handleRefresh();
       } else {
           // Snap back if not pulled enough
