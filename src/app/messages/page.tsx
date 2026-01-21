@@ -333,7 +333,9 @@ function ConversationsList({
     onLongPress: (conversation: WithId<Conversation>) => void;
 }) {
     const emptyStateTitle = type === 'chats' ? "No Chats Yet" : "No New Requests";
-    const emptyStateDescription = type === 'chats' ? "Accepted requests will appear here." : "When a user wants to chat, you'll see their request here.";
+    const emptyStateDescription = type === 'chats' 
+        ? "Start a chat by sending a request to others. Your first anonymous chat is one tap away." 
+        : "When a user wants to chat, you'll see their request here.";
     const EmptyIcon = type === 'chats' ? MessageSquare : Mail;
 
     if (isLoading) {
@@ -350,6 +352,11 @@ function ConversationsList({
                 <p className="text-muted-foreground mt-2 max-w-sm mx-auto">
                    {emptyStateDescription}
                 </p>
+                {type === 'chats' && (
+                    <Button asChild className="mt-6 bg-primary text-primary-foreground hover:bg-primary/90 rounded-full font-bold">
+                        <Link href="/home">Start a New Chat</Link>
+                    </Button>
+                )}
             </div>
         )
     }
