@@ -8,6 +8,9 @@ const ogImageUrl = "https://blogger.googleusercontent.com/img/b/R29vZ2xl/AVvXsEg
 export const metadata: Metadata = {
   title: 'Blur Networks',
   description: 'Your secure and anonymous identity starts here.',
+  icons: {
+    icon: 'https://blogger.googleusercontent.com/img/b/R29vZ2xl/AVvXsEg8detuvYHZT2-GWXVQcJMUvb5veWvHhrCSb31Z370W02gels89bK3Jp5sY9XpNXISWQJZhXkhSwNuacfQKemfhSvs0-kWrMRBXj6tM8lsk-Jmg1rHbMpeKuu5szJrXE35iBX0Iud33rC2UOyTr4ml0VvrWBGfB1M1Tm07WcLRilRHAtb2poEnq8BBe90fF/s320/Blur%20Favicon%20logo.png',
+  },
   openGraph: {
     title: 'Blur Networks',
     description: 'Your secure and anonymous identity starts here.',
