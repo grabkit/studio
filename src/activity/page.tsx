@@ -1,11 +1,10 @@
-
 "use client";
 
 import AppLayout from "@/components/AppLayout";
 import { useFirebase, useMemoFirebase, useUser } from "@/firebase";
 import { collection, query, orderBy, limit, doc, updateDoc, writeBatch, getDocs } from "firebase/firestore";
 import { useCollection, type WithId } from "@/firebase/firestore/use-collection";
-import type { Notification } from "@/lib/types";
+import type { Notification, NotificationSettings } from "@/lib/types";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import Link from "next/link";
@@ -14,48 +13,55 @@ import { cn, formatTimestamp, getAvatar, formatUserId } from "@/lib/utils.tsx";
 import { Button } from "@/components/ui/button";
 import React, { useEffect, useState, useRef, useCallback, type TouchEvent, useMemo } from "react";
 import { motion } from "framer-motion";
-import { PullToRefreshIndicator } from "@/components/PullToRefreshIndicator";
 
 const notificationInfo = {
     like: {
         icon: Heart,
         text: "liked your post",
         color: "text-pink-500",
+        settingKey: 'likes',
     },
     comment: {
         icon: MessageCircle,
         text: "replied to your post", 
         color: "text-blue-500",
+        settingKey: 'comments',
     },
     comment_approval: {
         icon: AlertTriangle,
         text: "reply needs your approval",
         color: "text-amber-500",
+        settingKey: 'comments', // assuming this falls under comments
     },
     follow: {
         icon: UserPlus,
         text: "started following you",
         color: "text-green-500",
+        settingKey: 'followers',
     },
     message_request: {
         icon: Mail,
         text: "wants to send you a message",
         color: "text-purple-500",
+        settingKey: 'messageRequests',
     },
     repost: {
         icon: Repeat,
         text: "reposted your post",
         color: "text-green-500",
+        settingKey: 'reposts',
     },
     quote: {
         icon: MessageSquareQuote,
         text: "quoted your post",
         color: "text-blue-500",
+        settingKey: 'reposts', // assuming this falls under reposts
     },
     new_post: {
         icon: Newspaper,
         text: "shared a new thought",
         color: "text-gray-500",
+        settingKey: 'reposts', // Assuming this might fall under a general "updates" or similar category. For now, let's tie it to reposts setting.
     }
 } as const;
 
@@ -134,11 +140,6 @@ function ActivitySkeleton() {
 export default function ActivityPage() {
     const { firestore, user, userProfile } = useFirebase();
 
-    const [isRefreshing, setIsRefreshing] = useState(false);
-    const [pullPosition, setPullPosition] = useState(0);
-    const touchStartRef = useRef(0);
-    const containerRef = useRef<HTMLDivElement>(null);
-
     const notificationsQuery = useMemoFirebase(() => {
         if (!firestore || !user) return null;
         return query(
@@ -168,56 +169,30 @@ export default function ActivityPage() {
         });
 
     }, [notifications, firestore, user]);
+    
+    const settings = useMemo(() => {
+        return userProfile?.notificationSettings || {
+            likes: true,
+            comments: true,
+            reposts: true,
+            followers: true,
+            messageRequests: true,
+        };
+    }, [userProfile]);
 
-    const fetchNotifications = async () => {
-        if (!notificationsQuery) return;
-        try {
-            const querySnapshot = await getDocs(notificationsQuery);
-            const fetchedNotifications = querySnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as WithId<Notification>));
-            setNotifications(fetchedNotifications);
-        } catch (error) {
-            console.error("Error fetching notifications:", error);
-        }
-    };
-
-    const handleRefresh = async () => {
-        if (isRefreshing) return;
-        setIsRefreshing(true);
-        window.navigator.vibrate?.(50);
-        await fetchNotifications();
-        setTimeout(() => {
-            setIsRefreshing(false);
-            setPullPosition(0);
-            window.navigator.vibrate?.(50);
-        }, 500);
-    };
-
-    const handleTouchStart = (e: TouchEvent) => {
-        touchStartRef.current = e.targetTouches[0].clientY;
-    };
-
-    const handleTouchMove = (e: TouchEvent) => {
-        const touchY = e.targetTouches[0].clientY;
-        const pullDistance = touchY - touchStartRef.current;
+    const filteredNotifications = useMemo(() => {
+        if (!notifications) return [];
         
-        if (containerRef.current && containerRef.current.scrollTop === 0 && pullDistance > 0 && !isRefreshing) {
-            e.preventDefault();
-            const newPullPosition = Math.min(pullDistance, 120);
-            
-            if (pullPosition <= 70 && newPullPosition > 70) {
-                window.navigator.vibrate?.(50);
-            }
-            setPullPosition(newPullPosition);
-        }
-    };
+        return notifications.filter(notification => {
+             const type = notification.type as keyof typeof notificationInfo;
+             const info = notificationInfo[type];
+             if (info && info.settingKey) {
+                 return settings[info.settingKey as keyof NotificationSettings] !== false; // Show if setting is true or undefined
+             }
+             return true; // Show notifications that don't have a specific setting (e.g. comment_approval)
+        });
 
-    const handleTouchEnd = () => {
-        if (pullPosition > 70) {
-            handleRefresh();
-        } else {
-            setPullPosition(0);
-        }
-    };
+    }, [notifications, settings]);
 
 
     return (
@@ -229,15 +204,9 @@ export default function ActivityPage() {
                 transition={{ duration: 0.3 }}
             >
                 <div
-                    ref={containerRef}
-                    onTouchStart={handleTouchStart}
-                    onTouchMove={handleTouchMove}
-                    onTouchEnd={handleTouchEnd}
                     className="relative h-full overflow-y-auto"
                 >
-                    <PullToRefreshIndicator pullPosition={pullPosition} isRefreshing={isRefreshing} />
-
-                    <div style={{ transform: `translateY(${pullPosition}px)` }}>
+                    <div>
                         <div className="p-4 border-b">
                             <h1 className="text-2xl font-bold font-headline">Activity</h1>
                         </div>
@@ -250,13 +219,13 @@ export default function ActivityPage() {
                                     <ActivitySkeleton />
                                 </>
                             )}
-                            {!isLoading && notifications?.length === 0 && (
+                            {!isLoading && filteredNotifications?.length === 0 && (
                                 <div className="text-center py-20">
                                     <h2 className="text-2xl font-headline text-primary">No Activity Yet</h2>
                                     <p className="text-muted-foreground mt-2">Likes and comments on your posts will appear here.</p>
                                 </div>
                             )}
-                            {notifications?.map(notification => (
+                            {filteredNotifications?.map(notification => (
                                 <NotificationItem key={notification.id} notification={notification} />
                             ))}
                         </div>

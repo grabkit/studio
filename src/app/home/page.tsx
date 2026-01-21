@@ -1,4 +1,3 @@
-
 "use client";
 
 import AppLayout from "@/components/AppLayout";
@@ -642,11 +641,6 @@ export function PostSkeleton() {
 export default function HomePage() {
   const { firestore, userProfile } = useFirebase();
   const { user } = useUser();
-  const containerRef = useRef<HTMLDivElement>(null);
-  const scrollStartY = useRef(0);
-  const touchStartRef = useRef(0);
-  const [pullPosition, setPullPosition] = useState(0);
-  const [isRefreshing, setIsRefreshing] = useState(false);
   
   const postsQuery = useMemoFirebase(() => {
     if (!firestore) return null;
@@ -654,51 +648,7 @@ export default function HomePage() {
   }, [firestore]);
 
   const { data: initialPosts, isLoading: postsLoading, setData } = useCollection<Post>(postsQuery);
-  
-  const fetchPosts = useCallback(async () => {
-    if (!postsQuery) return;
-    const querySnapshot = await getDocs(postsQuery);
-    const posts = querySnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as WithId<Post>));
-    setData(posts);
-  }, [postsQuery, setData]);
 
-  const handleRefresh = useCallback(async () => {
-    if (isRefreshing) return;
-    setIsRefreshing(true);
-    await fetchPosts();
-    // Simulate a delay for visual feedback
-    setTimeout(() => {
-        setIsRefreshing(false);
-        setPullPosition(0);
-    }, 500);
-  }, [isRefreshing, fetchPosts]);
-
-
-  const handleTouchStart = (e: TouchEvent) => {
-    scrollStartY.current = containerRef.current?.scrollTop || 0;
-    touchStartRef.current = e.targetTouches[0].clientY;
-  };
-
-  const handleTouchMove = (e: TouchEvent) => {
-      const touchY = e.targetTouches[0].clientY;
-      const pullDistance = touchY - touchStartRef.current;
-
-      // Only allow pull-to-refresh if the user is at the top of the scroll container
-      if (scrollStartY.current === 0 && pullDistance > 0) {
-        // Prevent the browser's default pull-to-refresh action
-        e.preventDefault();
-        setPullPosition(pullDistance);
-      }
-  };
-
-  const handleTouchEnd = () => {
-      if (pullPosition > 80) { // Threshold to trigger refresh
-        handleRefresh();
-      } else {
-        setPullPosition(0);
-      }
-  };
-  
   const updatePost = useCallback((postId: string, updatedData: Partial<Post>) => {
     setData(currentPosts => {
         if (!currentPosts) return null;
@@ -739,54 +689,30 @@ export default function HomePage() {
         transition={{ duration: 0.3 }}
       >
         <div
-          ref={containerRef}
-          onTouchStart={handleTouchStart}
-          onTouchMove={handleTouchMove}
-          onTouchEnd={handleTouchEnd}
           className="relative h-full overflow-y-auto"
         >
-          {isRefreshing ? (
-             <div className="absolute top-0 left-0 right-0 flex justify-center items-center h-16 pointer-events-none">
-                <Loader2 className="h-6 w-6 animate-spin text-primary" />
-            </div>
-          ) : (
-             <div
-                className="absolute top-0 left-0 right-0 flex justify-center items-center h-16 pointer-events-none"
-                style={{ opacity: Math.min(pullPosition / 80, 1) }}
-            >
-               <div
-                    className="h-8 w-8 rounded-full flex items-center justify-center bg-secondary"
-                    style={{ transform: `rotate(${pullPosition}deg)` }}
-                >
-                    <ArrowDown className="h-5 w-5 text-muted-foreground" />
-                </div>
-            </div>
-          )}
-          
-          <div style={{ transform: `translateY(${isRefreshing ? '4rem' : '0px'})`, transition: 'transform 0.3s' }}>
-            <div className="divide-y border-b">
-              {(isLoading || !initialPosts) && (
-                <>
-                  <PostSkeleton />
-                  <PostSkeleton />
-                  <PostSkeleton />
-                  <PostSkeleton />
-                  <PostSkeleton />
-                </>
-              )}
+          <div className="divide-y border-b">
+            {(isLoading || !initialPosts) && (
+              <>
+                <PostSkeleton />
+                <PostSkeleton />
+                <PostSkeleton />
+                <PostSkeleton />
+                <PostSkeleton />
+              </>
+            )}
 
-              {!isLoading && initialPosts && filteredPosts.length === 0 && (
-                <div className="text-center py-10 h-screen">
-                  <h2 className="text-2xl font-headline text-primary">No posts yet!</h2>
-                  <p className="text-muted-foreground mt-2">Start following people to see their posts here.</p>
-                </div>
-              )}
-              
-              {!isLoading && initialPosts && filteredPosts.map((post) => (
-                  <PostItem key={post.id} post={post} bookmarks={bookmarks} updatePost={updatePost} onDelete={handleDeletePostOptimistic} />
-                ))
-              }
-            </div>
+            {!isLoading && initialPosts && filteredPosts.length === 0 && (
+              <div className="text-center py-10 h-screen">
+                <h2 className="text-2xl font-headline text-primary">No posts yet!</h2>
+                <p className="text-muted-foreground mt-2">Start following people to see their posts here.</p>
+              </div>
+            )}
+            
+            {!isLoading && initialPosts && filteredPosts.map((post) => (
+                <PostItem key={post.id} post={post} bookmarks={bookmarks} updatePost={updatePost} onDelete={handleDeletePostOptimistic} />
+              ))
+            }
           </div>
         </div>
       </motion.div>
