@@ -39,6 +39,7 @@ export default function RootLayout({
   return (
     <html lang="en">
       <head>
+        <link rel="icon" href="https://blogger.googleusercontent.com/img/b/R29vZ2xl/AVvXsEg8detuvYHZT2-GWXVQcJMUvb5veWvHhrCSb31Z370W02gels89bK3Jp5sY9XpNXISWQJZhXkhSwNuacfQKemfhSvs0-kWrMRBXj6tM8lsk-Jmg1rHbMpeKuu5szJrXE35iBX0Iud33rC2UOyTr4ml0VvrWBGfB1M1Tm07WcLRilRHAtb2poEnq8BBe90fF/s320/Blur%20Favicon%20logo.png" sizes="any" />
         <link rel="preconnect" href="https://fonts.googleapis.com" />
         <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="anonymous" />
         <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600;700&family=PT+Sans:wght@400;700&display=swap" rel="stylesheet" />
