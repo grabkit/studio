@@ -1,4 +1,3 @@
-
 'use client';
 
 import { motion, AnimatePresence } from 'framer-motion';
@@ -28,11 +27,11 @@ const variants = {
 
 export function AnimatedCount({ count, direction }: AnimatedCountProps) {
   if (count <= 0) {
-    return <span className="text-xs w-4">&nbsp;</span>;
+    return <span className="text-xs w-10">&nbsp;</span>;
   }
   
   return (
-    <div className="relative h-4 w-4 overflow-hidden text-left flex items-center">
+    <div className="relative h-4 w-10 text-left flex items-center">
       <AnimatePresence initial={false} custom={direction}>
         <motion.span
           key={count}

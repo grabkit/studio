@@ -530,14 +530,14 @@ function InnerPostItem({ post, bookmarks, updatePost, onDelete, onPin, showPinSt
 
             <div className="flex items-center justify-between pt-2 text-muted-foreground">
                 <div className="flex items-center space-x-6">
-                  <button onClick={handleLike} disabled={isLiking} className={cn("flex items-center space-x-1 w-8", hasLiked && "text-pink-500")}>
+                  <button onClick={handleLike} disabled={isLiking} className={cn("flex items-center space-x-1", hasLiked && "text-pink-500")}>
                     <Heart className="h-4 w-4 shrink-0" fill={hasLiked ? 'currentColor' : 'none'} />
                     <AnimatedCount count={post.likeCount} direction={likeDirection} />
                   </button>
                   <CommentButtonWrapper
                     href={`/post/${post.id}`}
                     className={cn(
-                        "flex items-center space-x-1 w-8",
+                        "flex items-center space-x-1",
                         repliesAllowed ? "hover:text-primary" : "opacity-50 pointer-events-none"
                     )}
                   >
@@ -547,7 +547,7 @@ function InnerPostItem({ post, bookmarks, updatePost, onDelete, onPin, showPinSt
                     </div>
                     <AnimatedCount count={post.commentCount} direction="up" />
                   </CommentButtonWrapper>
-                  <button onClick={handleRepost} className="flex items-center space-x-1 w-8 hover:text-green-500">
+                  <button onClick={handleRepost} className="flex items-center space-x-1 hover:text-green-500">
                     <Repeat className={cn("h-4 w-4 shrink-0")} />
                     <AnimatedCount count={post.repostCount} direction="up" />
                   </button>
