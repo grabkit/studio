@@ -13,7 +13,7 @@ import type { Post, Bookmark, User, Notification } from "@/lib/types";
 import { Skeleton } from "@/components/ui/skeleton";
 import React, { useMemo, useState, useEffect, useCallback, useRef, type TouchEvent } from "react";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
-import { getAvatar, cn, formatUserId } from "@/lib/utils";
+import { getAvatar, cn, formatUserId, getFormattedUserIdString } from "@/lib/utils";
 
 import { PostItem as HomePostItem, PostSkeleton } from "@/app/home/page";
 import { RepliesList } from "@/components/RepliesList";
@@ -230,8 +230,8 @@ export default function AccountPage() {
 
   const handleShareProfile = async () => {
     const shareData = {
-      title: `Check out ${formatUserId(authUser?.uid)} on Blur`,
-      text: `View ${formatUserId(authUser?.uid)}'s profile on Blur.`,
+      title: `Check out ${getFormattedUserIdString(authUser?.uid)} on Blur`,
+      text: `View ${getFormattedUserIdString(authUser?.uid)}'s profile on Blur.`,
       url: window.location.origin + `/profile/${authUser?.uid}`,
     };
 

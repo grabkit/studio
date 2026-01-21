@@ -84,17 +84,17 @@ export function CallView({
 
     const getStatusText = () => {
         if (isAnswered) {
-            return formatDuration(callDuration);
+            return <>{formatDuration(callDuration)}</>;
         }
         switch (status) {
             case 'offering':
-                 return `Calling ${formatUserId(otherPartyId)}...`;
+                 return <>Calling {formatUserId(otherPartyId)}...</>;
             case 'ringing':
-                 return `${formatUserId(otherPartyId)} is calling...`;
+                 return <>{formatUserId(otherPartyId)} is calling...</>;
             case 'answered':
-                return 'Connected';
+                return <>Connected</>;
             default:
-                return '...';
+                return <>...</>;
         }
     };
     
@@ -105,7 +105,7 @@ export function CallView({
 
             <div className="text-center pt-20">
                 <Avatar className="h-32 w-32 mx-auto mb-6">
-                    <AvatarImage src={isAvatarUrl ? avatar : undefined} alt={formatUserId(otherPartyId)} />
+                    <AvatarImage src={isAvatarUrl ? avatar : undefined} alt={String(formatUserId(otherPartyId))} />
                     <AvatarFallback className="text-5xl">{!isAvatarUrl ? avatar : ''}</AvatarFallback>
                 </Avatar>
                 <h1 className="text-3xl font-bold">{formatUserId(otherPartyId)}</h1>
@@ -177,5 +177,3 @@ export function CallView({
         </div>
     );
 }
-
-    

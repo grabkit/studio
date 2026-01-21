@@ -25,6 +25,26 @@ const hashCode = (s: string) => s.split('').reduce((a, b) => {
 const VERIFIED_USER_IDS = ['j2OfaN33r2SMyg5N7lYdFkS3lA52'];
 const ADMIN_USER_ID = 'e9ZGHMjgnmO3ueSbf1ao3Crvlr02';
 
+function getUsername(uid: string): string {
+  const hash = Math.abs(hashCode(uid));
+  const adjIndex = hash % adjectives.length;
+  const nounIndex = (hash >> 8) % nouns.length;
+  const number = (hash >> 16) % 10000;
+  const adjective = adjectives[adjIndex];
+  const noun = nouns[nounIndex];
+  let combined = `${adjective}${noun}`;
+  if (combined.length > 12) {
+    combined = combined.substring(0, 12);
+  }
+  return `${combined}-${String(number).padStart(4, '0')}`;
+}
+
+export function getFormattedUserIdString(uid: string | undefined): string {
+    if (!uid) return "Anonymous-User-0000";
+    if (uid === ADMIN_USER_ID) return "Blur";
+    return getUsername(uid);
+}
+
 
 export function formatUserId(uid: string | undefined): React.ReactNode {
   if (!uid) return "Anonymous-User-0000";
@@ -39,26 +59,12 @@ export function formatUserId(uid: string | undefined): React.ReactNode {
     );
   }
 
-  const hash = Math.abs(hashCode(uid));
-  
-  const adjIndex = hash % adjectives.length;
-  const nounIndex = (hash >> 8) % nouns.length;
-  const number = (hash >> 16) % 10000; // 4-digit number
-
-  const adjective = adjectives[adjIndex];
-  const noun = nouns[nounIndex];
-
-  // Combine and trim to a max length to keep UI consistent
-  let combined = `${adjective}${noun}`;
-  if (combined.length > 12) {
-    combined = combined.substring(0, 12);
-  }
-
+  const username = getUsername(uid);
   const isVerified = VERIFIED_USER_IDS.includes(uid);
 
   return (
     <span className="inline-flex items-center gap-0.5">
-      <span>{`${combined}-${String(number).padStart(4, '0')}`}</span>
+      <span>{username}</span>
       {isVerified && <Verified className="h-4 w-4 text-amber-500" fill="currentColor" stroke="white" strokeWidth={2} />}
     </span>
   );

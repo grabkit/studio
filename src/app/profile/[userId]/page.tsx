@@ -17,7 +17,7 @@ import { Button, buttonVariants } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { ArrowLeft, MessageSquare, ArrowUpRight, MoreHorizontal, ShieldAlert, Flag, VolumeX, Info, MinusCircle, Link as LinkIcon, QrCode, Calendar, Badge, User as UserIcon, Volume2, BarChart3, ChevronDown, Loader2 } from "lucide-react";
-import { getAvatar, cn, formatLastSeen, formatUserId } from "@/lib/utils.tsx";
+import { getAvatar, cn, formatLastSeen, formatUserId, getFormattedUserIdString } from "@/lib/utils.tsx";
 import { FirestorePermissionError } from "@/firebase/errors";
 import { errorEmitter } from "@/firebase/error-emitter";
 import { PostItem as HomePostItem, PostSkeleton } from "@/app/home/page";
@@ -319,8 +319,8 @@ export default function UserProfilePage() {
     const handleShare = async () => {
         if (!user) return;
         const shareData = {
-            title: `Check out ${formatUserId(user.id)} on Blur`,
-            text: `View ${formatUserId(user.id)}'s profile on Blur.`,
+            title: `Check out ${getFormattedUserIdString(user.id)} on Blur`,
+            text: `View ${getFormattedUserIdString(user.id)}'s profile on Blur.`,
             url: window.location.href,
         };
         try {
@@ -775,7 +775,7 @@ export default function UserProfilePage() {
                                 </Button>
                             </div>
                             <div className="border rounded-2xl">
-                                <ReportDialog reportedUserId={user.id} reportedUserName={formatUserId(user.id).toString()}>
+                                <ReportDialog reportedUserId={user.id} reportedUserName={getFormattedUserIdString(user.id).toString()}>
                                     <Button variant="ghost" className="justify-between text-base py-6 rounded-2xl w-full text-destructive hover:text-destructive">
                                         <span>Report</span>
                                         <Flag className="h-5 w-5" />
