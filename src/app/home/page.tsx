@@ -528,36 +528,34 @@ function InnerPostItem({ post, bookmarks, updatePost, onDelete, onPin, showPinSt
                 <PollComponent post={post} user={user} onVote={(updatedData) => updatePost?.(post.id, updatedData)} />
             )}
 
-            <div className="flex items-center justify-between pt-2 text-muted-foreground">
-                <div className="flex items-center space-x-6">
-                  <button onClick={handleLike} disabled={isLiking} className={cn("flex items-center space-x-1", hasLiked && "text-pink-500")}>
-                    <Heart className="h-4 w-4 shrink-0" fill={hasLiked ? 'currentColor' : 'none'} />
-                    <AnimatedCount count={post.likeCount} direction={likeDirection} />
-                  </button>
-                  <CommentButtonWrapper
-                    href={`/post/${post.id}`}
-                    className={cn(
-                        "flex items-center space-x-1",
-                        repliesAllowed ? "hover:text-primary" : "opacity-50 pointer-events-none"
-                    )}
-                  >
-                    <div className="relative">
-                      <MessageCircle className="h-4 w-4 shrink-0" />
-                      {!repliesAllowed && <Slash className="absolute top-0 left-0 h-4 w-4 stroke-[2.5px]" />}
-                    </div>
-                    <AnimatedCount count={post.commentCount} direction="up" />
-                  </CommentButtonWrapper>
-                  <button onClick={handleRepost} className="flex items-center space-x-1 hover:text-green-500">
-                    <Repeat className={cn("h-4 w-4 shrink-0")} />
-                    <AnimatedCount count={post.repostCount} direction="up" />
-                  </button>
-                  <button onClick={() => setIsShareSheetOpen(true)} className="flex items-center space-x-1 hover:text-primary">
-                    <ArrowUpRight className="h-4 w-4 shrink-0" />
-                  </button>
-                   <button onClick={handleBookmark} className="flex items-center space-x-1 hover:text-foreground">
-                    <BookmarkIcon className={cn("h-4 w-4 shrink-0", isBookmarked && "text-foreground fill-foreground")} />
-                  </button>
+            <div className="flex items-center space-x-4 pt-2 text-muted-foreground">
+              <button onClick={handleLike} disabled={isLiking} className={cn("flex items-center space-x-1", hasLiked && "text-pink-500")}>
+                <Heart className="h-4 w-4 shrink-0" fill={hasLiked ? 'currentColor' : 'none'} />
+                <AnimatedCount count={post.likeCount} direction={likeDirection} />
+              </button>
+              <CommentButtonWrapper
+                href={`/post/${post.id}`}
+                className={cn(
+                    "flex items-center space-x-1",
+                    repliesAllowed ? "hover:text-primary" : "opacity-50 pointer-events-none"
+                )}
+              >
+                <div className="relative">
+                  <MessageCircle className="h-4 w-4 shrink-0" />
+                  {!repliesAllowed && <Slash className="absolute top-0 left-0 h-4 w-4 stroke-[2.5px]" />}
                 </div>
+                <AnimatedCount count={post.commentCount} direction="up" />
+              </CommentButtonWrapper>
+              <button onClick={handleRepost} className="flex items-center space-x-1 hover:text-green-500">
+                <Repeat className={cn("h-4 w-4 shrink-0")} />
+                <AnimatedCount count={post.repostCount} direction="up" />
+              </button>
+              <button onClick={() => setIsShareSheetOpen(true)} className="flex items-center space-x-1 hover:text-primary">
+                <ArrowUpRight className="h-4 w-4 shrink-0" />
+              </button>
+               <button onClick={handleBookmark} className="flex items-center space-x-1 hover:text-foreground">
+                <BookmarkIcon className={cn("h-4 w-4 shrink-0", isBookmarked && "text-foreground fill-foreground")} />
+              </button>
             </div>
       </div>
     </div>
@@ -795,6 +793,8 @@ export default function HomePage() {
     </AppLayout>
   );
 }
+    
+
     
 
     
