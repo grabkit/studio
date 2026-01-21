@@ -3,9 +3,29 @@ import './globals.css';
 import { Toaster } from '@/components/ui/toaster';
 import { FirebaseClientProvider } from '@/firebase/client-provider';
 
+const ogImageUrl = "https://blogger.googleusercontent.com/img/b/R29vZ2xl/AVvXsEgSIOQYwoQ_D8LcS9OlsMjXOlBws0OSrPnxh7nqq_wHdmqQ9PlIRvrtOni6EwDf68sAofpaFhvfA4wK58PpYu6HV4JeLsFbj61-ryJZUGPsGed4dswZSblL09Huc3Fd4-nmSln8MybhJVeWIMSoudR_U6Pe0IiCuiJ4ucEqFn6i0zNdTqNwM6goO8pbOaOR/s320/blur%20OG%20logo.png";
+
 export const metadata: Metadata = {
   title: 'Blur Identity',
   description: 'Your secure and anonymous identity starts here.',
+  openGraph: {
+    title: 'Blur Identity',
+    description: 'Your secure and anonymous identity starts here.',
+    images: [
+      {
+        url: ogImageUrl,
+        width: 320,
+        height: 320,
+      },
+    ],
+    type: 'website',
+  },
+  twitter: {
+    card: 'summary',
+    title: 'Blur Identity',
+    description: 'Your secure and anonymous identity starts here.',
+    images: [ogImageUrl],
+  },
 };
 
 export default function RootLayout({
