@@ -60,7 +60,7 @@ export default function AppLayout({
     return (
       <div className="flex h-screen w-full flex-col items-center justify-center bg-background space-y-4">
         <Loader2 className="h-10 w-10 animate-spin text-primary" />
-        <p className="font-headline text-muted-foreground">Loading Your Space</p>
+        <p className="font-headline text-muted-foreground">Initializing</p>
       </div>
     );
   }
