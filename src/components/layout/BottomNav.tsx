@@ -2,17 +2,18 @@
 "use client";
 
 import Link from "next/link";
-import { usePathname } from "next/navigation";
+import { usePathname, useRouter } from "next/navigation";
 import { Home, HomeIcon, Plus, Heart as HeartIcon, Send, User } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useFirebase, useMemoFirebase } from "@/firebase";
 import { collection, query, where, limit } from "firebase/firestore";
 import type { Notification, Conversation, NotificationSettings } from "@/lib/types";
 import { useCollection } from "@/firebase/firestore/use-collection";
-import { useMemo } from "react";
+import { useMemo, useState } from "react";
+import { eventBus } from "@/lib/event-bus";
 
 const navItems = [
-  { href: "/home", label: "Home", icon: Home, activeIcon: HomeIcon },
+  { href: "/home", label: "Home", icon: Home, activeIcon: HomeIcon, event: "refresh-home" },
   { href: "/activity", label: "Activity", icon: HeartIcon, activeIcon: HeartIcon },
   { href: "/post", label: "Post", icon: Plus, activeIcon: Plus },
   { href: "/messages", label: "Messages", icon: Send, activeIcon: Send },
@@ -28,13 +29,15 @@ const notificationInfo: Record<string, { settingKey?: keyof Omit<NotificationSet
     message_request: { settingKey: 'messageRequests' },
     repost: { settingKey: 'reposts' },
     quote: { settingKey: 'reposts' },
-    new_post: { settingKey: 'reposts' }, // Assuming this might fall under a general "updates" or similar category. For now, let's tie it to reposts setting.
+    new_post: { settingKey: 'reposts' },
 };
 
 
 export default function BottomNav() {
   const pathname = usePathname();
+  const router = useRouter(); // For navigation
   const { firestore, user, userProfile } = useFirebase();
+  const [lastTap, setLastTap] = useState(0);
 
   const unreadNotifsQuery = useMemoFirebase(() => {
     if (!firestore || !user) return null;
@@ -68,17 +71,14 @@ export default function BottomNav() {
   const hasUnreadActivity = useMemo(() => {
     if (!unreadNotifications || unreadNotifications.length === 0) return false;
 
-    // Filter unread notifications based on settings before determining if the dot should show
     const visibleUnread = unreadNotifications.filter(notification => {
         const type = notification.type as keyof typeof notificationInfo;
         const info = notificationInfo[type];
         
-        // If the notification type has a setting key, check if that setting is enabled.
         if (info && info.settingKey) {
-            return notificationSettings[info.settingKey as keyof NotificationSettings] !== false; // Show if setting is true or undefined
+            return notificationSettings[info.settingKey as keyof NotificationSettings] !== false;
         }
 
-        // If no specific setting is found for this notification type, default to showing it.
         return true; 
     });
 
@@ -97,6 +97,31 @@ export default function BottomNav() {
   }, [conversations, user]);
 
 
+  const handleNavClick = (itemHref: string, itemEvent?: string) => {
+    const now = Date.now();
+    const isMessagesPath = itemHref === '/messages';
+    const isActive = isMessagesPath ? pathname.startsWith(itemHref) : pathname === itemHref;
+
+    if (isActive) {
+        // It's the active tab, check for double tap
+        if (now - lastTap < 300) {
+            // Double tap
+            if (itemEvent) {
+                eventBus.emit(itemEvent);
+            }
+            setLastTap(0); // Reset tap timer
+        } else {
+            // First tap on active tab
+            setLastTap(now);
+        }
+    } else {
+        // Not the active tab, just navigate
+        router.push(itemHref);
+        setLastTap(0); // Reset on navigation
+    }
+  };
+
+
   const isMessagesActive = pathname.startsWith('/messages');
 
   return (
@@ -108,23 +133,40 @@ export default function BottomNav() {
           const isActivityTab = item.href === '/activity';
           const isMessagesTab = item.href === '/messages';
           const isPostTab = item.href === '/post';
-          const isAccountTab = item.href === '/account';
 
+          // For the post button, we still want a direct link. For others, a button for the onClick handler.
+          if (isPostTab) {
+              return (
+                <Link
+                  key={item.href}
+                  href={item.href}
+                  aria-label={item.label}
+                  className={cn(
+                    "flex flex-col items-center justify-center w-16 transition-colors duration-200",
+                    "text-muted-foreground hover:text-foreground"
+                  )}
+                >
+                  <div className="p-3 rounded-full">
+                     <Icon className="h-7 w-7" />
+                  </div>
+                </Link>
+              )
+          }
 
           return (
-            <Link
+            <button
               key={item.href}
-              href={item.href}
+              onClick={() => handleNavClick(item.href, item.event)}
               aria-label={item.label}
               className={cn(
                 "flex flex-col items-center justify-center w-16 transition-colors duration-200",
-                isActive && item.href !== '/post' ? "text-foreground" : "text-muted-foreground hover:text-foreground"
+                isActive ? "text-foreground" : "text-muted-foreground hover:text-foreground"
               )}
             >
               <div className={cn(
                 "p-3 rounded-full relative"
               )}>
-                <Icon className={cn("h-7 w-7")} fill={(isActive && !isPostTab) ? "currentColor" : "none"} />
+                <Icon className={cn("h-7 w-7")} fill={isActive ? "currentColor" : "none"} />
                 {(isActivityTab && hasUnreadActivity) && (
                     <div className="absolute top-3 right-2.5 w-2.5 h-2.5 bg-destructive rounded-full border-2 border-background"></div>
                 )}
@@ -132,7 +174,7 @@ export default function BottomNav() {
                     <div className="absolute top-3 right-2.5 w-2.5 h-2.5 bg-destructive rounded-full border-2 border-background"></div>
                 )}
               </div>
-            </Link>
+            </button>
           );
         })}
       </nav>

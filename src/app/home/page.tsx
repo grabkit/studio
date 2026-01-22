@@ -35,6 +35,7 @@ import { QuotedPostCard } from "@/components/QuotedPostCard";
 import { AnimatedCount } from "@/components/AnimatedCount";
 import { motion } from "framer-motion";
 import { Progress } from "@/components/ui/progress";
+import { eventBus } from "@/lib/event-bus";
 
 
 function LinkPreview({ metadata }: { metadata: LinkMetadata }) {
@@ -645,6 +646,8 @@ export default function HomePage() {
   const { firestore, userProfile } = useFirebase();
   const { user } = useUser();
   const { toast } = useToast();
+  const scrollContainerRef = useRef<HTMLDivElement>(null);
+  const [isRefreshing, setIsRefreshing] = useState(false);
   
   const postsQuery = useMemoFirebase(() => {
     if (!firestore) return null;
@@ -668,6 +671,52 @@ export default function HomePage() {
   }, [firestore, user]);
 
   const { data: bookmarks, isLoading: bookmarksLoading } = useCollection<Bookmark>(bookmarksQuery);
+  
+  const handleRefresh = useCallback(async () => {
+    if (isRefreshing || !firestore || !postsQuery) return;
+
+    // Scroll to top first
+    scrollContainerRef.current?.scrollTo({ top: 0, behavior: 'smooth' });
+    
+    // A short delay to allow scroll animation to start before showing spinner
+    setTimeout(async () => {
+        setIsRefreshing(true);
+        try {
+            const postsSnapshot = await getDocs(postsQuery);
+            const newPosts = postsSnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as WithId<Post>));
+            
+            // Shuffle the new posts for a fresh feel
+            for (let i = newPosts.length - 1; i > 0; i--) {
+                const j = Math.floor(Math.random() * (i + 1));
+                [newPosts[i], newPosts[j]] = [newPosts[j], newPosts[i]];
+            }
+
+            setData(newPosts);
+        } catch (error) {
+            console.error("Failed to refresh posts:", error);
+            toast({
+                variant: "destructive",
+                title: "Refresh Failed",
+                description: "Could not fetch the latest posts.",
+            });
+        } finally {
+            setIsRefreshing(false);
+        }
+    }, 300); // 300ms delay
+
+  }, [isRefreshing, firestore, postsQuery, setData, toast]);
+
+
+  // Subscribe to the refresh event
+  useEffect(() => {
+    const refreshHandler = () => handleRefresh();
+    eventBus.on('refresh-home', refreshHandler);
+
+    return () => {
+        eventBus.off('refresh-home', refreshHandler);
+    };
+  }, [handleRefresh]);
+
 
   const isLoading = postsLoading || bookmarksLoading;
 
@@ -693,9 +742,15 @@ export default function HomePage() {
       >
         <div
             className="relative h-full overflow-y-auto"
+            ref={scrollContainerRef}
         >
+          {isRefreshing && (
+            <div className="sticky top-0 z-10 flex items-center justify-center py-4 bg-background/80 backdrop-blur-sm">
+                 <Loader2 className="h-6 w-6 animate-spin text-primary" />
+            </div>
+          )}
           <div className="divide-y border-b">
-            {(isLoading || !initialPosts) && (
+            {(isLoading && !isRefreshing) && (
               <>
                 <PostSkeleton />
                 <PostSkeleton />
@@ -712,7 +767,7 @@ export default function HomePage() {
               </div>
             )}
             
-            {!isLoading && initialPosts && filteredPosts.map((post) => (
+            {filteredPosts.map((post) => (
                 <PostItem key={post.id} post={post} bookmarks={bookmarks} updatePost={updatePost} onDelete={handleDeletePostOptimistic} />
               ))
             }
