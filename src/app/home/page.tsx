@@ -1,4 +1,3 @@
-
 "use client";
 
 import AppLayout from "@/components/AppLayout";
@@ -36,6 +35,7 @@ import { motion } from "framer-motion";
 import { Progress } from "@/components/ui/progress";
 import { eventBus } from "@/lib/event-bus";
 import { useCollection } from "@/firebase/firestore/use-collection";
+import { useDoc } from "@/firebase/firestore/use-doc";
 
 
 function LinkPreview({ metadata }: { metadata: LinkMetadata }) {
