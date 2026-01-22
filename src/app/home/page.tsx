@@ -685,7 +685,7 @@ export default function HomePage() {
   }, []);
 
   const bookmarksQuery = useMemoFirebase(() => {
-    if (!firestore || !user) return null;
+    if (!user) return null;
     return collection(firestore, 'users', user.uid, 'bookmarks');
   }, [firestore, user]);
 
@@ -750,7 +750,7 @@ export default function HomePage() {
     if (!posts || !user) return [];
     const mutedUsers = userProfile?.mutedUsers || [];
     return posts.filter(post => 
-      !mutedUsers.includes(post.authorId)
+      !mutedUsers.includes(post.authorId) && post.authorId !== user.uid
     );
   }, [posts, userProfile, user]);
 
@@ -798,26 +798,3 @@ export default function HomePage() {
     </AppLayout>
   );
 }
-    
-    
-
-    
-
-
-
-
-    
-
-
-
-
-
-
-
-
-
-
-    
-
-    
-
