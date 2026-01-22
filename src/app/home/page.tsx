@@ -530,7 +530,7 @@ function InnerPostItem({ post, bookmarks, updatePost, onDelete, onPin, showPinSt
             )}
 
             <div className="flex items-center pt-2">
-                <div className="flex items-center space-x-4 text-muted-foreground">
+                <div className="flex items-center space-x-1 text-muted-foreground">
                     <button onClick={handleLike} disabled={isLiking} className={cn("flex items-center", hasLiked && "text-pink-500")}>
                         <Heart className="h-4 w-4 shrink-0" fill={hasLiked ? 'currentColor' : 'none'} />
                         <AnimatedCount count={post.likeCount} direction={likeDirection} />
@@ -675,35 +675,34 @@ export default function HomePage() {
   const handleRefresh = useCallback(async () => {
     if (isRefreshing || !firestore || !postsQuery) return;
 
-    // Scroll to top first
+    // Show spinner and start scrolling immediately.
+    setIsRefreshing(true);
     scrollContainerRef.current?.scrollTo({ top: 0, behavior: 'smooth' });
-    
-    // A short delay to allow scroll animation to start before showing spinner
-    setTimeout(async () => {
-        setIsRefreshing(true);
-        try {
-            const postsSnapshot = await getDocs(postsQuery);
-            const newPosts = postsSnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as WithId<Post>));
-            
-            // Shuffle the new posts for a fresh feel
-            for (let i = newPosts.length - 1; i > 0; i--) {
-                const j = Math.floor(Math.random() * (i + 1));
-                [newPosts[i], newPosts[j]] = [newPosts[j], newPosts[i]];
-            }
 
-            setData(newPosts);
-        } catch (error) {
-            console.error("Failed to refresh posts:", error);
-            toast({
-                variant: "destructive",
-                title: "Refresh Failed",
-                description: "Could not fetch the latest posts.",
-            });
-        } finally {
-            setIsRefreshing(false);
+    try {
+        // Fetch data while scrolling happens.
+        const postsSnapshot = await getDocs(postsQuery);
+        const newPosts = postsSnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as WithId<Post>));
+        
+        // Shuffle the new posts for a fresh feel
+        for (let i = newPosts.length - 1; i > 0; i--) {
+            const j = Math.floor(Math.random() * (i + 1));
+            [newPosts[i], newPosts[j]] = [newPosts[j], newPosts[i]];
         }
-    }, 300); // 300ms delay
 
+        // Update the UI with new posts.
+        setData(newPosts);
+    } catch (error) {
+        console.error("Failed to refresh posts:", error);
+        toast({
+            variant: "destructive",
+            title: "Refresh Failed",
+            description: "Could not fetch the latest posts.",
+        });
+    } finally {
+        // Hide the spinner.
+        setIsRefreshing(false);
+    }
   }, [isRefreshing, firestore, postsQuery, setData, toast]);
 
 
@@ -786,3 +785,4 @@ export default function HomePage() {
 
 
     
+

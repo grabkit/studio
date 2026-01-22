@@ -9,7 +9,7 @@ import { useFirebase, useMemoFirebase } from "@/firebase";
 import { collection, query, where, limit } from "firebase/firestore";
 import type { Notification, Conversation, NotificationSettings } from "@/lib/types";
 import { useCollection } from "@/firebase/firestore/use-collection";
-import { useMemo, useState } from "react";
+import { useMemo, useState, useCallback } from "react";
 import { eventBus } from "@/lib/event-bus";
 
 const navItems = [
@@ -97,7 +97,7 @@ export default function BottomNav() {
   }, [conversations, user]);
 
 
-  const handleNavClick = (itemHref: string, itemEvent?: string) => {
+  const handleNavClick = useCallback((itemHref: string, itemEvent?: string) => {
     const now = Date.now();
     const isMessagesPath = itemHref === '/messages';
     const isActive = isMessagesPath ? pathname.startsWith(itemHref) : pathname === itemHref;
@@ -119,7 +119,7 @@ export default function BottomNav() {
         router.push(itemHref);
         setLastTap(0); // Reset on navigation
     }
-  };
+  }, [lastTap, pathname, router]);
 
 
   const isMessagesActive = pathname.startsWith('/messages');
