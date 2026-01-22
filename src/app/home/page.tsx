@@ -69,31 +69,40 @@ function LinkPreview({ metadata }: { metadata: LinkMetadata }) {
     )
 }
 
-function PostExpiryInfo({ expiresAt }: { expiresAt: Timestamp }) {
-  const [displayTime, setDisplayTime] = useState(() => formatExpiry(expiresAt.toDate()));
+function PostExpiryInfo({ post }: { post: WithId<Post> }) {
+  const calculateProgress = useCallback(() => {
+    if (!post.expiresAt || !post.timestamp) return 0;
+
+    const startTime = post.timestamp.toMillis();
+    const endTime = post.expiresAt.toMillis();
+    const now = Date.now();
+
+    if (now >= endTime) return 0;
+    if (now <= startTime) return 100;
+
+    const totalDuration = endTime - startTime;
+    const elapsedTime = now - startTime;
+    
+    const remainingPercentage = 100 - (elapsedTime / totalDuration) * 100;
+
+    return Math.max(0, remainingPercentage);
+  }, [post.timestamp, post.expiresAt]);
+
+  const [progress, setProgress] = useState(calculateProgress);
 
   useEffect(() => {
-    const updateDisplayTime = () => {
-      const newDisplayTime = formatExpiry(expiresAt.toDate());
-      if (newDisplayTime === 'Expired') {
-        setDisplayTime(newDisplayTime);
-        clearInterval(intervalId);
-      } else {
-        setDisplayTime(newDisplayTime);
-      }
-    };
+    const timer = setInterval(() => {
+      setProgress(calculateProgress());
+    }, 1000); 
 
-    const intervalId = setInterval(updateDisplayTime, 1000 * 30); // Update every 30 seconds
+    return () => clearInterval(timer);
+  }, [calculateProgress]);
 
-    return () => clearInterval(intervalId);
-  }, [expiresAt]);
-
-  if (displayTime === 'Expired') return null;
+  if (progress <= 0) return null;
 
   return (
-    <div className="w-full text-xs text-amber-600 dark:text-amber-500 flex items-center justify-center gap-1.5 mt-1">
-      <Clock className="h-3 w-3" />
-      <span>Expires in {displayTime}</span>
+    <div className="w-full mt-1">
+        <Progress value={progress} className="h-[2px] bg-amber-500/10 rounded-full" indicatorClassName="bg-amber-500" />
     </div>
   );
 }
@@ -589,7 +598,7 @@ function InnerPostItem({ post, bookmarks, updatePost, onDelete, onPin, showPinSt
                 </button>
             </div>
             
-            {post.expiresAt && <PostExpiryInfo expiresAt={post.expiresAt} />}
+            {post.expiresAt && post.timestamp && <PostExpiryInfo post={post} />}
       </div>
     </div>
     <ShareSheet post={post} isOpen={isShareSheetOpen} onOpenChange={setIsShareSheetOpen} />
