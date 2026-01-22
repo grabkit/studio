@@ -530,14 +530,14 @@ function InnerPostItem({ post, bookmarks, updatePost, onDelete, onPin, showPinSt
             )}
 
             <div className="flex items-center space-x-4 pt-2 text-muted-foreground">
-              <button onClick={handleLike} disabled={isLiking} className={cn("flex items-center space-x-1", hasLiked && "text-pink-500")}>
+              <button onClick={handleLike} disabled={isLiking} className={cn("flex items-center", hasLiked && "text-pink-500")}>
                 <Heart className="h-4 w-4 shrink-0" fill={hasLiked ? 'currentColor' : 'none'} />
                 <AnimatedCount count={post.likeCount} direction={likeDirection} />
               </button>
               <CommentButtonWrapper
                 href={`/post/${post.id}`}
                 className={cn(
-                    "flex items-center space-x-1",
+                    "flex items-center",
                     repliesAllowed ? "hover:text-primary" : "opacity-50 pointer-events-none"
                 )}
               >
@@ -547,14 +547,14 @@ function InnerPostItem({ post, bookmarks, updatePost, onDelete, onPin, showPinSt
                 </div>
                 <AnimatedCount count={post.commentCount} direction="up" />
               </CommentButtonWrapper>
-              <button onClick={handleRepost} className="flex items-center space-x-1 hover:text-green-500">
+              <button onClick={handleRepost} className="flex items-center hover:text-green-500">
                 <Repeat className={cn("h-4 w-4 shrink-0")} />
                 <AnimatedCount count={post.repostCount} direction="up" />
               </button>
-              <button onClick={() => setIsShareSheetOpen(true)} className="flex items-center space-x-1 hover:text-primary">
+              <button onClick={() => setIsShareSheetOpen(true)} className="flex items-center hover:text-primary">
                 <ArrowUpRight className="h-4 w-4 shrink-0" />
               </button>
-               <button onClick={handleBookmark} className="flex items-center space-x-1 hover:text-foreground">
+               <button onClick={handleBookmark} className="flex items-center hover:text-foreground">
                 <BookmarkIcon className={cn("h-4 w-4 shrink-0", isBookmarked && "text-foreground fill-foreground")} />
               </button>
             </div>
@@ -645,9 +645,10 @@ export default function HomePage() {
   const { user } = useUser();
   const { toast } = useToast();
   
-  const [touchStartY, setTouchStartY] = useState(0);
+  const [touchStartY, setTouchStartY] = useState<number | null>(null);
   const [pullPosition, setPullPosition] = useState(0);
   const [isRefreshing, setIsRefreshing] = useState(false);
+  const scrollContainerRef = useRef<HTMLDivElement>(null);
   
   const postsQuery = useMemoFirebase(() => {
     if (!firestore) return null;
@@ -689,43 +690,52 @@ export default function HomePage() {
   }, [firestore, postsQuery, isRefreshing, setData, toast]);
   
   const handleTouchStart = (e: React.TouchEvent<HTMLDivElement>) => {
-    // Record the starting touch position.
-    setTouchStartY(e.targetTouches[0].clientY);
+    // Only initiate pull-to-refresh logic if we are at the very top of the scroll container.
+    if (scrollContainerRef.current && scrollContainerRef.current.scrollTop === 0) {
+      setTouchStartY(e.targetTouches[0].clientY);
+    } else {
+      // If not at the top, ensure we don't track this gesture for pull-to-refresh.
+      setTouchStartY(null);
+    }
   };
 
   const handleTouchMove = (e: React.TouchEvent<HTMLDivElement>) => {
-    const scrollTop = e.currentTarget.scrollTop;
+    // If we're not tracking a pull gesture, do nothing and let native scroll work.
+    if (touchStartY === null) {
+      return;
+    }
+
     const touchY = e.targetTouches[0].clientY;
     const pullDistance = touchY - touchStartY;
 
-    // If we aren't at the top, or if the gesture is a scroll up, do nothing.
-    if (scrollTop > 0 || pullDistance < 0) {
-      // If we were previously showing the indicator, hide it.
-      if (pullPosition > 0) {
-        setPullPosition(0);
-      }
-      return;
-    }
-    
-    // Only if we are at the top and pulling down, show the indicator.
-    // The scrollTop <= 0 is a failsafe, but the main check is scrollTop > 0 above.
-    if (pullDistance > 0 && scrollTop <= 0) {
-      e.preventDefault(); // Prevent native browser overscroll actions
+    // Only act on pull-down gestures (positive distance).
+    // If the user starts pulling down then scrolls up, we ignore it.
+    if (pullDistance > 0) {
+      e.preventDefault(); // Prevent browser's overscroll-refresh behavior
       setPullPosition(pullDistance);
+    } else {
+      // If user scrolls up after starting a pull, cancel the pull-to-refresh gesture
+      setTouchStartY(null);
+      setPullPosition(0);
     }
   };
 
   const handleTouchEnd = () => {
-    // Reset the starting touch position.
-    setTouchStartY(0);
+    // If a pull wasn't being tracked, do nothing.
+    if (touchStartY === null) {
+      return;
+    }
     
-    // If the pull was enough to trigger, refresh.
+    // If the pull was strong enough, trigger the refresh.
     if (pullPosition > 80) {
       handleRefresh();
     } else {
-      // Otherwise, just hide the indicator.
+      // Otherwise, just animate the indicator away.
       setPullPosition(0);
     }
+
+    // Reset gesture tracking state.
+    setTouchStartY(null);
   };
 
   const updatePost = useCallback((postId: string, updatedData: Partial<Post>) => {
@@ -768,6 +778,7 @@ export default function HomePage() {
         transition={{ duration: 0.3 }}
       >
         <div
+          ref={scrollContainerRef}
           className="relative h-full overflow-y-auto"
           onTouchStart={handleTouchStart}
           onTouchMove={handleTouchMove}
@@ -811,3 +822,6 @@ export default function HomePage() {
     
 
 
+
+
+    
