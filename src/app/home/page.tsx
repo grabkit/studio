@@ -561,7 +561,7 @@ function InnerPostItem({ post, bookmarks, updatePost, onDelete, onPin, showPinSt
                 <PollComponent post={post} user={user} onVote={(updatedData) => updatePost?.(post.id, updatedData)} />
             )}
 
-            <div className="-mx-4 mt-2 px-4 py-3">
+            <div className="mt-2 py-3">
                 <div className="flex items-center justify-around">
                     <button onClick={handleLike} disabled={isLiking} className={cn("flex items-center space-x-1", hasLiked && "text-pink-500")}>
                         <Heart className="h-4 w-4" fill={hasLiked ? 'currentColor' : 'none'} />
@@ -684,6 +684,7 @@ export default function HomePage() {
 
   const [posts, setPosts] = useState<WithId<Post>[] | null>(null);
   const [postsLoading, setPostsLoading] = useState(true);
+  const [currentTime, setCurrentTime] = useState(new Date());
   
   const postsQuery = useMemoFirebase(() => {
     if (!firestore) return null;
@@ -710,6 +711,13 @@ export default function HomePage() {
     setPostsLoading(true);
     fetchPosts().finally(() => setPostsLoading(false));
   }, [fetchPosts]);
+
+  useEffect(() => {
+    const timerId = setInterval(() => {
+      setCurrentTime(new Date());
+    }, 30000); // Check every 30 seconds for expiry
+    return () => clearInterval(timerId);
+  }, []);
   
   const updatePost = useCallback((postId: string, updatedData: Partial<Post>) => {
     setPosts(currentPosts => {
@@ -785,13 +793,13 @@ export default function HomePage() {
   const filteredPosts = useMemo(() => {
     if (!posts || !user) return [];
     const mutedUsers = userProfile?.mutedUsers || [];
-    const now = new Date();
+    const now = currentTime;
     return posts.filter(post => 
       !mutedUsers.includes(post.authorId) && 
       post.authorId !== user.uid &&
       (!post.expiresAt || post.expiresAt.toDate() > now)
     );
-  }, [posts, userProfile, user]);
+  }, [posts, userProfile, user, currentTime]);
 
   const handleDeletePostOptimistic = (postId: string) => {
     setPosts(currentPosts => currentPosts?.filter(p => p.id !== postId) ?? []);

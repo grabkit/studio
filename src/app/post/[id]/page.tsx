@@ -463,7 +463,7 @@ function PostDetailItem({ post, updatePost }: { post: WithId<Post>, updatePost: 
   return (
     <>
     <Card className="w-full shadow-none rounded-none border-x-0 border-t-0">
-      <CardContent className="px-4 pt-4 pb-0">
+      <CardContent className="px-4 pt-4 pb-2">
         <div className="flex space-x-3">
           <Avatar className="h-10 w-10">
             <AvatarImage src={isAvatarUrl ? avatar : undefined} alt={String(formatUserId(post.authorId))} />
@@ -528,8 +528,8 @@ function PostDetailItem({ post, updatePost }: { post: WithId<Post>, updatePost: 
               <PollComponent post={post} user={user} onVote={(updatedData) => updatePost(updatedData)} />
             )}
 
-            <div className="-mx-4 mt-2 px-4 py-3">
-                <div className="flex items-center justify-around">
+            <div className="py-3">
+                <div className="flex items-center space-x-6">
                     <div className="flex items-center space-x-2">
                         <span className="font-bold text-foreground"><AnimatedCount count={post.likeCount} direction={likeDirection}/></span>
                         <span className="text-sm text-muted-foreground">Likes</span>
@@ -545,7 +545,7 @@ function PostDetailItem({ post, updatePost }: { post: WithId<Post>, updatePost: 
                 </div>
             </div>
 
-            <div className="-mx-4">
+            <div className="border-t">
                 <div className="flex items-center justify-around py-2">
                     <button
                         onClick={handleLike}
@@ -1021,6 +1021,14 @@ export default function PostDetailPage() {
   const params = useParams();
   const router = useRouter();
   const id = params.id as string;
+  const [currentTime, setCurrentTime] = useState(new Date());
+
+  useEffect(() => {
+    const timerId = setInterval(() => {
+      setCurrentTime(new Date());
+    }, 30000); // Check every 30 seconds for expiry
+    return () => clearInterval(timerId);
+  }, []);
 
   const postRef = useMemoFirebase(() => {
     if (!firestore || !id) return null;
@@ -1045,6 +1053,7 @@ export default function PostDetailPage() {
     });
   };
 
+  const isExpired = post && post.expiresAt && post.expiresAt.toDate() < currentTime;
 
   if (isPostLoading) {
     return (
@@ -1062,19 +1071,19 @@ export default function PostDetailPage() {
     );
   }
   
-  if (!post) {
+  if (!post || isExpired) {
     return (
       <AppLayout showTopBar={false} showBottomNav={false}>
-        <div className="fixed top-0 left-0 right-0 z-10 flex items-center p-2 bg-background border-b h-14">
+        <div className="fixed top-0 left-0 right-0 z-10 flex items-center p-2 bg-background border-b h-14 max-w-2xl mx-auto sm:px-4">
           <Button variant="ghost" size="icon" onClick={() => router.back()}>
               <ArrowLeft />
           </Button>
-          <h2 className="text-lg font-bold mx-auto">Post</h2>
+          <h2 className="text-lg font-bold mx-auto -translate-x-4">Post</h2>
         </div>
         <div className="text-center py-20 pt-32">
-          <h2 className="text-2xl font-headline text-primary">Post not found</h2>
+          <h2 className="text-2xl font-headline text-primary">{isExpired ? "This Post has Expired" : "Post not found"}</h2>
           <p className="text-muted-foreground mt-2">
-            This post may have been deleted.
+            {isExpired ? "This content is no longer available." : "This post may have been deleted or has expired."}
           </p>
         </div>
       </AppLayout>
