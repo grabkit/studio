@@ -33,7 +33,6 @@ import { ShareSheet } from "@/components/ShareSheet";
 import { RepostSheet } from "@/components/RepostSheet";
 import { QuotedPostCard } from "@/components/QuotedPostCard";
 import { motion } from "framer-motion";
-import { Progress } from "@/components/ui/progress";
 import { eventBus } from "@/lib/event-bus";
 import { useCollection } from "@/firebase/firestore/use-collection";
 
@@ -69,39 +68,35 @@ function LinkPreview({ metadata }: { metadata: LinkMetadata }) {
 }
 
 function PostExpiryInfo({ post }: { post: WithId<Post> }) {
-  const calculateProgress = useCallback(() => {
-    if (!post.expiresAt || !post.timestamp) return 0;
-
-    const startTime = post.timestamp.toMillis();
-    const endTime = post.expiresAt.toMillis();
-    const now = Date.now();
-
-    if (now >= endTime) return 0;
-    if (now <= startTime) return 100;
-
-    const totalDuration = endTime - startTime;
-    const elapsedTime = now - startTime;
-    
-    const remainingPercentage = 100 - (elapsedTime / totalDuration) * 100;
-
-    return Math.max(0, remainingPercentage);
-  }, [post.timestamp, post.expiresAt]);
-
-  const [progress, setProgress] = useState(calculateProgress);
+  const [expiryText, setExpiryText] = useState(() => {
+    if (!post.expiresAt) return "Expired";
+    return formatExpiry(post.expiresAt.toDate());
+  });
 
   useEffect(() => {
-    const timer = setInterval(() => {
-      setProgress(calculateProgress());
-    }, 1000); 
+    if (!post.expiresAt) return;
 
-    return () => clearInterval(timer);
-  }, [calculateProgress]);
+    const timerId = setInterval(() => {
+      const newExpiryText = formatExpiry(post.expiresAt.toDate());
+      setExpiryText(newExpiryText);
+      if (newExpiryText === "Expired") {
+        clearInterval(timerId);
+      }
+    }, 30000); // update every 30 seconds
 
-  if (progress <= 0) return null;
+    return () => clearInterval(timerId);
+  }, [post.expiresAt]);
+
+  if (!post.expiresAt || expiryText === "Expired") {
+    return null;
+  }
 
   return (
-    <div className="w-full mt-1">
-        <Progress value={progress} className="h-[10px] bg-amber-500/10 rounded-full" indicatorClassName="bg-amber-500" />
+    <div className="mt-2 w-full bg-amber-500/10 rounded-lg px-3 py-1.5 text-center">
+        <div className="flex justify-center items-center gap-1.5 text-xs text-amber-700 font-medium">
+            <Clock className="h-3 w-3" />
+            <span>Expires in {expiryText}</span>
+        </div>
     </div>
   );
 }
