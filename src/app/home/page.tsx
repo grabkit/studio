@@ -560,7 +560,7 @@ function InnerPostItem({ post, bookmarks, updatePost, onDelete, onPin, showPinSt
                 <PollComponent post={post} user={user} onVote={(updatedData) => updatePost?.(post.id, updatedData)} />
             )}
 
-            <div className="border-t -mx-4 mt-2 px-4 py-2">
+            <div className="border-t -mx-4 mt-2 px-4 py-3">
                 <div className="flex items-center justify-around">
                     <button onClick={handleLike} disabled={isLiking} className={cn("flex items-center space-x-1", hasLiked && "text-pink-500")}>
                         <Heart className="h-4 w-4" fill={hasLiked ? 'currentColor' : 'none'} />
@@ -582,6 +582,9 @@ function InnerPostItem({ post, bookmarks, updatePost, onDelete, onPin, showPinSt
                     <button onClick={handleRepost} className="flex items-center space-x-1 hover:text-green-500">
                         <Repeat className={cn("h-4 w-4", post.repostCount > 0 && "text-green-500")} />
                         <span className="text-xs">{formatCount(post.repostCount)}</span>
+                    </button>
+                     <button onClick={handleBookmark} className={cn("flex items-center space-x-1 hover:text-amber-500", isBookmarked && "text-amber-500")}>
+                        <BookmarkIcon className="h-4 w-4" fill={isBookmarked ? "currentColor" : "none"} />
                     </button>
                      <button onClick={() => setIsShareSheetOpen(true)} className="flex items-center space-x-1 hover:text-primary">
                         <ArrowUpRight className="h-4 w-4" />
@@ -617,7 +620,7 @@ export function PostItem({ post, ...props }: { post: WithId<Post>, bookmarks: Wi
             return null;
         }
         return (
-            <Card className="w-full shadow-none border-x-0 border-t-0 rounded-xl">
+            <Card className="w-full shadow-none border-x-0 border-t-0 rounded-none">
                 <CardContent className="px-4 pt-4 pb-0">
                     <div className="flex items-center gap-2 text-xs text-muted-foreground mb-2 pl-12">
                         <Repeat className="h-3 w-3" />
@@ -630,7 +633,7 @@ export function PostItem({ post, ...props }: { post: WithId<Post>, bookmarks: Wi
     }
 
     return (
-        <Card className="w-full shadow-none border-x-0 border-t-0 rounded-xl">
+        <Card className="w-full shadow-none border-x-0 border-t-0 rounded-none">
             <CardContent className="px-4 pt-4 pb-0">
                 {props.showPinStatus && post.isPinned && (
                     <div className="flex items-center gap-2 text-xs text-muted-foreground mb-2 pl-12">
