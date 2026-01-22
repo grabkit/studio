@@ -4,7 +4,7 @@
 import AppLayout from "@/components/AppLayout";
 import { useFirebase, useMemoFirebase, useUser } from "@/firebase";
 import { collection, query, orderBy, limit, doc, updateDoc, arrayUnion, arrayRemove, increment, deleteDoc, setDoc, serverTimestamp, getDoc, runTransaction, getDocs, where, type Timestamp } from "firebase/firestore";
-import type { WithId } from "@/firebase/firestore/use-collection";
+import { useDoc, type WithId } from "@/firebase/firestore/use-doc";
 import { Card, CardContent } from "@/components/ui/card";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -36,7 +36,6 @@ import { motion } from "framer-motion";
 import { Progress } from "@/components/ui/progress";
 import { eventBus } from "@/lib/event-bus";
 import { useCollection } from "@/firebase/firestore/use-collection";
-import { useDoc } from "@/firebase/firestore/use-doc";
 
 
 function LinkPreview({ metadata }: { metadata: LinkMetadata }) {
@@ -102,7 +101,7 @@ function PostExpiryInfo({ post }: { post: WithId<Post> }) {
 
   return (
     <div className="w-full mt-1">
-        <Progress value={progress} className="h-[2px] bg-amber-500/10 rounded-full" indicatorClassName="bg-amber-500" />
+        <Progress value={progress} className="h-[10px] bg-amber-500/10 rounded-full" indicatorClassName="bg-amber-500" />
     </div>
   );
 }

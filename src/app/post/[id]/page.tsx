@@ -91,7 +91,7 @@ function PostExpiryInfo({ post }: { post: WithId<Post> }) {
 
   return (
     <div className="w-full mt-1">
-        <Progress value={progress} className="h-[2px] bg-amber-500/10 rounded-full" indicatorClassName="bg-amber-500" />
+        <Progress value={progress} className="h-[10px] bg-amber-500/10 rounded-full" indicatorClassName="bg-amber-500" />
     </div>
   );
 }
@@ -745,7 +745,7 @@ function CommentForm({ post, commentsAllowed }: { post: WithId<Post>, commentsAl
                     type="submit" 
                     disabled={form.formState.isSubmitting} 
                     size="icon"
-                    className="rounded-full shrink-0 h-8 w-8 bg-black hover:bg-gray-800"
+                    className="rounded-full shrink-0 h-8 w-8 bg-primary hover:bg-primary/90"
                 >
                     <Send className="h-4 w-4" fill="currentColor"/>
                 </Button>
