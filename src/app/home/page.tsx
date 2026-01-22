@@ -691,12 +691,27 @@ export default function HomePage() {
   const { data: bookmarks, isLoading: bookmarksLoading } = useCollection<Bookmark>(bookmarksQuery);
   
   const handleRefresh = useCallback(async () => {
+    if (!postsQuery) return;
+
     eventBus.emit('refresh-start');
     scrollContainerRef.current?.scrollTo({ top: 0, behavior: 'smooth' });
 
     try {
+        const postsSnapshot = await getDocs(postsQuery);
+        const newPosts = postsSnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as WithId<Post>));
+        
         const minDelay = new Promise(resolve => setTimeout(resolve, 750));
-        await Promise.all([fetchPosts(), minDelay]);
+        await minDelay;
+
+        if (posts && posts.length > 0 && newPosts.length > 0 && posts[0].id === newPosts[0].id) {
+            toast({
+                title: "మీరు అప్‌డేట్‌గా ఉన్నారు!",
+                description: "ప్రస్తుతం చూపించడానికి కొత్త పోస్ట్‌లు ఏవీ లేవు.",
+            });
+        } else {
+            setPosts(newPosts);
+        }
+
     } catch (error) {
         console.error("Failed to refresh posts:", error);
         toast({
@@ -707,7 +722,7 @@ export default function HomePage() {
     } finally {
         eventBus.emit('refresh-end');
     }
-  }, [fetchPosts, toast]);
+  }, [postsQuery, toast, posts]);
 
 
   // Subscribe to the refresh event
@@ -793,5 +808,7 @@ export default function HomePage() {
 
 
 
+
+    
 
     
