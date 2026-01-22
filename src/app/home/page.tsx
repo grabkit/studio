@@ -32,7 +32,6 @@ import { usePresence } from "@/hooks/usePresence";
 import { ShareSheet } from "@/components/ShareSheet";
 import { RepostSheet } from "@/components/RepostSheet";
 import { QuotedPostCard } from "@/components/QuotedPostCard";
-import { AnimatedCount } from "@/components/AnimatedCount";
 import { motion } from "framer-motion";
 import { Progress } from "@/components/ui/progress";
 import { eventBus } from "@/lib/event-bus";
@@ -260,7 +259,6 @@ function InnerPostItem({ post, bookmarks, updatePost, onDelete, onPin, showPinSt
   const [isMoreOptionsSheetOpen, setIsMoreOptionsSheetOpen] = useState(false);
   const [isRepostSheetOpen, setIsRepostSheetOpen] = useState(false);
   const [isLiking, setIsLiking] = useState(false);
-  const [likeDirection, setLikeDirection] = useState<'up' | 'down'>('up');
   
   const isOwner = user?.uid === post.authorId;
   const isBookmarked = useMemo(() => bookmarks?.some(b => b.postId === post.id), [bookmarks, post.id]);
@@ -299,7 +297,6 @@ function InnerPostItem({ post, bookmarks, updatePost, onDelete, onPin, showPinSt
     const postRef = doc(firestore, 'posts', post.id);
     const originalLikes = post.likes;
     const originalLikeCount = post.likeCount;
-    setLikeDirection(hasLiked ? 'down' : 'up');
 
     // Optimistic UI update
     const newLikes = hasLiked
@@ -529,36 +526,36 @@ function InnerPostItem({ post, bookmarks, updatePost, onDelete, onPin, showPinSt
                 <PollComponent post={post} user={user} onVote={(updatedData) => updatePost?.(post.id, updatedData)} />
             )}
 
-            <div className="flex items-center pt-2">
-                <div className="flex items-center space-x-1 text-muted-foreground">
-                    <button onClick={handleLike} disabled={isLiking} className={cn("flex items-center", hasLiked && "text-pink-500")}>
-                        <Heart className="h-4 w-4 shrink-0" fill={hasLiked ? 'currentColor' : 'none'} />
-                        <AnimatedCount count={post.likeCount} direction={likeDirection} />
+            <div className="flex items-center justify-between pt-2">
+                <div className="flex items-center space-x-6 text-muted-foreground">
+                    <button onClick={handleLike} disabled={isLiking} className={cn("flex items-center space-x-1", hasLiked && "text-pink-500")}>
+                        <Heart className="h-4 w-4" fill={hasLiked ? 'currentColor' : 'none'} />
+                        <span className="text-xs">{formatCount(post.likeCount)}</span>
                     </button>
                     <CommentButtonWrapper
                         href={`/post/${post.id}`}
                         className={cn(
-                            "flex items-center",
+                            "flex items-center space-x-1",
                             repliesAllowed ? "hover:text-primary" : "opacity-50 pointer-events-none"
                         )}
                     >
                         <div className="relative">
-                        <MessageCircle className="h-4 w-4 shrink-0" />
+                        <MessageCircle className="h-4 w-4" />
                         {!repliesAllowed && <Slash className="absolute top-0 left-0 h-4 w-4 stroke-[2.5px]" />}
                         </div>
-                        <AnimatedCount count={post.commentCount} direction="up" />
+                        <span className="text-xs">{formatCount(post.commentCount)}</span>
                     </CommentButtonWrapper>
-                    <button onClick={handleRepost} className="flex items-center hover:text-green-500">
-                        <Repeat className={cn("h-4 w-4 shrink-0")} />
-                        <AnimatedCount count={post.repostCount} direction="up" />
+                    <button onClick={handleRepost} className="flex items-center space-x-1 hover:text-green-500">
+                        <Repeat className={cn("h-4 w-4", post.repostCount > 0 && "text-green-500")} />
+                        <span className="text-xs">{formatCount(post.repostCount)}</span>
                     </button>
-                    <button onClick={() => setIsShareSheetOpen(true)} className="flex items-center hover:text-primary">
-                        <ArrowUpRight className="h-4 w-4 shrink-0" />
-                    </button>
-                    <button onClick={handleBookmark} className="flex items-center hover:text-foreground">
-                        <BookmarkIcon className={cn("h-4 w-4 shrink-0", isBookmarked && "text-foreground fill-foreground")} />
+                     <button onClick={() => setIsShareSheetOpen(true)} className="flex items-center space-x-1 hover:text-primary">
+                        <ArrowUpRight className="h-4 w-4" />
                     </button>
                 </div>
+                <button onClick={handleBookmark}>
+                    <BookmarkIcon className={cn("h-4 w-4", isBookmarked && "text-foreground fill-foreground")} />
+                </button>
             </div>
       </div>
     </div>
@@ -791,5 +788,6 @@ export default function HomePage() {
 
 
     
+
 
 
