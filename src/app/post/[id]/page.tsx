@@ -82,7 +82,7 @@ function PostExpiryInfo({ post }: { post: WithId<Post> }) {
   }
 
   return (
-    <div className="mt-2 w-full bg-amber-500/10 rounded-lg px-3 py-1.5 text-center">
+    <div className="mt-2 w-full bg-amber-500/10 rounded-lg px-3 py-1 text-center">
         <div className="flex justify-center items-center gap-1.5 text-xs text-amber-700 font-medium">
             <Clock className="h-3 w-3" />
             <span>Expires in {expiryText}</span>
@@ -198,7 +198,7 @@ function PollComponent({ post, user, onVote }: { post: WithId<Post>, user: any, 
                      const bgClass = isUserChoice ? colorSet.light : 'bg-secondary';
                      const borderClass = isUserChoice ? colorSet.dark : 'border-border';
                      const fontWeight = isUserChoice ? 'font-bold' : 'font-medium';
-                     const textColor = isUserChoice ? colorSet.text : 'text-foreground';
+                     const textColor = isUserChoice ? colorSet.text : 'text-primary';
 
 
                      return (
@@ -463,7 +463,7 @@ function PostDetailItem({ post, updatePost }: { post: WithId<Post>, updatePost: 
   return (
     <>
     <Card className="w-full shadow-none rounded-none border-x-0 border-t-0 border-b">
-      <CardContent className="px-4 pt-4 pb-2">
+      <CardContent className="px-4 pt-4 pb-0">
         <div className="flex space-x-3">
           <Avatar className="h-10 w-10">
             <AvatarImage src={isAvatarUrl ? avatar : undefined} alt={String(formatUserId(post.authorId))} />
@@ -543,7 +543,7 @@ function PostDetailItem({ post, updatePost }: { post: WithId<Post>, updatePost: 
                 </div>
             </div>
 
-            <div className="flex items-center justify-around pt-2 text-muted-foreground">
+            <div className="flex items-center justify-around pt-2 pb-2">
                 <button
                     onClick={handleLike}
                     disabled={isLiking}

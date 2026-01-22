@@ -92,7 +92,7 @@ function PostExpiryInfo({ post }: { post: WithId<Post> }) {
   }
 
   return (
-    <div className="mt-2 w-full bg-amber-500/10 rounded-lg px-3 py-1.5 text-center">
+    <div className="mt-2 w-full bg-amber-500/10 rounded-lg px-3 py-1 text-center">
         <div className="flex justify-center items-center gap-1.5 text-xs text-amber-700 font-medium">
             <Clock className="h-3 w-3" />
             <span>Expires in {expiryText}</span>
@@ -208,7 +208,7 @@ export function PollComponent({ post, user, onVote }: { post: WithId<Post>, user
                      const bgClass = isUserChoice ? colorSet.light : 'bg-secondary';
                      const borderClass = isUserChoice ? colorSet.dark : 'border-border';
                      const fontWeight = isUserChoice ? 'font-bold' : 'font-medium';
-                     const textColorClass = isUserChoice ? colorSet.text : 'text-foreground';
+                     const textColorClass = isUserChoice ? colorSet.text : 'text-primary';
 
 
                      return (
@@ -560,7 +560,7 @@ function InnerPostItem({ post, bookmarks, updatePost, onDelete, onPin, showPinSt
                 <PollComponent post={post} user={user} onVote={(updatedData) => updatePost?.(post.id, updatedData)} />
             )}
 
-            <div className="flex items-center justify-between pt-2">
+            <div className="flex items-center justify-between pt-2 pb-2">
                 <div className="flex items-center space-x-6 text-muted-foreground">
                     <button onClick={handleLike} disabled={isLiking} className={cn("flex items-center space-x-1", hasLiked && "text-pink-500")}>
                         <Heart className="h-4 w-4" fill={hasLiked ? 'currentColor' : 'none'} />
@@ -588,7 +588,7 @@ function InnerPostItem({ post, bookmarks, updatePost, onDelete, onPin, showPinSt
                     </button>
                 </div>
                 <button onClick={handleBookmark}>
-                    <BookmarkIcon className={cn("h-4 w-4", isBookmarked && "text-foreground fill-foreground")} />
+                    <BookmarkIcon className={cn("h-4 w-4", isBookmarked && "text-primary fill-primary")} />
                 </button>
             </div>
             
@@ -621,7 +621,7 @@ export function PostItem({ post, ...props }: { post: WithId<Post>, bookmarks: Wi
         }
         return (
             <Card className="w-full shadow-none border-x-0 border-t-0 rounded-xl">
-                <CardContent className="px-4 pt-4 pb-2">
+                <CardContent className="px-4 pt-4 pb-0">
                     <div className="flex items-center gap-2 text-xs text-muted-foreground mb-2 pl-12">
                         <Repeat className="h-3 w-3" />
                         <span>Reposted by {formatUserId(post.authorId)}</span>
@@ -634,7 +634,7 @@ export function PostItem({ post, ...props }: { post: WithId<Post>, bookmarks: Wi
 
     return (
         <Card className="w-full shadow-none border-x-0 border-t-0 rounded-xl">
-            <CardContent className="px-4 pt-4 pb-2">
+            <CardContent className="px-4 pt-4 pb-0">
                 {props.showPinStatus && post.isPinned && (
                     <div className="flex items-center gap-2 text-xs text-muted-foreground mb-2 pl-12">
                         <Pin className="h-3 w-3" />
