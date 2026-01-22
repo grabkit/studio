@@ -680,15 +680,21 @@ export default function HomePage() {
     scrollContainerRef.current?.scrollTo({ top: 0, behavior: 'smooth' });
 
     try {
-        // Fetch data while scrolling happens.
-        const postsSnapshot = await getDocs(postsQuery);
-        const newPosts = postsSnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as WithId<Post>));
-        
-        // Shuffle the new posts for a fresh feel
-        for (let i = newPosts.length - 1; i > 0; i--) {
-            const j = Math.floor(Math.random() * (i + 1));
-            [newPosts[i], newPosts[j]] = [newPosts[j], newPosts[i]];
-        }
+        const fetchData = async () => {
+            const postsSnapshot = await getDocs(postsQuery);
+            const newPosts = postsSnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as WithId<Post>));
+            
+            // Shuffle the new posts for a fresh feel
+            for (let i = newPosts.length - 1; i > 0; i--) {
+                const j = Math.floor(Math.random() * (i + 1));
+                [newPosts[i], newPosts[j]] = [newPosts[j], newPosts[i]];
+            }
+            return newPosts;
+        };
+
+        const minDelay = new Promise(resolve => setTimeout(resolve, 750)); // Minimum spinner time
+
+        const [newPosts] = await Promise.all([fetchData(), minDelay]);
 
         // Update the UI with new posts.
         setData(newPosts);
@@ -785,4 +791,5 @@ export default function HomePage() {
 
 
     
+
 
