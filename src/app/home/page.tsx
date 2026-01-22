@@ -2,7 +2,7 @@
 "use client";
 
 import AppLayout from "@/components/AppLayout";
-import { useFirebase, useMemoFirebase, useUser, useDoc } from "@/firebase";
+import { useFirebase, useMemoFirebase, useUser, useDoc, useCollection } from "@/firebase";
 import { collection, query, orderBy, limit, doc, updateDoc, arrayUnion, arrayRemove, increment, deleteDoc, setDoc, serverTimestamp, getDoc, runTransaction, getDocs, where } from "firebase/firestore";
 import type { WithId } from "@/firebase/firestore/use-collection";
 import { Card, CardContent } from "@/components/ui/card";
@@ -688,7 +688,7 @@ export default function HomePage() {
     return collection(firestore, 'users', user.uid, 'bookmarks');
   }, [firestore, user]);
 
-  const { data: bookmarks, isLoading: bookmarksLoading } = useDoc<Bookmark[]>(bookmarksQuery as any);
+  const { data: bookmarks, isLoading: bookmarksLoading } = useCollection<Bookmark>(bookmarksQuery);
   
   const handleRefresh = useCallback(async () => {
     eventBus.emit('refresh-start');
@@ -792,3 +792,6 @@ export default function HomePage() {
 
 
 
+
+
+    
