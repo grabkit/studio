@@ -4,7 +4,7 @@
 import AppLayout from "@/components/AppLayout";
 import { useFirebase, useMemoFirebase, useUser, useDoc } from "@/firebase";
 import { collection, query, orderBy, limit, doc, updateDoc, arrayUnion, arrayRemove, increment, deleteDoc, setDoc, serverTimestamp, getDoc, runTransaction, getDocs, where } from "firebase/firestore";
-import { useCollection, type WithId } from "@/firebase/firestore/use-collection";
+import type { WithId } from "@/firebase/firestore/use-collection";
 import { Card, CardContent } from "@/components/ui/card";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -644,50 +644,59 @@ export default function HomePage() {
   const { user } = useUser();
   const { toast } = useToast();
   const scrollContainerRef = useRef<HTMLDivElement>(null);
-  const [isRefreshing, setIsRefreshing] = useState(false);
+
+  const [posts, setPosts] = useState<WithId<Post>[] | null>(null);
+  const [postsLoading, setPostsLoading] = useState(true);
   
   const postsQuery = useMemoFirebase(() => {
     if (!firestore) return null;
     return query(collection(firestore, 'posts'), orderBy("timestamp", "desc"), limit(50));
   }, [firestore]);
 
-  const { data: initialPosts, isLoading: postsLoading, setData } = useCollection<Post>(postsQuery);
+  const fetchPosts = useCallback(async () => {
+    if (!postsQuery) return;
+    try {
+        const postsSnapshot = await getDocs(postsQuery);
+        const newPosts = postsSnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as WithId<Post>));
+        setPosts(newPosts);
+    } catch (error) {
+        console.error("Failed to fetch posts:", error);
+        toast({
+            variant: "destructive",
+            title: "Load Failed",
+            description: "Could not fetch posts.",
+        });
+    }
+  }, [postsQuery, toast]);
+
+  useEffect(() => {
+    setPostsLoading(true);
+    fetchPosts().finally(() => setPostsLoading(false));
+  }, [fetchPosts]);
   
   const updatePost = useCallback((postId: string, updatedData: Partial<Post>) => {
-    setData(currentPosts => {
+    setPosts(currentPosts => {
         if (!currentPosts) return null;
         return currentPosts.map(p =>
             p.id === postId ? { ...p, ...updatedData } : p
         );
     });
-  }, [setData]);
+  }, []);
 
   const bookmarksQuery = useMemoFirebase(() => {
     if (!firestore || !user) return null;
     return collection(firestore, 'users', user.uid, 'bookmarks');
   }, [firestore, user]);
 
-  const { data: bookmarks, isLoading: bookmarksLoading } = useCollection<Bookmark>(bookmarksQuery);
+  const { data: bookmarks, isLoading: bookmarksLoading } = useDoc<Bookmark[]>(bookmarksQuery as any);
   
   const handleRefresh = useCallback(async () => {
-    if (isRefreshing) return;
-
-    setIsRefreshing(true);
     eventBus.emit('refresh-start');
     scrollContainerRef.current?.scrollTo({ top: 0, behavior: 'smooth' });
 
     try {
-        const fetchData = async () => {
-            const postsSnapshot = await getDocs(postsQuery);
-            const newPosts = postsSnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as WithId<Post>));
-            return newPosts;
-        };
-
         const minDelay = new Promise(resolve => setTimeout(resolve, 750));
-
-        const [newPosts] = await Promise.all([fetchData(), minDelay]);
-
-        setData(newPosts);
+        await Promise.all([fetchPosts(), minDelay]);
     } catch (error) {
         console.error("Failed to refresh posts:", error);
         toast({
@@ -696,10 +705,9 @@ export default function HomePage() {
             description: "Could not fetch the latest posts.",
         });
     } finally {
-        setIsRefreshing(false);
         eventBus.emit('refresh-end');
     }
-  }, [isRefreshing, firestore, postsQuery, setData, toast]);
+  }, [fetchPosts, toast]);
 
 
   // Subscribe to the refresh event
@@ -716,15 +724,15 @@ export default function HomePage() {
   const isLoading = postsLoading || bookmarksLoading;
 
   const filteredPosts = useMemo(() => {
-    if (!initialPosts || !user) return [];
+    if (!posts || !user) return [];
     const mutedUsers = userProfile?.mutedUsers || [];
-    return initialPosts.filter(post => 
+    return posts.filter(post => 
       !mutedUsers.includes(post.authorId)
     );
-  }, [initialPosts, userProfile, user]);
+  }, [posts, userProfile, user]);
 
   const handleDeletePostOptimistic = (postId: string) => {
-    setData(currentPosts => currentPosts?.filter(p => p.id !== postId) ?? []);
+    setPosts(currentPosts => currentPosts?.filter(p => p.id !== postId) ?? []);
   }
 
   return (
@@ -740,7 +748,7 @@ export default function HomePage() {
             ref={scrollContainerRef}
         >
           <div className="divide-y border-b">
-            {(isLoading && !isRefreshing) && (
+            {isLoading && (
               <>
                 <PostSkeleton />
                 <PostSkeleton />
@@ -750,7 +758,7 @@ export default function HomePage() {
               </>
             )}
 
-            {!isLoading && initialPosts && filteredPosts.length === 0 && (
+            {!isLoading && posts && filteredPosts.length === 0 && (
               <div className="text-center py-10 h-screen">
                 <h2 className="text-2xl font-headline text-primary">No posts yet!</h2>
                 <p className="text-muted-foreground mt-2">Start following people to see their posts here.</p>
@@ -776,6 +784,7 @@ export default function HomePage() {
 
 
     
+
 
 
 
