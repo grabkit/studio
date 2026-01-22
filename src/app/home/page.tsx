@@ -670,21 +670,16 @@ export default function HomePage() {
   const { data: bookmarks, isLoading: bookmarksLoading } = useCollection<Bookmark>(bookmarksQuery);
   
   const handleRefresh = useCallback(async () => {
-    if (isRefreshing || !firestore || !postsQuery) return;
+    if (isRefreshing) return;
 
     setIsRefreshing(true);
+    eventBus.emit('refresh-start');
     scrollContainerRef.current?.scrollTo({ top: 0, behavior: 'smooth' });
 
     try {
         const fetchData = async () => {
             const postsSnapshot = await getDocs(postsQuery);
             const newPosts = postsSnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as WithId<Post>));
-            
-            // Shuffle the new posts for a fresh feel
-            for (let i = newPosts.length - 1; i > 0; i--) {
-                const j = Math.floor(Math.random() * (i + 1));
-                [newPosts[i], newPosts[j]] = [newPosts[j], newPosts[i]];
-            }
             return newPosts;
         };
 
@@ -702,6 +697,7 @@ export default function HomePage() {
         });
     } finally {
         setIsRefreshing(false);
+        eventBus.emit('refresh-end');
     }
   }, [isRefreshing, firestore, postsQuery, setData, toast]);
 
@@ -739,11 +735,6 @@ export default function HomePage() {
         animate={{ scale: 1, opacity: 1 }}
         transition={{ duration: 0.3 }}
       >
-        {isRefreshing && (
-          <div className="absolute top-0 left-0 right-0 z-10 h-1.5 w-full overflow-hidden">
-              <div className="h-full w-full animate-loading-bar" />
-          </div>
-        )}
         <div
             className="relative h-full overflow-y-auto"
             ref={scrollContainerRef}
@@ -785,6 +776,7 @@ export default function HomePage() {
 
 
     
+
 
 
 
