@@ -24,7 +24,7 @@ import {
 import { Input } from "@/components/ui/input";
 import { Loader2, Mail, Lock, User as UserIcon } from "lucide-react";
 import { createUserWithEmailAndPassword, signInWithEmailAndPassword, updateProfile } from "firebase/auth";
-import { cn, getAvatar } from "@/lib/utils.tsx";
+import { cn, getAvatar, getFormattedUserIdString } from "@/lib/utils.tsx";
 import { Checkbox } from "@/components/ui/checkbox";
 import { doc, serverTimestamp, setDoc } from "firebase/firestore";
 import type { User as UserType } from "@/lib/types";
@@ -124,9 +124,12 @@ export default function AuthForm() {
             
             const userDocRef = doc(firestore, "users", user.uid);
             
+            const username = getFormattedUserIdString(user.uid).toLowerCase();
+
             const newUser: Omit<UserType, 'upvotes' | 'upvotedBy' > = {
                 id: user.uid,
                 name: values.name,
+                username: username,
                 email: values.email,
                 createdAt: serverTimestamp(),
                 status: 'active',

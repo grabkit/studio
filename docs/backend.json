@@ -16,6 +16,10 @@
           "type": "string",
           "description": "User's display name."
         },
+        "username": {
+            "type": "string",
+            "description": "The user's generated unique username."
+        },
         "email": {
           "type": "string",
           "description": "User's email address.",
@@ -119,6 +123,7 @@
       "required": [
         "id",
         "name",
+        "username",
         "email",
         "createdAt"
       ]
