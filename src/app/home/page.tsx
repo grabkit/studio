@@ -1,4 +1,3 @@
-
 "use client";
 
 import AppLayout from "@/components/AppLayout";
@@ -25,7 +24,7 @@ import {
   SheetClose,
   SheetTrigger,
 } from "@/components/ui/sheet";
-import React, { useState, useMemo, useRef, TouchEvent, useEffect, useCallback } from "react";
+import React, { useState, useMemo, useEffect, useCallback } from "react";
 import { Button, buttonVariants } from "@/components/ui/button";
 import { useRouter } from "next/navigation";
 import { usePresence } from "@/hooks/usePresence";
@@ -35,7 +34,6 @@ import { QuotedPostCard } from "@/components/QuotedPostCard";
 import { AnimatedCount } from "@/components/AnimatedCount";
 import { motion } from "framer-motion";
 import { Progress } from "@/components/ui/progress";
-import { PullToRefreshIndicator } from "@/components/PullToRefreshIndicator";
 
 
 function LinkPreview({ metadata }: { metadata: LinkMetadata }) {
@@ -645,98 +643,12 @@ export default function HomePage() {
   const { user } = useUser();
   const { toast } = useToast();
   
-  const [touchStartY, setTouchStartY] = useState<number | null>(null);
-  const [pullPosition, setPullPosition] = useState(0);
-  const [isRefreshing, setIsRefreshing] = useState(false);
-  const scrollContainerRef = useRef<HTMLDivElement>(null);
-  
   const postsQuery = useMemoFirebase(() => {
     if (!firestore) return null;
     return query(collection(firestore, 'posts'), orderBy("timestamp", "desc"), limit(50));
   }, [firestore]);
 
   const { data: initialPosts, isLoading: postsLoading, setData } = useCollection<Post>(postsQuery);
-  
-  const handleRefresh = useCallback(async () => {
-    if (!firestore || !postsQuery || isRefreshing) return;
-
-    setIsRefreshing(true);
-
-    try {
-      const querySnapshot = await getDocs(postsQuery);
-      let refreshedPosts = querySnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as WithId<Post>));
-      
-      // Fisher-Yates shuffle algorithm to shuffle the posts
-      for (let i = refreshedPosts.length - 1; i > 0; i--) {
-        const j = Math.floor(Math.random() * (i + 1));
-        [refreshedPosts[i], refreshedPosts[j]] = [refreshedPosts[j], refreshedPosts[i]];
-      }
-
-      setData(refreshedPosts);
-    } catch (error) {
-      console.error("Error refreshing posts:", error);
-      toast({
-        variant: "destructive",
-        title: "Refresh Failed",
-        description: "Could not fetch the latest posts.",
-      });
-    } finally {
-      // Use a timeout to make the refresh feel more natural
-      setTimeout(() => {
-        setIsRefreshing(false);
-        setPullPosition(0);
-      }, 500);
-    }
-  }, [firestore, postsQuery, isRefreshing, setData, toast]);
-  
-  const handleTouchStart = (e: React.TouchEvent<HTMLDivElement>) => {
-    // Only initiate pull-to-refresh logic if we are at the very top of the scroll container.
-    if (scrollContainerRef.current && scrollContainerRef.current.scrollTop === 0) {
-      setTouchStartY(e.targetTouches[0].clientY);
-    } else {
-      // If not at the top, ensure we don't track this gesture for pull-to-refresh.
-      setTouchStartY(null);
-    }
-  };
-
-  const handleTouchMove = (e: React.TouchEvent<HTMLDivElement>) => {
-    // If we're not tracking a pull gesture, do nothing and let native scroll work.
-    if (touchStartY === null) {
-      return;
-    }
-
-    const touchY = e.targetTouches[0].clientY;
-    const pullDistance = touchY - touchStartY;
-
-    // Only act on pull-down gestures (positive distance).
-    // If the user starts pulling down then scrolls up, we ignore it.
-    if (pullDistance > 0) {
-      e.preventDefault(); // Prevent browser's overscroll-refresh behavior
-      setPullPosition(pullDistance);
-    } else {
-      // If user scrolls up after starting a pull, cancel the pull-to-refresh gesture
-      setTouchStartY(null);
-      setPullPosition(0);
-    }
-  };
-
-  const handleTouchEnd = () => {
-    // If a pull wasn't being tracked, do nothing.
-    if (touchStartY === null) {
-      return;
-    }
-    
-    // If the pull was strong enough, trigger the refresh.
-    if (pullPosition > 80) {
-      handleRefresh();
-    } else {
-      // Otherwise, just animate the indicator away.
-      setPullPosition(0);
-    }
-
-    // Reset gesture tracking state.
-    setTouchStartY(null);
-  };
 
   const updatePost = useCallback((postId: string, updatedData: Partial<Post>) => {
     setData(currentPosts => {
@@ -778,13 +690,8 @@ export default function HomePage() {
         transition={{ duration: 0.3 }}
       >
         <div
-          ref={scrollContainerRef}
           className="relative h-full overflow-y-auto"
-          onTouchStart={handleTouchStart}
-          onTouchMove={handleTouchMove}
-          onTouchEnd={handleTouchEnd}
         >
-          <PullToRefreshIndicator pullPosition={pullPosition} isRefreshing={isRefreshing} />
           <div className="divide-y border-b">
             {(isLoading || !initialPosts) && (
               <>
@@ -814,14 +721,6 @@ export default function HomePage() {
   );
 }
     
-
     
-
-    
-
-    
-
-
-
 
     
