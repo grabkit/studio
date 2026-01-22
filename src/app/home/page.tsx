@@ -528,7 +528,7 @@ function InnerPostItem({ post, bookmarks, updatePost, onDelete, onPin, showPinSt
                 <PollComponent post={post} user={user} onVote={(updatedData) => updatePost?.(post.id, updatedData)} />
             )}
 
-            <div className="flex items-center space-x-4 pt-2 text-muted-foreground">
+            <div className="flex items-center space-x-2 pt-2 text-muted-foreground">
               <button onClick={handleLike} disabled={isLiking} className={cn("flex items-center space-x-1", hasLiked && "text-pink-500")}>
                 <Heart className="h-4 w-4 shrink-0" fill={hasLiked ? 'currentColor' : 'none'} />
                 <AnimatedCount count={post.likeCount} direction={likeDirection} />
@@ -662,7 +662,14 @@ export default function HomePage() {
 
     try {
       const querySnapshot = await getDocs(postsQuery);
-      const refreshedPosts = querySnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as WithId<Post>));
+      let refreshedPosts = querySnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as WithId<Post>));
+      
+      // Fisher-Yates shuffle algorithm to shuffle the posts
+      for (let i = refreshedPosts.length - 1; i > 0; i--) {
+        const j = Math.floor(Math.random() * (i + 1));
+        [refreshedPosts[i], refreshedPosts[j]] = [refreshedPosts[j], refreshedPosts[i]];
+      }
+
       setData(refreshedPosts);
     } catch (error) {
       console.error("Error refreshing posts:", error);
@@ -790,4 +797,3 @@ export default function HomePage() {
     
 
     
-
