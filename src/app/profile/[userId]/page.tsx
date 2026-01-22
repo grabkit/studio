@@ -77,6 +77,7 @@ export default function UserProfilePage() {
     
     const [posts, setPosts] = useState<WithId<Post>[]>([]);
     const [postsLoading, setPostsLoading] = useState(true);
+    const [currentTime, setCurrentTime] = useState(new Date());
     const [isMoreOptionsSheetOpen, setIsMoreOptionsSheetOpen] = useState(false);
     const [isAboutSheetOpen, setIsAboutSheetOpen] = useState(false);
     const [isQrDialogOpen, setIsQrDialogOpen] = useState(false);
@@ -88,6 +89,11 @@ export default function UserProfilePage() {
     }, [firestore, userId]);
     
     const { data: fetchedUser, isLoading: userLoading, setData: setFetchedUser } = useDoc<User>(userRef);
+    
+    useEffect(() => {
+        const timer = setInterval(() => setCurrentTime(new Date()), 30000); // Check every 30s
+        return () => clearInterval(timer);
+    }, []);
 
     // Fetch conversation status
     const conversationId = useMemo(() => {
@@ -165,6 +171,11 @@ export default function UserProfilePage() {
 
     const { data: bookmarks, isLoading: bookmarksLoading } = useCollection<Bookmark>(bookmarksQuery);
 
+    const filteredPosts = useMemo(() => {
+        if (!posts) return [];
+        const now = currentTime;
+        return posts.filter(post => !post.expiresAt || post.expiresAt.toDate() > now);
+    }, [posts, currentTime]);
     
     const isBlocked = useMemo(() => {
         return currentUserProfile?.blockedUsers?.includes(userId) ?? false;
@@ -634,7 +645,7 @@ export default function UserProfilePage() {
                                             {isLoading ? (
                                                 <div className="font-bold text-lg"><Skeleton className="h-6 w-8 mx-auto" /></div>
                                             ) : (
-                                                <div className="font-bold text-lg">{posts?.length ?? 0}</div>
+                                                <div className="font-bold text-lg">{filteredPosts?.length ?? 0}</div>
                                             )}
                                             <p className="text-sm text-muted-foreground">Posts</p>
                                         </div>
@@ -711,13 +722,13 @@ export default function UserProfilePage() {
                                                 <PostSkeleton />
                                             </>
                                         )}
-                                        {!(postsLoading || bookmarksLoading) && posts?.length === 0 && (
+                                        {!(postsLoading || bookmarksLoading) && filteredPosts?.length === 0 && (
                                             <div className="text-center py-16">
                                                 <h3 className="text-xl font-headline text-primary">No Posts Yet</h3>
                                                 <p className="text-muted-foreground">This user hasn't posted anything.</p>
                                             </div>
                                         )}
-                                        {posts?.map((post) => (
+                                        {filteredPosts?.map((post) => (
                                             <HomePostItem 
                                             key={post.id} 
                                             post={post} 

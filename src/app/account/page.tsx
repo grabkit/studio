@@ -125,6 +125,12 @@ export default function AccountPage() {
   const { toast } = useToast();
   const [posts, setPosts] = useState<WithId<Post>[]>([]);
   const [postsLoading, setPostsLoading] = useState(true);
+  const [currentTime, setCurrentTime] = useState(new Date());
+
+  useEffect(() => {
+    const timer = setInterval(() => setCurrentTime(new Date()), 30000); // Check every 30s
+    return () => clearInterval(timer);
+  }, []);
   
   const updatePostState = useCallback((postId: string, updatedData: Partial<Post>) => {
     setPosts(currentPosts => {
@@ -227,6 +233,12 @@ export default function AccountPage() {
 
   const { data: bookmarks, isLoading: bookmarksLoading } = useCollection<Bookmark>(bookmarksQuery);
   
+  const filteredPosts = useMemo(() => {
+    if (!posts) return [];
+    const now = currentTime;
+    return posts.filter(post => !post.expiresAt || post.expiresAt.toDate() > now);
+  }, [posts, currentTime]);
+
 
   const handleShareProfile = async () => {
     const shareData = {
@@ -335,7 +347,7 @@ export default function AccountPage() {
                                 {isLoading ? (
                                     <div className="font-bold text-lg"><Skeleton className="h-6 w-8 mx-auto" /></div>
                                 ) : (
-                                    <div className="font-bold text-lg">{posts?.length ?? 0}</div>
+                                    <div className="font-bold text-lg">{filteredPosts?.length ?? 0}</div>
                                 )}
                                 <p className="text-sm text-muted-foreground">Posts</p>
                             </div>
@@ -397,13 +409,13 @@ export default function AccountPage() {
                                         <PostSkeleton />
                                     </>
                                 )}
-                                {!(postsLoading || bookmarksLoading) && posts?.length === 0 && (
+                                {!(postsLoading || bookmarksLoading) && filteredPosts?.length === 0 && (
                                     <div className="col-span-3 text-center py-16">
                                         <h3 className="text-xl font-headline text-primary">No Posts Yet</h3>
                                         <p className="text-muted-foreground">Start sharing your thoughts!</p>
                                     </div>
                                 )}
-                                {posts?.map((post) => (
+                                {filteredPosts?.map((post) => (
                                     <HomePostItem 
                                     key={post.id} 
                                     post={post} 
