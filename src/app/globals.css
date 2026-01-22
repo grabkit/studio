@@ -10,7 +10,7 @@
     --card-foreground: 222.2 84% 4.9%;
     --popover: 0 0% 100%;
     --popover-foreground: 222.2 84% 4.9%;
-    --primary: 217.2 91.2% 59.8%;
+    --primary: 0 0% 9%;
     --primary-foreground: 210 40% 98%;
     --secondary: 0 0% 95.7%;
     --secondary-foreground: 222.2 47.4% 11.2%;
@@ -22,8 +22,9 @@
     --destructive-foreground: 210 40% 98%;
     --border: 214.3 31.8% 91.4%;
     --input: 214.3 31.8% 91.4%;
-    --ring: 217.2 91.2% 59.8%;
+    --ring: 0 0% 9%;
     --online-glow-color: 135 58% 49%;
+    --loading-bar-color: 217.2 91.2% 59.8%;
   }
 }
 
@@ -202,7 +203,7 @@
     background: linear-gradient(
       90deg,
       hsl(var(--background) / 0),
-      hsl(var(--primary)),
+      hsl(var(--loading-bar-color)),
       hsl(var(--background) / 0)
     );
     background-size: 200% 100%;

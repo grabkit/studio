@@ -660,7 +660,7 @@ export default function UserProfilePage() {
                                     <p className="font-semibold font-headline">{formatUserId(user?.id)}</p>
                                     {user?.bio && <p className="text-sm">{user.bio}</p>}
                                     {user?.website && (
-                                        <a href={user.website} target="_blank" rel="noopener noreferrer" className="flex items-center gap-2 text-sm text-blue-500 hover:underline">
+                                        <a href={user.website} target="_blank" rel="noopener noreferrer" className="flex items-center gap-2 text-sm text-primary hover:underline">
                                             <LinkIcon className="h-4 w-4" />
                                             <span>{user.website.replace(/^(https?:\/\/)?(www\.)?/, '')}</span>
                                         </a>

@@ -24,7 +24,7 @@ const notificationInfo = {
     comment: {
         icon: MessageCircle,
         text: "replied to your post", 
-        color: "text-blue-500",
+        color: "text-foreground",
         settingKey: 'comments',
     },
     comment_approval: {
@@ -54,7 +54,7 @@ const notificationInfo = {
     quote: {
         icon: MessageSquareQuote,
         text: "quoted your post",
-        color: "text-blue-500",
+        color: "text-foreground",
         settingKey: 'reposts', // assuming this falls under reposts
     },
     new_post: {

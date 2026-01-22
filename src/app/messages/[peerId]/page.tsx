@@ -185,7 +185,7 @@ function MessageBubble({ message, isOwnMessage, conversation, onSetReply, onForw
                     "relative pl-3 pr-2 py-1.5 rounded-[5px] mb-1 mx-2 mt-1 w-auto border-l-4",
                     !isOwnMessage 
                         ? "bg-gray-200 dark:bg-gray-700 border-gray-400 dark:border-gray-500" 
-                        : "bg-blue-400 border-blue-300"
+                        : "bg-white/20 border-white/40"
                 )}>
                     <p className="text-xs font-semibold truncate">{formatUserId(message.replyToMessageId === message.senderId ? message.senderId : undefined)}</p>
                     <p className="text-sm opacity-80 line-clamp-2">{message.replyToMessageText}</p>
@@ -215,7 +215,7 @@ function MessageBubble({ message, isOwnMessage, conversation, onSetReply, onForw
                     <p className="px-3 py-1.5 text-base break-words whitespace-pre-wrap max-w-full">
                         {message.text}
                     </p>
-                    <p className={cn("text-[11px] self-end px-3 pb-1.5", isOwnMessage ? "text-white/70" : "text-muted-foreground")}>
+                    <p className={cn("text-[11px] self-end px-3 pb-1.5", isOwnMessage ? "text-primary-foreground/70" : "text-muted-foreground")}>
                         {message.timestamp?.toDate ? formatMessageTimestamp(message.timestamp.toDate()) : '...'}
                     </p>
                 </div>
@@ -224,7 +224,7 @@ function MessageBubble({ message, isOwnMessage, conversation, onSetReply, onForw
             { !message.text &&
                 <p className={cn(
                     "text-[11px] self-end px-3 pb-1.5", 
-                    isOwnMessage ? "text-white/70" : "text-muted-foreground"
+                    isOwnMessage ? "text-primary-foreground/70" : "text-muted-foreground"
                 )}>
                     {message.timestamp?.toDate ? formatMessageTimestamp(message.timestamp.toDate()) : '...'}
                 </p>
@@ -245,7 +245,7 @@ function MessageBubble({ message, isOwnMessage, conversation, onSetReply, onForw
              )}>
                 <div className={cn(
                     "flex flex-col rounded-2xl",
-                    isOwnMessage ? "bg-blue-500 text-white" : "bg-secondary text-foreground",
+                    isOwnMessage ? "bg-primary text-primary-foreground" : "bg-secondary text-foreground",
                     isOwnMessage ? "rounded-br-none" : "rounded-bl-none",
                      (isPostShare || isLinkShare) ? 'w-64' : 'max-w-[80%]',
                 )}>
