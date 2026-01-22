@@ -35,7 +35,6 @@ import { QuotedPostCard } from "@/components/QuotedPostCard";
 import { AnimatedCount } from "@/components/AnimatedCount";
 import { motion } from "framer-motion";
 import { Progress } from "@/components/ui/progress";
-import PullToRefreshIndicator from "@/components/PullToRefreshIndicator";
 
 
 function LinkPreview({ metadata }: { metadata: LinkMetadata }) {
@@ -647,81 +646,12 @@ export default function HomePage() {
   const { user } = useUser();
   const { toast } = useToast();
   
-  const [isRefreshing, setIsRefreshing] = useState(false);
-  const [pullDistance, setPullDistance] = useState(0);
-  const scrollRef = useRef<HTMLDivElement>(null);
-  const canPull = useRef(false);
-  const startY = useRef(0);
-
-
   const postsQuery = useMemoFirebase(() => {
     if (!firestore) return null;
     return query(collection(firestore, 'posts'), orderBy("timestamp", "desc"), limit(50));
   }, [firestore]);
 
   const { data: initialPosts, isLoading: postsLoading, setData } = useCollection<Post>(postsQuery);
-
-  const handleRefresh = useCallback(async () => {
-    if (!firestore) return;
-    setIsRefreshing(true);
-    
-    try {
-        const postsQuery = query(collection(firestore, "posts"), orderBy("timestamp", "desc"), limit(50));
-        const querySnapshot = await getDocs(postsQuery);
-        let posts = querySnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as WithId<Post>));
-        
-        for (let i = posts.length - 1; i > 0; i--) {
-            const j = Math.floor(Math.random() * (i + 1));
-            [posts[i], posts[j]] = [posts[j], posts[i]];
-        }
-        
-        setData(posts);
-    } catch (e) {
-        console.error("Error refreshing posts:", e);
-        toast({ variant: 'destructive', title: 'Error', description: 'Could not refresh feed.' });
-    } finally {
-        setTimeout(() => {
-            setIsRefreshing(false);
-            setPullDistance(0);
-        }, 500);
-    }
-  }, [firestore, setData, toast]);
-
-
-  const handleTouchStart = (e: TouchEvent) => {
-    if (scrollRef.current && scrollRef.current.scrollTop === 0) {
-      canPull.current = true;
-      startY.current = e.touches[0].clientY;
-    } else {
-      canPull.current = false;
-    }
-  };
-
-  const handleTouchMove = (e: TouchEvent) => {
-    if (!canPull.current) return;
-
-    const currentY = e.touches[0].clientY;
-    const distance = currentY - startY.current;
-
-    if (distance < 0) {
-      canPull.current = false;
-      return;
-    }
-
-    e.preventDefault();
-    setPullDistance(distance);
-  };
-
-  const handleTouchEnd = () => {
-    if (!canPull.current) return;
-
-    canPull.current = false;
-    if (pullDistance > 80) { 
-      handleRefresh();
-    } else {
-      setPullDistance(0);
-    }
-  };
   
   const updatePost = useCallback((postId: string, updatedData: Partial<Post>) => {
     setData(currentPosts => {
@@ -762,16 +692,8 @@ export default function HomePage() {
         transition={{ duration: 0.3 }}
       >
         <div
-            ref={scrollRef}
             className="relative h-full overflow-y-auto"
-            onTouchStart={handleTouchStart}
-            onTouchMove={handleTouchMove}
-            onTouchEnd={handleTouchEnd}
         >
-          <PullToRefreshIndicator 
-            isRefreshing={isRefreshing} 
-            pullDistance={pullDistance}
-          />
           <div className="divide-y border-b">
             {(isLoading || !initialPosts) && (
               <>
@@ -806,3 +728,6 @@ export default function HomePage() {
     
 
 
+
+
+    
