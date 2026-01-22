@@ -561,36 +561,34 @@ function InnerPostItem({ post, bookmarks, updatePost, onDelete, onPin, showPinSt
                 <PollComponent post={post} user={user} onVote={(updatedData) => updatePost?.(post.id, updatedData)} />
             )}
 
-            <div className="mt-2 py-3">
-                <div className="flex items-center justify-around">
-                    <button onClick={handleLike} disabled={isLiking} className={cn("flex items-center space-x-1", hasLiked && "text-pink-500")}>
-                        <Heart className="h-4 w-4" fill={hasLiked ? 'currentColor' : 'none'} />
-                        <span className="text-xs">{formatCount(post.likeCount)}</span>
-                    </button>
-                    <CommentButtonWrapper
-                        href={`/post/${post.id}`}
-                        className={cn(
-                            "flex items-center space-x-1",
-                            repliesAllowed ? "hover:text-primary" : "opacity-50 pointer-events-none"
-                        )}
-                    >
-                        <div className="relative">
-                        <MessageCircle className="h-4 w-4" />
-                        {!repliesAllowed && <Slash className="absolute top-0 left-0 h-4 w-4 stroke-[2.5px]" />}
-                        </div>
-                        <span className="text-xs">{formatCount(post.commentCount)}</span>
-                    </CommentButtonWrapper>
-                    <button onClick={handleRepost} className="flex items-center space-x-1 hover:text-green-500">
-                        <Repeat className={cn("h-4 w-4", post.repostCount > 0 && "text-green-500")} />
-                        <span className="text-xs">{formatCount(post.repostCount)}</span>
-                    </button>
-                     <button onClick={handleBookmark} className={cn("flex items-center space-x-1 hover:text-amber-500", isBookmarked && "text-amber-500")}>
-                        <BookmarkIcon className="h-4 w-4" fill={isBookmarked ? "currentColor" : "none"} />
-                    </button>
-                     <button onClick={() => setIsShareSheetOpen(true)} className="flex items-center space-x-1 hover:text-primary">
-                        <ArrowUpRight className="h-4 w-4" />
-                    </button>
-                </div>
+            <div className="mt-2 flex items-center justify-around">
+                <button onClick={handleLike} disabled={isLiking} className={cn("flex items-center space-x-1 p-2 -m-2", hasLiked && "text-pink-500")}>
+                    <Heart className="h-4 w-4" fill={hasLiked ? 'currentColor' : 'none'} />
+                    <span className="text-xs">{formatCount(post.likeCount)}</span>
+                </button>
+                <CommentButtonWrapper
+                    href={`/post/${post.id}`}
+                    className={cn(
+                        "flex items-center space-x-1 p-2 -m-2",
+                        repliesAllowed ? "hover:text-primary" : "opacity-50 pointer-events-none"
+                    )}
+                >
+                    <div className="relative">
+                    <MessageCircle className="h-4 w-4" />
+                    {!repliesAllowed && <Slash className="absolute top-0 left-0 h-4 w-4 stroke-[2.5px]" />}
+                    </div>
+                    <span className="text-xs">{formatCount(post.commentCount)}</span>
+                </CommentButtonWrapper>
+                <button onClick={handleRepost} className="flex items-center space-x-1 p-2 -m-2 hover:text-green-500">
+                    <Repeat className={cn("h-4 w-4", post.repostCount > 0 && "text-green-500")} />
+                    <span className="text-xs">{formatCount(post.repostCount)}</span>
+                </button>
+                 <button onClick={handleBookmark} className={cn("flex items-center space-x-1 p-2 -m-2 hover:text-amber-500", isBookmarked && "text-amber-500")}>
+                    <BookmarkIcon className="h-4 w-4" fill={isBookmarked ? "currentColor" : "none"} />
+                </button>
+                 <button onClick={() => setIsShareSheetOpen(true)} className="flex items-center space-x-1 p-2 -m-2 hover:text-primary">
+                    <ArrowUpRight className="h-4 w-4" />
+                </button>
             </div>
             
             {post.expiresAt && post.timestamp && <PostExpiryInfo post={post} />}
@@ -677,10 +675,10 @@ export function PostSkeleton() {
 
 
 export default function HomePage() {
-  const { firestore, userProfile } = useFirebase();
-  const { user } = useUser();
+  const { firestore, userProfile, user } = useFirebase();
   const { toast } = useToast();
   const scrollContainerRef = useRef<HTMLDivElement>(null);
+  const router = useRouter();
 
   const [posts, setPosts] = useState<WithId<Post>[] | null>(null);
   const [postsLoading, setPostsLoading] = useState(true);
@@ -804,6 +802,14 @@ export default function HomePage() {
   const handleDeletePostOptimistic = (postId: string) => {
     setPosts(currentPosts => currentPosts?.filter(p => p.id !== postId) ?? []);
   }
+  
+  const handleCreatePostClick = () => {
+    router.push('/post');
+  };
+
+  const avatar = getAvatar(userProfile);
+  const isAvatarUrl = avatar.startsWith('http');
+
 
   return (
     <AppLayout>
@@ -817,6 +823,22 @@ export default function HomePage() {
             className="relative h-full overflow-y-auto"
             ref={scrollContainerRef}
         >
+          <div className="p-4 border-b">
+            <div 
+              className="flex items-center space-x-3 cursor-pointer"
+              onClick={handleCreatePostClick}
+            >
+              <Avatar>
+                <AvatarImage src={isAvatarUrl ? avatar : undefined} alt={String(formatUserId(user?.uid))} />
+                <AvatarFallback>{!isAvatarUrl ? avatar : ''}</AvatarFallback>
+              </Avatar>
+              <div className="flex-1">
+                <div className="border rounded-full px-4 py-2 text-muted-foreground hover:bg-secondary transition-colors">
+                  What's on your mind?
+                </div>
+              </div>
+            </div>
+          </div>
           <div className="divide-y border-b">
             {isLoading && (
               <>
@@ -845,5 +867,3 @@ export default function HomePage() {
     </AppLayout>
   );
 }
-
-    
