@@ -672,7 +672,6 @@ export default function HomePage() {
   const handleRefresh = useCallback(async () => {
     if (isRefreshing || !firestore || !postsQuery) return;
 
-    // Show spinner and start scrolling immediately.
     setIsRefreshing(true);
     scrollContainerRef.current?.scrollTo({ top: 0, behavior: 'smooth' });
 
@@ -689,11 +688,10 @@ export default function HomePage() {
             return newPosts;
         };
 
-        const minDelay = new Promise(resolve => setTimeout(resolve, 750)); // Minimum spinner time
+        const minDelay = new Promise(resolve => setTimeout(resolve, 750));
 
         const [newPosts] = await Promise.all([fetchData(), minDelay]);
 
-        // Update the UI with new posts.
         setData(newPosts);
     } catch (error) {
         console.error("Failed to refresh posts:", error);
@@ -703,7 +701,6 @@ export default function HomePage() {
             description: "Could not fetch the latest posts.",
         });
     } finally {
-        // Hide the spinner.
         setIsRefreshing(false);
     }
   }, [isRefreshing, firestore, postsQuery, setData, toast]);
@@ -737,20 +734,20 @@ export default function HomePage() {
   return (
     <AppLayout>
       <motion.div
-        className="h-full"
+        className="h-full relative"
         initial={{ scale: 0.98, opacity: 0 }}
         animate={{ scale: 1, opacity: 1 }}
         transition={{ duration: 0.3 }}
       >
+        {isRefreshing && (
+          <div className="absolute top-0 left-0 right-0 z-10 h-1.5 w-full overflow-hidden">
+              <div className="h-full w-full animate-loading-bar" />
+          </div>
+        )}
         <div
             className="relative h-full overflow-y-auto"
             ref={scrollContainerRef}
         >
-          {isRefreshing && (
-            <div className="sticky top-0 z-10 h-1.5 w-full overflow-hidden">
-                <div className="h-full w-full animate-loading-bar" />
-            </div>
-          )}
           <div className="divide-y border-b">
             {(isLoading && !isRefreshing) && (
               <>
@@ -788,6 +785,7 @@ export default function HomePage() {
 
 
     
+
 
 
 
