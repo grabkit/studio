@@ -458,7 +458,7 @@ function PostDetailItem({ post, updatePost }: { post: WithId<Post>, updatePost: 
   return (
     <>
     <Card className="w-full shadow-none rounded-none border-x-0 border-t-0 border-b">
-      <CardContent className="p-4">
+      <CardContent className="px-4 pt-4 pb-2">
         <div className="flex space-x-3">
           <Avatar className="h-10 w-10">
             <AvatarImage src={isAvatarUrl ? avatar : undefined} alt={String(formatUserId(post.authorId))} />
