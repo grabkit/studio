@@ -36,7 +36,7 @@ function getUsername(uid: string): string {
   if (combined.length > 12) {
     combined = combined.substring(0, 12);
   }
-  return `${combined}-${String(number).padStart(4, '0')}`;
+  return (`${combined}-${String(number).padStart(4, '0')}`).toLowerCase();
 }
 
 export function getFormattedUserIdString(uid: string | undefined): string {

@@ -124,7 +124,7 @@ export default function AuthForm() {
             
             const userDocRef = doc(firestore, "users", user.uid);
             
-            const username = getFormattedUserIdString(user.uid).toLowerCase();
+            const username = getFormattedUserIdString(user.uid);
 
             const newUser: Omit<UserType, 'upvotes' | 'upvotedBy' > = {
                 id: user.uid,
