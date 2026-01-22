@@ -545,7 +545,7 @@ function PostDetailItem({ post, updatePost }: { post: WithId<Post>, updatePost: 
                 </div>
             </div>
 
-            <div className="border-t -mx-4">
+            <div className="-mx-4">
                 <div className="flex items-center justify-around py-2">
                     <button
                         onClick={handleLike}
@@ -1121,3 +1121,5 @@ export default function PostDetailPage() {
     </AppLayout>
   );
 }
+
+    

@@ -35,6 +35,7 @@ import { QuotedPostCard } from "@/components/QuotedPostCard";
 import { motion } from "framer-motion";
 import { eventBus } from "@/lib/event-bus";
 import { useCollection } from "@/firebase/firestore/use-collection";
+import { Progress } from "@/components/ui/progress";
 
 
 function LinkPreview({ metadata }: { metadata: LinkMetadata }) {
@@ -560,7 +561,7 @@ function InnerPostItem({ post, bookmarks, updatePost, onDelete, onPin, showPinSt
                 <PollComponent post={post} user={user} onVote={(updatedData) => updatePost?.(post.id, updatedData)} />
             )}
 
-            <div className="border-t -mx-4 mt-2 px-4 py-3">
+            <div className="-mx-4 mt-2 px-4 py-3">
                 <div className="flex items-center justify-around">
                     <button onClick={handleLike} disabled={isLiking} className={cn("flex items-center space-x-1", hasLiked && "text-pink-500")}>
                         <Heart className="h-4 w-4" fill={hasLiked ? 'currentColor' : 'none'} />
@@ -836,3 +837,5 @@ export default function HomePage() {
     </AppLayout>
   );
 }
+
+    
