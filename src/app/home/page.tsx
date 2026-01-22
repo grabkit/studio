@@ -747,8 +747,8 @@ export default function HomePage() {
             ref={scrollContainerRef}
         >
           {isRefreshing && (
-            <div className="sticky top-0 z-10 h-1 w-full overflow-hidden">
-                <div className="h-full w-full animate-gradient" />
+            <div className="sticky top-0 z-10 h-1.5 w-full overflow-hidden">
+                <div className="h-full w-full animate-loading-bar" />
             </div>
           )}
           <div className="divide-y border-b">
@@ -788,6 +788,7 @@ export default function HomePage() {
 
 
     
+
 
 
 

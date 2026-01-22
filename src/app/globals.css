@@ -10,7 +10,7 @@
     --card-foreground: 222.2 84% 4.9%;
     --popover: 0 0% 100%;
     --popover-foreground: 222.2 84% 4.9%;
-    --primary: 222.2 84% 4.9%;
+    --primary: 217.2 91.2% 59.8%;
     --primary-foreground: 210 40% 98%;
     --secondary: 0 0% 95.7%;
     --secondary-foreground: 222.2 47.4% 11.2%;
@@ -22,7 +22,7 @@
     --destructive-foreground: 210 40% 98%;
     --border: 214.3 31.8% 91.4%;
     --input: 214.3 31.8% 91.4%;
-    --ring: 222.2 84% 4.9%;
+    --ring: 217.2 91.2% 59.8%;
     --online-glow-color: 135 58% 49%;
   }
 }
@@ -170,7 +170,6 @@
   .audio-wave-bar-avatar:nth-child(2) {
       animation-delay: -1.0s;
   }
-
   .audio-wave-bar-avatar:nth-child(3) {
       animation-delay: -0.8s;
   }
@@ -190,22 +189,24 @@
       }
   }
 
-  @keyframes gradient-animation {
+  @keyframes loading-bar-animation {
     0% {
-      background-position: 0% 50%;
-    }
-    50% {
-      background-position: 100% 50%;
+      background-position: 200% 0;
     }
     100% {
-      background-position: 0% 50%;
+      background-position: -200% 0;
     }
   }
 
-  .animate-gradient {
-    background-image: linear-gradient(-45deg, #ee7752, #e73c7e, #23a6d5, #23d5ab);
-    background-size: 400% 400%;
-    animation: gradient-animation 8s ease infinite;
+  .animate-loading-bar {
+    background: linear-gradient(
+      90deg,
+      hsl(var(--background) / 0),
+      hsl(var(--primary)),
+      hsl(var(--background) / 0)
+    );
+    background-size: 200% 100%;
+    animation: loading-bar-animation 1.5s infinite linear;
   }
 
 
