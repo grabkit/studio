@@ -529,34 +529,36 @@ function InnerPostItem({ post, bookmarks, updatePost, onDelete, onPin, showPinSt
                 <PollComponent post={post} user={user} onVote={(updatedData) => updatePost?.(post.id, updatedData)} />
             )}
 
-            <div className="flex items-center space-x-4 pt-2 text-muted-foreground">
-              <button onClick={handleLike} disabled={isLiking} className={cn("flex items-center", hasLiked && "text-pink-500")}>
-                <Heart className="h-4 w-4 shrink-0" fill={hasLiked ? 'currentColor' : 'none'} />
-                <AnimatedCount count={post.likeCount} direction={likeDirection} />
-              </button>
-              <CommentButtonWrapper
-                href={`/post/${post.id}`}
-                className={cn(
-                    "flex items-center",
-                    repliesAllowed ? "hover:text-primary" : "opacity-50 pointer-events-none"
-                )}
-              >
-                <div className="relative">
-                  <MessageCircle className="h-4 w-4 shrink-0" />
-                  {!repliesAllowed && <Slash className="absolute top-0 left-0 h-4 w-4 stroke-[2.5px]" />}
+            <div className="flex items-center pt-2 w-full max-w-xs">
+                <div className="flex items-center space-x-4 text-muted-foreground">
+                    <button onClick={handleLike} disabled={isLiking} className={cn("flex items-center", hasLiked && "text-pink-500")}>
+                        <Heart className="h-4 w-4 shrink-0" fill={hasLiked ? 'currentColor' : 'none'} />
+                        <AnimatedCount count={post.likeCount} direction={likeDirection} />
+                    </button>
+                    <CommentButtonWrapper
+                        href={`/post/${post.id}`}
+                        className={cn(
+                            "flex items-center",
+                            repliesAllowed ? "hover:text-primary" : "opacity-50 pointer-events-none"
+                        )}
+                    >
+                        <div className="relative">
+                        <MessageCircle className="h-4 w-4 shrink-0" />
+                        {!repliesAllowed && <Slash className="absolute top-0 left-0 h-4 w-4 stroke-[2.5px]" />}
+                        </div>
+                        <AnimatedCount count={post.commentCount} direction="up" />
+                    </CommentButtonWrapper>
+                    <button onClick={handleRepost} className="flex items-center hover:text-green-500">
+                        <Repeat className={cn("h-4 w-4 shrink-0")} />
+                        <AnimatedCount count={post.repostCount} direction="up" />
+                    </button>
+                    <button onClick={() => setIsShareSheetOpen(true)} className="flex items-center hover:text-primary">
+                        <ArrowUpRight className="h-4 w-4 shrink-0" />
+                    </button>
+                    <button onClick={handleBookmark} className="flex items-center hover:text-foreground">
+                        <BookmarkIcon className={cn("h-4 w-4 shrink-0", isBookmarked && "text-foreground fill-foreground")} />
+                    </button>
                 </div>
-                <AnimatedCount count={post.commentCount} direction="up" />
-              </CommentButtonWrapper>
-              <button onClick={handleRepost} className="flex items-center hover:text-green-500">
-                <Repeat className={cn("h-4 w-4 shrink-0")} />
-                <AnimatedCount count={post.repostCount} direction="up" />
-              </button>
-              <button onClick={() => setIsShareSheetOpen(true)} className="flex items-center hover:text-primary">
-                <ArrowUpRight className="h-4 w-4 shrink-0" />
-              </button>
-               <button onClick={handleBookmark} className="flex items-center hover:text-foreground">
-                <BookmarkIcon className={cn("h-4 w-4 shrink-0", isBookmarked && "text-foreground fill-foreground")} />
-              </button>
             </div>
       </div>
     </div>
@@ -647,9 +649,9 @@ export default function HomePage() {
   
   const [isRefreshing, setIsRefreshing] = useState(false);
   const [pullDistance, setPullDistance] = useState(0);
-  const startY = useRef(0);
-  const isPulling = useRef(false);
   const scrollRef = useRef<HTMLDivElement>(null);
+  const isPulling = useRef(false);
+  const startY = useRef(0);
 
 
   const postsQuery = useMemoFirebase(() => {
@@ -668,7 +670,6 @@ export default function HomePage() {
         const querySnapshot = await getDocs(postsQuery);
         let posts = querySnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as WithId<Post>));
         
-        // Shuffle the posts
         for (let i = posts.length - 1; i > 0; i--) {
             const j = Math.floor(Math.random() * (i + 1));
             [posts[i], posts[j]] = [posts[j], posts[i]];
@@ -702,22 +703,20 @@ export default function HomePage() {
     const currentY = e.touches[0].clientY;
     const distance = currentY - startY.current;
 
-    // Only allow pulling down, not scrolling up from the top
-    if (distance > 0) {
-        e.preventDefault(); // Prevent default scroll behavior only when pulling down
-        setPullDistance(distance);
-    } else {
-        // User is trying to scroll up, cancel the pull
-        isPulling.current = false;
-        setPullDistance(0);
+    if (distance < 0) {
+      isPulling.current = false;
+      return;
     }
+
+    e.preventDefault();
+    setPullDistance(distance);
   };
 
   const handleTouchEnd = () => {
     if (!isPulling.current) return;
-    
+
     isPulling.current = false;
-    if (pullDistance > 80) { // Threshold to trigger refresh
+    if (pullDistance > 80) { 
       handleRefresh();
     } else {
       setPullDistance(0);
@@ -746,7 +745,6 @@ export default function HomePage() {
     if (!initialPosts || !user) return [];
     const mutedUsers = userProfile?.mutedUsers || [];
     return initialPosts.filter(post => 
-      post.authorId !== user.uid &&
       !mutedUsers.includes(post.authorId)
     );
   }, [initialPosts, userProfile, user]);
@@ -806,3 +804,4 @@ export default function HomePage() {
     
 
     
+
