@@ -172,7 +172,7 @@ export const FirebaseProvider: React.FC<FirebaseProviderProps> = ({
   useEffect(() => {
     if (firestore && userAuthState.user && loggedInUserProfile && !loggedInUserProfile.username) {
       const userDocRef = doc(firestore, 'users', userAuthState.user.uid);
-      const username = getFormattedUserIdString(userAuthState.user.uid);
+      const username = getFormattedUserIdString(userAuthState.user.uid).toLowerCase();
 
       updateDoc(userDocRef, { username: username })
         .then(() => {
@@ -542,4 +542,3 @@ export function useMemoFirebase<T>(factory: () => T, deps: DependencyList): T | 
     
 
     
-
