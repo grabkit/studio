@@ -91,7 +91,7 @@ function PostExpiryInfo({ expiresAt }: { expiresAt: Timestamp }) {
   if (displayTime === 'Expired') return null;
 
   return (
-    <div className="text-xs text-amber-600 dark:text-amber-500 flex items-center gap-1.5 mt-4">
+    <div className="w-full text-xs text-amber-600 dark:text-amber-500 flex items-center justify-center gap-1.5 mt-1">
       <Clock className="h-3 w-3" />
       <span>Expires in {displayTime}</span>
     </div>
@@ -205,7 +205,7 @@ export function PollComponent({ post, user, onVote }: { post: WithId<Post>, user
                      const bgClass = isUserChoice ? colorSet.light : 'bg-secondary';
                      const borderClass = isUserChoice ? colorSet.dark : 'border-border';
                      const fontWeight = isUserChoice ? 'font-bold' : 'font-medium';
-                     const textColorClass = isUserChoice ? colorSet.text : 'text-muted-foreground';
+                     const textColorClass = isUserChoice ? colorSet.text : 'text-foreground';
 
 
                      return (
