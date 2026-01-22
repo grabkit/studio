@@ -590,15 +590,15 @@ function PostPageComponent() {
                         <Button
                             key={opt.value}
                             variant="outline"
-                            className="justify-start"
+                            className="justify-start rounded-[5px]"
                             onClick={() => handleSelectExpiration(opt.value, opt.label)}
                         >
                             {opt.label}
                         </Button>
                     ))}
                     <Button
-                        variant="destructive"
-                        className="justify-start"
+                        variant="outline"
+                        className="justify-start rounded-[5px]"
                         onClick={handleClearExpiration}
                     >
                         Never Expire
