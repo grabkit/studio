@@ -1,3 +1,4 @@
+
 "use client";
 
 import AppLayout from "@/components/AppLayout";
@@ -24,7 +25,7 @@ import {
   SheetClose,
   SheetTrigger,
 } from "@/components/ui/sheet";
-import React, { useState, useMemo, useEffect, useCallback } from "react";
+import React, { useState, useMemo, useEffect, useCallback, useRef, type TouchEvent } from "react";
 import { Button, buttonVariants } from "@/components/ui/button";
 import { useRouter } from "next/navigation";
 import { usePresence } from "@/hooks/usePresence";
@@ -34,6 +35,7 @@ import { QuotedPostCard } from "@/components/QuotedPostCard";
 import { AnimatedCount } from "@/components/AnimatedCount";
 import { motion } from "framer-motion";
 import { Progress } from "@/components/ui/progress";
+import PullToRefreshIndicator from "@/components/PullToRefreshIndicator";
 
 
 function LinkPreview({ metadata }: { metadata: LinkMetadata }) {
@@ -643,6 +645,13 @@ export default function HomePage() {
   const { user } = useUser();
   const { toast } = useToast();
   
+  const [isRefreshing, setIsRefreshing] = useState(false);
+  const [pullDistance, setPullDistance] = useState(0);
+  const startY = useRef(0);
+  const isPulling = useRef(false);
+  const scrollRef = useRef<HTMLDivElement>(null);
+
+
   const postsQuery = useMemoFirebase(() => {
     if (!firestore) return null;
     return query(collection(firestore, 'posts'), orderBy("timestamp", "desc"), limit(50));
@@ -650,6 +659,71 @@ export default function HomePage() {
 
   const { data: initialPosts, isLoading: postsLoading, setData } = useCollection<Post>(postsQuery);
 
+  const handleRefresh = useCallback(async () => {
+    if (!firestore) return;
+    setIsRefreshing(true);
+    
+    try {
+        const postsQuery = query(collection(firestore, "posts"), orderBy("timestamp", "desc"), limit(50));
+        const querySnapshot = await getDocs(postsQuery);
+        let posts = querySnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as WithId<Post>));
+        
+        // Shuffle the posts
+        for (let i = posts.length - 1; i > 0; i--) {
+            const j = Math.floor(Math.random() * (i + 1));
+            [posts[i], posts[j]] = [posts[j], posts[i]];
+        }
+        
+        setData(posts);
+    } catch (e) {
+        console.error("Error refreshing posts:", e);
+        toast({ variant: 'destructive', title: 'Error', description: 'Could not refresh feed.' });
+    } finally {
+        setTimeout(() => {
+            setIsRefreshing(false);
+            setPullDistance(0);
+        }, 500);
+    }
+  }, [firestore, setData, toast]);
+
+
+  const handleTouchStart = (e: TouchEvent) => {
+    if (scrollRef.current && scrollRef.current.scrollTop === 0) {
+      startY.current = e.touches[0].clientY;
+      isPulling.current = true;
+    } else {
+      isPulling.current = false;
+    }
+  };
+
+  const handleTouchMove = (e: TouchEvent) => {
+    if (!isPulling.current) return;
+
+    const currentY = e.touches[0].clientY;
+    const distance = currentY - startY.current;
+
+    // Only allow pulling down, not scrolling up from the top
+    if (distance > 0) {
+        e.preventDefault(); // Prevent default scroll behavior only when pulling down
+        setPullDistance(distance);
+    } else {
+        // User is trying to scroll up, cancel the pull
+        isPulling.current = false;
+        setPullDistance(0);
+    }
+  };
+
+  const handleTouchEnd = () => {
+    if (!isPulling.current) return;
+    
+    isPulling.current = false;
+    if (pullDistance > 80) { // Threshold to trigger refresh
+      handleRefresh();
+    } else {
+      setPullDistance(0);
+    }
+  };
+  
   const updatePost = useCallback((postId: string, updatedData: Partial<Post>) => {
     setData(currentPosts => {
         if (!currentPosts) return null;
@@ -690,8 +764,16 @@ export default function HomePage() {
         transition={{ duration: 0.3 }}
       >
         <div
-          className="relative h-full overflow-y-auto"
+            ref={scrollRef}
+            className="relative h-full overflow-y-auto"
+            onTouchStart={handleTouchStart}
+            onTouchMove={handleTouchMove}
+            onTouchEnd={handleTouchEnd}
         >
+          <PullToRefreshIndicator 
+            isRefreshing={isRefreshing} 
+            pullDistance={pullDistance}
+          />
           <div className="divide-y border-b">
             {(isLoading || !initialPosts) && (
               <>
