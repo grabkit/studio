@@ -2,7 +2,7 @@
 "use client";
 
 import AppLayout from "@/components/AppLayout";
-import { useFirebase, useMemoFirebase, useUser, useDoc, useCollection } from "@/firebase";
+import { useFirebase, useMemoFirebase, useUser } from "@/firebase";
 import { collection, query, orderBy, limit, doc, updateDoc, arrayUnion, arrayRemove, increment, deleteDoc, setDoc, serverTimestamp, getDoc, runTransaction, getDocs, where } from "firebase/firestore";
 import type { WithId } from "@/firebase/firestore/use-collection";
 import { Card, CardContent } from "@/components/ui/card";
@@ -35,6 +35,7 @@ import { QuotedPostCard } from "@/components/QuotedPostCard";
 import { motion } from "framer-motion";
 import { Progress } from "@/components/ui/progress";
 import { eventBus } from "@/lib/event-bus";
+import { useCollection } from "@/firebase/firestore/use-collection";
 
 
 function LinkPreview({ metadata }: { metadata: LinkMetadata }) {
@@ -704,11 +705,18 @@ export default function HomePage() {
         await minDelay;
 
         if (posts && posts.length > 0 && newPosts.length > 0 && posts[0].id === newPosts[0].id) {
-            toast({
-                title: "మీరు అప్‌డేట్‌గా ఉన్నారు!",
-                description: "ప్రస్తుతం చూపించడానికి కొత్త పోస్ట్‌లు ఏవీ లేవు.",
+            // No new posts, shuffle existing ones
+            setPosts(currentPosts => {
+                if (!currentPosts) return [];
+                const shuffled = [...currentPosts];
+                for (let i = shuffled.length - 1; i > 0; i--) {
+                    const j = Math.floor(Math.random() * (i + 1));
+                    [shuffled[i], shuffled[j]] = [shuffled[j], shuffled[i]];
+                }
+                return shuffled;
             });
         } else {
+            // New posts available, update the list
             setPosts(newPosts);
         }
 
@@ -722,7 +730,7 @@ export default function HomePage() {
     } finally {
         eventBus.emit('refresh-end');
     }
-  }, [postsQuery, toast, posts]);
+  }, [postsQuery, posts, toast]);
 
 
   // Subscribe to the refresh event
@@ -812,3 +820,4 @@ export default function HomePage() {
     
 
     
+
