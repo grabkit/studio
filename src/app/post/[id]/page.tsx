@@ -105,9 +105,9 @@ function PollComponent({ post, user, onVote }: { post: WithId<Post>, user: any, 
 
     const pollColors = useMemo(() => [
         { light: 'bg-gray-500/20', dark: 'border-gray-500', text: 'text-gray-500' },
-        { light: 'bg-emerald-500/20', dark: 'border-emerald-500', text: 'text-emerald-500' },
-        { light: 'bg-amber-500/20', dark: 'border-amber-500', text: 'text-amber-500' },
-        { light: 'bg-fuchsia-500/20', dark: 'border-fuchsia-500', text: 'text-fuchsia-500' }
+        { light: 'bg-emerald-500/20', dark: 'border-emerald-500', text: 'text-emerald-600' },
+        { light: 'bg-amber-500/20', dark: 'border-amber-500', text: 'text-amber-600' },
+        { light: 'bg-fuchsia-500/20', dark: 'border-fuchsia-500', text: 'text-fuchsia-600' }
     ], []);
 
 
@@ -528,7 +528,7 @@ function PostDetailItem({ post, updatePost }: { post: WithId<Post>, updatePost: 
               <PollComponent post={post} user={user} onVote={(updatedData) => updatePost(updatedData)} />
             )}
 
-            <div className="border-t -mx-4 mt-2 px-4 py-3">
+            <div className="-mx-4 mt-2 px-4 py-3">
                 <div className="flex items-center justify-around">
                     <div className="flex items-center space-x-2">
                         <span className="font-bold text-foreground"><AnimatedCount count={post.likeCount} direction={likeDirection}/></span>
