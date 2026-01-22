@@ -21,7 +21,7 @@ import { errorEmitter } from './error-emitter';
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from '@/components/ui/sheet';
 import { Button } from '@/components/ui/button';
 import { Phone, Video, PhoneOff } from 'lucide-react';
-import { formatUserId, getAvatar } from '@/lib/utils.tsx';
+import { formatUserId, getAvatar, getFormattedUserIdString } from '@/lib/utils.tsx';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import {
   AlertDialog,
@@ -167,6 +167,27 @@ export const FirebaseProvider: React.FC<FirebaseProviderProps> = ({
   const { data: loggedInUserProfile, isLoading: isUserProfileLoading, setData: setLoggedInUserProfile } = useDoc<UserProfile>(loggedInUserProfileRef);
 
   const userProfile = activeUserProfile || loggedInUserProfile;
+
+  // Backfill username for existing users
+  useEffect(() => {
+    if (firestore && userAuthState.user && loggedInUserProfile && !loggedInUserProfile.username) {
+      const userDocRef = doc(firestore, 'users', userAuthState.user.uid);
+      const username = getFormattedUserIdString(userAuthState.user.uid).toLowerCase();
+
+      updateDoc(userDocRef, { username: username })
+        .then(() => {
+          // Optimistically update the local profile state as well
+          setLoggedInUserProfile(currentProfile => {
+            if (!currentProfile) return null;
+            return { ...currentProfile, username: username };
+          });
+          console.log(`Successfully backfilled username for user ${userAuthState.user.uid}`);
+        })
+        .catch(error => {
+          console.error("Error backfilling username:", error);
+        });
+    }
+  }, [firestore, userAuthState.user, loggedInUserProfile, setLoggedInUserProfile]);
 
   const handleDeleteVoiceStatus = async () => {
     if (!firestore || !userAuthState.user) return;
