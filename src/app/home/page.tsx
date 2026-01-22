@@ -34,6 +34,7 @@ import { QuotedPostCard } from "@/components/QuotedPostCard";
 import { AnimatedCount } from "@/components/AnimatedCount";
 import { motion } from "framer-motion";
 import { Progress } from "@/components/ui/progress";
+import { PullToRefreshIndicator } from "@/components/PullToRefreshIndicator";
 
 
 function LinkPreview({ metadata }: { metadata: LinkMetadata }) {
@@ -641,6 +642,11 @@ export function PostSkeleton() {
 export default function HomePage() {
   const { firestore, userProfile } = useFirebase();
   const { user } = useUser();
+  const { toast } = useToast();
+  
+  const [touchStartY, setTouchStartY] = useState(0);
+  const [pullPosition, setPullPosition] = useState(0);
+  const [isRefreshing, setIsRefreshing] = useState(false);
   
   const postsQuery = useMemoFirebase(() => {
     if (!firestore) return null;
@@ -648,6 +654,60 @@ export default function HomePage() {
   }, [firestore]);
 
   const { data: initialPosts, isLoading: postsLoading, setData } = useCollection<Post>(postsQuery);
+  
+  const handleRefresh = useCallback(async () => {
+    if (!firestore || !postsQuery || isRefreshing) return;
+
+    setIsRefreshing(true);
+
+    try {
+      const querySnapshot = await getDocs(postsQuery);
+      const refreshedPosts = querySnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as WithId<Post>));
+      setData(refreshedPosts);
+    } catch (error) {
+      console.error("Error refreshing posts:", error);
+      toast({
+        variant: "destructive",
+        title: "Refresh Failed",
+        description: "Could not fetch the latest posts.",
+      });
+    } finally {
+      // Use a timeout to make the refresh feel more natural
+      setTimeout(() => {
+        setIsRefreshing(false);
+        setPullPosition(0);
+      }, 500);
+    }
+  }, [firestore, postsQuery, isRefreshing, setData, toast]);
+  
+  const handleTouchStart = (e: React.TouchEvent<HTMLDivElement>) => {
+    if (e.currentTarget.scrollTop === 0) {
+      setTouchStartY(e.targetTouches[0].clientY);
+    } else {
+      setTouchStartY(0);
+    }
+  };
+
+  const handleTouchMove = (e: React.TouchEvent<HTMLDivElement>) => {
+    if (touchStartY === 0) return;
+
+    const touchY = e.targetTouches[0].clientY;
+    const pullDistance = touchY - touchStartY;
+    
+    // Allow pulling only when at the top and pulling down
+    if (pullDistance > 0 && e.currentTarget.scrollTop === 0) {
+      setPullPosition(pullDistance);
+    }
+  };
+
+  const handleTouchEnd = () => {
+    setTouchStartY(0);
+    if (pullPosition > 80) { // Trigger threshold
+      handleRefresh();
+    } else {
+      setPullPosition(0);
+    }
+  };
 
   const updatePost = useCallback((postId: string, updatedData: Partial<Post>) => {
     setData(currentPosts => {
@@ -690,7 +750,11 @@ export default function HomePage() {
       >
         <div
           className="relative h-full overflow-y-auto"
+          onTouchStart={handleTouchStart}
+          onTouchMove={handleTouchMove}
+          onTouchEnd={handleTouchEnd}
         >
+          <PullToRefreshIndicator pullPosition={pullPosition} isRefreshing={isRefreshing} />
           <div className="divide-y border-b">
             {(isLoading || !initialPosts) && (
               <>
@@ -726,3 +790,4 @@ export default function HomePage() {
     
 
     
+
