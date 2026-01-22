@@ -1,3 +1,4 @@
+
 "use client";
 
 import AppLayout from "@/components/AppLayout";
@@ -688,43 +689,41 @@ export default function HomePage() {
   }, [firestore, postsQuery, isRefreshing, setData, toast]);
   
   const handleTouchStart = (e: React.TouchEvent<HTMLDivElement>) => {
-    // Only set the start Y if the scroll position is at the very top.
-    if (e.currentTarget.scrollTop <= 0) {
-      setTouchStartY(e.targetTouches[0].clientY);
-    } else {
-      setTouchStartY(0); // Reset if not at the top
-    }
+    // Record the starting touch position.
+    setTouchStartY(e.targetTouches[0].clientY);
   };
 
   const handleTouchMove = (e: React.TouchEvent<HTMLDivElement>) => {
-    if (touchStartY === 0) return; // Touch didn't start at the top
-
+    const scrollTop = e.currentTarget.scrollTop;
     const touchY = e.targetTouches[0].clientY;
     const pullDistance = touchY - touchStartY;
 
-    // If user starts pulling up, abort the refresh gesture for this touch.
-    if (pullDistance < 0) {
-      setTouchStartY(0);
-      setPullPosition(0);
+    // If we aren't at the top, or if the gesture is a scroll up, do nothing.
+    if (scrollTop > 0 || pullDistance < 0) {
+      // If we were previously showing the indicator, hide it.
+      if (pullPosition > 0) {
+        setPullPosition(0);
+      }
       return;
     }
     
-    // Check if we are at the top and pulling down
-    if (e.currentTarget.scrollTop <= 0 && pullDistance > 0) {
-      // Prevent the default browser action (like overscroll bounce)
-      // ONLY when we are actively handling the pull-to-refresh.
-      e.preventDefault(); 
+    // Only if we are at the top and pulling down, show the indicator.
+    // The scrollTop <= 0 is a failsafe, but the main check is scrollTop > 0 above.
+    if (pullDistance > 0 && scrollTop <= 0) {
+      e.preventDefault(); // Prevent native browser overscroll actions
       setPullPosition(pullDistance);
     }
   };
 
   const handleTouchEnd = () => {
-    if (touchStartY === 0) return; // Gesture was not a pull-to-refresh gesture
+    // Reset the starting touch position.
+    setTouchStartY(0);
     
-    setTouchStartY(0); // Reset for the next touch
-    if (pullPosition > 80) { // Trigger threshold
+    // If the pull was enough to trigger, refresh.
+    if (pullPosition > 80) {
       handleRefresh();
     } else {
+      // Otherwise, just hide the indicator.
       setPullPosition(0);
     }
   };
@@ -810,4 +809,5 @@ export default function HomePage() {
     
 
     
+
 
