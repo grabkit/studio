@@ -82,8 +82,8 @@ function PostExpiryInfo({ post }: { post: WithId<Post> }) {
   }
 
   return (
-    <div className="w-full bg-amber-500/10 px-4 py-1 mt-4 -mx-4 -mb-2">
-        <div className="flex justify-center items-center gap-1.5 text-xs text-amber-700 font-medium">
+    <div className="flex justify-center mt-4 -mb-2">
+        <div className="bg-amber-500/10 px-4 py-1 rounded-t-[25px] flex items-center gap-1.5 text-xs text-amber-700 font-medium">
             <Clock className="h-3 w-3" />
             <span>Expires in {expiryText}</span>
         </div>
