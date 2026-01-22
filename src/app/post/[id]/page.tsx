@@ -79,7 +79,7 @@ function PostExpiryInfo({ expiresAt }: { expiresAt: Timestamp }) {
   if (displayTime === 'Expired') return null;
 
   return (
-    <div className="text-xs text-amber-600 dark:text-amber-500 flex items-center gap-1.5 mt-3 pt-3 border-t">
+    <div className="text-xs text-amber-600 dark:text-amber-500 flex items-center gap-1.5 mt-4">
       <Clock className="h-3 w-3" />
       <span>Expires in {displayTime}</span>
     </div>
@@ -523,9 +523,6 @@ function PostDetailItem({ post, updatePost }: { post: WithId<Post>, updatePost: 
               <PollComponent post={post} user={user} onVote={(updatedData) => updatePost(updatedData)} />
             )}
 
-            {post.expiresAt && <PostExpiryInfo expiresAt={post.expiresAt} />}
-
-
             <div className="border-t border-b -mx-4 my-2 px-4 py-2 text-sm text-muted-foreground flex items-center justify-around">
                 <div className="flex items-center space-x-2">
                     <span className="font-bold text-foreground"><AnimatedCount count={post.likeCount} direction={likeDirection}/></span>
@@ -568,6 +565,8 @@ function PostDetailItem({ post, updatePost }: { post: WithId<Post>, updatePost: 
                     <ArrowUpRight className="h-4 w-4" />
                   </button>
             </div>
+            
+            {post.expiresAt && <PostExpiryInfo expiresAt={post.expiresAt} />}
           </div>
         </div>
       </CardContent>

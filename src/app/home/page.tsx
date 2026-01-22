@@ -91,7 +91,7 @@ function PostExpiryInfo({ expiresAt }: { expiresAt: Timestamp }) {
   if (displayTime === 'Expired') return null;
 
   return (
-    <div className="text-xs text-amber-600 dark:text-amber-500 flex items-center gap-1.5 mt-3 pt-3 border-t">
+    <div className="text-xs text-amber-600 dark:text-amber-500 flex items-center gap-1.5 mt-4">
       <Clock className="h-3 w-3" />
       <span>Expires in {displayTime}</span>
     </div>
@@ -111,7 +111,7 @@ export function PollComponent({ post, user, onVote }: { post: WithId<Post>, user
     }, [post.pollOptions]);
 
     const pollColors = useMemo(() => [
-        { light: 'bg-gray-500/20', dark: 'border-gray-600', text: 'text-gray-600' },
+        { light: 'bg-gray-500/20', dark: 'border-gray-500', text: 'text-gray-500' },
         { light: 'bg-emerald-500/20', dark: 'border-emerald-600', text: 'text-emerald-600' },
         { light: 'bg-amber-500/20', dark: 'border-amber-600', text: 'text-amber-600' },
         { light: 'bg-fuchsia-500/20', dark: 'border-fuchsia-600', text: 'text-fuchsia-600' }
@@ -557,8 +557,6 @@ function InnerPostItem({ post, bookmarks, updatePost, onDelete, onPin, showPinSt
                 <PollComponent post={post} user={user} onVote={(updatedData) => updatePost?.(post.id, updatedData)} />
             )}
 
-            {post.expiresAt && <PostExpiryInfo expiresAt={post.expiresAt} />}
-
             <div className="flex items-center justify-between pt-2">
                 <div className="flex items-center space-x-6 text-muted-foreground">
                     <button onClick={handleLike} disabled={isLiking} className={cn("flex items-center space-x-1", hasLiked && "text-pink-500")}>
@@ -590,6 +588,8 @@ function InnerPostItem({ post, bookmarks, updatePost, onDelete, onPin, showPinSt
                     <BookmarkIcon className={cn("h-4 w-4", isBookmarked && "text-foreground fill-foreground")} />
                 </button>
             </div>
+            
+            {post.expiresAt && <PostExpiryInfo expiresAt={post.expiresAt} />}
       </div>
     </div>
     <ShareSheet post={post} isOpen={isShareSheetOpen} onOpenChange={setIsShareSheetOpen} />
