@@ -1,15 +1,16 @@
+
 "use client";
 
 import AppLayout from "@/components/AppLayout";
 import { useFirebase, useMemoFirebase, useUser } from "@/firebase";
-import { collection, query, orderBy, limit, doc, updateDoc, arrayUnion, arrayRemove, increment, deleteDoc, setDoc, serverTimestamp, getDoc, runTransaction, getDocs, where } from "firebase/firestore";
+import { collection, query, orderBy, limit, doc, updateDoc, arrayUnion, arrayRemove, increment, deleteDoc, setDoc, serverTimestamp, getDoc, runTransaction, getDocs, where, type Timestamp } from "firebase/firestore";
 import type { WithId } from "@/firebase/firestore/use-collection";
 import { Card, CardContent } from "@/components/ui/card";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Skeleton } from "@/components/ui/skeleton";
 import type { Post, Bookmark, PollOption, Notification, User, LinkMetadata, QuotedPost } from "@/lib/types";
-import { Heart, MessageCircle, Repeat, ArrowUpRight, MoreHorizontal, Edit, Trash2, Bookmark as BookmarkIcon, CheckCircle2, Slash, Pin, ArrowDown } from "lucide-react";
-import { cn, formatTimestamp, getAvatar, formatCount, formatUserId } from "@/lib/utils";
+import { Heart, MessageCircle, Repeat, ArrowUpRight, MoreHorizontal, Edit, Trash2, Bookmark as BookmarkIcon, CheckCircle2, Slash, Pin, Clock } from "lucide-react";
+import { cn, formatTimestamp, getAvatar, formatCount, formatUserId, formatExpiry } from "@/lib/utils";
 import { useToast } from "@/hooks/use-toast";
 import { FirestorePermissionError } from "@/firebase/errors";
 import { errorEmitter } from "@/firebase/error-emitter";
@@ -66,6 +67,35 @@ function LinkPreview({ metadata }: { metadata: LinkMetadata }) {
             </div>
         </a>
     )
+}
+
+function PostExpiryInfo({ expiresAt }: { expiresAt: Timestamp }) {
+  const [displayTime, setDisplayTime] = useState(() => formatExpiry(expiresAt.toDate()));
+
+  useEffect(() => {
+    const updateDisplayTime = () => {
+      const newDisplayTime = formatExpiry(expiresAt.toDate());
+      if (newDisplayTime === 'Expired') {
+        setDisplayTime(newDisplayTime);
+        clearInterval(intervalId);
+      } else {
+        setDisplayTime(newDisplayTime);
+      }
+    };
+
+    const intervalId = setInterval(updateDisplayTime, 1000 * 30); // Update every 30 seconds
+
+    return () => clearInterval(intervalId);
+  }, [expiresAt]);
+
+  if (displayTime === 'Expired') return null;
+
+  return (
+    <div className="text-xs text-amber-600 dark:text-amber-500 flex items-center gap-1.5 mt-3 pt-3 border-t">
+      <Clock className="h-3 w-3" />
+      <span>Expires in {displayTime}</span>
+    </div>
+  );
 }
 
 export function PollComponent({ post, user, onVote }: { post: WithId<Post>, user: any, onVote?: (updatedPost: Partial<Post>) => void }) {
@@ -527,6 +557,8 @@ function InnerPostItem({ post, bookmarks, updatePost, onDelete, onPin, showPinSt
                 <PollComponent post={post} user={user} onVote={(updatedData) => updatePost?.(post.id, updatedData)} />
             )}
 
+            {post.expiresAt && <PostExpiryInfo expiresAt={post.expiresAt} />}
+
             <div className="flex items-center justify-between pt-2">
                 <div className="flex items-center space-x-6 text-muted-foreground">
                     <button onClick={handleLike} disabled={isLiking} className={cn("flex items-center space-x-1", hasLiked && "text-pink-500")}>
@@ -749,8 +781,11 @@ export default function HomePage() {
   const filteredPosts = useMemo(() => {
     if (!posts || !user) return [];
     const mutedUsers = userProfile?.mutedUsers || [];
+    const now = new Date();
     return posts.filter(post => 
-      !mutedUsers.includes(post.authorId) && post.authorId !== user.uid
+      !mutedUsers.includes(post.authorId) && 
+      post.authorId !== user.uid &&
+      (!post.expiresAt || post.expiresAt.toDate() > now)
     );
   }, [posts, userProfile, user]);
 

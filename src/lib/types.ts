@@ -37,6 +37,7 @@ export interface Post {
     commentCount: number;
     commentsAllowed?: boolean;
     isPinned?: boolean;
+    expiresAt?: Timestamp;
 
     // Type of post
     type?: 'text' | 'poll' | 'repost' | 'quote';

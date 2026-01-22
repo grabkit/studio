@@ -7,7 +7,7 @@ import { useRouter, useSearchParams } from "next/navigation";
 import { useForm, useFieldArray } from "react-hook-form";
 import * as z from "zod";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { collection, serverTimestamp, setDoc, doc, updateDoc, getDoc, writeBatch } from "firebase/firestore";
+import { collection, serverTimestamp, setDoc, doc, updateDoc, getDoc, writeBatch, Timestamp } from "firebase/firestore";
 import { useFirebase, useDoc, useMemoFirebase } from "@/firebase";
 import type { Post, QuotedPost, Notification } from "@/lib/types";
 import { WithId } from "@/firebase/firestore/use-collection";
@@ -19,13 +19,14 @@ import {
   SheetTitle,
   SheetDescription,
   SheetClose,
+  SheetHeader,
 } from "@/components/ui/sheet";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Form, FormControl, FormField, FormItem, FormMessage } from "@/components/ui/form";
-import { Loader2, X, ListOrdered, Plus, Trash2, Link as LinkIcon, Image as ImageIcon } from "lucide-react";
+import { Loader2, X, ListOrdered, Plus, Link as LinkIcon, Image as ImageIcon, CalendarClock } from "lucide-react";
 import { errorEmitter } from "@/firebase/error-emitter";
 import { FirestorePermissionError } from "@/firebase/errors";
 import { Switch } from "@/components/ui/switch";
@@ -57,12 +58,12 @@ const quotedPostSchema = z.object({
 }).optional();
 
 
-// Base schema for common fields
 const baseSchema = z.object({
   content: z.string().max(560, "Post is too long.").optional(),
   commentsAllowed: z.boolean().default(true),
   linkMetadata: linkMetadataSchema,
   quotedPost: quotedPostSchema,
+  expiration: z.number().optional(), // duration in seconds
 });
 
 // Schema for a standard text post
@@ -87,6 +88,14 @@ const postSchema = z.discriminatedUnion("isPoll", [
     message: "Post content cannot be empty.",
     path: ["content"],
 });
+
+const expirationOptions = [
+    { label: '30 Minutes', value: 30 * 60 },
+    { label: '1 Hour', value: 60 * 60 },
+    { label: '6 Hours', value: 6 * 60 * 60 },
+    { label: '1 Day', value: 24 * 60 * 60 },
+    { label: '7 Days', value: 7 * 24 * 60 * 60 },
+];
 
 
 function LinkPreview({ metadata, onRemove }: { metadata: LinkMetadata, onRemove: () => void }) {
@@ -125,6 +134,8 @@ function PostPageComponent() {
   const [isOpen, setIsOpen] = useState(true);
   const [showLinkInput, setShowLinkInput] = useState(false);
   const [isFetchingPreview, setIsFetchingPreview] = useState(false);
+  const [isExpirationSheetOpen, setIsExpirationSheetOpen] = useState(false);
+  const [expirationLabel, setExpirationLabel] = useState("Never");
   const router = useRouter();
   const searchParams = useSearchParams();
   const { user, userProfile, firestore } = useFirebase();
@@ -161,13 +172,28 @@ function PostPageComponent() {
         const postSnap = await getDoc(postRef);
         if (postSnap.exists()) {
           const postData = postSnap.data() as Post;
+          
+          let expirationInSeconds;
+          let currentLabel = 'Never';
+          if (postData.expiresAt) {
+            expirationInSeconds = (postData.expiresAt.toMillis() - Date.now()) / 1000;
+            const matchedOption = expirationOptions.find(opt => Math.abs(opt.value - expirationInSeconds!) < 60); // Allow 1-minute tolerance
+            if (matchedOption) {
+              currentLabel = matchedOption.label;
+            } else {
+              currentLabel = 'Custom';
+            }
+          }
+
           form.reset({
             content: postData.content,
             commentsAllowed: postData.commentsAllowed,
             isPoll: postData.type === 'poll',
             quotedPost: postData.quotedPost,
             linkMetadata: postData.linkMetadata,
+            expiration: expirationInSeconds,
           });
+          setExpirationLabel(currentLabel);
         }
       };
       fetchPostData();
@@ -239,9 +265,10 @@ function PostPageComponent() {
     if (!user || !firestore) return;
 
     form.trigger();
+    const { expiration, ...postValues } = values;
+
     
     if (isEditMode && postId) {
-      // Logic for updating an existing post
       const postRef = doc(firestore, `posts`, postId);
       const updatedData: Partial<Post> = {
         content: values.content,
@@ -250,12 +277,20 @@ function PostPageComponent() {
         quotedPost: values.quotedPost,
       };
 
-      // Firestore doesn't accept `undefined` values.
+      if (expiration) {
+        updatedData.expiresAt = Timestamp.fromMillis(Date.now() + expiration * 1000);
+      } else {
+        updatedData.expiresAt = undefined;
+      }
+
       if (updatedData.linkMetadata === undefined) {
         delete updatedData.linkMetadata;
       }
       if (updatedData.quotedPost === undefined) {
         delete updatedData.quotedPost;
+      }
+      if (updatedData.expiresAt === undefined) {
+        delete updatedData.expiresAt;
       }
 
       updateDoc(postRef, updatedData)
@@ -299,6 +334,10 @@ function PostPageComponent() {
           ...(values.quotedPost && { quotedPost: values.quotedPost }),
         };
 
+        if (expiration) {
+          newPostData.expiresAt = Timestamp.fromMillis(Date.now() + expiration * 1000);
+        }
+
         if (values.isPoll) {
             newPostData.pollOptions = values.pollOptions.map(opt => ({ option: opt.option, votes: 0 }));
             newPostData.voters = {};
@@ -306,7 +345,6 @@ function PostPageComponent() {
 
         setDoc(newPostRef, newPostData)
           .then(() => {
-            // Handle quote post notification
             if (type === 'quote' && values.quotedPost && values.quotedPost.authorId !== user.uid) {
                 const notificationRef = doc(collection(firestore, 'users', values.quotedPost.authorId, 'notifications'));
                 const notificationData: Omit<Notification, 'id' | 'timestamp'> = {
@@ -321,7 +359,6 @@ function PostPageComponent() {
                 });
             }
 
-            // Fan-out notifications to users who have upvoted the author
             if (userProfile && userProfile.upvotedBy && userProfile.upvotedBy.length > 0) {
               const batch = writeBatch(firestore);
               userProfile.upvotedBy.forEach(followerId => {
@@ -350,10 +387,7 @@ function PostPageComponent() {
             });
             errorEmitter.emit('permission-error', permissionError);
           })
-          .finally(() => {
-            // No need for isSubmitting state, react-hook-form provides it
-          });
-    }
+      }
   };
   
   const handlePollToggle = () => {
@@ -369,6 +403,18 @@ function PostPageComponent() {
         remove(); // remove all fields
     }
   };
+  
+  const handleSelectExpiration = (seconds: number, label: string) => {
+    form.setValue('expiration', seconds);
+    setExpirationLabel(label);
+    setIsExpirationSheetOpen(false);
+  }
+
+  const handleClearExpiration = () => {
+      form.setValue('expiration', undefined);
+      setExpirationLabel('Never');
+      setIsExpirationSheetOpen(false);
+  }
 
 
   return (
@@ -496,6 +542,12 @@ function PostPageComponent() {
                                             <Button type="button" variant="ghost" size="icon" onClick={handlePollToggle} disabled={isEditMode}>
                                                 <ListOrdered className={cn("h-5 w-5 text-muted-foreground", isPoll && "text-primary")} />
                                             </Button>
+                                            <div className="flex items-center gap-1">
+                                                <Button type="button" variant="ghost" size="icon" onClick={() => setIsExpirationSheetOpen(true)}>
+                                                    <CalendarClock className="h-5 w-5 text-muted-foreground" />
+                                                </Button>
+                                                <span className="text-xs text-muted-foreground">{expirationLabel}</span>
+                                            </div>
                                              <FormField
                                                 control={form.control}
                                                 name="commentsAllowed"
@@ -517,9 +569,9 @@ function PostPageComponent() {
                                             {form.formState.isSubmitting ? (
                                                 <Loader2 className="h-4 w-4 animate-spin" />
                                             ) : isEditMode ? (
-                                                'Save Changes'
+                                                'Save'
                                             ) : (
-                                                'Publish'
+                                                'Post'
                                             )}
                                         </Button>
                                     </div>
@@ -530,6 +582,33 @@ function PostPageComponent() {
                 </div>
             </div>
         </div>
+         <Sheet open={isExpirationSheetOpen} onOpenChange={setIsExpirationSheetOpen}>
+            <SheetContent side="bottom" className="rounded-t-2xl">
+                <SheetHeader className="pb-4">
+                    <SheetTitle>Post Expiration</SheetTitle>
+                    <SheetDescription>The post will be deleted after this duration.</SheetDescription>
+                </SheetHeader>
+                <div className="flex flex-col space-y-2">
+                    {expirationOptions.map(opt => (
+                        <Button
+                            key={opt.value}
+                            variant="outline"
+                            className="justify-start"
+                            onClick={() => handleSelectExpiration(opt.value, opt.label)}
+                        >
+                            {opt.label}
+                        </Button>
+                    ))}
+                    <Button
+                        variant="destructive"
+                        className="justify-start"
+                        onClick={handleClearExpiration}
+                    >
+                        Never Expire
+                    </Button>
+                </div>
+            </SheetContent>
+        </Sheet>
       </SheetContent>
     </Sheet>
   );
@@ -542,5 +621,3 @@ export default function PostPage() {
     </Suspense>
   );
 }
-
-    

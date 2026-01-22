@@ -2,7 +2,7 @@
 
 import { clsx, type ClassValue } from "clsx"
 import { twMerge } from "tailwind-merge"
-import { formatDistanceToNowStrict, isToday, isYesterday, format, isThisWeek, fromUnixTime } from "date-fns";
+import { formatDistanceToNowStrict, isToday, isYesterday, format, isThisWeek, fromUnixTime, formatDistanceStrict } from "date-fns";
 import { defaultAvatars } from "./avatars";
 import type { User } from "./types";
 import { adjectives, nouns } from './names';
@@ -186,4 +186,15 @@ export function formatCount(count: number | undefined | null): string {
         return (count / 1_000).toFixed(1).replace(/\.0$/, '') + 'K';
     }
     return count.toString();
+}
+
+export function formatExpiry(date: Date): string {
+  const now = new Date();
+  const diff = date.getTime() - now.getTime();
+
+  if (diff <= 0) {
+    return "Expired";
+  }
+
+  return formatDistanceStrict(date, now);
 }

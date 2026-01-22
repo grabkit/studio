@@ -30,24 +30,24 @@
             "format": "date-time",
             "description": "Timestamp indicating when the user account was created."
         },
-        "upvotes": {
+        "followersCount": {
             "type": "number",
-            "description": "Total number of upvotes the user profile has received."
+            "description": "Total number of followers the user has."
         },
-        "upvotedBy": {
+        "followedBy": {
             "type": "array",
-            "description": "An array of user IDs that have upvoted this user.",
+            "description": "An array of user IDs that are following this user.",
             "items": {
                 "type": "string"
             }
         },
-        "upvotedCount": {
+        "followingCount": {
             "type": "number",
-            "description": "The total number of upvotes this user has given to others."
+            "description": "The total number of users this user is following."
         },
-        "upvotedTo": {
+        "following": {
             "type": "array",
-            "description": "An array of user IDs that this user has upvoted.",
+            "description": "An array of user IDs that this user is following.",
             "items": {
                 "type": "string"
             }
@@ -96,6 +96,24 @@
             "type": "string",
             "format": "date-time",
             "description": "Timestamp indicating when the voice status was created."
+        },
+        "notificationSettings": {
+            "type": "object",
+            "description": "User preferences for receiving notifications.",
+            "properties": {
+                "likes": { "type": "boolean" },
+                "comments": { "type": "boolean" },
+                "reposts": { "type": "boolean" },
+                "followers": { "type": "boolean" },
+                "messageRequests": { "type": "boolean" }
+            }
+        },
+        "fcmTokens": {
+            "type": "array",
+            "description": "An array of Firebase Cloud Messaging tokens for push notifications.",
+            "items": {
+                "type": "string"
+            }
         }
       },
       "required": [
@@ -205,6 +223,11 @@
         "linkMetadata": {
             "$ref": "#/backend/entities/LinkMetadata",
             "description": "Metadata for a URL to show a link preview."
+        },
+        "expiresAt": {
+            "type": "string",
+            "format": "date-time",
+            "description": "Timestamp indicating when the post will automatically expire and be deleted."
         }
       },
       "required": [
@@ -273,7 +296,7 @@
       "properties": {
         "postId": {
           "type": "string",
-          "description": "The ID of the bookmarked post."
+          "description": "The bookmarked post."
         },
         "timestamp": {
           "type": "string",
@@ -298,16 +321,16 @@
             },
             "type": {
                 "type": "string",
-                "enum": ["comment", "comment_approval", "upvote", "message_request", "like", "repost", "quote"],
+                "enum": ["comment", "comment_approval", "follow", "message_request", "like", "repost", "quote", "new_post"],
                 "description": "The type of activity."
             },
             "postId": {
                 "type": "string",
-                "description": "The ID of the post the activity is related to. Not present for upvote or message_request types."
+                "description": "The ID of the post the activity is related to. Not present for follow or message_request types."
             },
-            "postContent": {
+            "activityContent": {
                 "type": "string",
-                "description": "A snippet of the content of the post. Not present for upvote or message_request types."
+                "description": "A snippet of the content of the post or comment."
             },
             "fromUserId": {
                 "type": "string",
@@ -349,6 +372,16 @@
             "type": "array",
             "description": "An array of user IDs who have muted this conversation.",
             "items": { "type": "string" }
+        },
+        "voiceCallsDisabledBy": {
+            "type": "array",
+            "description": "An array of user IDs who have disabled voice calls for this conversation.",
+            "items": { "type": "string" }
+        },
+        "videoCallsDisabledBy": {
+            "type": "array",
+            "description": "An array of user IDs who have disabled video calls for this conversation.",
+            "items": { "type": "string" }
         }
       },
       "required": ["id", "participantIds", "lastUpdated", "status", "requesterId"]
@@ -365,6 +398,20 @@
         "timestamp": { "type": "string", "format": "date-time" }
       },
       "required": ["id", "senderId", "text", "timestamp"]
+    },
+    "ProblemReport": {
+        "$schema": "http://json-schema.org/draft-07/schema#",
+        "title": "Problem Report",
+        "type": "object",
+        "description": "Represents a problem report submitted by a user through the help center.",
+        "properties": {
+            "id": { "type": "string" },
+            "reporterUserId": { "type": "string" },
+            "category": { "type": "string" },
+            "description": { "type": "string" },
+            "timestamp": { "type": "string", "format": "date-time" }
+        },
+        "required": ["id", "reporterUserId", "category", "description", "timestamp"]
     },
     "Report": {
         "$schema": "http://json-schema.org/draft-07/schema#",
@@ -594,6 +641,22 @@
               "description": "The unique identifier for the message."
             }
           ]
+        }
+      },
+      {
+        "path": "/problemReports/{reportId}",
+        "definition": {
+            "entityName": "ProblemReport",
+            "schema": {
+                "$ref": "#/backend/entities/ProblemReport"
+            },
+            "description": "Stores problem reports submitted by users from the help center.",
+            "params": [
+                {
+                    "name": "reportId",
+                    "description": "The unique identifier for the problem report."
+                }
+            ]
         }
       },
       {

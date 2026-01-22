@@ -19,12 +19,13 @@ import {
   runTransaction,
   getDocs,
   where,
+  type Timestamp,
 } from "firebase/firestore";
 import { useCollection, type WithId } from "@/firebase/firestore/use-collection";
 import { useDoc } from "@/firebase/firestore/use-doc";
 import type { Post, Comment, Notification, User as UserProfile, LinkMetadata, PollOption } from "@/lib/types";
 import { useParams, useRouter } from "next/navigation";
-import React, { useState, useMemo } from "react";
+import React, { useState, useMemo, useEffect } from "react";
 import Link from 'next/link';
 import Image from "next/image";
 import { motion } from "framer-motion";
@@ -36,8 +37,8 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { Button, buttonVariants } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { Form, FormControl, FormField, FormItem, FormMessage } from "@/components/ui/form";
-import { Heart, MessageCircle, ArrowUpRight, Trash2, MoreHorizontal, Edit, ArrowLeft, Repeat, Check, AlertTriangle, Slash, Loader2, Send, CheckCircle2 } from "lucide-react";
-import { cn, formatTimestamp, getAvatar, formatCount, formatUserId } from "@/lib/utils";
+import { Heart, MessageCircle, ArrowUpRight, Trash2, MoreHorizontal, Edit, ArrowLeft, Repeat, Check, AlertTriangle, Slash, Loader2, Send, CheckCircle2, Clock } from "lucide-react";
+import { cn, formatTimestamp, getAvatar, formatCount, formatUserId, formatExpiry } from "@/lib/utils";
 import { useToast } from "@/hooks/use-toast";
 import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
@@ -55,6 +56,35 @@ import {
 } from "@/components/ui/sheet";
 import { QuotedPostCard } from "@/components/QuotedPostCard";
 import { AnimatedCount } from "@/components/AnimatedCount";
+
+function PostExpiryInfo({ expiresAt }: { expiresAt: Timestamp }) {
+  const [displayTime, setDisplayTime] = useState(() => formatExpiry(expiresAt.toDate()));
+
+  useEffect(() => {
+    const updateDisplayTime = () => {
+      const newDisplayTime = formatExpiry(expiresAt.toDate());
+      if (newDisplayTime === 'Expired') {
+        setDisplayTime(newDisplayTime);
+        clearInterval(intervalId);
+      } else {
+        setDisplayTime(newDisplayTime);
+      }
+    };
+
+    const intervalId = setInterval(updateDisplayTime, 1000 * 30); // Update every 30 seconds
+
+    return () => clearInterval(intervalId);
+  }, [expiresAt]);
+
+  if (displayTime === 'Expired') return null;
+
+  return (
+    <div className="text-xs text-amber-600 dark:text-amber-500 flex items-center gap-1.5 mt-3 pt-3 border-t">
+      <Clock className="h-3 w-3" />
+      <span>Expires in {displayTime}</span>
+    </div>
+  );
+}
 
 function PollComponent({ post, user, onVote }: { post: WithId<Post>, user: any, onVote?: (updatedPost: Partial<Post>) => void }) {
     const { firestore } = useFirebase();
@@ -492,6 +522,8 @@ function PostDetailItem({ post, updatePost }: { post: WithId<Post>, updatePost: 
             {post.type === 'poll' && post.pollOptions && (
               <PollComponent post={post} user={user} onVote={(updatedData) => updatePost(updatedData)} />
             )}
+
+            {post.expiresAt && <PostExpiryInfo expiresAt={post.expiresAt} />}
 
 
             <div className="border-t border-b -mx-4 my-2 px-4 py-2 text-sm text-muted-foreground flex items-center justify-around">
@@ -1081,7 +1113,3 @@ export default function PostDetailPage() {
     </AppLayout>
   );
 }
-
-
-
-    
