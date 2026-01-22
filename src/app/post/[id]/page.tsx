@@ -82,7 +82,7 @@ function PostExpiryInfo({ post }: { post: WithId<Post> }) {
   }
 
   return (
-    <div className="mt-2 w-full bg-amber-500/10 rounded-lg px-3 py-1 text-center">
+    <div className="w-full bg-amber-500/10 rounded-t-[25px] px-3 py-1">
         <div className="flex justify-center items-center gap-1.5 text-xs text-amber-700 font-medium">
             <Clock className="h-3 w-3" />
             <span>Expires in {expiryText}</span>
@@ -462,7 +462,7 @@ function PostDetailItem({ post, updatePost }: { post: WithId<Post>, updatePost: 
 
   return (
     <>
-    <Card className="w-full shadow-none rounded-none border-x-0 border-t-0 border-b">
+    <Card className="w-full shadow-none rounded-none border-x-0 border-t-0">
       <CardContent className="px-4 pt-4 pb-0">
         <div className="flex space-x-3">
           <Avatar className="h-10 w-10">
@@ -528,47 +528,51 @@ function PostDetailItem({ post, updatePost }: { post: WithId<Post>, updatePost: 
               <PollComponent post={post} user={user} onVote={(updatedData) => updatePost(updatedData)} />
             )}
 
-            <div className="border-t border-b -mx-4 my-2 px-4 py-2 text-sm text-muted-foreground flex items-center justify-around">
-                <div className="flex items-center space-x-2">
-                    <span className="font-bold text-foreground"><AnimatedCount count={post.likeCount} direction={likeDirection}/></span>
-                    <span>Likes</span>
-                </div>
-                 <div className="flex items-center space-x-2">
-                    <span className="font-bold text-foreground"><AnimatedCount count={post.commentCount} direction="up" /></span>
-                    <span>Replies</span>
-                </div>
-                 <div className="flex items-center space-x-2">
-                    <span className="font-bold text-foreground"><AnimatedCount count={post.repostCount} direction="up" /></span>
-                    <span>Reposts</span>
+            <div className="border-t -mx-4 mt-2 px-4 py-3">
+                <div className="flex items-center justify-around">
+                    <div className="flex items-center space-x-2">
+                        <span className="font-bold text-foreground"><AnimatedCount count={post.likeCount} direction={likeDirection}/></span>
+                        <span className="text-sm text-muted-foreground">Likes</span>
+                    </div>
+                     <div className="flex items-center space-x-2">
+                        <span className="font-bold text-foreground"><AnimatedCount count={post.commentCount} direction="up" /></span>
+                        <span className="text-sm text-muted-foreground">Replies</span>
+                    </div>
+                     <div className="flex items-center space-x-2">
+                        <span className="font-bold text-foreground"><AnimatedCount count={post.repostCount} direction="up" /></span>
+                        <span className="text-sm text-muted-foreground">Reposts</span>
+                    </div>
                 </div>
             </div>
 
-            <div className="flex items-center justify-around pt-2 pb-2">
-                <button
-                    onClick={handleLike}
-                    disabled={isLiking}
-                    className={cn("flex items-center space-x-1", hasLiked && "text-pink-500")}
-                >
-                    <Heart
-                    className="h-4 w-4"
-                    fill={hasLiked ? 'currentColor' : 'none'}
-                    />
-                </button>
-                <button className={cn(
-                    "flex items-center space-x-1 relative",
-                    repliesAllowed ? "hover:text-primary" : "opacity-50"
-                )}>
-                    <div className="relative">
-                        <MessageCircle className="h-4 w-4" />
-                        {!repliesAllowed && <Slash className="absolute top-0 left-0 h-4 w-4 stroke-[2.5px]" />}
-                    </div>
-                </button>
-                <button className="flex items-center space-x-1 hover:text-green-500">
-                    <Repeat className={cn("h-4 w-4")} />
-                </button>
-                 <button onClick={handleShare} className="flex items-center space-x-1 hover:text-primary">
-                    <ArrowUpRight className="h-4 w-4" />
-                  </button>
+            <div className="border-t -mx-4">
+                <div className="flex items-center justify-around py-2">
+                    <button
+                        onClick={handleLike}
+                        disabled={isLiking}
+                        className={cn("flex items-center space-x-1", hasLiked && "text-pink-500")}
+                    >
+                        <Heart
+                        className="h-4 w-4"
+                        fill={hasLiked ? 'currentColor' : 'none'}
+                        />
+                    </button>
+                    <button className={cn(
+                        "flex items-center space-x-1 relative",
+                        repliesAllowed ? "hover:text-primary" : "opacity-50"
+                    )}>
+                        <div className="relative">
+                            <MessageCircle className="h-4 w-4" />
+                            {!repliesAllowed && <Slash className="absolute top-0 left-0 h-4 w-4 stroke-[2.5px]" />}
+                        </div>
+                    </button>
+                    <button className="flex items-center space-x-1 hover:text-green-500">
+                        <Repeat className={cn("h-4 w-4")} />
+                    </button>
+                     <button onClick={handleShare} className="flex items-center space-x-1 hover:text-primary">
+                        <ArrowUpRight className="h-4 w-4" />
+                      </button>
+                </div>
             </div>
             
             {post.expiresAt && post.timestamp && <PostExpiryInfo post={post} />}

@@ -92,7 +92,7 @@ function PostExpiryInfo({ post }: { post: WithId<Post> }) {
   }
 
   return (
-    <div className="mt-2 w-full bg-amber-500/10 rounded-lg px-3 py-1 text-center">
+    <div className="w-full bg-amber-500/10 rounded-t-[25px] px-3 py-1">
         <div className="flex justify-center items-center gap-1.5 text-xs text-amber-700 font-medium">
             <Clock className="h-3 w-3" />
             <span>Expires in {expiryText}</span>
@@ -560,8 +560,8 @@ function InnerPostItem({ post, bookmarks, updatePost, onDelete, onPin, showPinSt
                 <PollComponent post={post} user={user} onVote={(updatedData) => updatePost?.(post.id, updatedData)} />
             )}
 
-            <div className="flex items-center justify-between pt-2 pb-2">
-                <div className="flex items-center space-x-6 text-muted-foreground">
+            <div className="border-t -mx-4 mt-2 px-4 py-2">
+                <div className="flex items-center justify-around">
                     <button onClick={handleLike} disabled={isLiking} className={cn("flex items-center space-x-1", hasLiked && "text-pink-500")}>
                         <Heart className="h-4 w-4" fill={hasLiked ? 'currentColor' : 'none'} />
                         <span className="text-xs">{formatCount(post.likeCount)}</span>
@@ -587,9 +587,6 @@ function InnerPostItem({ post, bookmarks, updatePost, onDelete, onPin, showPinSt
                         <ArrowUpRight className="h-4 w-4" />
                     </button>
                 </div>
-                <button onClick={handleBookmark}>
-                    <BookmarkIcon className={cn("h-4 w-4", isBookmarked && "text-primary fill-primary")} />
-                </button>
             </div>
             
             {post.expiresAt && post.timestamp && <PostExpiryInfo post={post} />}
