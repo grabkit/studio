@@ -420,16 +420,24 @@ function PostPageComponent() {
   return (
     <Sheet open={isOpen} onOpenChange={setIsOpen}>
       <SheetContent side="bottom" className="h-screen flex flex-col p-0 rounded-t-2xl">
-        <div className="z-10 flex items-center gap-2 p-2 border-b bg-background sticky top-0 h-14">
-          <SheetClose asChild>
-            <Button variant="ghost" size="icon">
-                <X className="h-4 w-4" />
-            </Button>
-          </SheetClose>
-          <SheetTitle className="text-base font-bold">{isEditMode ? 'Edit Post' : 'Create Post'}</SheetTitle>
-          <SheetDescription className="sr-only">
-            {isEditMode ? 'Edit your existing post.' : 'Create a new post by writing content. You can also disable replies before publishing.'}
-          </SheetDescription>
+        <div className="z-10 flex items-center justify-between p-2 border-b bg-background sticky top-0 h-14">
+          <div className="flex items-center gap-2">
+            <SheetClose asChild>
+                <Button variant="ghost" size="icon">
+                    <X className="h-4 w-4" />
+                </Button>
+            </SheetClose>
+            <SheetTitle className="text-base font-bold">{isEditMode ? 'Edit Post' : 'Create Post'}</SheetTitle>
+          </div>
+          <Button form="post-form" type="submit" disabled={form.formState.isSubmitting} className="rounded-full px-6 font-bold">
+            {form.formState.isSubmitting ? (
+                <Loader2 className="h-4 w-4 animate-spin" />
+            ) : isEditMode ? (
+                'Save'
+            ) : (
+                'Post'
+            )}
+          </Button>
         </div>
         
         <div className="flex-grow flex flex-col">
@@ -444,7 +452,7 @@ function PostPageComponent() {
                             <span className="font-semibold text-sm">{formatUserId(user?.uid)}</span>
                         </div>
                         <Form {...form}>
-                            <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
+                            <form id="post-form" onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
                                 <FormField
                                     control={form.control}
                                     name="content"
@@ -534,46 +542,35 @@ function PostPageComponent() {
                                  )}
                                  
                                 <div className="p-4 border-t bg-background w-full fixed bottom-0 left-0 right-0">
-                                    <div className="flex items-center justify-between">
-                                        <div className="flex items-center space-x-1">
-                                            <Button type="button" variant="ghost" size="icon" onClick={() => setShowLinkInput(!showLinkInput)} disabled={!!linkMetadata || isEditMode}>
-                                                <LinkIcon className="h-5 w-5 text-muted-foreground" />
-                                            </Button>
-                                            <Button type="button" variant="ghost" size="icon" onClick={handlePollToggle} disabled={isEditMode}>
-                                                <ListOrdered className={cn("h-5 w-5 text-muted-foreground", isPoll && "text-primary")} />
-                                            </Button>
-                                            <div className="flex items-center gap-1">
-                                                <Button type="button" variant="ghost" size="icon" onClick={() => setIsExpirationSheetOpen(true)}>
-                                                    <CalendarClock className="h-5 w-5 text-muted-foreground" />
-                                                </Button>
-                                                <span className="text-xs text-muted-foreground">{expirationLabel}</span>
-                                            </div>
-                                             <FormField
-                                                control={form.control}
-                                                name="commentsAllowed"
-                                                render={({ field }) => (
-                                                    <FormItem className="flex items-center space-x-2 space-y-0 pl-2">
-                                                         <Switch
-                                                            id="comments-allowed"
-                                                            checked={field.value}
-                                                            onCheckedChange={field.onChange}
-                                                        />
-                                                        <Label htmlFor="comments-allowed" className="text-sm">
-                                                            Replies
-                                                        </Label>
-                                                    </FormItem>
-                                                )}
-                                                />
-                                        </div>
-                                        <Button type="submit" disabled={form.formState.isSubmitting} className="rounded-full w-32 font-bold">
-                                            {form.formState.isSubmitting ? (
-                                                <Loader2 className="h-4 w-4 animate-spin" />
-                                            ) : isEditMode ? (
-                                                'Save'
-                                            ) : (
-                                                'Post'
-                                            )}
+                                    <div className="flex items-center space-x-1">
+                                        <Button type="button" variant="ghost" size="icon" onClick={() => setShowLinkInput(!showLinkInput)} disabled={!!linkMetadata || isEditMode}>
+                                            <LinkIcon className="h-5 w-5 text-muted-foreground" />
                                         </Button>
+                                        <Button type="button" variant="ghost" size="icon" onClick={handlePollToggle} disabled={isEditMode}>
+                                            <ListOrdered className={cn("h-5 w-5 text-muted-foreground", isPoll && "text-primary")} />
+                                        </Button>
+                                        <div className="flex items-center gap-1">
+                                            <Button type="button" variant="ghost" size="icon" onClick={() => setIsExpirationSheetOpen(true)}>
+                                                <CalendarClock className="h-5 w-5 text-muted-foreground" />
+                                            </Button>
+                                            <span className="text-xs text-muted-foreground">{expirationLabel}</span>
+                                        </div>
+                                            <FormField
+                                            control={form.control}
+                                            name="commentsAllowed"
+                                            render={({ field }) => (
+                                                <FormItem className="flex items-center space-x-2 space-y-0 pl-2">
+                                                        <Switch
+                                                        id="comments-allowed"
+                                                        checked={field.value}
+                                                        onCheckedChange={field.onChange}
+                                                    />
+                                                    <Label htmlFor="comments-allowed" className="text-sm">
+                                                        Replies
+                                                    </Label>
+                                                </FormItem>
+                                            )}
+                                            />
                                     </div>
                                 </div>
                             </form>
