@@ -9,7 +9,7 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Skeleton } from "@/components/ui/skeleton";
 import type { Post, Bookmark, PollOption, Notification, User, LinkMetadata, QuotedPost } from "@/lib/types";
-import { Heart, MessageCircle, Repeat, ArrowUpRight, MoreHorizontal, Edit, Trash2, Bookmark as BookmarkIcon, CheckCircle2, Slash, Pin, Loader2, ArrowDown } from "lucide-react";
+import { Heart, MessageCircle, Repeat, ArrowUpRight, MoreHorizontal, Edit, Trash2, Bookmark as BookmarkIcon, CheckCircle2, Slash, Pin, ArrowDown } from "lucide-react";
 import { cn, formatTimestamp, getAvatar, formatCount, formatUserId } from "@/lib/utils";
 import { useToast } from "@/hooks/use-toast";
 import { FirestorePermissionError } from "@/firebase/errors";
@@ -747,8 +747,8 @@ export default function HomePage() {
             ref={scrollContainerRef}
         >
           {isRefreshing && (
-            <div className="sticky top-0 z-10 flex items-center justify-center py-4 bg-background/80 backdrop-blur-sm">
-                 <Loader2 className="h-6 w-6 animate-spin text-primary" />
+            <div className="sticky top-0 z-10 h-1 w-full overflow-hidden">
+                <div className="h-full w-full animate-gradient" />
             </div>
           )}
           <div className="divide-y border-b">
@@ -788,6 +788,7 @@ export default function HomePage() {
 
 
     
+
 
 
 
