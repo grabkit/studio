@@ -561,7 +561,7 @@ function InnerPostItem({ post, bookmarks, updatePost, onDelete, onPin, showPinSt
                 <PollComponent post={post} user={user} onVote={(updatedData) => updatePost?.(post.id, updatedData)} />
             )}
 
-            <div className="mt-2 flex items-center justify-around">
+            <div className="mt-4 flex items-center justify-around">
                 <button onClick={handleLike} disabled={isLiking} className={cn("flex items-center space-x-1 p-2 -m-2", hasLiked && "text-pink-500")}>
                     <Heart className="h-4 w-4" fill={hasLiked ? 'currentColor' : 'none'} />
                     <span className="text-xs">{formatCount(post.likeCount)}</span>
@@ -867,3 +867,4 @@ export default function HomePage() {
     </AppLayout>
   );
 }
+

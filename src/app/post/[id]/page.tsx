@@ -528,7 +528,7 @@ function PostDetailItem({ post, updatePost }: { post: WithId<Post>, updatePost: 
               <PollComponent post={post} user={user} onVote={(updatedData) => updatePost(updatedData)} />
             )}
 
-            <div className="py-3">
+            <div className="mt-2 py-3">
                 <div className="flex items-center space-x-6">
                     <div className="flex items-center space-x-2">
                         <span className="font-bold text-foreground"><AnimatedCount count={post.likeCount} direction={likeDirection}/></span>
@@ -1132,3 +1132,4 @@ export default function PostDetailPage() {
 }
 
     
+
