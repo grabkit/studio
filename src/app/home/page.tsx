@@ -529,7 +529,7 @@ function InnerPostItem({ post, bookmarks, updatePost, onDelete, onPin, showPinSt
                 <PollComponent post={post} user={user} onVote={(updatedData) => updatePost?.(post.id, updatedData)} />
             )}
 
-            <div className="flex items-center pt-2 w-full max-w-xs">
+            <div className="flex items-center pt-2">
                 <div className="flex items-center space-x-4 text-muted-foreground">
                     <button onClick={handleLike} disabled={isLiking} className={cn("flex items-center", hasLiked && "text-pink-500")}>
                         <Heart className="h-4 w-4 shrink-0" fill={hasLiked ? 'currentColor' : 'none'} />
@@ -650,7 +650,7 @@ export default function HomePage() {
   const [isRefreshing, setIsRefreshing] = useState(false);
   const [pullDistance, setPullDistance] = useState(0);
   const scrollRef = useRef<HTMLDivElement>(null);
-  const isPulling = useRef(false);
+  const canPull = useRef(false);
   const startY = useRef(0);
 
 
@@ -690,21 +690,21 @@ export default function HomePage() {
 
   const handleTouchStart = (e: TouchEvent) => {
     if (scrollRef.current && scrollRef.current.scrollTop === 0) {
+      canPull.current = true;
       startY.current = e.touches[0].clientY;
-      isPulling.current = true;
     } else {
-      isPulling.current = false;
+      canPull.current = false;
     }
   };
 
   const handleTouchMove = (e: TouchEvent) => {
-    if (!isPulling.current) return;
+    if (!canPull.current) return;
 
     const currentY = e.touches[0].clientY;
     const distance = currentY - startY.current;
 
     if (distance < 0) {
-      isPulling.current = false;
+      canPull.current = false;
       return;
     }
 
@@ -713,9 +713,9 @@ export default function HomePage() {
   };
 
   const handleTouchEnd = () => {
-    if (!isPulling.current) return;
+    if (!canPull.current) return;
 
-    isPulling.current = false;
+    canPull.current = false;
     if (pullDistance > 80) { 
       handleRefresh();
     } else {
@@ -804,4 +804,5 @@ export default function HomePage() {
     
 
     
+
 
