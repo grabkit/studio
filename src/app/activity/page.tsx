@@ -13,6 +13,7 @@ import { cn, formatTimestamp, getAvatar, formatUserId } from "@/lib/utils.tsx";
 import { Button } from "@/components/ui/button";
 import React, { useEffect, useState, useRef, useCallback, type TouchEvent, useMemo } from "react";
 import { motion } from "framer-motion";
+import { eventBus } from "@/lib/event-bus";
 
 const notificationInfo = {
     like: {
@@ -139,6 +140,7 @@ function ActivitySkeleton() {
 
 export default function ActivityPage() {
     const { firestore, user, userProfile } = useFirebase();
+    const scrollContainerRef = useRef<HTMLDivElement>(null);
 
     const notificationsQuery = useMemoFirebase(() => {
         if (!firestore || !user) return null;
@@ -194,6 +196,35 @@ export default function ActivityPage() {
 
     }, [notifications, settings]);
 
+    const handleRefresh = useCallback(async () => {
+        if (!notificationsQuery) return;
+
+        eventBus.emit('refresh-start');
+        scrollContainerRef.current?.scrollTo({ top: 0, behavior: 'smooth' });
+
+        try {
+            const notificationsSnapshot = await getDocs(notificationsQuery);
+            const newNotifications = notificationsSnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as WithId<Notification>));
+            
+            await new Promise(resolve => setTimeout(resolve, 750));
+
+            setNotifications(newNotifications);
+        } catch (error) {
+            console.error("Failed to refresh notifications:", error);
+        } finally {
+            eventBus.emit('refresh-end');
+        }
+    }, [notificationsQuery, setNotifications]);
+
+    useEffect(() => {
+        const refreshHandler = () => handleRefresh();
+        eventBus.on('refresh-activity', refreshHandler);
+
+        return () => {
+            eventBus.off('refresh-activity', refreshHandler);
+        };
+    }, [handleRefresh]);
+
 
     return (
         <AppLayout showTopBar={false}>
@@ -205,9 +236,10 @@ export default function ActivityPage() {
             >
                 <div
                     className="relative h-full overflow-y-auto"
+                    ref={scrollContainerRef}
                 >
                     <div>
-                        <div className="p-4 border-b">
+                        <div className="p-4 border-b sticky top-0 bg-background/80 backdrop-blur-sm z-10">
                             <h1 className="text-2xl font-bold font-headline">Activity</h1>
                         </div>
                         <div>

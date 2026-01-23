@@ -13,7 +13,7 @@ import { eventBus } from "@/lib/event-bus";
 
 const navItems = [
   { href: "/home", label: "Home", icon: Home, activeIcon: HomeIcon, event: "refresh-home" },
-  { href: "/activity", label: "Activity", icon: HeartIcon, activeIcon: HeartIcon },
+  { href: "/activity", label: "Activity", icon: HeartIcon, activeIcon: HeartIcon, event: "refresh-activity" },
   { href: "/search", label: "Search", icon: Search, activeIcon: Search },
   { href: "/messages", label: "Messages", icon: Send, activeIcon: Send },
   { href: "/account", label: "Account", icon: User, activeIcon: User },
@@ -131,6 +131,7 @@ export default function BottomNav() {
           const Icon = isActive ? item.activeIcon : item.icon;
           const isActivityTab = item.href === '/activity';
           const isMessagesTab = item.href === '/messages';
+          const isSearchTab = item.href === '/search';
 
           return (
             <button
@@ -145,7 +146,7 @@ export default function BottomNav() {
               <div className={cn(
                 "p-3 rounded-full relative"
               )}>
-                <Icon className={cn("h-7 w-7")} fill={isActive && item.href !== '/search' ? "currentColor" : "none"} />
+                <Icon className={cn("h-7 w-7")} fill={isActive && !isSearchTab ? "currentColor" : "none"} />
                 {(isActivityTab && hasUnreadActivity) && (
                     <div className="absolute top-3 right-2.5 w-2.5 h-2.5 bg-destructive rounded-full border-2 border-background"></div>
                 )}
