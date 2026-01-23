@@ -13,7 +13,7 @@ import { Heart, MessageCircle, AlertTriangle, UserPlus, Mail, Repeat, MessageSqu
 import { cn, formatTimestamp, getAvatar, formatUserId } from "@/lib/utils.tsx";
 import { Button } from "@/components/ui/button";
 import React, { useEffect, useState, useRef, useCallback, type TouchEvent, useMemo } from "react";
-import { motion } from "framer-motion";
+import { motion, AnimatePresence } from "framer-motion";
 import { eventBus } from "@/lib/event-bus";
 
 const notificationInfo = {
@@ -229,39 +229,58 @@ export default function ActivityPage() {
 
     return (
         <AppLayout showTopBar={false}>
-             <motion.div
-                initial={{ scale: 0.98, opacity: 0 }}
-                animate={{ scale: 1, opacity: 1 }}
-                transition={{ duration: 0.3 }}
-            >
-                <div className="sticky top-0 p-4 border-b bg-background/80 backdrop-blur-sm z-10">
-                    <h1 className="text-2xl font-bold font-headline">Activity</h1>
+            <div className="relative h-full">
+                <AnimatePresence>
                     {isRefreshing && (
-                        <div className="absolute bottom-0 left-0 right-0 h-0.5 w-full overflow-hidden">
-                            <div className="h-full w-full animate-loading-bar" />
+                        <motion.div
+                            key="activity-refresh-indicator"
+                            initial={{ height: 0 }}
+                            animate={{ height: 60 }}
+                            exit={{ height: 0, transition: { duration: 0.2 } }}
+                            transition={{ duration: 0.4, ease: "easeInOut" }}
+                            className="bg-blue-500 flex items-center justify-center overflow-hidden absolute top-0 left-0 right-0 z-20"
+                        >
+                            <Loader2 className="h-6 w-6 animate-spin text-white" />
+                        </motion.div>
+                    )}
+                </AnimatePresence>
+
+                <motion.div
+                    className="h-full"
+                    animate={{ paddingTop: isRefreshing ? 60 : 0 }}
+                    transition={{ duration: 0.4, ease: "easeInOut" }}
+                >
+                    <motion.div 
+                        className="h-full"
+                        initial={{ opacity: 0, scale: 0.98 }}
+                        animate={{ opacity: 1, scale: 1 }}
+                        transition={{ duration: 0.3 }}
+                    >
+                        <div className="sticky top-0 p-4 border-b bg-background/80 backdrop-blur-sm z-10">
+                            <h1 className="text-2xl font-bold font-headline">Activity</h1>
                         </div>
-                    )}
-                </div>
-                <div>
-                    {isLoading && (
-                        <>
-                            <ActivitySkeleton />
-                            <ActivitySkeleton />
-                            <ActivitySkeleton />
-                            <ActivitySkeleton />
-                        </>
-                    )}
-                    {!isLoading && filteredNotifications?.length === 0 && (
-                        <div className="text-center py-20">
-                            <h2 className="text-2xl font-headline text-primary">No Activity Yet</h2>
-                            <p className="text-muted-foreground mt-2">Likes and comments on your posts will appear here.</p>
+                        <div>
+                            {isLoading && (
+                                <>
+                                    <ActivitySkeleton />
+                                    <ActivitySkeleton />
+                                    <ActivitySkeleton />
+                                    <ActivitySkeleton />
+                                </>
+                            )}
+                            {!isLoading && filteredNotifications?.length === 0 && (
+                                <div className="text-center py-20">
+                                    <h2 className="text-2xl font-headline text-primary">No Activity Yet</h2>
+                                    <p className="text-muted-foreground mt-2">Likes and comments on your posts will appear here.</p>
+                                </div>
+                            )}
+                            {filteredNotifications?.map(notification => (
+                                <NotificationItem key={notification.id} notification={notification} />
+                            ))}
                         </div>
-                    )}
-                    {filteredNotifications?.map(notification => (
-                        <NotificationItem key={notification.id} notification={notification} />
-                    ))}
-                </div>
-            </motion.div>
+                    </motion.div>
+                </motion.div>
+            </div>
         </AppLayout>
     )
 }
