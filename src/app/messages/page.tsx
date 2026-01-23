@@ -7,7 +7,7 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { getAvatar, formatMessageTimestamp, formatUserId } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import { MessageSquare, Mail, Trash2, BellOff, CheckCircle, User as UserIcon, Bell, Mic, Loader2 } from "lucide-react";
-import { useFirebase, useMemoFirebase, useDoc } from "@/firebase";
+import { useFirebase, useMemoFirebase } from "@/firebase";
 import { collection, query, where, doc, updateDoc, deleteDoc, arrayUnion, arrayRemove, getDocs, documentId, getDocsFromCache, orderBy } from "firebase/firestore";
 import type { Conversation, User } from "@/lib/types";
 import React, { useMemo, useState, useEffect, useRef, useCallback, type TouchEvent } from "react";
@@ -23,7 +23,7 @@ import { usePresence } from "@/hooks/usePresence";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { motion, AnimatePresence } from "framer-motion";
 import { eventBus } from "@/lib/event-bus";
-import { WithId } from "@/firebase/firestore/use-collection";
+import { WithId, useDoc, useCollection } from "@/firebase/firestore/use-collection";
 
 
 function FollowedUserSkeleton() {
@@ -420,6 +420,7 @@ export default function MessagesPage() {
     }, [conversationsQuery]);
     
     const handleRefresh = useCallback(async () => {
+        eventBus.emit('scroll-main-to-top');
         setIsRefreshing(true);
         await Promise.all([fetchFollowedUsers(), fetchConversations()]);
         // Short delay for better UX
@@ -612,24 +613,19 @@ export default function MessagesPage() {
             <AnimatePresence>
                 {isRefreshing && (
                     <motion.div
-                        key="messages-loader"
+                        key="messages-refresh-indicator"
                         initial={{ height: 0 }}
-                        animate={{ height: "2.5rem" }}
+                        animate={{ height: 60 }}
                         exit={{ height: 0 }}
-                        transition={{ type: 'spring', duration: 0.4 }}
-                        className="flex items-center justify-center overflow-hidden"
+                        transition={{ duration: 0.4, ease: "easeInOut" }}
+                        className="bg-black flex items-center justify-center overflow-hidden"
                     >
-                        <div className="absolute bottom-0 left-0 right-0 h-0.5 w-full overflow-hidden">
-                            <div className="h-full w-full animate-loading-bar" />
-                        </div>
+                        <Loader2 className="h-6 w-6 animate-spin text-white" />
                     </motion.div>
                 )}
             </AnimatePresence>
-            <motion.div
+            <div
                 className="h-full flex flex-col"
-                initial={{ y: 0 }}
-                animate={{ y: isRefreshing ? "2.5rem" : "0rem" }}
-                transition={{ type: 'spring', duration: 0.4 }}
             >
                 <div className="flex-shrink-0">
                     <FollowedUsers 
@@ -680,7 +676,7 @@ export default function MessagesPage() {
                         </div>
                     </Tabs>
                 </div>
-            </motion.div>
+            </div>
             
             <Sheet open={isSheetOpen} onOpenChange={setIsSheetOpen}>
                 <SheetContent side="bottom" className="rounded-t-2xl">
