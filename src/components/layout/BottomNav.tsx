@@ -1,4 +1,3 @@
-
 "use client";
 
 import Link from "next/link";
@@ -146,7 +145,7 @@ export default function BottomNav() {
               <div className={cn(
                 "p-3 rounded-full relative"
               )}>
-                <Icon className={cn("h-7 w-7")} fill={isActive ? "currentColor" : "none"} />
+                <Icon className={cn("h-7 w-7")} fill={isActive && item.href !== '/search' ? "currentColor" : "none"} />
                 {(isActivityTab && hasUnreadActivity) && (
                     <div className="absolute top-3 right-2.5 w-2.5 h-2.5 bg-destructive rounded-full border-2 border-background"></div>
                 )}
