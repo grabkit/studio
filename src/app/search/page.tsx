@@ -4,7 +4,7 @@ import AppLayout from '@/components/AppLayout';
 import { Input } from '@/components/ui/input';
 import { Search, UserX, Loader2 } from 'lucide-react';
 import { useState, useEffect, useCallback } from 'react';
-import { motion } from 'framer-motion';
+import { motion, AnimatePresence } from 'framer-motion';
 import { useFirebase } from '@/firebase';
 import { collection, query, where, getDocs, limit, orderBy, runTransaction, doc, increment, arrayRemove, arrayUnion, setDoc, serverTimestamp, documentId } from 'firebase/firestore';
 import type { User, Notification } from '@/lib/types';
@@ -17,6 +17,7 @@ import { Button } from '@/components/ui/button';
 import { useToast } from '@/hooks/use-toast';
 import { errorEmitter } from '@/firebase/error-emitter';
 import { FirestorePermissionError } from '@/firebase/errors';
+import { eventBus } from '@/lib/event-bus';
 
 // Debounce hook
 function useDebounce(value: string, delay: number) {
@@ -102,73 +103,73 @@ export default function SearchPage() {
   
   const [suggestions, setSuggestions] = useState<WithId<User>[]>([]);
   const [suggestionsLoading, setSuggestionsLoading] = useState(true);
+  const [isRefreshing, setIsRefreshing] = useState(false);
 
   const debouncedSearchTerm = useDebounce(searchTerm, 500);
   const { firestore, user: currentUser, userProfile, setUserProfile } = useFirebase();
   const { toast } = useToast();
   
-  // Fetch follow suggestions
-  useEffect(() => {
+  const fetchSuggestions = useCallback(async () => {
     if (!firestore || !currentUser) return;
     
-    const fetchSuggestions = async () => {
-        setSuggestionsLoading(true);
-        try {
-            // Generate a random ID for the 'older' users query
-            const generateRandomFirestoreId = () => {
-                const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789';
-                let autoId = '';
-                for (let i = 0; i < 20; i++) {
-                    autoId += chars.charAt(Math.floor(Math.random() * chars.length));
-                }
-                return autoId;
-            };
-            const randomId = generateRandomFirestoreId();
-
-            // Query for recent users
-            const recentUsersQuery = query(
-                collection(firestore, "users"),
-                orderBy("createdAt", "desc"),
-                limit(10)
-            );
-
-            // Query for random/older users
-            const randomUsersQuery = query(
-                collection(firestore, "users"),
-                where(documentId(), ">=", randomId),
-                limit(10)
-            );
-            
-            const [recentUsersSnapshot, randomUsersSnapshot] = await Promise.all([
-                getDocs(recentUsersQuery),
-                getDocs(randomUsersQuery)
-            ]);
-
-            const recentUsers = recentUsersSnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as WithId<User>));
-            const randomUsers = randomUsersSnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as WithId<User>));
-            
-            // Combine, deduplicate, and filter out the current user
-            const combinedUsers = [...recentUsers, ...randomUsers];
-            const uniqueUsers = Array.from(new Map(combinedUsers.map(user => [user.id, user])).values())
-                                    .filter(user => user.id !== currentUser.uid);
-
-            // Shuffle the final array for a dynamic feel
-            for (let i = uniqueUsers.length - 1; i > 0; i--) {
-                const j = Math.floor(Math.random() * (i + 1));
-                [uniqueUsers[i], uniqueUsers[j]] = [uniqueUsers[j], uniqueUsers[i]];
+    setSuggestionsLoading(true);
+    try {
+        // Generate a random ID for the 'older' users query
+        const generateRandomFirestoreId = () => {
+            const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789';
+            let autoId = '';
+            for (let i = 0; i < 20; i++) {
+                autoId += chars.charAt(Math.floor(Math.random() * chars.length));
             }
-            
-            setSuggestions(uniqueUsers);
+            return autoId;
+        };
+        const randomId = generateRandomFirestoreId();
 
-        } catch (error) {
-            console.error("Error fetching follow suggestions:", error);
-        } finally {
-            setSuggestionsLoading(false);
+        // Query for recent users
+        const recentUsersQuery = query(
+            collection(firestore, "users"),
+            orderBy("createdAt", "desc"),
+            limit(10)
+        );
+
+        // Query for random/older users
+        const randomUsersQuery = query(
+            collection(firestore, "users"),
+            where(documentId(), ">=", randomId),
+            limit(10)
+        );
+        
+        const [recentUsersSnapshot, randomUsersSnapshot] = await Promise.all([
+            getDocs(recentUsersQuery),
+            getDocs(randomUsersQuery)
+        ]);
+
+        const recentUsers = recentUsersSnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as WithId<User>));
+        const randomUsers = randomUsersSnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as WithId<User>));
+        
+        // Combine, deduplicate, and filter out the current user
+        const combinedUsers = [...recentUsers, ...randomUsers];
+        const uniqueUsers = Array.from(new Map(combinedUsers.map(user => [user.id, user])).values())
+                                .filter(user => user.id !== currentUser.uid);
+
+        // Shuffle the final array for a dynamic feel
+        for (let i = uniqueUsers.length - 1; i > 0; i--) {
+            const j = Math.floor(Math.random() * (i + 1));
+            [uniqueUsers[i], uniqueUsers[j]] = [uniqueUsers[j], uniqueUsers[i]];
         }
-    };
-    
-    fetchSuggestions();
+        
+        setSuggestions(uniqueUsers);
+
+    } catch (error) {
+        console.error("Error fetching follow suggestions:", error);
+    } finally {
+        setSuggestionsLoading(false);
+    }
   }, [firestore, currentUser]);
+
+  useEffect(() => {
+    fetchSuggestions();
+  }, [fetchSuggestions]);
   
 
   const searchUsers = useCallback(async (term: string) => {
@@ -265,82 +266,119 @@ export default function SearchPage() {
     }
 }, [firestore, currentUser, userProfile, setUserProfile, toast]);
 
+    const handleRefresh = useCallback(async () => {
+        setIsRefreshing(true);
+        await fetchSuggestions();
+        await new Promise(resolve => setTimeout(resolve, 750));
+        setIsRefreshing(false);
+    }, [fetchSuggestions]);
+
+    useEffect(() => {
+        const refreshHandler = () => handleRefresh();
+        eventBus.on('refresh-search', refreshHandler);
+
+        return () => {
+            eventBus.off('refresh-search', refreshHandler);
+        };
+    }, [handleRefresh]);
+
   return (
     <AppLayout showTopBar={false}>
       <motion.div
-        className="h-full flex flex-col"
+        className="h-full flex flex-col relative"
         initial={{ scale: 0.98, opacity: 0 }}
         animate={{ scale: 1, opacity: 1 }}
         transition={{ duration: 0.3 }}
       >
-        <div className="p-4 border-b sticky top-0 bg-background/80 backdrop-blur-sm z-10">
-          <div className="relative">
-            <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 h-5 w-5 text-muted-foreground" />
-            <Input
-              type="search"
-              placeholder="Search users..."
-              className="w-full pl-11 rounded-full bg-secondary"
-              value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
-              autoFocus
-            />
+        <AnimatePresence>
+            {isRefreshing && (
+                <motion.div
+                    key="search-refresh-indicator"
+                    initial={{ height: 0 }}
+                    animate={{ height: 60 }}
+                    exit={{ height: 0, transition: { duration: 0.2 } }}
+                    transition={{ duration: 0.4, ease: "easeInOut" }}
+                    className="bg-blue-500 flex items-center justify-center overflow-hidden absolute top-0 left-0 right-0 z-20"
+                >
+                    <Loader2 className="h-6 w-6 animate-spin text-white" />
+                </motion.div>
+            )}
+        </AnimatePresence>
+        
+        <motion.div
+            className="h-full flex flex-col"
+            animate={{ paddingTop: isRefreshing ? 60 : 0 }}
+            transition={{ duration: 0.4, ease: "easeInOut" }}
+        >
+          <div className="p-4 border-b sticky top-0 bg-background/80 backdrop-blur-sm z-10">
+            <div className="relative">
+              <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 h-5 w-5 text-muted-foreground" />
+              <Input
+                type="search"
+                placeholder="Search users..."
+                className="w-full pl-11 rounded-full bg-secondary"
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+                autoFocus
+              />
+            </div>
           </div>
-        </div>
 
-        <div className="flex-1 overflow-y-auto">
-          {isLoading && (
-            <div className='divide-y'>
-                <UserResultSkeleton />
-                <UserResultSkeleton />
-                <UserResultSkeleton />
-            </div>
-          )}
-          {!isLoading && hasSearched && results.length === 0 && (
-            <div className="text-center py-20 px-4">
-              <div className="inline-block p-4 bg-secondary rounded-full">
-                <UserX className="h-10 w-10 text-muted-foreground" />
+          <div className="flex-1 overflow-y-auto">
+            {isLoading && (
+              <div className='divide-y'>
+                  <UserResultSkeleton />
+                  <UserResultSkeleton />
+                  <UserResultSkeleton />
               </div>
-              <h2 className="text-xl font-headline mt-4">No results found</h2>
-              <p className="text-muted-foreground mt-2">Try a different search term.</p>
-            </div>
-          )}
-          {!isLoading && results.length > 0 && (
-            <div className="divide-y">
-              {results.map(user => (
-                <UserResultItem key={user.id} user={user} />
-              ))}
-            </div>
-          )}
-          {!hasSearched && !isLoading && (
-            <div>
-                 <h2 className="p-4 text-lg font-bold font-headline">Follow suggestions</h2>
-                 {suggestionsLoading && (
-                     <div className='divide-y'>
-                        <UserResultSkeleton />
-                        <UserResultSkeleton />
-                        <UserResultSkeleton />
-                    </div>
-                 )}
-                 {!suggestionsLoading && suggestions.length > 0 && (
-                     <div className="divide-y">
-                         {suggestions.map(user => (
-                             <FollowSuggestionItem
-                                key={user.id}
-                                user={user}
-                                isFollowing={userProfile?.following?.includes(user.id) ?? false}
-                                onFollow={handleFollow}
-                             />
-                         ))}
-                     </div>
-                 )}
-                 {!suggestionsLoading && suggestions.length === 0 && (
-                      <div className="text-center py-10 px-4">
-                        <p className="text-muted-foreground">No suggestions right now. Check back later!</p>
-                    </div>
-                 )}
-            </div>
-          )}
-        </div>
+            )}
+            {!isLoading && hasSearched && results.length === 0 && (
+              <div className="text-center py-20 px-4">
+                <div className="inline-block p-4 bg-secondary rounded-full">
+                  <UserX className="h-10 w-10 text-muted-foreground" />
+                </div>
+                <h2 className="text-xl font-headline mt-4">No results found</h2>
+                <p className="text-muted-foreground mt-2">Try a different search term.</p>
+              </div>
+            )}
+            {!isLoading && results.length > 0 && (
+              <div className="divide-y">
+                {results.map(user => (
+                  <UserResultItem key={user.id} user={user} />
+                ))}
+              </div>
+            )}
+            {!hasSearched && !isLoading && (
+              <div>
+                   <h2 className="p-4 text-lg font-bold font-headline">Follow suggestions</h2>
+                   {suggestionsLoading && (
+                       <div className='divide-y'>
+                          <UserResultSkeleton />
+                          <UserResultSkeleton />
+                          <UserResultSkeleton />
+                      </div>
+                   )}
+                   {!suggestionsLoading && suggestions.length > 0 && (
+                       <div className="divide-y">
+                           {suggestions.map(user => (
+                               <FollowSuggestionItem
+                                  key={user.id}
+                                  user={user}
+                                  isFollowing={userProfile?.following?.includes(user.id) ?? false}
+                                  onFollow={handleFollow}
+                               />
+                           ))}
+                       </div>
+                   )}
+                   {!suggestionsLoading && suggestions.length === 0 && (
+                        <div className="text-center py-10 px-4">
+                          <p className="text-muted-foreground">No suggestions right now. Check back later!</p>
+                      </div>
+                   )}
+              </div>
+            )}
+          </div>
+        </motion.div>
       </motion.div>
     </AppLayout>
   );
