@@ -6,7 +6,7 @@ import { Search, UserX, Loader2 } from 'lucide-react';
 import { useState, useEffect, useCallback } from 'react';
 import { motion } from 'framer-motion';
 import { useFirebase } from '@/firebase';
-import { collection, query, where, getDocs, limit, orderBy, runTransaction, doc, increment, arrayRemove, arrayUnion, setDoc, serverTimestamp } from 'firebase/firestore';
+import { collection, query, where, getDocs, limit, orderBy, runTransaction, doc, increment, arrayRemove, arrayUnion, setDoc, serverTimestamp, documentId } from 'firebase/firestore';
 import type { User, Notification } from '@/lib/types';
 import type { WithId } from '@/firebase/firestore/use-collection';
 import { Avatar, AvatarImage, AvatarFallback } from '@/components/ui/avatar';
@@ -60,7 +60,6 @@ function UserResultSkeleton() {
             <Skeleton className="h-11 w-11 rounded-full" />
             <div className="flex-1 space-y-2">
                 <Skeleton className="h-4 w-32" />
-                <Skeleton className="h-3 w-24" />
             </div>
         </div>
     )
@@ -115,17 +114,52 @@ export default function SearchPage() {
     const fetchSuggestions = async () => {
         setSuggestionsLoading(true);
         try {
-            const q = query(
+            // Generate a random ID for the 'older' users query
+            const generateRandomFirestoreId = () => {
+                const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789';
+                let autoId = '';
+                for (let i = 0; i < 20; i++) {
+                    autoId += chars.charAt(Math.floor(Math.random() * chars.length));
+                }
+                return autoId;
+            };
+            const randomId = generateRandomFirestoreId();
+
+            // Query for recent users
+            const recentUsersQuery = query(
                 collection(firestore, "users"),
                 orderBy("createdAt", "desc"),
-                limit(20)
+                limit(10)
             );
-            const querySnapshot = await getDocs(q);
-            const fetchedUsers = querySnapshot.docs
-                .map(doc => ({ id: doc.id, ...doc.data() } as WithId<User>))
-                .filter(user => user.id !== currentUser.uid); // Filter out the current user
+
+            // Query for random/older users
+            const randomUsersQuery = query(
+                collection(firestore, "users"),
+                where(documentId(), ">=", randomId),
+                limit(10)
+            );
             
-            setSuggestions(fetchedUsers);
+            const [recentUsersSnapshot, randomUsersSnapshot] = await Promise.all([
+                getDocs(recentUsersQuery),
+                getDocs(randomUsersQuery)
+            ]);
+
+            const recentUsers = recentUsersSnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as WithId<User>));
+            const randomUsers = randomUsersSnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as WithId<User>));
+            
+            // Combine, deduplicate, and filter out the current user
+            const combinedUsers = [...recentUsers, ...randomUsers];
+            const uniqueUsers = Array.from(new Map(combinedUsers.map(user => [user.id, user])).values())
+                                    .filter(user => user.id !== currentUser.uid);
+
+            // Shuffle the final array for a dynamic feel
+            for (let i = uniqueUsers.length - 1; i > 0; i--) {
+                const j = Math.floor(Math.random() * (i + 1));
+                [uniqueUsers[i], uniqueUsers[j]] = [uniqueUsers[j], uniqueUsers[i]];
+            }
+            
+            setSuggestions(uniqueUsers);
+
         } catch (error) {
             console.error("Error fetching follow suggestions:", error);
         } finally {
@@ -245,7 +279,7 @@ export default function SearchPage() {
             <Input
               type="search"
               placeholder="Search users..."
-              className="w-full pl-11 rounded-full bg-secondary"
+              className="w-full pl-11 rounded-full bg-secondary focus-visible:ring-1"
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
               autoFocus
