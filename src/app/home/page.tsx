@@ -606,7 +606,7 @@ export function PostItem({ post, ...props }: { post: WithId<Post>, bookmarks: Wi
     const { firestore } = useFirebase();
 
     if (post.type === 'audio') {
-        return <AudioPostCard post={post} bookmarks={props.bookmarks} />;
+        return <AudioPostCard post={post} bookmarks={props.bookmarks} updatePost={props.updatePost} />;
     }
 
     const originalPostRef = useMemoFirebase(() => {

@@ -2,7 +2,7 @@
 
 "use client";
 
-import { useMemo, useState, useEffect, useRef } from 'react';
+import { useMemo, useState, useEffect, useRef, useCallback } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import AppLayout from '@/components/AppLayout';
 import { useFirebase, useMemoFirebase, useCollection } from '@/firebase';
@@ -109,6 +109,15 @@ function SharedContent() {
 
     const { data: bookmarks } = useCollection<Bookmark>(bookmarksQuery);
 
+    const updateSharedPostState = useCallback((postId: string, updatedData: Partial<Post>) => {
+        setPosts(currentPosts => {
+            if (!currentPosts) return [];
+            return currentPosts.map(p =>
+                p.id === postId ? { ...p, ...updatedData } : p
+            );
+        });
+    }, []);
+
     return (
         <Tabs defaultValue="links">
             <div className="sticky top-0 bg-background z-10 border-b">
@@ -146,6 +155,7 @@ function SharedContent() {
                         key={post.id} 
                         post={post} 
                         bookmarks={bookmarks || []}
+                        updatePost={updateSharedPostState}
                     />
                 ))}
             </TabsContent>
