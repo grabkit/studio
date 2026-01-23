@@ -1,4 +1,3 @@
-
 "use client";
 
 import React, { useState, useRef, useEffect, useCallback } from 'react';
@@ -11,6 +10,7 @@ import { WithId } from '@/firebase/firestore/use-collection';
 import { useFirebase, useDoc, useMemoFirebase } from '@/firebase';
 import { getAvatar, formatUserId, formatTimestamp, cn, formatCount } from '@/lib/utils';
 import Link from 'next/link';
+import { doc } from 'firebase/firestore';
 
 export function AudioPostCard({ post, bookmarks }: { post: WithId<Post>, bookmarks: WithId<Bookmark>[] | null }) {
     const { user, firestore } = useFirebase();
@@ -20,7 +20,10 @@ export function AudioPostCard({ post, bookmarks }: { post: WithId<Post>, bookmar
     const canvasRef = useRef<HTMLCanvasElement>(null);
     const animationFrameId = useRef<number>();
 
-    const { data: authorProfile } = useDoc<User>(useMemoFirebase(() => doc(firestore, 'users', post.authorId), [firestore, post.authorId]));
+    const { data: authorProfile } = useDoc<User>(useMemoFirebase(() => {
+        if (!firestore) return null;
+        return doc(firestore, 'users', post.authorId);
+    }, [firestore, post.authorId]));
 
     const avatar = getAvatar(authorProfile);
     const isAvatarUrl = avatar.startsWith('http');
@@ -120,7 +123,7 @@ export function AudioPostCard({ post, bookmarks }: { post: WithId<Post>, bookmar
 
                         <div className="mt-4 flex items-center justify-around">
                             <button onClick={handleLike} className={cn("flex items-center space-x-1 p-2 -m-2", hasLiked && "text-pink-500")}>
-                                <Heart className="h-4 w-4" fill={hasLiked ? 'currentColor' : 'none'} />
+                                <Heart className="h-4 w-4" fill={hasLiked ? "currentColor" : "none"} />
                                 <span className="text-xs">{formatCount(post.likeCount)}</span>
                             </button>
                             <Link href={`/post/${post.id}`} className="flex items-center space-x-1 p-2 -m-2">
