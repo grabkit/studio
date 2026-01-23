@@ -677,7 +677,6 @@ export function PostSkeleton() {
 export default function HomePage() {
   const { firestore, userProfile, user } = useFirebase();
   const { toast } = useToast();
-  const scrollContainerRef = useRef<HTMLDivElement>(null);
   const router = useRouter();
 
   const [posts, setPosts] = useState<WithId<Post>[] | null>(null);
@@ -737,7 +736,7 @@ export default function HomePage() {
     if (!postsQuery) return;
 
     eventBus.emit('refresh-start');
-    scrollContainerRef.current?.scrollTo({ top: 0, behavior: 'smooth' });
+    eventBus.emit('scroll-main-to-top');
 
     try {
         const postsSnapshot = await getDocs(postsQuery);
@@ -819,10 +818,7 @@ export default function HomePage() {
         animate={{ scale: 1, opacity: 1 }}
         transition={{ duration: 0.3 }}
       >
-        <div
-            className="relative h-full overflow-y-auto"
-            ref={scrollContainerRef}
-        >
+        
           <div className="p-4 border-b">
             <div 
               className="flex items-center space-x-3 cursor-pointer"
@@ -862,9 +858,8 @@ export default function HomePage() {
               ))
             }
           </div>
-        </div>
+        
       </motion.div>
     </AppLayout>
   );
 }
-

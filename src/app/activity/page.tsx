@@ -1,3 +1,4 @@
+
 "use client";
 
 import AppLayout from "@/components/AppLayout";
@@ -140,7 +141,7 @@ function ActivitySkeleton() {
 
 export default function ActivityPage() {
     const { firestore, user, userProfile } = useFirebase();
-    const scrollContainerRef = useRef<HTMLDivElement>(null);
+    const [isRefreshing, setIsRefreshing] = useState(false);
 
     const notificationsQuery = useMemoFirebase(() => {
         if (!firestore || !user) return null;
@@ -199,8 +200,8 @@ export default function ActivityPage() {
     const handleRefresh = useCallback(async () => {
         if (!notificationsQuery) return;
 
-        eventBus.emit('refresh-start');
-        scrollContainerRef.current?.scrollTo({ top: 0, behavior: 'smooth' });
+        setIsRefreshing(true);
+        eventBus.emit('scroll-main-to-top');
 
         try {
             const notificationsSnapshot = await getDocs(notificationsQuery);
@@ -212,7 +213,7 @@ export default function ActivityPage() {
         } catch (error) {
             console.error("Failed to refresh notifications:", error);
         } finally {
-            eventBus.emit('refresh-end');
+            setIsRefreshing(false);
         }
     }, [notificationsQuery, setNotifications]);
 
@@ -229,14 +230,17 @@ export default function ActivityPage() {
     return (
         <AppLayout showTopBar={false}>
              <motion.div
-                className=""
-                ref={scrollContainerRef}
                 initial={{ scale: 0.98, opacity: 0 }}
                 animate={{ scale: 1, opacity: 1 }}
                 transition={{ duration: 0.3 }}
             >
                 <div className="sticky top-0 p-4 border-b bg-background/80 backdrop-blur-sm z-10">
                     <h1 className="text-2xl font-bold font-headline">Activity</h1>
+                    {isRefreshing && (
+                        <div className="absolute bottom-0 left-0 right-0 h-0.5 w-full overflow-hidden">
+                            <div className="h-full w-full animate-loading-bar" />
+                        </div>
+                    )}
                 </div>
                 <div>
                     {isLoading && (

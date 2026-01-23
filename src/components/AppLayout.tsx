@@ -3,13 +3,14 @@
 
 import { useFirebase, useUser } from "@/firebase";
 import { useRouter } from "next/navigation";
-import { useEffect } from "react";
+import { useEffect, useRef } from "react";
 import TopBar from "./layout/TopBar";
 import BottomNav from "./layout/BottomNav";
 import { Loader2, ShieldAlert } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Button } from "./ui/button";
 import { signOut } from "firebase/auth";
+import { eventBus } from "@/lib/event-bus";
 
 function AccountStatusScreen({ status, onLogout }: { status: 'suspended' | 'banned', onLogout: () => void }) {
     const title = status === 'suspended' ? 'Account Suspended' : 'Account Banned';
@@ -43,12 +44,23 @@ export default function AppLayout({
 }) {
   const { user, isUserLoading, userProfile, isUserProfileLoading, auth } = useFirebase();
   const router = useRouter();
+  const mainRef = useRef<HTMLElement>(null);
 
   useEffect(() => {
     if (!isUserLoading && !user) {
       router.replace("/auth");
     }
   }, [user, isUserLoading, router]);
+
+  useEffect(() => {
+    const handleScrollToTop = () => {
+      mainRef.current?.scrollTo({ top: 0, behavior: 'smooth' });
+    };
+    eventBus.on('scroll-main-to-top', handleScrollToTop);
+    return () => {
+      eventBus.off('scroll-main-to-top', handleScrollToTop);
+    };
+  }, []);
 
   const handleLogout = async () => {
     if (!auth) return;
@@ -84,6 +96,7 @@ export default function AppLayout({
     <div className="relative h-screen flex flex-col bg-background">
       {showTopBar && <TopBar />}
       <main
+        ref={mainRef}
         className={cn(
           "mx-auto max-w-2xl w-full flex-1 overflow-y-auto",
           showTopBar ? "pt-12" : "",
