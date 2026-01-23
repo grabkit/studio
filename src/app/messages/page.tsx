@@ -618,7 +618,7 @@ export default function MessagesPage() {
                         animate={{ height: 60 }}
                         exit={{ height: 0 }}
                         transition={{ duration: 0.4, ease: "easeInOut" }}
-                        className="bg-black flex items-center justify-center overflow-hidden"
+                        className="bg-black flex items-center justify-center overflow-hidden relative z-10"
                     >
                         <Loader2 className="h-6 w-6 animate-spin text-white" />
                     </motion.div>
