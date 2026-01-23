@@ -20,7 +20,7 @@ import { ArrowLeft, MessageSquare, ArrowUpRight, MoreHorizontal, ShieldAlert, Fl
 import { getAvatar, cn, formatLastSeen, formatUserId, getFormattedUserIdString } from "@/lib/utils.tsx";
 import { FirestorePermissionError } from "@/firebase/errors";
 import { errorEmitter } from "@/firebase/error-emitter";
-import { PostItem as HomePostItem, PostSkeleton } from "@/app/home/page";
+import { PostItem as HomePostItem, PostSkeleton } from "@/app/home/page.tsx";
 import type { Bookmark } from "@/lib/types";
 import { RepliesList } from "@/components/RepliesList";
 import { Sheet, SheetContent, SheetTrigger, SheetHeader, SheetTitle, SheetDescription, SheetClose } from "@/components/ui/sheet";
@@ -671,7 +671,7 @@ export default function UserProfilePage() {
                                     <p className="font-semibold font-headline">{formatUserId(user?.id)}</p>
                                     {user?.bio && <p className="text-sm">{user.bio}</p>}
                                     {user?.website && (
-                                        <a href={user.website} target="_blank" rel="noopener noreferrer" className="flex items-center gap-2 text-sm text-primary hover:underline">
+                                        <a href={user.website} target="_blank" rel="noopener noreferrer" className="flex items-center gap-2 text-sm text-blue-500 hover:underline">
                                             <LinkIcon className="h-4 w-4" />
                                             <span>{user.website.replace(/^(https?:\/\/)?(www\.)?/, '')}</span>
                                         </a>
@@ -811,3 +811,5 @@ export default function UserProfilePage() {
         </AppLayout>
     );
 }
+
+    
