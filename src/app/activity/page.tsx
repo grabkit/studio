@@ -229,7 +229,7 @@ export default function ActivityPage() {
     return (
         <AppLayout showTopBar={false}>
              <motion.div
-                className="h-full overflow-y-auto"
+                className=""
                 ref={scrollContainerRef}
                 initial={{ scale: 0.98, opacity: 0 }}
                 animate={{ scale: 1, opacity: 1 }}

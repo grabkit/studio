@@ -85,7 +85,7 @@ export default function AppLayout({
       {showTopBar && <TopBar />}
       <main
         className={cn(
-          "mx-auto max-w-2xl w-full flex-1",
+          "mx-auto max-w-2xl w-full flex-1 overflow-y-auto",
           showTopBar ? "pt-12" : "",
           showBottomNav ? "pb-14" : ""
         )}
