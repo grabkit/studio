@@ -7,7 +7,7 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { getAvatar, formatMessageTimestamp, formatUserId } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import { MessageSquare, Mail, Trash2, BellOff, CheckCircle, User as UserIcon, Bell, Mic, Loader2 } from "lucide-react";
-import { useFirebase, useMemoFirebase } from "@/firebase";
+import { useFirebase, useMemoFirebase, useDoc } from "@/firebase";
 import { collection, query, where, doc, updateDoc, deleteDoc, arrayUnion, arrayRemove, getDocs, documentId, getDocsFromCache, orderBy } from "firebase/firestore";
 import type { Conversation, User } from "@/lib/types";
 import React, { useMemo, useState, useEffect, useRef, useCallback, type TouchEvent } from "react";
