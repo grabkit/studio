@@ -229,37 +229,35 @@ export default function ActivityPage() {
     return (
         <AppLayout showTopBar={false}>
              <motion.div
-                className="h-full"
+                className="h-full flex flex-col"
                 initial={{ scale: 0.98, opacity: 0 }}
                 animate={{ scale: 1, opacity: 1 }}
                 transition={{ duration: 0.3 }}
             >
+                <div className="p-4 border-b bg-background/80 backdrop-blur-sm z-10 flex-shrink-0">
+                    <h1 className="text-2xl font-bold font-headline">Activity</h1>
+                </div>
                 <div
-                    className="relative h-full overflow-y-auto"
+                    className="flex-grow overflow-y-auto"
                     ref={scrollContainerRef}
                 >
-                    <div className="p-4 border-b sticky top-0 bg-background/80 backdrop-blur-sm z-10">
-                        <h1 className="text-2xl font-bold font-headline">Activity</h1>
-                    </div>
-                    <div>
-                        {isLoading && (
-                            <>
-                                <ActivitySkeleton />
-                                <ActivitySkeleton />
-                                <ActivitySkeleton />
-                                <ActivitySkeleton />
-                            </>
-                        )}
-                        {!isLoading && filteredNotifications?.length === 0 && (
-                            <div className="text-center py-20">
-                                <h2 className="text-2xl font-headline text-primary">No Activity Yet</h2>
-                                <p className="text-muted-foreground mt-2">Likes and comments on your posts will appear here.</p>
-                            </div>
-                        )}
-                        {filteredNotifications?.map(notification => (
-                            <NotificationItem key={notification.id} notification={notification} />
-                        ))}
-                    </div>
+                    {isLoading && (
+                        <>
+                            <ActivitySkeleton />
+                            <ActivitySkeleton />
+                            <ActivitySkeleton />
+                            <ActivitySkeleton />
+                        </>
+                    )}
+                    {!isLoading && filteredNotifications?.length === 0 && (
+                        <div className="text-center py-20">
+                            <h2 className="text-2xl font-headline text-primary">No Activity Yet</h2>
+                            <p className="text-muted-foreground mt-2">Likes and comments on your posts will appear here.</p>
+                        </div>
+                    )}
+                    {filteredNotifications?.map(notification => (
+                        <NotificationItem key={notification.id} notification={notification} />
+                    ))}
                 </div>
             </motion.div>
         </AppLayout>
