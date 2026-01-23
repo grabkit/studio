@@ -279,7 +279,7 @@ export default function SearchPage() {
             <Input
               type="search"
               placeholder="Search users..."
-              className="w-full pl-11 rounded-full bg-secondary focus-visible:ring-1"
+              className="w-full pl-11 rounded-full bg-secondary"
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
               autoFocus
