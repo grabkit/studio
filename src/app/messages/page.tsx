@@ -8,9 +8,7 @@ import { getAvatar, formatMessageTimestamp, formatUserId } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import { MessageSquare, Mail, Trash2, BellOff, CheckCircle, User as UserIcon, Bell, Mic, Loader2 } from "lucide-react";
 import { useFirebase, useMemoFirebase } from "@/firebase";
-import { collection, query, where, doc, updateDoc, deleteDoc, arrayUnion, arrayRemove, getDocs, documentId } from "firebase/firestore";
-import { useCollection, type WithId } from "@/firebase/firestore/use-collection";
-import { useDoc } from "@/firebase/firestore/use-doc";
+import { collection, query, where, doc, updateDoc, deleteDoc, arrayUnion, arrayRemove, getDocs, documentId, getDocsFromCache, orderBy } from "firebase/firestore";
 import type { Conversation, User } from "@/lib/types";
 import React, { useMemo, useState, useEffect, useRef, useCallback, type TouchEvent } from "react";
 import Link from "next/link";
@@ -23,7 +21,10 @@ import { FirestorePermissionError } from "@/firebase/errors";
 import { errorEmitter } from "@/firebase/error-emitter";
 import { usePresence } from "@/hooks/usePresence";
 import { ScrollArea } from "@/components/ui/scroll-area";
-import { motion } from "framer-motion";
+import { motion, AnimatePresence } from "framer-motion";
+import { eventBus } from "@/lib/event-bus";
+import { WithId } from "@/firebase/firestore/use-collection";
+
 
 function FollowedUserSkeleton() {
     return (
@@ -34,57 +35,7 @@ function FollowedUserSkeleton() {
     )
 }
 
-function FollowedUsers() {
-    const { firestore, user: currentUser, userProfile, showVoiceStatusPlayer } = useFirebase();
-    const [followedUsers, setFollowedUsers] = useState<WithId<User>[]>([]);
-    const [isLoading, setIsLoading] = useState(true);
-
-    const followingIds = useMemo(() => userProfile?.following || [], [userProfile]);
-
-    useEffect(() => {
-        if (!firestore) return;
-
-        const fetchFollowedUsers = async () => {
-            setIsLoading(true);
-            const usersToFetch = [...followingIds];
-            const fetchedUsers: WithId<User>[] = [];
-
-            if (userProfile) {
-                const currentUserAsUser = {
-                    id: userProfile.id,
-                    ...userProfile
-                } as WithId<User>;
-                fetchedUsers.push(currentUserAsUser);
-            }
-            
-            if (usersToFetch.length > 0) {
-                 // Firestore 'in' query is limited to 30 items, batch if needed.
-                const userQuery = query(collection(firestore, "users"), where(documentId(), 'in', usersToFetch.slice(0,30)));
-                try {
-                    const querySnapshot = await getDocs(userQuery);
-                    querySnapshot.forEach(doc => {
-                        fetchedUsers.push({ id: doc.id, ...doc.data() } as WithId<User>);
-                    });
-                } catch (error) {
-                    console.error("Error fetching followed users:", error);
-                }
-            }
-            
-            // Put current user at the front if they exist
-            const finalUsers = fetchedUsers.sort((a, b) => {
-                if (a.id === currentUser?.uid) return -1;
-                if (b.id === currentUser?.uid) return 1;
-                return 0;
-            });
-
-            setFollowedUsers(finalUsers);
-            setIsLoading(false);
-        };
-
-        fetchFollowedUsers();
-    }, [firestore, followingIds, userProfile, currentUser]);
-
-
+function FollowedUsers({ users, isLoading, currentUser, showVoiceStatusPlayer }: { users: WithId<User>[], isLoading: boolean, currentUser: User | null, showVoiceStatusPlayer: (user: WithId<User>) => void }) {
     if (isLoading) {
         return (
             <div className="p-4 border-b">
@@ -99,7 +50,7 @@ function FollowedUsers() {
         );
     }
     
-    if (followedUsers.length === 0) {
+    if (users.length === 0) {
         return null;
     }
 
@@ -108,7 +59,7 @@ function FollowedUsers() {
             <h2 className="text-lg font-semibold font-headline mb-3">Following</h2>
              <div className="overflow-x-auto pb-2 -mb-2 no-scrollbar">
                 <div className="flex space-x-4">
-                    {followedUsers.map(user => {
+                    {users.map(user => {
                         const isCurrentUser = user.id === currentUser?.uid;
                         const href = isCurrentUser ? '/account' : `/profile/${user.id}`;
                         const name = isCurrentUser ? 'Your Profile' : formatUserId(user.id);
@@ -172,7 +123,6 @@ function FollowedUsers() {
         </div>
     );
 }
-
 
 function ConversationItem({ conversation, currentUser, onLongPress }: { conversation: WithId<Conversation>, currentUser: User, onLongPress: (conversation: WithId<Conversation>) => void }) {
     const otherParticipantId = conversation.participantIds.find(p => p !== currentUser.uid);
@@ -403,7 +353,7 @@ function ConversationsList({
 
 
 export default function MessagesPage() {
-    const { firestore, user } = useFirebase();
+    const { firestore, user, userProfile, showVoiceStatusPlayer } = useFirebase();
     const { toast } = useToast();
     const router = useRouter();
     const [hasNewRequests, setHasNewRequests] = useState(false);
@@ -411,7 +361,42 @@ export default function MessagesPage() {
 
     const [isSheetOpen, setIsSheetOpen] = useState(false);
     const [selectedConvo, setSelectedConvo] = useState<WithId<Conversation> | null>(null);
-    
+
+    // State for refresh and data
+    const [isRefreshing, setIsRefreshing] = useState(false);
+    const [followedUsers, setFollowedUsers] = useState<WithId<User>[]>([]);
+    const [followedUsersLoading, setFollowedUsersLoading] = useState(true);
+    const [conversations, setConversations] = useState<WithId<Conversation>[] | null>(null);
+    const [conversationsLoading, setConversationsLoading] = useState(true);
+
+    const followingIds = useMemo(() => userProfile?.following || [], [userProfile]);
+
+    const fetchFollowedUsers = useCallback(async () => {
+        if (!firestore || !user) return;
+        setFollowedUsersLoading(true);
+         try {
+            const usersToFetch = [...followingIds];
+            const fetchedUsers: WithId<User>[] = [];
+
+            if (userProfile) {
+                const currentUserAsUser = { id: user.uid, ...userProfile } as WithId<User>;
+                fetchedUsers.push(currentUserAsUser);
+            }
+            
+            if (usersToFetch.length > 0) {
+                const userQuery = query(collection(firestore, "users"), where(documentId(), 'in', usersToFetch.slice(0,30)));
+                const querySnapshot = await getDocs(userQuery);
+                querySnapshot.forEach(doc => fetchedUsers.push({ id: doc.id, ...doc.data() } as WithId<User>));
+            }
+            
+            const finalUsers = fetchedUsers.sort((a, b) => a.id === user.uid ? -1 : b.id === user.uid ? 1 : 0);
+            setFollowedUsers(finalUsers);
+        } catch (error) {
+            console.error("Error fetching followed users:", error);
+        } finally {
+            setFollowedUsersLoading(false);
+        }
+    }, [firestore, user, userProfile, followingIds]);
 
     const conversationsQuery = useMemoFirebase(() => {
         if (!user || !firestore) return null;
@@ -421,7 +406,40 @@ export default function MessagesPage() {
         );
     }, [user, firestore]);
 
-    const { data: conversations, isLoading, setData: setConversations } = useCollection<Conversation>(conversationsQuery);
+    const fetchConversations = useCallback(async () => {
+        if (!conversationsQuery) return;
+        setConversationsLoading(true);
+        try {
+            const snapshot = await getDocs(conversationsQuery);
+            setConversations(snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as WithId<Conversation>)));
+        } catch (error) {
+            console.error("Error fetching conversations:", error);
+        } finally {
+            setConversationsLoading(false);
+        }
+    }, [conversationsQuery]);
+    
+    const handleRefresh = useCallback(async () => {
+        setIsRefreshing(true);
+        await Promise.all([fetchFollowedUsers(), fetchConversations()]);
+        // Short delay for better UX
+        await new Promise(resolve => setTimeout(resolve, 750));
+        setIsRefreshing(false);
+    }, [fetchFollowedUsers, fetchConversations]);
+
+    useEffect(() => {
+        fetchFollowedUsers();
+        fetchConversations();
+    }, [fetchFollowedUsers, fetchConversations]);
+
+    useEffect(() => {
+        const refreshHandler = () => handleRefresh();
+        eventBus.on('refresh-messages', refreshHandler);
+        return () => {
+            eventBus.off('refresh-messages', refreshHandler);
+        };
+    }, [handleRefresh]);
+
 
     const { chats, requests } = useMemo(() => {
         const chats: WithId<Conversation>[] = [];
@@ -469,6 +487,8 @@ export default function MessagesPage() {
         const convoRef = doc(firestore, 'conversations', conversationId);
         try {
             await updateDoc(convoRef, { status: 'accepted' });
+            // Manually update local state for immediate feedback
+            setConversations(prev => prev?.map(c => c.id === conversationId ? { ...c, status: 'accepted' } : c) || null);
             toast({
                 title: "Request Accepted",
                 description: "You can now chat with this user.",
@@ -494,6 +514,7 @@ export default function MessagesPage() {
         
         deleteDoc(convoRef)
             .then(() => {
+                setConversations(prev => prev?.filter(c => c.id !== selectedConvo.id) || null);
                 toast({ title: "Chat Deleted", description: "The conversation has been removed." });
             })
             .catch(serverError => {
@@ -515,6 +536,7 @@ export default function MessagesPage() {
         
         updateDoc(convoRef, updatePayload)
             .then(() => {
+                 setConversations(prev => prev?.map(c => c.id === selectedConvo.id ? { ...c, unreadCounts: { ...c.unreadCounts, [user.uid]: 1 } } : c) || null);
                  toast({ title: "Marked as Unread" });
             })
             .catch(serverError => {
@@ -544,19 +566,25 @@ export default function MessagesPage() {
         
         const convoRef = doc(firestore, 'conversations', selectedConvo.id);
         const isMuted = selectedConvo.mutedBy?.includes(user.uid);
-        const updatePayload = { 
-            mutedBy: isMuted ? arrayRemove(user.uid) : arrayUnion(user.uid)
-        };
+        const newMutedBy = isMuted ? arrayRemove(user.uid) : arrayUnion(user.uid);
 
-        updateDoc(convoRef, updatePayload)
+        updateDoc(convoRef, { mutedBy: newMutedBy })
             .then(() => {
+                setConversations(prev => prev?.map(c => {
+                    if (c.id === selectedConvo.id) {
+                        const currentMutedBy = c.mutedBy || [];
+                        const updatedMutedBy = isMuted ? currentMutedBy.filter(id => id !== user.uid) : [...currentMutedBy, user.uid];
+                        return { ...c, mutedBy: updatedMutedBy };
+                    }
+                    return c;
+                }) || null);
                 toast({ title: isMuted ? "Unmuted" : "Muted" });
             })
             .catch(serverError => {
                 const permissionError = new FirestorePermissionError({
                     path: convoRef.path,
                     operation: 'update',
-                    requestResourceData: updatePayload,
+                    requestResourceData: { mutedBy: newMutedBy },
                 });
                 errorEmitter.emit('permission-error', permissionError);
             })
@@ -581,14 +609,35 @@ export default function MessagesPage() {
 
     return (
         <AppLayout showTopBar={false}>
-             <motion.div
+            <AnimatePresence>
+                {isRefreshing && (
+                    <motion.div
+                        key="messages-loader"
+                        initial={{ height: 0 }}
+                        animate={{ height: "2.5rem" }}
+                        exit={{ height: 0 }}
+                        transition={{ type: 'spring', duration: 0.4 }}
+                        className="flex items-center justify-center overflow-hidden"
+                    >
+                        <div className="absolute bottom-0 left-0 right-0 h-0.5 w-full overflow-hidden">
+                            <div className="h-full w-full animate-loading-bar" />
+                        </div>
+                    </motion.div>
+                )}
+            </AnimatePresence>
+            <motion.div
                 className="h-full flex flex-col"
-                initial={{ scale: 0.98, opacity: 0 }}
-                animate={{ scale: 1, opacity: 1 }}
-                transition={{ duration: 0.3 }}
+                initial={{ y: 0 }}
+                animate={{ y: isRefreshing ? "2.5rem" : "0rem" }}
+                transition={{ type: 'spring', duration: 0.4 }}
             >
                 <div className="flex-shrink-0">
-                    <FollowedUsers />
+                    <FollowedUsers 
+                        users={followedUsers}
+                        isLoading={followedUsersLoading}
+                        currentUser={user}
+                        showVoiceStatusPlayer={showVoiceStatusPlayer}
+                    />
                 </div>
                 
                 <div className="flex-grow flex flex-col p-2 overflow-hidden">
@@ -611,7 +660,7 @@ export default function MessagesPage() {
                             <TabsContent value="chats">
                                 <ConversationsList 
                                     conversations={chats}
-                                    isLoading={isLoading}
+                                    isLoading={conversationsLoading}
                                     type="chats"
                                     currentUser={user}
                                     onAcceptRequest={handleAcceptRequest}
@@ -621,7 +670,7 @@ export default function MessagesPage() {
                             <TabsContent value="requests">
                                 <ConversationsList
                                     conversations={requests}
-                                    isLoading={isLoading}
+                                    isLoading={conversationsLoading}
                                     type="requests"
                                     currentUser={user}
                                     onAcceptRequest={handleAcceptRequest}

@@ -1,3 +1,4 @@
+
 "use client";
 
 import Link from "next/link";
@@ -15,7 +16,7 @@ const navItems = [
   { href: "/home", label: "Home", icon: Home, activeIcon: HomeIcon, event: "refresh-home" },
   { href: "/activity", label: "Activity", icon: HeartIcon, activeIcon: HeartIcon, event: "refresh-activity" },
   { href: "/search", label: "Search", icon: Search, activeIcon: Search },
-  { href: "/messages", label: "Messages", icon: Send, activeIcon: Send },
+  { href: "/messages", label: "Messages", icon: Send, activeIcon: Send, event: "refresh-messages" },
   { href: "/account", label: "Account", icon: User, activeIcon: User },
 ];
 
