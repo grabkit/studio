@@ -229,18 +229,16 @@ export default function ActivityPage() {
     return (
         <AppLayout showTopBar={false}>
              <motion.div
-                className="h-full flex flex-col"
+                className="h-full overflow-y-auto"
+                ref={scrollContainerRef}
                 initial={{ scale: 0.98, opacity: 0 }}
                 animate={{ scale: 1, opacity: 1 }}
                 transition={{ duration: 0.3 }}
             >
-                <div className="p-4 border-b bg-background/80 backdrop-blur-sm z-10 flex-shrink-0">
+                <div className="sticky top-0 p-4 border-b bg-background/80 backdrop-blur-sm z-10">
                     <h1 className="text-2xl font-bold font-headline">Activity</h1>
                 </div>
-                <div
-                    className="flex-grow overflow-y-auto"
-                    ref={scrollContainerRef}
-                >
+                <div>
                     {isLoading && (
                         <>
                             <ActivitySkeleton />
