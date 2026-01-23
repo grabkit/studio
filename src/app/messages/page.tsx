@@ -7,7 +7,7 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { getAvatar, formatMessageTimestamp, formatUserId } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import { MessageSquare, Mail, Trash2, BellOff, CheckCircle, User as UserIcon, Bell, Mic, Loader2 } from "lucide-react";
-import { useFirebase, useMemoFirebase } from "@/firebase";
+import { useFirebase, useMemoFirebase, useDoc } from "@/firebase";
 import { collection, query, where, doc, updateDoc, deleteDoc, arrayUnion, arrayRemove, getDocs, documentId, getDocsFromCache, orderBy } from "firebase/firestore";
 import type { Conversation, User } from "@/lib/types";
 import React, { useMemo, useState, useEffect, useRef, useCallback, type TouchEvent } from "react";
@@ -23,7 +23,7 @@ import { usePresence } from "@/hooks/usePresence";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { motion, AnimatePresence } from "framer-motion";
 import { eventBus } from "@/lib/event-bus";
-import { WithId, useDoc, useCollection } from "@/firebase/firestore/use-collection";
+import { WithId, useCollection } from "@/firebase/firestore/use-collection";
 
 
 function FollowedUserSkeleton() {
@@ -610,72 +610,77 @@ export default function MessagesPage() {
 
     return (
         <AppLayout showTopBar={false}>
-            <AnimatePresence>
-                {isRefreshing && (
-                    <motion.div
-                        key="messages-refresh-indicator"
-                        initial={{ height: 0 }}
-                        animate={{ height: 60 }}
-                        exit={{ height: 0 }}
-                        transition={{ duration: 0.4, ease: "easeInOut" }}
-                        className="bg-black flex items-center justify-center overflow-hidden relative z-10"
-                    >
-                        <Loader2 className="h-6 w-6 animate-spin text-white" />
-                    </motion.div>
-                )}
-            </AnimatePresence>
-            <div
-                className="h-full flex flex-col"
-            >
-                <div className="flex-shrink-0">
-                    <FollowedUsers 
-                        users={followedUsers}
-                        isLoading={followedUsersLoading}
-                        currentUser={user}
-                        showVoiceStatusPlayer={showVoiceStatusPlayer}
-                    />
-                </div>
+            <div className="relative h-full">
+                <AnimatePresence>
+                    {isRefreshing && (
+                        <motion.div
+                            key="messages-refresh-indicator"
+                            initial={{ height: 0 }}
+                            animate={{ height: 60 }}
+                            exit={{ height: 0, transition: { duration: 0.2 } }}
+                            transition={{ duration: 0.4, ease: "easeInOut" }}
+                            className="bg-black flex items-center justify-center overflow-hidden absolute top-0 left-0 right-0 z-10"
+                        >
+                            <Loader2 className="h-6 w-6 animate-spin text-white" />
+                        </motion.div>
+                    )}
+                </AnimatePresence>
                 
-                <div className="flex-grow flex flex-col p-2 overflow-hidden">
-                    <Tabs defaultValue="chats" className="w-full flex flex-col flex-grow" onValueChange={handleTabChange}>
-                        <TabsList className="grid w-full grid-cols-2 rounded-full flex-shrink-0">
-                            <TabsTrigger value="chats" className="relative flex items-center justify-center gap-2 rounded-full font-bold">
-                                {hasUnreadChats && (
-                                    <div className="w-2 h-2 rounded-full bg-destructive"></div>
-                                )}
-                                Chats
-                            </TabsTrigger>
-                            <TabsTrigger value="requests" className="relative flex items-center justify-center gap-2 rounded-full font-bold">
-                                {hasNewRequests && (
-                                    <div className="w-2 h-2 rounded-full bg-destructive"></div>
-                                )}
-                                Requests
-                            </TabsTrigger>
-                        </TabsList>
-                        <div className="flex-grow overflow-y-auto">
-                            <TabsContent value="chats">
-                                <ConversationsList 
-                                    conversations={chats}
-                                    isLoading={conversationsLoading}
-                                    type="chats"
-                                    currentUser={user}
-                                    onAcceptRequest={handleAcceptRequest}
-                                    onLongPress={handleLongPress}
-                                />
-                            </TabsContent>
-                            <TabsContent value="requests">
-                                <ConversationsList
-                                    conversations={requests}
-                                    isLoading={conversationsLoading}
-                                    type="requests"
-                                    currentUser={user}
-                                    onAcceptRequest={handleAcceptRequest}
-                                    onLongPress={handleLongPress}
-                                />
-                            </TabsContent>
-                        </div>
-                    </Tabs>
-                </div>
+                <motion.div
+                    className="h-full flex flex-col"
+                    animate={{ paddingTop: isRefreshing ? 60 : 0 }}
+                    transition={{ duration: 0.4, ease: "easeInOut" }}
+                >
+                    <div className="flex-shrink-0">
+                        <FollowedUsers 
+                            users={followedUsers}
+                            isLoading={followedUsersLoading}
+                            currentUser={user}
+                            showVoiceStatusPlayer={showVoiceStatusPlayer}
+                        />
+                    </div>
+                    
+                    <div className="flex-grow flex flex-col p-2 overflow-hidden">
+                        <Tabs defaultValue="chats" className="w-full flex flex-col flex-grow" onValueChange={handleTabChange}>
+                            <TabsList className="grid w-full grid-cols-2 rounded-full flex-shrink-0">
+                                <TabsTrigger value="chats" className="relative flex items-center justify-center gap-2 rounded-full font-bold">
+                                    {hasUnreadChats && (
+                                        <div className="w-2 h-2 rounded-full bg-destructive"></div>
+                                    )}
+                                    Chats
+                                </TabsTrigger>
+                                <TabsTrigger value="requests" className="relative flex items-center justify-center gap-2 rounded-full font-bold">
+                                    {hasNewRequests && (
+                                        <div className="w-2 h-2 rounded-full bg-destructive"></div>
+                                    )}
+                                    Requests
+                                </TabsTrigger>
+                            </TabsList>
+                            <div className="flex-grow overflow-y-auto">
+                                <TabsContent value="chats">
+                                    <ConversationsList 
+                                        conversations={chats}
+                                        isLoading={conversationsLoading}
+                                        type="chats"
+                                        currentUser={user}
+                                        onAcceptRequest={handleAcceptRequest}
+                                        onLongPress={handleLongPress}
+                                    />
+                                </TabsContent>
+                                <TabsContent value="requests">
+                                    <ConversationsList
+                                        conversations={requests}
+                                        isLoading={conversationsLoading}
+                                        type="requests"
+                                        currentUser={user}
+                                        onAcceptRequest={handleAcceptRequest}
+                                        onLongPress={handleLongPress}
+                                    />
+                                </TabsContent>
+                            </div>
+                        </Tabs>
+                    </div>
+                </motion.div>
             </div>
             
             <Sheet open={isSheetOpen} onOpenChange={setIsSheetOpen}>
