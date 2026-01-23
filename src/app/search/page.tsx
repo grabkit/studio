@@ -44,12 +44,11 @@ function UserResultItem({ user }: { user: WithId<User> }) {
   return (
     <Link href={`/profile/${user.id}`} className="flex items-center gap-4 p-4 hover:bg-accent transition-colors">
       <Avatar className="h-11 w-11">
-        <AvatarImage src={isAvatarUrl ? avatar : undefined} alt={user.name} />
+        <AvatarImage src={isAvatarUrl ? avatar : undefined} alt={String(formatUserId(user.id))} />
         <AvatarFallback>{!isAvatarUrl ? avatar : ''}</AvatarFallback>
       </Avatar>
       <div className="flex-1">
         <p className="font-semibold">{formatUserId(user.id)}</p>
-        <p className="text-sm text-muted-foreground">{user.name}</p>
       </div>
     </Link>
   )
@@ -76,18 +75,18 @@ function FollowSuggestionItem({ user, isFollowing, onFollow }: { user: WithId<Us
         <div className="flex items-center gap-4 p-4">
             <Link href={`/profile/${user.id}`} className="flex items-center gap-4 flex-1">
                  <Avatar className="h-11 w-11">
-                    <AvatarImage src={isAvatarUrl ? avatar : undefined} alt={user.name} />
+                    <AvatarImage src={isAvatarUrl ? avatar : undefined} alt={String(formatUserId(user.id))} />
                     <AvatarFallback>{!isAvatarUrl ? avatar : ''}</AvatarFallback>
                 </Avatar>
                 <div className="flex-1">
                     <p className="font-semibold">{formatUserId(user.id)}</p>
-                    <p className="text-sm text-muted-foreground">{user.name}</p>
                 </div>
             </Link>
             <Button
                 variant={isFollowing ? 'secondary' : 'default'}
                 size="sm"
                 onClick={() => onFollow(user.id, isFollowing)}
+                className="rounded-[10px]"
             >
                 {isFollowing ? 'Following' : 'Follow'}
             </Button>
