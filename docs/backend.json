@@ -205,7 +205,7 @@
         "commentsAllowed": { "type": "boolean" },
         "type": {
           "type": "string",
-          "enum": ["text", "poll", "repost", "quote"],
+          "enum": ["text", "poll", "repost", "quote", "audio"],
           "description": "The type of the post."
         },
         "pollOptions": {
@@ -233,6 +233,22 @@
             "type": "string",
             "format": "date-time",
             "description": "Timestamp indicating when the post will automatically expire and be deleted."
+        },
+        "audioUrl": {
+          "type": "string",
+          "format": "uri",
+          "description": "URL to the audio file for an audio post."
+        },
+        "audioWaveform": {
+          "type": "array",
+          "description": "An array of numbers representing the audio waveform for visualization.",
+          "items": {
+            "type": "number"
+          }
+        },
+        "audioDuration": {
+          "type": "number",
+          "description": "The duration of the audio in seconds."
         }
       },
       "required": [

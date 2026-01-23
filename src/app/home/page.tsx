@@ -1,4 +1,5 @@
 
+
 "use client";
 
 import AppLayout from "@/components/AppLayout";
@@ -36,6 +37,7 @@ import { motion } from "framer-motion";
 import { eventBus } from "@/lib/event-bus";
 import { useCollection } from "@/firebase/firestore/use-collection";
 import { Progress } from "@/components/ui/progress";
+import { AudioPostCard } from "@/components/AudioPostCard";
 
 
 function LinkPreview({ metadata }: { metadata: LinkMetadata }) {
@@ -378,7 +380,7 @@ function InnerPostItem({ post, bookmarks, updatePost, onDelete, onPin, showPinSt
                         fromUserId: user.uid,
                         timestamp: serverTimestamp(),
                         read: false,
-                        activityContent: post.content.substring(0, 100),
+                        activityContent: post.content?.substring(0, 100),
                     };
                     setDoc(notificationRef, { ...notificationData, id: notificationRef.id }).catch(serverError => {
                         console.error("Failed to create like notification:", serverError);
@@ -492,7 +494,7 @@ function InnerPostItem({ post, bookmarks, updatePost, onDelete, onPin, showPinSt
         <div>
              <Link href={`/profile/${post.authorId}`} className="flex-shrink-0">
                 <Avatar className="h-10 w-10">
-                    <AvatarImage src={isAvatarUrl ? avatar : undefined} alt={formatUserId(post.authorId)} />
+                    <AvatarImage src={isAvatarUrl ? avatar : undefined} alt={String(formatUserId(post.authorId))} />
                     <AvatarFallback>{!isAvatarUrl ? avatar : ''}</AvatarFallback>
                 </Avatar>
             </Link>
@@ -546,7 +548,7 @@ function InnerPostItem({ post, bookmarks, updatePost, onDelete, onPin, showPinSt
             </div>
 
             <Link href={`/post/${post.id}`} className="block">
-                <p className="text-foreground text-sm whitespace-pre-wrap">{post.content}</p>
+                {post.content && <p className="text-foreground text-sm whitespace-pre-wrap">{post.content}</p>}
             </Link>
 
             {post.type === 'quote' && post.quotedPost && (
@@ -603,6 +605,10 @@ function InnerPostItem({ post, bookmarks, updatePost, onDelete, onPin, showPinSt
 export function PostItem({ post, ...props }: { post: WithId<Post>, bookmarks: WithId<Bookmark>[] | null, updatePost?: (id: string, data: Partial<Post>) => void, onDelete?: (id: string) => void, onPin?: (id: string, currentStatus: boolean) => void, showPinStatus?: boolean, authorProfile?: WithId<User> | null }) {
     const { firestore } = useFirebase();
 
+    if (post.type === 'audio') {
+        return <AudioPostCard post={post} bookmarks={props.bookmarks} />;
+    }
+
     const originalPostRef = useMemoFirebase(() => {
         if (!firestore || post.type !== 'repost' || !post.repostOf) return null;
         return doc(firestore, 'posts', post.repostOf);
@@ -615,7 +621,6 @@ export function PostItem({ post, ...props }: { post: WithId<Post>, bookmarks: Wi
             return <PostSkeleton />;
         }
         if (!originalPost) {
-            // Original post might be deleted, so don't render anything
             return null;
         }
         return (

@@ -30,7 +30,7 @@ export interface Post {
     id: string;
     timestamp: Timestamp;
     authorId: string;
-    content: string;
+    content?: string;
     likes: string[];
     likeCount: number;
     repostCount: number;
@@ -40,7 +40,7 @@ export interface Post {
     expiresAt?: Timestamp;
 
     // Type of post
-    type?: 'text' | 'poll' | 'repost' | 'quote';
+    type?: 'text' | 'poll' | 'repost' | 'quote' | 'audio';
 
     // Poll specific fields
     pollOptions?: PollOption[];
@@ -52,6 +52,11 @@ export interface Post {
     // Repost/Quote specific fields
     repostOf?: string; // ID of the original post, for simple reposts
     quotedPost?: QuotedPost; // Denormalized data for a quoted post
+
+    // Audio post specific fields
+    audioUrl?: string;
+    audioWaveform?: number[];
+    audioDuration?: number;
 }
 
 export interface Comment {

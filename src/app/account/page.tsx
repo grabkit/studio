@@ -1,4 +1,5 @@
 
+
 "use client";
 
 import AppLayout from "@/components/AppLayout";
@@ -324,8 +325,7 @@ export default function AccountPage() {
                     initial={{ height: 0 }}
                     animate={{ height: 60 }}
                     exit={{ height: 0, transition: { duration: 0.2 } }}
-                    transition={{ duration: 0.4, ease: "easeInOut" }}
-                    className="bg-blue-500 flex items-center justify-center overflow-hidden absolute top-0 left-0 right-0 z-10"
+                    className="absolute top-0 left-0 right-0 bg-blue-500 flex items-center justify-center z-10"
                 >
                     <Loader2 className="h-6 w-6 animate-spin text-white" />
                 </motion.div>

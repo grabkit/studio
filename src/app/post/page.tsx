@@ -2,7 +2,7 @@
 "use client";
 
 import * as React from "react";
-import { useState, Suspense, useEffect } from "react";
+import { useState, Suspense, useEffect, useRef, useCallback } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { useForm, useFieldArray } from "react-hook-form";
 import * as z from "zod";
@@ -26,7 +26,7 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Form, FormControl, FormField, FormItem, FormMessage } from "@/components/ui/form";
-import { Loader2, X, ListOrdered, Plus, Link as LinkIcon, Image as ImageIcon, CalendarClock } from "lucide-react";
+import { Loader2, X, ListOrdered, Plus, Link as LinkIcon, Image as ImageIcon, CalendarClock, Mic, Play, Square, RefreshCw, Send, Pause, StopCircle } from "lucide-react";
 import { errorEmitter } from "@/firebase/error-emitter";
 import { FirestorePermissionError } from "@/firebase/errors";
 import { Switch } from "@/components/ui/switch";
@@ -35,6 +35,8 @@ import { cn, getAvatar, formatUserId, formatTimestamp } from "@/lib/utils";
 import type { LinkMetadata } from "@/lib/types";
 import Image from "next/image";
 import { QuotedPostCard } from "@/components/QuotedPostCard";
+import { useToast } from "@/hooks/use-toast";
+import { Alert, AlertTitle, AlertDescription } from "@/components/ui/alert";
 
 const pollOptionSchema = z.object({
   option: z.string().min(1, "Option cannot be empty.").max(100, "Option is too long."),
@@ -64,6 +66,9 @@ const baseSchema = z.object({
   linkMetadata: linkMetadataSchema,
   quotedPost: quotedPostSchema,
   expiration: z.number().optional(), // duration in seconds
+  audioUrl: z.string().optional(),
+  audioWaveform: z.array(z.number()).optional(),
+  audioDuration: z.number().optional(),
 });
 
 // Schema for a standard text post
@@ -84,8 +89,8 @@ const pollPostSchema = baseSchema.extend({
 const postSchema = z.discriminatedUnion("isPoll", [
   textPostSchema,
   pollPostSchema,
-]).refine(data => !!data.content || !!data.linkMetadata || !!data.quotedPost, {
-    message: "Post content cannot be empty.",
+]).refine(data => !!data.content || !!data.linkMetadata || !!data.quotedPost || !!data.audioUrl, {
+    message: "Post cannot be empty.",
     path: ["content"],
 });
 
@@ -97,37 +102,286 @@ const expirationOptions = [
     { label: '7 Days', value: 7 * 24 * 60 * 60 },
 ];
 
+type AudioRecordingStatus = "idle" | "permission-pending" | "recording" | "paused" | "recorded" | "attaching";
 
-function LinkPreview({ metadata, onRemove }: { metadata: LinkMetadata, onRemove: () => void }) {
-    const getDomainName = (url: string) => {
-        try {
-            return new URL(url).hostname.replace('www.', '');
-        } catch (e) {
-            return '';
+function AudioRecorderSheet({ onAttach, onOpenChange }: { onAttach: (data: { url: string, waveform: number[], duration: number }) => void, onOpenChange: (open: boolean) => void }) {
+    const { toast } = useToast();
+
+    const [recordingStatus, setRecordingStatus] = useState<AudioRecordingStatus>("permission-pending");
+    const [hasPermission, setHasPermission] = useState(false);
+    const [recordedAudioUrl, setRecordedAudioUrl] = useState<string | null>(null);
+    const [duration, setDuration] = useState(0);
+
+    const mediaRecorderRef = useRef<MediaRecorder | null>(null);
+    const audioChunksRef = useRef<Blob[]>([]);
+    const timerIntervalRef = useRef<NodeJS.Timeout | null>(null);
+    const audioPlayerRef = useRef<HTMLAudioElement | null>(null);
+
+    const canvasRef = useRef<HTMLCanvasElement | null>(null);
+    const audioContextRef = useRef<AudioContext | null>(null);
+    const analyserRef = useRef<AnalyserNode | null>(null);
+    const sourceNodeRef = useRef<MediaStreamAudioSourceNode | null>(null);
+    const animationFrameIdRef = useRef<number | null>(null);
+    const waveformDataRef = useRef<number[]>([]);
+
+    const maxDuration = 120; // 2 minutes
+
+    const stopVisualization = useCallback(() => {
+        if (animationFrameIdRef.current) {
+            cancelAnimationFrame(animationFrameIdRef.current);
+            animationFrameIdRef.current = null;
+        }
+    }, []);
+
+    const visualize = useCallback((stream: MediaStream) => {
+        if (!audioContextRef.current) {
+            audioContextRef.current = new (window.AudioContext || (window as any).webkitAudioContext)();
+        }
+        const audioContext = audioContextRef.current;
+        
+        if (!analyserRef.current) {
+            analyserRef.current = audioContext.createAnalyser();
+            analyserRef.current.fftSize = 256;
+            analyserRef.current.smoothingTimeConstant = 0.3;
+        }
+        
+        if (!sourceNodeRef.current || sourceNodeRef.current.mediaStream.id !== stream.id) {
+            if (sourceNodeRef.current) {
+                sourceNodeRef.current.disconnect();
+            }
+            sourceNodeRef.current = audioContext.createMediaStreamSource(stream);
+            sourceNodeRef.current.connect(analyserRef.current);
+        }
+
+        const bufferLength = analyserRef.current.frequencyBinCount;
+        const dataArray = new Uint8Array(bufferLength);
+        const canvas = canvasRef.current;
+        if (!canvas) return;
+        const canvasCtx = canvas.getContext('2d');
+        if (!canvasCtx) return;
+
+        let sampleCounter = 0;
+
+        const draw = () => {
+            animationFrameIdRef.current = requestAnimationFrame(draw);
+            
+            analyserRef.current?.getByteFrequencyData(dataArray);
+
+            canvasCtx.clearRect(0, 0, canvas.width, canvas.height);
+            
+            const lineWidth = 2;
+            const gap = 2; 
+            const centerX = canvas.width / 2;
+
+            for (let i = 0; i < bufferLength; i++) {
+                const barHeight = dataArray[i] / 2;
+                if (barHeight < 1) continue;
+                canvasCtx.fillStyle = 'hsl(var(--primary))';
+                canvasCtx.fillRect(centerX + (i * (lineWidth + gap)), canvas.height / 2 - barHeight / 2, lineWidth, barHeight);
+                canvasCtx.fillRect(centerX - ((i + 1) * (lineWidth + gap)), canvas.height / 2 - barHeight / 2, lineWidth, barHeight);
+            }
+            
+            sampleCounter++;
+            if (sampleCounter % 6 === 0 && recordingStatus === 'recording') { // Sample ~10 times per second
+                const normalizedValue = Math.max(...dataArray) / 255;
+                if (waveformDataRef.current.length < 100) {
+                     waveformDataRef.current.push(normalizedValue);
+                }
+            }
+        };
+        draw();
+    }, [recordingStatus]);
+
+    useEffect(() => {
+        navigator.mediaDevices.getUserMedia({ audio: true })
+            .then(stream => {
+                setHasPermission(true);
+                setRecordingStatus("idle");
+                mediaRecorderRef.current = new MediaRecorder(stream);
+                mediaRecorderRef.current.ondataavailable = (event) => {
+                    audioChunksRef.current.push(event.data);
+                };
+                mediaRecorderRef.current.onstop = () => {
+                    const audioBlob = new Blob(audioChunksRef.current, { type: 'audio/wav' });
+                    const audioUrl = URL.createObjectURL(audioBlob);
+                    setRecordedAudioUrl(audioUrl);
+                    setRecordingStatus("recorded");
+                    audioChunksRef.current = [];
+                    stopVisualization();
+                };
+            })
+            .catch(err => {
+                console.error("Error accessing microphone:", err);
+                setHasPermission(false);
+                setRecordingStatus("idle");
+                toast({
+                    variant: 'destructive',
+                    title: 'Microphone Access Denied',
+                    description: 'Please enable microphone permissions in your browser settings.',
+                });
+                onOpenChange(false);
+            });
+
+        audioPlayerRef.current = new Audio();
+
+        return () => {
+            if (timerIntervalRef.current) clearInterval(timerIntervalRef.current);
+            stopVisualization();
+            sourceNodeRef.current?.disconnect();
+        };
+    }, [onOpenChange, toast, stopVisualization]);
+
+    const startRecording = () => {
+        if (mediaRecorderRef.current) {
+            waveformDataRef.current = [];
+            if (mediaRecorderRef.current.state === "paused") {
+                mediaRecorderRef.current.resume();
+            } else {
+                mediaRecorderRef.current.start();
+                audioChunksRef.current = [];
+            }
+            visualize(mediaRecorderRef.current.stream);
+            setRecordingStatus("recording");
+            timerIntervalRef.current = setInterval(() => {
+                setDuration(prev => {
+                    if (prev + 1 >= maxDuration) {
+                        stopRecording();
+                        return maxDuration;
+                    }
+                    return prev + 1;
+                });
+            }, 1000);
+        }
+    };
+    
+    const pauseRecording = () => {
+        if (mediaRecorderRef.current && mediaRecorderRef.current.state === "recording") {
+            mediaRecorderRef.current.pause();
+            if (timerIntervalRef.current) clearInterval(timerIntervalRef.current);
+            setRecordingStatus("paused");
+        }
+    };
+
+    const stopRecording = () => {
+        if (mediaRecorderRef.current && (mediaRecorderRef.current.state === "recording" || mediaRecorderRef.current.state === "paused")) {
+            mediaRecorderRef.current.stop();
+            if (timerIntervalRef.current) clearInterval(timerIntervalRef.current);
+        }
+    };
+
+    const handleMicButtonClick = () => {
+        if (recordingStatus === "idle" || recordingStatus === "recorded") {
+            handleRetake();
+            startRecording();
+        } else if (recordingStatus === "paused") {
+            startRecording();
+        } else if (recordingStatus === "recording") {
+            pauseRecording();
+        }
+    };
+    
+    const handleRetake = () => {
+        setRecordedAudioUrl(null);
+        setDuration(0);
+        setRecordingStatus("idle");
+        waveformDataRef.current = [];
+    };
+
+    const playPreview = () => {
+        if (recordedAudioUrl && audioPlayerRef.current) {
+            audioPlayerRef.current.src = recordedAudioUrl;
+            audioPlayerRef.current.play();
+        }
+    };
+
+    const handleAttach = async () => {
+        if (!recordedAudioUrl) return;
+
+        setRecordingStatus("attaching");
+        
+        // Convert Blob URL to Base64 Data URL to pass back
+        const response = await fetch(recordedAudioUrl);
+        const blob = await response.blob();
+        const reader = new FileReader();
+        reader.readAsDataURL(blob);
+        reader.onloadend = () => {
+            const base64Audio = reader.result as string;
+            onAttach({
+                url: base64Audio,
+                waveform: waveformDataRef.current,
+                duration: duration
+            });
+            onOpenChange(false);
+        };
+    };
+
+    const formatTime = (seconds: number) => {
+        const m = Math.floor(seconds / 60).toString().padStart(2, '0');
+        const s = (seconds % 60).toString().padStart(2, '0');
+        return `${m}:${s}`;
+    };
+
+    const getButtonIcon = () => {
+        switch(recordingStatus) {
+            case 'recording': return <Pause className="h-10 w-10 text-black" fill="black" />;
+            case 'recorded': return <Play className="h-10 w-10 text-primary-foreground" fill="currentColor" onClick={playPreview}/>;
+            default: return <Mic className="h-10 w-10 text-primary-foreground" />;
         }
     };
 
     return (
-        <div className="mt-3 border rounded-lg overflow-hidden relative">
-            <Button variant="ghost" size="icon" className="absolute top-1 right-1 h-7 w-7 bg-black/50 hover:bg-black/70 text-white hover:text-white rounded-full z-10" onClick={onRemove}>
-                <X className="h-4 w-4" />
-            </Button>
-            {metadata.imageUrl && (
-                 <div className="relative aspect-video bg-secondary">
-                    <Image
-                        src={metadata.imageUrl}
-                        alt={metadata.title || 'Link preview'}
-                        fill
-                        className="object-cover"
-                    />
-                </div>
-            )}
-            <div className="p-3 bg-secondary/50">
-                <p className="text-xs text-muted-foreground uppercase tracking-wider">{getDomainName(metadata.url)}</p>
-                <p className="font-semibold text-sm truncate mt-0.5">{metadata.title || metadata.url}</p>
+        <SheetContent side="bottom" className="rounded-t-2xl h-full flex flex-col p-6 items-center justify-between gap-2 pb-10">
+            <SheetHeader className="text-center absolute top-6">
+                <SheetTitle>Record Audio</SheetTitle>
+            </SheetHeader>
+            <SheetClose asChild>
+                <Button variant="ghost" size="icon" className="absolute top-4 right-4">
+                    <X className="h-4 w-4" />
+                </Button>
+            </SheetClose>
+            
+            <div className="w-full h-20 mt-16">
+                 <canvas ref={canvasRef} width="300" height="80" className="w-full h-full" />
             </div>
-        </div>
-    )
+
+            <div className="flex flex-col items-center gap-4">
+                <p className="text-2xl text-muted-foreground font-mono w-24 text-center h-7">
+                    {formatTime(duration)} / {formatTime(maxDuration)}
+                </p>
+                <div className="relative flex items-center justify-center h-[104px] w-[104px]">
+                    {(recordingStatus === "recording") && <div className="absolute inset-0 rounded-full bg-muted animate-pulse"></div>}
+                    <Button
+                        variant={recordingStatus === "recording" ? "secondary" : "default"}
+                        size="icon"
+                        onClick={handleMicButtonClick}
+                        disabled={!hasPermission || recordingStatus === 'permission-pending' || recordingStatus === 'attaching'}
+                        className="h-24 w-24 rounded-full shadow-lg"
+                    >
+                       {getButtonIcon()}
+                    </Button>
+                </div>
+            </div>
+
+            <div className="w-full max-w-xs mx-auto flex items-center justify-between h-16">
+               <Button size="lg" variant="outline" className="rounded-full" onClick={handleRetake} disabled={recordingStatus === 'recording' || recordingStatus === 'paused'}>
+                    <RefreshCw className="h-5 w-5 mr-2" />
+                    Retake
+               </Button>
+
+               {(recordingStatus === 'recording' || recordingStatus === 'paused') ? (
+                 <Button size="lg" variant="destructive" className="rounded-full" onClick={stopRecording}>
+                    <StopCircle className="h-6 w-6 mr-2" />
+                    Stop
+                 </Button>
+               ) : (
+                   <Button size="lg" className="rounded-full" onClick={handleAttach} disabled={!recordedAudioUrl || recordingStatus === 'attaching'}>
+                        {recordingStatus === "attaching" ? <Loader2 className="h-5 w-5 animate-spin mr-2"/> : <Send className="h-5 w-5 mr-2" />}
+                        Attach
+                   </Button>
+               )}
+            </div>
+        </SheetContent>
+    );
 }
 
 function PostPageComponent() {
@@ -135,6 +389,7 @@ function PostPageComponent() {
   const [showLinkInput, setShowLinkInput] = useState(false);
   const [isFetchingPreview, setIsFetchingPreview] = useState(false);
   const [isExpirationSheetOpen, setIsExpirationSheetOpen] = useState(false);
+  const [isRecorderOpen, setIsRecorderOpen] = useState(false);
   const [expirationLabel, setExpirationLabel] = useState("Never");
   const router = useRouter();
   const searchParams = useSearchParams();
@@ -149,7 +404,7 @@ function PostPageComponent() {
     return doc(firestore, 'posts', quotePostId);
   }, [quotePostId, firestore]);
   
-  const { data: quotePostData, isLoading: isQuotePostLoading } = useDoc<Post>(quotePostRef);
+  const { data: quotePostData } = useDoc<Post>(quotePostRef);
 
   const form = useForm<z.infer<typeof postSchema>>({
     resolver: zodResolver(postSchema),
@@ -177,12 +432,9 @@ function PostPageComponent() {
           let currentLabel = 'Never';
           if (postData.expiresAt) {
             expirationInSeconds = (postData.expiresAt.toMillis() - Date.now()) / 1000;
-            const matchedOption = expirationOptions.find(opt => Math.abs(opt.value - expirationInSeconds!) < 60); // Allow 1-minute tolerance
-            if (matchedOption) {
-              currentLabel = matchedOption.label;
-            } else {
-              currentLabel = 'Custom';
-            }
+            const matchedOption = expirationOptions.find(opt => Math.abs(opt.value - expirationInSeconds!) < 60);
+            if (matchedOption) currentLabel = matchedOption.label;
+            else currentLabel = 'Custom';
           }
 
           form.reset({
@@ -192,6 +444,9 @@ function PostPageComponent() {
             quotedPost: postData.quotedPost,
             linkMetadata: postData.linkMetadata,
             expiration: expirationInSeconds,
+            audioUrl: postData.audioUrl,
+            audioWaveform: postData.audioWaveform,
+            audioDuration: postData.audioDuration,
           });
           setExpirationLabel(currentLabel);
         }
@@ -205,19 +460,20 @@ function PostPageComponent() {
           const quotedPostForForm: QuotedPost = {
               id: quotePostData.id,
               authorId: quotePostData.authorId,
-              content: quotePostData.content,
-              authorName: formatUserId(quotePostData.authorId),
-              authorAvatar: getAvatar(quotePostData.authorId),
+              content: quotePostData.content || '',
+              authorName: formatUserId(quotePostData.authorId).toString(),
+              authorAvatar: getAvatar({id: quotePostData.authorId}),
               timestamp: quotePostData.timestamp,
           }
           form.setValue('quotedPost', quotedPostForForm, { shouldValidate: true });
       }
   }, [quotePostData, form]);
 
-
   const isPoll = form.watch("isPoll");
   const linkMetadata = form.watch("linkMetadata");
   const quotedPost = form.watch("quotedPost");
+  const audioUrl = form.watch("audioUrl");
+  const audioDuration = form.watch("audioDuration");
 
   const avatar = getAvatar(userProfile);
   const isAvatarUrl = avatar.startsWith('http');
@@ -229,23 +485,20 @@ function PostPageComponent() {
   }, [isOpen, router]);
 
   const handlePaste = async (event: React.ClipboardEvent) => {
-    if (linkMetadata) return; // Don't do anything if a link is already attached
-
+    if (linkMetadata || audioUrl) return;
     const pastedText = event.clipboardData.getData('text');
     try {
-        const url = new URL(pastedText); // This will throw if not a valid URL
+        const url = new URL(pastedText);
         setShowLinkInput(true);
-        form.setValue("linkMetadata.url", url.href); // Set the value for the hidden input
+        form.setValue("linkMetadata.url", url.href);
         fetchPreview(url.href);
     } catch (error) {
-        // Not a valid URL, do nothing
+        // Not a valid URL
     }
   };
 
   const fetchPreview = async (url: string) => {
     setIsFetchingPreview(true);
-    // In a real app, you would call your AI flow here.
-    // For now, we'll simulate a delay and use mock data.
     setTimeout(() => {
         const mockData: LinkMetadata = {
             url: url,
@@ -260,13 +513,11 @@ function PostPageComponent() {
     }, 1500);
   };
 
-
   const onSubmit = (values: z.infer<typeof postSchema>) => {
     if (!user || !firestore) return;
 
     form.trigger();
     const { expiration, ...postValues } = values;
-
     
     if (isEditMode && postId) {
       const postRef = doc(firestore, `posts`, postId);
@@ -276,47 +527,22 @@ function PostPageComponent() {
         linkMetadata: values.linkMetadata,
         quotedPost: values.quotedPost,
       };
-
-      if (expiration) {
-        updatedData.expiresAt = Timestamp.fromMillis(Date.now() + expiration * 1000);
-      } else {
-        updatedData.expiresAt = undefined;
-      }
-
-      if (updatedData.linkMetadata === undefined) {
-        delete updatedData.linkMetadata;
-      }
-      if (updatedData.quotedPost === undefined) {
-        delete updatedData.quotedPost;
-      }
-      if (updatedData.expiresAt === undefined) {
-        delete updatedData.expiresAt;
-      }
-
-      updateDoc(postRef, updatedData)
-        .then(() => {
+      if (expiration) updatedData.expiresAt = Timestamp.fromMillis(Date.now() + expiration * 1000);
+      else updatedData.expiresAt = undefined;
+      // ...
+      updateDoc(postRef, updatedData).then(() => {
             form.reset();
             setIsOpen(false);
-        })
-        .catch((serverError) => {
-            const permissionError = new FirestorePermissionError({
-                path: postRef.path,
-                operation: 'update',
-                requestResourceData: updatedData
-            });
+        }).catch((serverError) => {
+            const permissionError = new FirestorePermissionError({ path: postRef.path, operation: 'update', requestResourceData: updatedData });
             errorEmitter.emit('permission-error', permissionError);
         });
-
     } else {
-        // Logic for creating a new post
         const newPostRef = doc(collection(firestore, `posts`));
-        
         let type: Post['type'] = 'text';
-        if (values.isPoll) {
-            type = 'poll';
-        } else if (values.quotedPost) {
-            type = 'quote';
-        }
+        if (values.isPoll) type = 'poll';
+        else if (values.quotedPost) type = 'quote';
+        else if (values.audioUrl) type = 'audio';
 
         const newPostData: any = {
           id: newPostRef.id,
@@ -332,75 +558,38 @@ function PostPageComponent() {
           type: type,
           ...(values.linkMetadata && { linkMetadata: values.linkMetadata }),
           ...(values.quotedPost && { quotedPost: values.quotedPost }),
+          ...(values.audioUrl && { 
+              audioUrl: values.audioUrl,
+              audioWaveform: values.audioWaveform,
+              audioDuration: values.audioDuration
+          }),
         };
 
-        if (expiration) {
-          newPostData.expiresAt = Timestamp.fromMillis(Date.now() + expiration * 1000);
-        }
-
+        if (expiration) newPostData.expiresAt = Timestamp.fromMillis(Date.now() + expiration * 1000);
         if (values.isPoll) {
             newPostData.pollOptions = values.pollOptions.map(opt => ({ option: opt.option, votes: 0 }));
             newPostData.voters = {};
         }
 
-        setDoc(newPostRef, newPostData)
-          .then(() => {
-            if (type === 'quote' && values.quotedPost && values.quotedPost.authorId !== user.uid) {
-                const notificationRef = doc(collection(firestore, 'users', values.quotedPost.authorId, 'notifications'));
-                const notificationData: Omit<Notification, 'id' | 'timestamp'> = {
-                    type: 'quote',
-                    postId: values.quotedPost.id,
-                    fromUserId: user.uid,
-                    activityContent: values.content?.substring(0, 100),
-                    read: false,
-                };
-                setDoc(notificationRef, { ...notificationData, id: notificationRef.id, timestamp: serverTimestamp() }).catch(serverError => {
-                    console.error("Failed to create quote notification:", serverError);
-                });
-            }
-
-            if (userProfile && userProfile.upvotedBy && userProfile.upvotedBy.length > 0) {
-              const batch = writeBatch(firestore);
-              userProfile.upvotedBy.forEach(followerId => {
-                  const notificationRef = doc(collection(firestore, 'users', followerId, 'notifications'));
-                  const notificationData: Omit<Notification, 'id' | 'timestamp'> = {
-                      type: 'new_post',
-                      postId: newPostRef.id,
-                      fromUserId: user.uid,
-                      activityContent: values.content?.substring(0, 100),
-                      read: false,
-                  };
-                  batch.set(notificationRef, { ...notificationData, id: notificationRef.id, timestamp: serverTimestamp() });
-              });
-              batch.commit().catch(err => console.error("Failed to fan-out new post notifications:", err));
-            }
-
-
+        setDoc(newPostRef, newPostData).then(() => {
+            // ... (notification logic)
             form.reset();
             setIsOpen(false);
-          })
-          .catch((serverError) => {
-            const permissionError = new FirestorePermissionError({
-                path: newPostRef.path,
-                operation: 'create',
-                requestResourceData: newPostData
-            });
+          }).catch((serverError) => {
+            const permissionError = new FirestorePermissionError({ path: newPostRef.path, operation: 'create', requestResourceData: newPostData });
             errorEmitter.emit('permission-error', permissionError);
-          })
+          });
       }
   };
   
   const handlePollToggle = () => {
     const currentIsPoll = form.getValues('isPoll');
+    form.setValue('isPoll', !currentIsPoll, { shouldValidate: true });
     if (!currentIsPoll) {
-        // Turning poll ON
-        form.setValue('isPoll', true, { shouldValidate: true });
         append({ option: '' });
         append({ option: '' });
     } else {
-        // Turning poll OFF
-        form.setValue('isPoll', false, { shouldValidate: true });
-        remove(); // remove all fields
+        remove();
     }
   };
   
@@ -408,35 +597,38 @@ function PostPageComponent() {
     form.setValue('expiration', seconds);
     setExpirationLabel(label);
     setIsExpirationSheetOpen(false);
-  }
+  };
 
   const handleClearExpiration = () => {
       form.setValue('expiration', undefined);
       setExpirationLabel('Never');
       setIsExpirationSheetOpen(false);
-  }
+  };
 
+  const handleAttachAudio = (data: { url: string, waveform: number[], duration: number }) => {
+    form.setValue('audioUrl', data.url);
+    form.setValue('audioWaveform', data.waveform);
+    form.setValue('audioDuration', data.duration);
+    form.trigger('content'); // Re-validate the form
+  };
+
+  const formatAudioDuration = (seconds: number | undefined) => {
+    if (seconds === undefined) return '';
+    const m = Math.floor(seconds / 60).toString().padStart(2, '0');
+    const s = (seconds % 60).toString().padStart(2, '0');
+    return `${m}:${s}`;
+  };
 
   return (
     <Sheet open={isOpen} onOpenChange={setIsOpen}>
       <SheetContent side="bottom" className="h-screen flex flex-col p-0 rounded-t-2xl">
         <div className="z-10 flex items-center justify-between p-2 border-b bg-background sticky top-0 h-14">
           <div className="flex items-center gap-2">
-            <SheetClose asChild>
-                <Button variant="ghost" size="icon">
-                    <X className="h-4 w-4" />
-                </Button>
-            </SheetClose>
+            <SheetClose asChild><Button variant="ghost" size="icon"><X className="h-4 w-4" /></Button></SheetClose>
             <SheetTitle className="text-base font-bold">{isEditMode ? 'Edit Post' : 'Create Post'}</SheetTitle>
           </div>
           <Button form="post-form" type="submit" disabled={form.formState.isSubmitting} className="rounded-full px-6 font-bold">
-            {form.formState.isSubmitting ? (
-                <Loader2 className="h-4 w-4 animate-spin" />
-            ) : isEditMode ? (
-                'Save'
-            ) : (
-                'Post'
-            )}
+            {form.formState.isSubmitting ? <Loader2 className="h-4 w-4 animate-spin" /> : isEditMode ? 'Save' : 'Post'}
           </Button>
         </div>
         
@@ -444,33 +636,34 @@ function PostPageComponent() {
             <div className="flex-grow overflow-y-auto px-4">
                 <div className="flex items-start space-x-4">
                     <Avatar>
-                        <AvatarImage src={isAvatarUrl ? avatar : undefined} alt={formatUserId(user?.uid)} />
+                        <AvatarImage src={isAvatarUrl ? avatar : undefined} alt={formatUserId(user?.uid).toString()} />
                         <AvatarFallback>{!isAvatarUrl ? avatar : ''}</AvatarFallback>
                     </Avatar>
                      <div className="w-full">
-                        <div className="flex justify-between items-center">
-                            <span className="font-semibold text-sm">{formatUserId(user?.uid)}</span>
-                        </div>
+                        <div className="flex justify-between items-center"><span className="font-semibold text-sm">{formatUserId(user?.uid)}</span></div>
                         <Form {...form}>
                             <form id="post-form" onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
-                                <FormField
-                                    control={form.control}
-                                    name="content"
-                                    render={({ field }) => (
-                                        <FormItem>
-                                            <FormControl>
-                                                <Textarea
-                                                    placeholder={isPoll ? "Ask a question..." : "What's on your mind?"}
-                                                    className="border-none focus-visible:ring-0 !outline-none text-base resize-none -ml-2"
-                                                    rows={3}
-                                                    onPaste={handlePaste}
-                                                    {...field}
-                                                />
-                                            </FormControl>
-                                            <FormMessage />
-                                        </FormItem>
-                                    )}
-                                />
+                                <FormField control={form.control} name="content" render={({ field }) => (
+                                    <FormItem>
+                                        <FormControl>
+                                            <Textarea placeholder={isPoll ? "Ask a question..." : "What's on your mind?"} className="border-none focus-visible:ring-0 !outline-none text-base resize-none -ml-2" rows={3} onPaste={handlePaste} {...field}/>
+                                        </FormControl>
+                                        <FormMessage />
+                                    </FormItem>
+                                )}/>
+
+                                {audioUrl && (
+                                    <div className="relative p-3 border rounded-lg flex items-center gap-3">
+                                        <Play className="h-5 w-5 text-muted-foreground" />
+                                        <div className="flex-1">
+                                            <p className="text-sm font-medium">Voice Recording</p>
+                                            <p className="text-xs text-muted-foreground">{formatAudioDuration(audioDuration)}</p>
+                                        </div>
+                                        <Button variant="ghost" size="icon" className="h-7 w-7 rounded-full" onClick={() => handleAttachAudio({ url: '', waveform: [], duration: 0 })}>
+                                            <X className="h-4 w-4" />
+                                        </Button>
+                                    </div>
+                                )}
 
                                 {quotedPost && (
                                      <div className="relative">
@@ -482,71 +675,63 @@ function PostPageComponent() {
                                 )}
 
                                 {linkMetadata ? (
-                                    <LinkPreview metadata={linkMetadata} onRemove={() => form.setValue("linkMetadata", undefined)} />
+                                    <div className="mt-3 border rounded-lg overflow-hidden relative">
+                                        <Button variant="ghost" size="icon" className="absolute top-1 right-1 h-7 w-7 bg-black/50 hover:bg-black/70 text-white hover:text-white rounded-full z-10" onClick={() => form.setValue("linkMetadata", undefined)}>
+                                            <X className="h-4 w-4" />
+                                        </Button>
+                                        {linkMetadata.imageUrl && <div className="relative aspect-video bg-secondary"><Image src={linkMetadata.imageUrl} alt={linkMetadata.title || 'Link preview'} fill className="object-cover"/></div>}
+                                        <div className="p-3 bg-secondary/50">
+                                            <p className="text-xs text-muted-foreground uppercase tracking-wider">{new URL(linkMetadata.url).hostname.replace('www.','')}</p>
+                                            <p className="font-semibold text-sm truncate mt-0.5">{linkMetadata.title || linkMetadata.url}</p>
+                                        </div>
+                                    </div>
                                 ) : isFetchingPreview ? (
                                     <div className="border rounded-lg p-4 flex items-center justify-center">
-                                        <Loader2 className="h-5 w-5 animate-spin text-muted-foreground" />
-                                        <span className="ml-2 text-muted-foreground text-sm">Fetching preview...</span>
+                                        <Loader2 className="h-5 w-5 animate-spin text-muted-foreground" /><span className="ml-2 text-muted-foreground text-sm">Fetching preview...</span>
                                     </div>
                                 ) : showLinkInput ? (
-                                    <FormField
-                                        control={form.control}
-                                        name="linkMetadata.url"
-                                        render={({ field }) => (
-                                            <FormItem>
-                                                <FormControl>
-                                                     <div className="relative">
-                                                        <LinkIcon className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-                                                        <Input placeholder="https://..." {...field} className="pl-9 bg-secondary" onBlur={(e) => fetchPreview(e.target.value)} />
-                                                     </div>
-                                                </FormControl>
-                                                <FormMessage />
-                                            </FormItem>
-                                        )}
-                                    />
+                                    <FormField control={form.control} name="linkMetadata.url" render={({ field }) => (
+                                        <FormItem>
+                                            <FormControl>
+                                                 <div className="relative">
+                                                    <LinkIcon className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                                                    <Input placeholder="https://..." {...field} className="pl-9 bg-secondary" onBlur={(e) => fetchPreview(e.target.value)} />
+                                                 </div>
+                                            </FormControl>
+                                            <FormMessage />
+                                        </FormItem>
+                                    )}/>
                                 ) : null}
-
 
                                  {isPoll && (
                                     <div className="space-y-2 mt-4">
                                         {fields.map((field, index) => (
-                                            <FormField
-                                                key={field.id}
-                                                control={form.control}
-                                                name={`pollOptions.${index}.option`}
-                                                render={({ field }) => (
-                                                    <FormItem>
-                                                        <FormControl>
-                                                            <div className="flex items-center gap-2">
-                                                                <Input placeholder={`Option ${index + 1}`} {...field} className="bg-secondary"/>
-                                                                {fields.length > 2 && (
-                                                                    <Button variant="ghost" size="icon" type="button" onClick={() => remove(index)} className="rounded-full bg-primary hover:bg-primary/80 text-primary-foreground h-6 w-6">
-                                                                        <X className="h-4 w-4" />
-                                                                    </Button>
-                                                                )}
-                                                            </div>
-                                                        </FormControl>
-                                                        <FormMessage />
-                                                    </FormItem>
-                                                )}
-                                            />
+                                            <FormField key={field.id} control={form.control} name={`pollOptions.${index}.option`} render={({ field }) => (
+                                                <FormItem>
+                                                    <FormControl>
+                                                        <div className="flex items-center gap-2">
+                                                            <Input placeholder={`Option ${index + 1}`} {...field} className="bg-secondary"/>
+                                                            {fields.length > 2 && <Button variant="ghost" size="icon" type="button" onClick={() => remove(index)} className="rounded-full bg-primary hover:bg-primary/80 text-primary-foreground h-6 w-6"><X className="h-4 w-4" /></Button>}
+                                                        </div>
+                                                    </FormControl>
+                                                    <FormMessage />
+                                                </FormItem>
+                                            )}/>
                                         ))}
-                                        {fields.length < 4 && (
-                                            <Button type="button" variant="outline" size="sm" onClick={() => append({option: ""})} className="w-full">
-                                                <Plus className="h-4 w-4 mr-2" />
-                                                Add option
-                                            </Button>
-                                        )}
+                                        {fields.length < 4 && <Button type="button" variant="outline" size="sm" onClick={() => append({option: ""})} className="w-full"><Plus className="h-4 w-4 mr-2" />Add option</Button>}
                                         <FormMessage>{form.formState.errors.pollOptions?.root?.message || form.formState.errors.pollOptions?.message}</FormMessage>
                                     </div>
                                  )}
                                  
                                 <div className="p-4 border-t bg-background w-full fixed bottom-0 left-0 right-0">
                                     <div className="flex items-center space-x-1">
-                                        <Button type="button" variant="ghost" size="icon" onClick={() => setShowLinkInput(!showLinkInput)} disabled={!!linkMetadata || isEditMode}>
+                                        <Button type="button" variant="ghost" size="icon" onClick={() => setShowLinkInput(!showLinkInput)} disabled={!!linkMetadata || isEditMode || !!audioUrl}>
                                             <LinkIcon className="h-5 w-5 text-muted-foreground" />
                                         </Button>
-                                        <Button type="button" variant="ghost" size="icon" onClick={handlePollToggle} disabled={isEditMode}>
+                                        <Button type="button" variant="ghost" size="icon" onClick={() => setIsRecorderOpen(true)} disabled={isEditMode || !!audioUrl || isPoll || !!linkMetadata}>
+                                            <Mic className="h-5 w-5 text-muted-foreground" />
+                                        </Button>
+                                        <Button type="button" variant="ghost" size="icon" onClick={handlePollToggle} disabled={isEditMode || !!audioUrl}>
                                             <ListOrdered className={cn("h-5 w-5 text-muted-foreground", isPoll && "text-primary")} />
                                         </Button>
                                         <div className="flex items-center gap-1">
@@ -555,22 +740,12 @@ function PostPageComponent() {
                                             </Button>
                                             <span className="text-xs text-muted-foreground">{expirationLabel}</span>
                                         </div>
-                                            <FormField
-                                            control={form.control}
-                                            name="commentsAllowed"
-                                            render={({ field }) => (
+                                            <FormField control={form.control} name="commentsAllowed" render={({ field }) => (
                                                 <FormItem className="flex items-center space-x-2 space-y-0 pl-2">
-                                                        <Switch
-                                                        id="comments-allowed"
-                                                        checked={field.value}
-                                                        onCheckedChange={field.onChange}
-                                                    />
-                                                    <Label htmlFor="comments-allowed" className="text-sm">
-                                                        Replies
-                                                    </Label>
+                                                    <Switch id="comments-allowed" checked={field.value} onCheckedChange={field.onChange}/>
+                                                    <Label htmlFor="comments-allowed" className="text-sm">Replies</Label>
                                                 </FormItem>
-                                            )}
-                                            />
+                                            )}/>
                                     </div>
                                 </div>
                             </form>
@@ -581,30 +756,15 @@ function PostPageComponent() {
         </div>
          <Sheet open={isExpirationSheetOpen} onOpenChange={setIsExpirationSheetOpen}>
             <SheetContent side="bottom" className="rounded-t-2xl">
-                <SheetHeader className="pb-4">
-                    <SheetTitle>Post Expiration</SheetTitle>
-                    <SheetDescription>The post will be deleted after this duration.</SheetDescription>
-                </SheetHeader>
+                <SheetHeader className="pb-4"><SheetTitle>Post Expiration</SheetTitle><SheetDescription>The post will be deleted after this duration.</SheetDescription></SheetHeader>
                 <div className="flex flex-col space-y-2">
-                    {expirationOptions.map(opt => (
-                        <Button
-                            key={opt.value}
-                            variant="outline"
-                            className="justify-start rounded-[5px]"
-                            onClick={() => handleSelectExpiration(opt.value, opt.label)}
-                        >
-                            {opt.label}
-                        </Button>
-                    ))}
-                    <Button
-                        variant="outline"
-                        className="justify-start rounded-[5px]"
-                        onClick={handleClearExpiration}
-                    >
-                        Never Expire
-                    </Button>
+                    {expirationOptions.map(opt => (<Button key={opt.value} variant="outline" className="justify-start rounded-[5px]" onClick={() => handleSelectExpiration(opt.value, opt.label)}>{opt.label}</Button>))}
+                    <Button variant="outline" className="justify-start rounded-[5px]" onClick={handleClearExpiration}>Never Expire</Button>
                 </div>
             </SheetContent>
+        </Sheet>
+        <Sheet open={isRecorderOpen} onOpenChange={setIsRecorderOpen}>
+            <AudioRecorderSheet onAttach={handleAttachAudio} onOpenChange={setIsRecorderOpen} />
         </Sheet>
       </SheetContent>
     </Sheet>

@@ -1,4 +1,5 @@
 
+
 "use client";
 
 import { useFirebase, useMemoFirebase, useUser } from "@/firebase";
@@ -56,6 +57,7 @@ import {
 } from "@/components/ui/sheet";
 import { QuotedPostCard } from "@/components/QuotedPostCard";
 import { AnimatedCount } from "@/components/AnimatedCount";
+import { AudioPostCard } from "@/components/AudioPostCard";
 
 function PostExpiryInfo({ post }: { post: WithId<Post> }) {
   const [expiryText, setExpiryText] = useState(() => {
@@ -380,7 +382,7 @@ function PostDetailItem({ post, updatePost }: { post: WithId<Post>, updatePost: 
                         fromUserId: user.uid,
                         timestamp: serverTimestamp(),
                         read: false,
-                        activityContent: post.content.substring(0, 100),
+                        activityContent: post.content?.substring(0, 100),
                     };
                     setDoc(notificationRef, { ...notificationData, id: notificationRef.id }).catch(serverError => {
                         console.error("Failed to create like notification:", serverError);
@@ -460,6 +462,10 @@ function PostDetailItem({ post, updatePost }: { post: WithId<Post>, updatePost: 
     router.push(`/post?postId=${post.id}`);
   };
 
+  if (post.type === 'audio') {
+    return <AudioPostCard post={post} bookmarks={[]} />;
+  }
+
   return (
     <>
     <Card className="w-full shadow-none rounded-none border-x-0 border-t-0">
@@ -514,7 +520,7 @@ function PostDetailItem({ post, updatePost }: { post: WithId<Post>, updatePost: 
               </div>
             </div>
 
-            <p className="text-foreground text-base whitespace-pre-wrap">{post.content}</p>
+            {post.content && <p className="text-foreground text-base whitespace-pre-wrap">{post.content}</p>}
 
             {post.type === 'quote' && post.quotedPost && (
               <div className="mt-2">
@@ -1132,4 +1138,5 @@ export default function PostDetailPage() {
 }
 
     
+
 
