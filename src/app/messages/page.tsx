@@ -619,9 +619,9 @@ export default function MessagesPage() {
                             animate={{ height: 60 }}
                             exit={{ height: 0, transition: { duration: 0.2 } }}
                             transition={{ duration: 0.4, ease: "easeInOut" }}
-                            className="bg-black flex items-center justify-center overflow-hidden absolute top-0 left-0 right-0 z-10"
+                            className="bg-primary flex items-center justify-center overflow-hidden absolute top-0 left-0 right-0 z-10"
                         >
-                            <Loader2 className="h-6 w-6 animate-spin text-white" />
+                            <Loader2 className="h-6 w-6 animate-spin text-primary-foreground" />
                         </motion.div>
                     )}
                 </AnimatePresence>
