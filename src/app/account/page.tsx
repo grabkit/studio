@@ -30,7 +30,8 @@ import {
   SheetDescription,
   SheetClose,
 } from "@/components/ui/sheet";
-import { motion } from "framer-motion";
+import { motion, AnimatePresence } from "framer-motion";
+import { eventBus } from "@/lib/event-bus";
 
 
 function BookmarksList({ bookmarks, bookmarksLoading }: { bookmarks: WithId<Bookmark>[] | null, bookmarksLoading: boolean }) {
@@ -126,6 +127,7 @@ export default function AccountPage() {
   const [posts, setPosts] = useState<WithId<Post>[]>([]);
   const [postsLoading, setPostsLoading] = useState(true);
   const [currentTime, setCurrentTime] = useState(new Date());
+  const [isRefreshing, setIsRefreshing] = useState(false);
 
   useEffect(() => {
     const timer = setInterval(() => setCurrentTime(new Date()), 30000); // Check every 30s
@@ -168,6 +170,27 @@ export default function AccountPage() {
             setPostsLoading(false);
         }
     }, [firestore, authUser]);
+    
+    const handleRefresh = useCallback(async () => {
+        setIsRefreshing(true);
+        eventBus.emit('scroll-main-to-top');
+
+        await fetchPosts();
+
+        // Short delay for better UX
+        await new Promise(resolve => setTimeout(resolve, 750));
+        setIsRefreshing(false);
+    }, [fetchPosts]);
+
+    useEffect(() => {
+        const refreshHandler = () => handleRefresh();
+        eventBus.on('refresh-account', refreshHandler);
+
+        return () => {
+            eventBus.off('refresh-account', refreshHandler);
+        };
+    }, [handleRefresh]);
+
 
   useEffect(() => {
     fetchPosts();
@@ -293,15 +316,33 @@ export default function AccountPage() {
 
   return (
     <AppLayout showTopBar={false}>
-       <motion.div
-        className="h-full"
-        initial={{ scale: 0.98, opacity: 0 }}
-        animate={{ scale: 1, opacity: 1 }}
-        transition={{ duration: 0.3 }}
-      >
-        <div
-            className="relative h-full overflow-y-auto"
+       <div className="relative h-full">
+        <AnimatePresence>
+            {isRefreshing && (
+                <motion.div
+                    key="account-refresh-indicator"
+                    initial={{ height: 0 }}
+                    animate={{ height: 60 }}
+                    exit={{ height: 0, transition: { duration: 0.2 } }}
+                    transition={{ duration: 0.4, ease: "easeInOut" }}
+                    className="bg-blue-500 flex items-center justify-center overflow-hidden absolute top-0 left-0 right-0 z-10"
+                >
+                    <Loader2 className="h-6 w-6 animate-spin text-white" />
+                </motion.div>
+            )}
+        </AnimatePresence>
+
+        <motion.div
+            className="h-full"
+            animate={{ paddingTop: isRefreshing ? 60 : 0 }}
+            transition={{ duration: 0.4, ease: "easeInOut" }}
         >
+          <motion.div
+            className="h-full"
+            initial={{ scale: 0.98, opacity: 0 }}
+            animate={{ scale: 1, opacity: 1 }}
+            transition={{ duration: 0.3 }}
+          >
             <div>
                 <div className="flex items-center justify-between h-14 px-4 bg-background">
                     <Link href="/post" className={cn(buttonVariants({ variant: "ghost", size: "icon" }))}>
@@ -437,8 +478,9 @@ export default function AccountPage() {
                         </TabsContent>
                     </Tabs>
                 </div>
-            </div>
+            </motion.div>
         </motion.div>
+      </div>
     </AppLayout>
   )
 }

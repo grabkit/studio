@@ -17,7 +17,7 @@ const navItems = [
   { href: "/activity", label: "Activity", icon: HeartIcon, activeIcon: HeartIcon, event: "refresh-activity" },
   { href: "/search", label: "Search", icon: Search, activeIcon: Search },
   { href: "/messages", label: "Messages", icon: Send, activeIcon: Send, event: "refresh-messages" },
-  { href: "/account", label: "Account", icon: User, activeIcon: User },
+  { href: "/account", label: "Account", icon: User, activeIcon: User, event: "refresh-account" },
 ];
 
 // This needs to be consistent with the definition in activity/page.tsx
