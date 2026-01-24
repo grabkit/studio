@@ -75,6 +75,7 @@ const baseSchema = z.object({
   audioUrl: z.string().optional(),
   audioWaveform: z.array(z.number()).optional(),
   audioDuration: z.number().optional(),
+  eventDetails: z.any().optional(),
 });
 
 // Schema for a standard text post
@@ -95,7 +96,7 @@ const pollPostSchema = baseSchema.extend({
 const postSchema = z.discriminatedUnion("isPoll", [
   textPostSchema,
   pollPostSchema,
-]).refine(data => !!data.content || !!data.linkMetadata || !!data.quotedPost || !!data.audioUrl, {
+]).refine(data => !!data.content || !!data.linkMetadata || !!data.quotedPost || !!data.audioUrl || !!data.eventDetails, {
     message: "Post cannot be empty.",
     path: ["content"],
 });
@@ -533,6 +534,7 @@ function PostPageComponent() {
             audioUrl: postData.audioUrl,
             audioWaveform: postData.audioWaveform,
             audioDuration: postData.audioDuration,
+            eventDetails: postData.eventDetails,
           });
           setExpirationLabel(currentLabel);
         }
@@ -629,6 +631,7 @@ function PostPageComponent() {
         if (values.isPoll) type = 'poll';
         else if (values.quotedPost) type = 'quote';
         else if (values.audioUrl) type = 'audio';
+        else if (values.eventDetails) type = 'event';
 
         const newPostData: any = {
           id: newPostRef.id,
@@ -649,6 +652,7 @@ function PostPageComponent() {
               audioWaveform: values.audioWaveform,
               audioDuration: values.audioDuration
           }),
+          ...(values.eventDetails && { eventDetails: values.eventDetails }),
         };
 
         if (expiration) newPostData.expiresAt = Timestamp.fromMillis(Date.now() + expiration * 1000);
@@ -868,7 +872,7 @@ function PostPageComponent() {
         </SheetContent>
     </Sheet>
     <Sheet open={isRecorderOpen} onOpenChange={setIsRecorderOpen}>
-       <AudioRecorderSheet onAttach={handleAttachAudio} onOpenChange={setIsRecorderOpen} />
+       {isRecorderOpen && <AudioRecorderSheet onAttach={handleAttachAudio} onOpenChange={setIsRecorderOpen} />}
     </Sheet>
     </>
   );
@@ -1031,12 +1035,20 @@ function EventFormSheet({ onClose, onPost }: { onClose: () => void; onPost: () =
                                     </PopoverTrigger>
                                     <PopoverContent className="w-auto p-0" align="start">
                                         <Calendar mode="single" selected={field.value} onSelect={field.onChange} disabled={(date) => date < new Date()} />
-                                        <div className="p-3 border-t"><Input type="time" value={field.value ? format(field.value, 'HH:mm') : ''} onChange={e => {
-                                            const newDate = new Date(field.value || new Date());
-                                            const [hours, minutes] = e.target.value.split(':');
-                                            newDate.setHours(parseInt(hours), parseInt(minutes));
-                                            field.onChange(newDate);
-                                        }}/></div>
+                                        <div className="p-3 border-t">
+                                            <Input
+                                                type="time"
+                                                value={field.value ? format(field.value, 'HH:mm') : ''}
+                                                onChange={e => {
+                                                    const newDate = new Date(field.value || new Date());
+                                                    const [hours, minutes] = e.target.value.split(':');
+                                                    if(!isNaN(parseInt(hours)) && !isNaN(parseInt(minutes))) {
+                                                        newDate.setHours(parseInt(hours), parseInt(minutes));
+                                                        field.onChange(newDate);
+                                                    }
+                                                }}
+                                            />
+                                        </div>
                                     </PopoverContent>
                                 </Popover>
                             <FormMessage /></FormItem>
@@ -1044,15 +1056,7 @@ function EventFormSheet({ onClose, onPost }: { onClose: () => void; onPost: () =
                         <FormField control={form.control} name="location" render={({ field }) => (
                              <FormItem><FormLabel>Location</FormLabel><FormControl>
                                 <div className="relative">
-                                    <Input placeholder="e.g. Hyderabad" {...field} onBlur={(e) => {
-                                        field.onBlur();
-                                        const city = e.target.value;
-                                        if (city && !getCoordsForCity(city)) {
-                                            form.setError("location", { message: "Sorry, only major Indian cities are supported for now." });
-                                        } else {
-                                            form.clearErrors("location");
-                                        }
-                                    }} />
+                                    <Input placeholder="e.g. Hyderabad" {...field} />
                                     {isLocationValid && (
                                         <Check className="absolute right-3 top-1/2 -translate-y-1/2 h-5 w-5 text-green-500" />
                                     )}
