@@ -902,6 +902,7 @@ function EventFormSheet({ onClose, onPost }: { onClose: () => void; onPost: () =
             type: "public",
             isPaid: false,
             reach: 10,
+            location: ""
         },
     });
 
@@ -1085,5 +1086,3 @@ export default function PostPage() {
     </Suspense>
   );
 }
-
-    
