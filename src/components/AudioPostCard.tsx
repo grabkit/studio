@@ -5,7 +5,7 @@ import React, { useState, useRef, useEffect, useCallback, useMemo } from 'react'
 import { Card, CardContent } from "@/components/ui/card";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
-import { Play, Pause, Heart, MessageCircle, Repeat, ArrowUpRight, Bookmark as BookmarkIcon } from "lucide-react";
+import { Play, Pause, Heart, MessageCircle, Repeat, ArrowUpRight, Bookmark as BookmarkIcon, MoreHorizontal, Pin, Trash2 } from "lucide-react";
 import type { Post, Bookmark, User, Notification } from '@/lib/types';
 import { WithId } from '@/firebase/firestore/use-collection';
 import { useFirebase, useDoc, useMemoFirebase } from '@/firebase';
@@ -27,11 +27,21 @@ import { FirestorePermissionError } from '@/firebase/errors';
 import { errorEmitter } from '@/firebase/error-emitter';
 import { RepostSheet } from '@/components/RepostSheet';
 import { ShareSheet } from '@/components/ShareSheet';
+import {
+  Sheet,
+  SheetContent,
+  SheetHeader,
+  SheetTitle,
+  SheetDescription,
+  SheetTrigger,
+} from '@/components/ui/sheet';
 
-export function AudioPostCard({ post, bookmarks, updatePost }: {
+export function AudioPostCard({ post, bookmarks, updatePost, onDelete, onPin }: {
     post: WithId<Post>,
     bookmarks: WithId<Bookmark>[] | null,
-    updatePost?: (id: string, data: Partial<Post>) => void
+    updatePost?: (id: string, data: Partial<Post>) => void,
+    onDelete?: (id: string) => void,
+    onPin?: (id: string, currentStatus: boolean) => void,
 }) {
     const { user, firestore } = useFirebase();
     const { toast } = useToast();
@@ -43,11 +53,44 @@ export function AudioPostCard({ post, bookmarks, updatePost }: {
     const [isLiking, setIsLiking] = useState(false);
     const [isRepostSheetOpen, setIsRepostSheetOpen] = useState(false);
     const [isShareSheetOpen, setIsShareSheetOpen] = useState(false);
+    const [isMoreOptionsSheetOpen, setIsMoreOptionsSheetOpen] = useState(false);
+    
+    const isOwner = user?.uid === post.authorId;
 
     const { data: authorProfile } = useDoc<User>(useMemoFirebase(() => {
         if (!firestore) return null;
         return doc(firestore, 'users', post.authorId);
     }, [firestore, post.authorId]));
+
+    const handleDeletePost = async () => {
+        if (!firestore || !isOwner) return;
+        setIsMoreOptionsSheetOpen(false);
+        
+        const postRef = doc(firestore, 'posts', post.id);
+        deleteDoc(postRef)
+          .then(() => {
+            toast({
+              title: "Post Deleted",
+              description: "Your post has been successfully deleted.",
+            });
+            if (onDelete) {
+              onDelete(post.id);
+            }
+          })
+          .catch((serverError) => {
+            const permissionError = new FirestorePermissionError({
+              path: postRef.path,
+              operation: 'delete',
+            });
+            errorEmitter.emit('permission-error', permissionError);
+          });
+      };
+
+    const handlePinPost = () => {
+        if (!isOwner || !onPin) return;
+        setIsMoreOptionsSheetOpen(false);
+        onPin(post.id, post.isPinned || false);
+    };
 
     const avatar = getAvatar(authorProfile);
     const isAvatarUrl = avatar.startsWith('http');
@@ -233,11 +276,42 @@ export function AudioPostCard({ post, bookmarks, updatePost }: {
                             </Avatar>
                         </Link>
                         <div className="flex-1">
-                            <div className="flex items-center space-x-1.5 -mb-1">
-                                <Link href={`/profile/${post.authorId}`} className="text-sm font-semibold hover:underline">
-                                    {formatUserId(post.authorId)}
-                                </Link>
-                                <div className="text-xs text-muted-foreground">· {post.timestamp ? formatTimestamp(post.timestamp.toDate()) : ''}</div>
+                            <div className="flex justify-between items-start">
+                                <div className="flex items-center space-x-1.5 -mb-1">
+                                    <Link href={`/profile/${post.authorId}`} className="text-sm font-semibold hover:underline">
+                                        {formatUserId(post.authorId)}
+                                    </Link>
+                                    <div className="text-xs text-muted-foreground">· {post.timestamp ? formatTimestamp(post.timestamp.toDate()) : ''}</div>
+                                </div>
+                                {isOwner && (
+                                     <Sheet open={isMoreOptionsSheetOpen} onOpenChange={setIsMoreOptionsSheetOpen}>
+                                        <SheetTrigger asChild>
+                                            <Button variant="ghost" size="icon" className="h-6 w-6">
+                                                <MoreHorizontal className="h-4 w-4" />
+                                            </Button>
+                                        </SheetTrigger>
+                                        <SheetContent side="bottom" className="rounded-t-2xl">
+                                            <SheetHeader className="sr-only">
+                                                <SheetTitle>Options for post</SheetTitle>
+                                                <SheetDescription>Manage your post.</SheetDescription>
+                                            </SheetHeader>
+                                            <div className="grid gap-2 py-4">
+                                                 <div className="border rounded-2xl">
+                                                    <Button variant="ghost" className="justify-between text-base py-6 rounded-2xl w-full" onClick={handlePinPost}>
+                                                        <span className="font-semibold">{post.isPinned ? "Unpin Post" : "Pin Post"}</span>
+                                                        <Pin className="h-5 w-5" />
+                                                    </Button>
+                                                 </div>
+                                                <div className="border rounded-2xl">
+                                                    <Button variant="ghost" className="justify-between text-base py-6 rounded-2xl w-full text-destructive hover:text-destructive" onClick={handleDeletePost}>
+                                                        <span className="font-semibold">Delete</span>
+                                                        <Trash2 className="h-5 w-5" />
+                                                    </Button>
+                                                </div>
+                                            </div>
+                                        </SheetContent>
+                                    </Sheet>
+                                )}
                             </div>
 
                             {post.content && <p className="text-foreground text-sm whitespace-pre-wrap mt-2">{post.content}</p>}
