@@ -270,9 +270,7 @@ function AudioRecorderSheet({ onAttach, onOpenChange }: { onAttach: (data: { url
                 setHasPermission(true);
                 setRecordingStatus("idle");
 
-                // Use audio/wav as a reliable fallback
-                const preferredMimeType = 'audio/webm;codecs=opus';
-                const mimeType = MediaRecorder.isTypeSupported(preferredMimeType) ? preferredMimeType : 'audio/wav';
+                const mimeType = 'audio/wav';
 
                 const options = { mimeType };
                 mediaRecorderRef.current = new MediaRecorder(stream, options);
@@ -893,7 +891,8 @@ function EventFormSheet({ onClose, onPost }: { onClose: () => void; onPost: () =
     const { toast } = useToast();
     const [expirationLabel, setExpirationLabel] = useState("Never");
     const [isExpirationSheetOpen, setIsExpirationSheetOpen] = useState(false);
-
+    const [isLocationValid, setIsLocationValid] = useState(false);
+    
     const form = useForm<z.infer<typeof eventSchema>>({
         resolver: zodResolver(eventSchema),
         defaultValues: {
@@ -905,13 +904,24 @@ function EventFormSheet({ onClose, onPost }: { onClose: () => void; onPost: () =
             location: ""
         },
     });
+    
+    const locationValue = form.watch('location');
+
+    useEffect(() => {
+        if (getCoordsForCity(locationValue)) {
+            setIsLocationValid(true);
+        } else {
+            setIsLocationValid(false);
+        }
+    }, [locationValue]);
+
 
     const onSubmit = async (values: z.infer<typeof eventSchema>) => {
         if (!user || !firestore) return;
 
         const coords = getCoordsForCity(values.location);
         if (!coords) {
-            form.setError("location", { message: "Could not find coordinates for this location. Please try another." });
+            form.setError("location", { message: "Sorry, only major Indian cities are supported for now." });
             return;
         }
 
@@ -1012,24 +1022,42 @@ function EventFormSheet({ onClose, onPost }: { onClose: () => void; onPost: () =
                         )}/>
                         <FormField control={form.control} name="eventTimestamp" render={({ field }) => (
                             <FormItem className="flex flex-col"><FormLabel>Date & Time</FormLabel>
-                                <Popover><PopoverTrigger asChild>
-                                    <FormControl><Button variant={"outline"} className={cn("pl-3 text-left font-normal", !field.value && "text-muted-foreground")}>
-                                        {field.value ? format(field.value, "PPP HH:mm") : <span>Pick a date and time</span>}
-                                        <CalendarClock className="ml-auto h-4 w-4 opacity-50" />
-                                    </Button></FormControl>
-                                </PopoverTrigger><PopoverContent className="w-auto p-0" align="start">
-                                    <Calendar mode="single" selected={field.value} onSelect={field.onChange} disabled={(date) => date < new Date()} />
-                                    <div className="p-3 border-t"><Input type="time" value={field.value ? format(field.value, 'HH:mm') : ''} onChange={e => {
-                                        const newDate = new Date(field.value || new Date());
-                                        const [hours, minutes] = e.target.value.split(':');
-                                        newDate.setHours(parseInt(hours), parseInt(minutes));
-                                        field.onChange(newDate);
-                                    }}/></div>
-                                </PopoverContent></Popover>
+                                <Popover>
+                                    <PopoverTrigger asChild>
+                                        <Button variant={"outline"} className={cn("pl-3 text-left font-normal", !field.value && "text-muted-foreground")}>
+                                            {field.value ? format(field.value, "PPP HH:mm") : <span>Pick a date and time</span>}
+                                            <CalendarClock className="ml-auto h-4 w-4 opacity-50" />
+                                        </Button>
+                                    </PopoverTrigger>
+                                    <PopoverContent className="w-auto p-0" align="start">
+                                        <Calendar mode="single" selected={field.value} onSelect={field.onChange} disabled={(date) => date < new Date()} />
+                                        <div className="p-3 border-t"><Input type="time" value={field.value ? format(field.value, 'HH:mm') : ''} onChange={e => {
+                                            const newDate = new Date(field.value || new Date());
+                                            const [hours, minutes] = e.target.value.split(':');
+                                            newDate.setHours(parseInt(hours), parseInt(minutes));
+                                            field.onChange(newDate);
+                                        }}/></div>
+                                    </PopoverContent>
+                                </Popover>
                             <FormMessage /></FormItem>
                         )}/>
                         <FormField control={form.control} name="location" render={({ field }) => (
-                             <FormItem><FormLabel>Location</FormLabel><FormControl><Input placeholder="e.g. Hyderabad" {...field} /></FormControl><FormMessage /></FormItem>
+                             <FormItem><FormLabel>Location</FormLabel><FormControl>
+                                <div className="relative">
+                                    <Input placeholder="e.g. Hyderabad" {...field} onBlur={(e) => {
+                                        field.onBlur();
+                                        const city = e.target.value;
+                                        if (city && !getCoordsForCity(city)) {
+                                            form.setError("location", { message: "Sorry, only major Indian cities are supported for now." });
+                                        } else {
+                                            form.clearErrors("location");
+                                        }
+                                    }} />
+                                    {isLocationValid && (
+                                        <Check className="absolute right-3 top-1/2 -translate-y-1/2 h-5 w-5 text-green-500" />
+                                    )}
+                                </div>
+                             </FormControl><FormMessage /></FormItem>
                         )}/>
                         <FormField control={form.control} name="reach" render={({ field }) => (
                             <FormItem>
