@@ -102,7 +102,7 @@ const expirationOptions = [
     { label: '7 Days', value: 7 * 24 * 60 * 60 },
 ];
 
-type AudioRecordingStatus = "idle" | "permission-pending" | "recording" | "recorded" | "playing_preview" | "attaching";
+type AudioRecordingStatus = "idle" | "permission-pending" | "recording" | "paused" | "recorded" | "playing_preview" | "attaching";
 
 function AudioRecorderSheet({ onAttach, onOpenChange }: { onAttach: (data: { url: string, waveform: number[], duration: number }) => void, onOpenChange: (open: boolean) => void }) {
     const { toast } = useToast();
@@ -125,6 +125,11 @@ function AudioRecorderSheet({ onAttach, onOpenChange }: { onAttach: (data: { url
     const animationFrameIdRef = useRef<number | null>(null);
     const waveformDataRef = useRef<number[]>([]);
     const playheadPositionRef = useRef(0);
+    const recordingStatusRef = useRef(recordingStatus);
+
+    useEffect(() => {
+        recordingStatusRef.current = recordingStatus;
+    }, [recordingStatus]);
 
     const maxDuration = 120; // 2 minutes
 
@@ -230,7 +235,7 @@ function AudioRecorderSheet({ onAttach, onOpenChange }: { onAttach: (data: { url
     }, []);
 
     const animatePlayhead = useCallback(() => {
-        if (recordingStatus !== 'playing_preview' || !audioPlayerRef.current || !canvasRef.current) {
+        if (recordingStatusRef.current !== 'playing_preview' || !audioPlayerRef.current || !canvasRef.current) {
             stopVisualization();
             return;
         }
@@ -242,7 +247,7 @@ function AudioRecorderSheet({ onAttach, onOpenChange }: { onAttach: (data: { url
         drawPreviewWaveform();
         animationFrameIdRef.current = requestAnimationFrame(animatePlayhead);
 
-    }, [recordingStatus, drawPreviewWaveform, stopVisualization]);
+    }, [drawPreviewWaveform, stopVisualization]);
 
 
     useEffect(() => {
@@ -421,6 +426,10 @@ function AudioRecorderSheet({ onAttach, onOpenChange }: { onAttach: (data: { url
 
     return (
         <SheetContent side="bottom" className="rounded-t-2xl h-full flex flex-col p-6 items-center justify-between gap-2 pb-10">
+            <SheetHeader className="sr-only">
+                <SheetTitle>Audio Recorder</SheetTitle>
+                <SheetDescription>Record an audio clip to attach to your post.</SheetDescription>
+            </SheetHeader>
             <SheetClose asChild>
                 <Button variant="ghost" size="icon" className="absolute top-4 right-4">
                     <X className="h-4 w-4" />
