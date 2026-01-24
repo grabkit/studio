@@ -129,6 +129,30 @@ function AudioRecorderSheet({ onAttach, onOpenChange }: { onAttach: (data: { url
     
     const maxDuration = 120; // 2 minutes
 
+    const drawInitialState = useCallback(() => {
+        const canvas = canvasRef.current;
+        if (!canvas) return;
+        const canvasCtx = canvas.getContext('2d');
+        if (!canvasCtx) return;
+
+        const width = canvas.width;
+        const height = canvas.height;
+
+        canvasCtx.clearRect(0, 0, width, height);
+        
+        canvasCtx.fillStyle = 'hsl(var(--muted) / 0.6)';
+        const barWidth = 3;
+        const gap = 2;
+        const numBars = Math.floor(width / (barWidth + gap));
+        const barHeight = 2; // Small, constant height for idle state
+
+        for (let i = 0; i < numBars; i++) {
+            const x = i * (barWidth + gap);
+            const y = (height - barHeight) / 2;
+            canvasCtx.fillRect(x, y, barWidth, barHeight);
+        }
+    }, []);
+
     const drawLiveWaveform = useCallback((stream: MediaStream) => {
         if (!audioContextRef.current) audioContextRef.current = new AudioContext();
         const audioContext = audioContextRef.current;
@@ -233,7 +257,9 @@ function AudioRecorderSheet({ onAttach, onOpenChange }: { onAttach: (data: { url
         return () => {
             if (timerIntervalRef.current) clearInterval(timerIntervalRef.current);
             if (animationFrameIdRef.current) cancelAnimationFrame(animationFrameIdRef.current);
-            mediaRecorderRef.current?.stream.getTracks().forEach(track => track.stop());
+            if (mediaRecorderRef.current?.stream) {
+              mediaRecorderRef.current.stream.getTracks().forEach(track => track.stop());
+            }
             sourceNodeRef.current?.disconnect();
 
             audio.removeEventListener('timeupdate', handleTimeUpdate);
@@ -338,6 +364,10 @@ function AudioRecorderSheet({ onAttach, onOpenChange }: { onAttach: (data: { url
         }
         onOpenChange(false);
     }
+    
+    useEffect(() => {
+        drawInitialState();
+    }, [drawInitialState]);
 
 
     const formatTime = (seconds: number) => {
@@ -351,7 +381,7 @@ function AudioRecorderSheet({ onAttach, onOpenChange }: { onAttach: (data: { url
             case 'idle':
                 return (
                      <div className="flex flex-col items-center justify-center h-full gap-8">
-                        <p className="text-5xl font-mono tabular-nums tracking-tighter">00:00.00</p>
+                        <p className="text-5xl font-mono tabular-nums tracking-tighter">00:00</p>
                         <div className="w-full h-24 my-4" />
                         <Button size="icon" className="h-20 w-20 rounded-full bg-red-500 hover:bg-red-600" onClick={handleMicButtonClick}>
                             <Mic className="h-10 w-10" />
@@ -362,7 +392,7 @@ function AudioRecorderSheet({ onAttach, onOpenChange }: { onAttach: (data: { url
             case 'paused':
                  return (
                     <div className="flex flex-col items-center justify-center h-full gap-8">
-                        <p className="text-5xl font-mono tabular-nums tracking-tighter w-48 text-center">{formatTime(duration).split('.')[0] + '.' + (duration % 1).toFixed(2).substring(2)}</p>
+                        <p className="text-5xl font-mono tabular-nums tracking-tighter w-48 text-center">{formatTime(duration)}</p>
                         <div className="w-full h-24 my-4">
                            <canvas ref={canvasRef} width="300" height="100" className="w-full h-full" />
                         </div>
@@ -417,6 +447,7 @@ function AudioRecorderSheet({ onAttach, onOpenChange }: { onAttach: (data: { url
         <SheetContent side="bottom" className="rounded-t-2xl h-full flex flex-col p-6 items-center justify-between gap-2 pb-10">
             <SheetHeader className="sr-only">
                 <SheetTitle>Record Audio</SheetTitle>
+                <SheetDescription>Record a voice note for your post.</SheetDescription>
             </SheetHeader>
             <Button variant="ghost" size="icon" className="absolute top-4 right-4" onClick={handleSheetClose}>
                 <X className="h-4 w-4" />
@@ -824,5 +855,7 @@ export default function PostPage() {
     </Suspense>
   );
 }
+
+    
 
     
