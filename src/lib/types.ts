@@ -40,7 +40,7 @@ export interface Post {
     expiresAt?: Timestamp;
 
     // Type of post
-    type?: 'text' | 'poll' | 'repost' | 'quote' | 'audio';
+    type?: 'text' | 'poll' | 'repost' | 'quote';
 
     // Poll specific fields
     pollOptions?: PollOption[];
@@ -52,11 +52,6 @@ export interface Post {
     // Repost/Quote specific fields
     repostOf?: string; // ID of the original post, for simple reposts
     quotedPost?: QuotedPost; // Denormalized data for a quoted post
-
-    // Audio post specific fields
-    audioUrl?: string;
-    audioWaveform?: number[];
-    audioDuration?: number;
 }
 
 export interface Comment {

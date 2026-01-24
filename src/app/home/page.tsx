@@ -37,7 +37,6 @@ import { motion } from "framer-motion";
 import { eventBus } from "@/lib/event-bus";
 import { useCollection } from "@/firebase/firestore/use-collection";
 import { Progress } from "@/components/ui/progress";
-import { AudioPostCard } from "@/components/AudioPostCard";
 
 
 function LinkPreview({ metadata }: { metadata: LinkMetadata }) {
@@ -604,10 +603,6 @@ function InnerPostItem({ post, bookmarks, updatePost, onDelete, onPin, showPinSt
 
 export function PostItem({ post, ...props }: { post: WithId<Post>, bookmarks: WithId<Bookmark>[] | null, updatePost?: (id: string, data: Partial<Post>) => void, onDelete?: (id: string) => void, onPin?: (id: string, currentStatus: boolean) => void, showPinStatus?: boolean, authorProfile?: WithId<User> | null }) {
     const { firestore } = useFirebase();
-
-    if (post.type === 'audio') {
-        return <AudioPostCard post={post} bookmarks={props.bookmarks} updatePost={props.updatePost} />;
-    }
 
     const originalPostRef = useMemoFirebase(() => {
         if (!firestore || post.type !== 'repost' || !post.repostOf) return null;

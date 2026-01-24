@@ -57,7 +57,6 @@ import {
 } from "@/components/ui/sheet";
 import { QuotedPostCard } from "@/components/QuotedPostCard";
 import { AnimatedCount } from "@/components/AnimatedCount";
-import { AudioPostCard } from "@/components/AudioPostCard";
 
 function PostExpiryInfo({ post }: { post: WithId<Post> }) {
   const [expiryText, setExpiryText] = useState(() => {
@@ -461,10 +460,6 @@ function PostDetailItem({ post, updatePost }: { post: WithId<Post>, updatePost: 
     setIsMoreOptionsSheetOpen(false);
     router.push(`/post?postId=${post.id}`);
   };
-
-  if (post.type === 'audio') {
-    return <AudioPostCard post={post} bookmarks={[]} />;
-  }
 
   return (
     <>
@@ -1138,5 +1133,6 @@ export default function PostDetailPage() {
 }
 
     
+
 
 

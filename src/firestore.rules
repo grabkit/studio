@@ -55,7 +55,7 @@ service cloud.firestore {
 
     match /posts/{postId} {
       allow get, list: if isSignedIn();
-      allow create: if isSignedIn() && (isNewTextPost() || isNewPollPost() || isNewRepost() || isNewQuotePost() || isNewAudioPost());
+      allow create: if isSignedIn() && (isNewTextPost() || isNewPollPost() || isNewRepost() || isNewQuotePost());
       allow delete: if isSignedIn() && isOwner(resource.data.authorId);
       allow update: if isSignedIn() && (
           (isOwner(resource.data.authorId) && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['content', 'commentsAllowed', 'isPinned', 'expiresAt'])) ||
@@ -180,25 +180,6 @@ service cloud.firestore {
             && data.quotedPost.keys().hasAll(['id', 'authorId', 'content'])
             && data.keys().hasOnly(allowedKeys);
     }
-    
-    function isNewAudioPost() {
-      let data = request.resource.data;
-      let allowedKeys = ['id', 'authorId', 'type', 'content', 'timestamp', 'likes', 'likeCount', 'commentCount', 'repostCount', 'commentsAllowed', 'isPinned', 'audioUrl', 'audioWaveform', 'audioDuration', 'expiresAt'];
-      return data.type == 'audio'
-        && data.authorId == request.auth.uid
-        && data.audioUrl is string && data.audioUrl.size() > 0
-        && data.audioDuration is number
-        && data.audioWaveform is list
-        && data.commentCount == 0
-        && data.commentsAllowed is bool
-        && data.isPinned == false
-        && data.likeCount == 0
-        && data.repostCount == 0
-        && data.likes is list && data.likes.size() == 0
-        && !data.keys().hasAny(['pollOptions', 'voters', 'repostOf', 'quotedPost', 'linkMetadata'])
-        && data.keys().hasOnly(allowedKeys);
-    }
-
 
     function isNewTextPost() {
       let data = request.resource.data;
