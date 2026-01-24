@@ -165,6 +165,10 @@ function AudioRecorderSheet({ onAttach, onOpenChange }: { onAttach: (data: { url
         const draw = () => {
             animationFrameIdRef.current = requestAnimationFrame(draw);
             
+            if (recordingStatus === 'paused') {
+                return;
+            }
+
             analyserRef.current?.getByteFrequencyData(dataArray);
 
             canvasCtx.clearRect(0, 0, canvas.width, canvas.height);
@@ -345,7 +349,7 @@ function AudioRecorderSheet({ onAttach, onOpenChange }: { onAttach: (data: { url
             </div>
 
             <div className="flex flex-col items-center gap-4">
-                <p className="text-2xl text-muted-foreground font-mono w-24 text-center h-7">
+                <p className="text-xl text-muted-foreground font-mono w-40 text-center h-7">
                     {formatTime(duration)} / {formatTime(maxDuration)}
                 </p>
                 <div className="relative flex items-center justify-center h-[104px] w-[104px]">
