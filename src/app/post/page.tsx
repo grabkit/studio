@@ -26,7 +26,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { Form, FormControl, FormField, FormItem, FormMessage, FormLabel, FormDescription } from "@/components/ui/form";
+import { Form, FormControl, FormField, FormItem, FormMessage, FormLabel } from "@/components/ui/form";
 import { Loader2, X, ListOrdered, Plus, Link as LinkIcon, Image as ImageIcon, CalendarClock, Mic, Play, Square, RefreshCw, Send, Pause, StopCircle, Check, Circle, Undo2, CalendarPlus } from "lucide-react";
 import { errorEmitter } from "@/firebase/error-emitter";
 import { FirestorePermissionError } from "@/firebase/errors";
@@ -43,6 +43,7 @@ import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover
 import { Calendar } from "@/components/ui/calendar";
 import { format } from "date-fns";
 import { Slider } from "@/components/ui/slider";
+import { FormDescription } from "@/components/ui/form";
 
 const pollOptionSchema = z.object({
   option: z.string().min(1, "Option cannot be empty.").max(100, "Option is too long."),
@@ -271,15 +272,14 @@ function AudioRecorderSheet({ onAttach, onOpenChange }: { onAttach: (data: { url
                 setHasPermission(true);
                 setRecordingStatus("idle");
 
-                const mimeType = 'audio/wav';
-
-                const options = { mimeType };
-                mediaRecorderRef.current = new MediaRecorder(stream, options);
+                // Let the browser pick the best supported mimeType
+                mediaRecorderRef.current = new MediaRecorder(stream);
                 
                 mediaRecorderRef.current.ondataavailable = (event) => { if (event.data.size > 0) audioChunksRef.current.push(event.data); };
                 
                 mediaRecorderRef.current.onstop = () => {
-                    const audioBlob = new Blob(audioChunksRef.current, { type: mimeType });
+                    // Use the mimeType from the recorder, which is the actual format being used
+                    const audioBlob = new Blob(audioChunksRef.current, { type: mediaRecorderRef.current?.mimeType });
                     
                     const reader = new FileReader();
                     reader.onloadend = () => {
@@ -905,7 +905,7 @@ function EventFormSheet({ onClose, onPost }: { onClose: () => void; onPost: () =
             type: "public",
             isPaid: false,
             reach: 10,
-            location: ""
+            location: "",
         },
     });
     
@@ -1040,7 +1040,7 @@ function EventFormSheet({ onClose, onPost }: { onClose: () => void; onPost: () =
                                                 type="time"
                                                 value={field.value ? format(field.value, 'HH:mm') : ''}
                                                 onChange={e => {
-                                                    const newDate = new Date(field.value || new Date());
+                                                    const newDate = field.value ? new Date(field.value) : new Date();
                                                     const [hours, minutes] = e.target.value.split(':');
                                                     if(!isNaN(parseInt(hours)) && !isNaN(parseInt(minutes))) {
                                                         newDate.setHours(parseInt(hours), parseInt(minutes));
