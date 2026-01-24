@@ -106,7 +106,6 @@ const expirationOptions = [
 type AudioRecordingStatus = "idle" | "permission-pending" | "recording" | "paused" | "recorded" | "sharing";
 
 function AudioRecorderSheet({ onAttach, onOpenChange }: { onAttach: (data: { url: string, waveform: number[], duration: number }) => void, onOpenChange: (open: boolean) => void }) {
-    const router = useRouter();
     const { toast } = useToast();
     const [recordingStatus, setRecordingStatus] = useState<AudioRecordingStatus>("permission-pending");
     const [hasPermission, setHasPermission] = useState(false);
@@ -124,11 +123,12 @@ function AudioRecorderSheet({ onAttach, onOpenChange }: { onAttach: (data: { url
     const sourceNodeRef = useRef<MediaStreamAudioSourceNode | null>(null);
     const animationFrameIdRef = useRef<number | null>(null);
     const [isPlayingPreview, setIsPlayingPreview] = useState(false);
+    const [waveform, setWaveform] = useState<number[]>([]);
     
     const maxDuration = 30; // 30 seconds
     const waveformSamples = 100;
 
-    const drawWaveform = useCallback((waveform: number[], progress: number = 0) => {
+    const drawWaveform = useCallback((waveformData: number[], progress: number = 0) => {
         const canvas = canvasRef.current;
         if (!canvas) return;
 
@@ -139,10 +139,10 @@ function AudioRecorderSheet({ onAttach, onOpenChange }: { onAttach: (data: { url
         
         const barWidth = 3;
         const gap = 2;
-        const numBars = waveform.length;
+        const numBars = waveformData.length;
         
         for (let i = 0; i < numBars; i++) {
-            const barHeight = Math.max(1, (waveform[i] || 0) * canvas.height * 0.9);
+            const barHeight = Math.max(1, (waveformData[i] || 0) * canvas.height * 0.9);
             const x = i * (barWidth + gap);
             const isPlayed = (i / numBars) * 100 < progress;
             
@@ -150,7 +150,7 @@ function AudioRecorderSheet({ onAttach, onOpenChange }: { onAttach: (data: { url
             ctx.fillRect(x, (canvas.height - barHeight) / 2, barWidth, barHeight);
         }
     }, []);
-
+    
     const stopVisualization = useCallback(() => {
         if (animationFrameIdRef.current) {
             cancelAnimationFrame(animationFrameIdRef.current);
@@ -159,7 +159,7 @@ function AudioRecorderSheet({ onAttach, onOpenChange }: { onAttach: (data: { url
     }, []);
     
     const visualize = useCallback((stream: MediaStream, onSample: (sample: number) => void) => {
-        if (!audioContextRef.current) {
+        if (!audioContextRef.current || audioContextRef.current.state === 'closed') {
             audioContextRef.current = new (window.AudioContext || (window as any).webkitAudioContext)();
         }
         const audioContext = audioContextRef.current;
@@ -171,7 +171,7 @@ function AudioRecorderSheet({ onAttach, onOpenChange }: { onAttach: (data: { url
             analyserRef.current.smoothingTimeConstant = 0.6;
         }
         
-        if (sourceNodeRef.current?.mediaStream.id !== stream.id) {
+        if (!sourceNodeRef.current || sourceNodeRef.current.mediaStream.id !== stream.id) {
             if (sourceNodeRef.current) {
                 sourceNodeRef.current.disconnect();
             }
@@ -184,7 +184,6 @@ function AudioRecorderSheet({ onAttach, onOpenChange }: { onAttach: (data: { url
     
         const animate = () => {
             animationFrameIdRef.current = requestAnimationFrame(animate);
-            if (recordingStatus !== 'recording') return;
             
             analyserRef.current?.getByteFrequencyData(dataArray);
             let sum = 0;
@@ -194,9 +193,13 @@ function AudioRecorderSheet({ onAttach, onOpenChange }: { onAttach: (data: { url
             const average = sum / bufferLength;
             onSample(average / 255);
         };
-        animate();
-    }, [recordingStatus]);
-    
+        
+        if (animationFrameIdRef.current === null) {
+          animate();
+        }
+
+    }, []);
+
     useEffect(() => {
         let liveWaveform: number[] = [];
         const canvas = canvasRef.current;
@@ -213,40 +216,36 @@ function AudioRecorderSheet({ onAttach, onOpenChange }: { onAttach: (data: { url
                 }
                 drawWaveform(liveWaveform, 100);
             });
-        } else {
-            stopVisualization();
         }
-    }, [recordingStatus, visualize, stopVisualization, drawWaveform]);
+    }, [recordingStatus, visualize, drawWaveform]);
+
+    const handleTimeUpdate = useCallback(() => {
+        const player = audioPlayerRef.current;
+        if (!player || player.paused) return;
+        const progress = (player.currentTime / player.duration) * 100;
+        drawWaveform(waveform, progress);
+    }, [waveform, drawWaveform]);
     
     useEffect(() => {
         const player = audioPlayerRef.current;
-        const updateProgress = () => {
-            if (!player || !player.duration) return;
-            const progress = (player.currentTime / player.duration) * 100;
-            if (recordedAudioUrl) {
-                const blob = new Blob(audioChunksRef.current);
-                 // This part needs fixing. We need the saved waveform.
-                 // For now, let's just use progress. The drawing function needs to be smarter.
-            }
-        };
-
         const onEnded = () => {
              setIsPlayingPreview(false);
              if (player) player.currentTime = 0;
+             drawWaveform(waveform, 0);
         };
 
-        player?.addEventListener('timeupdate', updateProgress);
+        player?.addEventListener('timeupdate', handleTimeUpdate);
         player?.addEventListener('ended', onEnded);
         player?.addEventListener('play', () => setIsPlayingPreview(true));
         player?.addEventListener('pause', () => setIsPlayingPreview(false));
 
         return () => {
-            player?.removeEventListener('timeupdate', updateProgress);
+            player?.removeEventListener('timeupdate', handleTimeUpdate);
             player?.removeEventListener('ended', onEnded);
             player?.removeEventListener('play', () => setIsPlayingPreview(true));
             player?.removeEventListener('pause', () => setIsPlayingPreview(false));
         }
-    }, [recordedAudioUrl]);
+    }, [handleTimeUpdate, waveform, drawWaveform]);
 
     useEffect(() => {
         async function getPermission() {
@@ -255,16 +254,26 @@ function AudioRecorderSheet({ onAttach, onOpenChange }: { onAttach: (data: { url
                 setHasPermission(true);
                 setRecordingStatus("idle");
                 
+                const supportedMimeTypes = ['audio/webm;codecs=opus', 'audio/webm', 'audio/ogg;codecs=opus', 'audio/mp4'];
                 const options = { mimeType: 'audio/webm' };
-                const supportedMimeTypes = ['audio/mp4', 'audio/webm;codecs=opus', 'audio/webm'];
                 const supportedType = supportedMimeTypes.find(type => MediaRecorder.isTypeSupported(type));
-                if (supportedType) {
-                    options.mimeType = supportedType;
+
+                if (!supportedType) {
+                    toast({
+                        variant: 'destructive',
+                        title: "Recording Not Supported",
+                        description: "Your browser doesn't support the necessary audio formats to record."
+                    });
+                    onOpenChange(false);
+                    return;
                 }
+
+                options.mimeType = supportedType;
 
                 mediaRecorderRef.current = new MediaRecorder(stream, options);
                 
                 mediaRecorderRef.current.ondataavailable = (event) => { if (event.data.size > 0) audioChunksRef.current.push(event.data); };
+                
                 mediaRecorderRef.current.onstop = () => {
                     const audioBlob = new Blob(audioChunksRef.current, { type: options.mimeType });
                     const reader = new FileReader();
@@ -282,16 +291,22 @@ function AudioRecorderSheet({ onAttach, onOpenChange }: { onAttach: (data: { url
             }
         }
         getPermission();
-        return () => { mediaRecorderRef.current?.stream.getTracks().forEach(track => track.stop()); }
+        return () => { 
+            mediaRecorderRef.current?.stream.getTracks().forEach(track => track.stop());
+            if (audioContextRef.current && audioContextRef.current.state !== 'closed') {
+                audioContextRef.current.close();
+            }
+         }
     }, [onOpenChange, toast, stopVisualization]);
-    
-    useEffect(() => {
-        if (!isSheetOpen) router.back();
-    }, [isSheetOpen, router]);
 
     const startRecording = async () => {
         if (mediaRecorderRef.current) {
-            if(audioContextRef.current?.state === 'suspended') { await audioContextRef.current.resume(); }
+            if (!audioContextRef.current || audioContextRef.current.state === 'closed') {
+              audioContextRef.current = new (window.AudioContext || (window as any).webkitAudioContext)();
+            }
+            if (audioContextRef.current.state === 'suspended') {
+              await audioContextRef.current.resume();
+            }
 
             if (mediaRecorderRef.current.state === "paused") {
                 mediaRecorderRef.current.resume();
@@ -346,28 +361,8 @@ function AudioRecorderSheet({ onAttach, onOpenChange }: { onAttach: (data: { url
     const handleAttach = async () => {
         if (!recordedAudioUrl) return;
         if (audioPlayerRef.current) audioPlayerRef.current.pause();
-
-        if (!audioContextRef.current) audioContextRef.current = new (window.AudioContext || (window as any).webkitAudioContext)();
         
-        const response = await fetch(recordedAudioUrl);
-        const blob = await response.blob();
-        const arrayBuffer = await blob.arrayBuffer();
-        const decodedBuffer = await audioContextRef.current.decodeAudioData(arrayBuffer);
-        const channelData = decodedBuffer.getChannelData(0);
-        
-        let waveform = [];
-        let maxAmp = 0;
-        const blockSize = Math.floor(channelData.length / waveformSamples);
-        for (let i = 0; i < waveformSamples; i++) {
-            let sum = 0;
-            for (let j = 0; j < blockSize; j++) { sum += Math.abs(channelData[i * blockSize + j]); }
-            const amp = sum / blockSize;
-            waveform.push(amp);
-            if (amp > maxAmp) maxAmp = amp;
-        }
-        const normalizedWaveform = waveform.map(a => maxAmp > 0 ? a / maxAmp : 0);
-
-        onAttach({ url: recordedAudioUrl, waveform: normalizedWaveform, duration: Math.floor(duration) });
+        onAttach({ url: recordedAudioUrl, waveform: waveform, duration: Math.floor(duration) });
         onOpenChange(false);
     }
     
@@ -375,6 +370,7 @@ function AudioRecorderSheet({ onAttach, onOpenChange }: { onAttach: (data: { url
         if (audioPlayerRef.current) audioPlayerRef.current.pause();
         setRecordedAudioUrl(null);
         setDuration(0);
+        setWaveform([]);
         setRecordingStatus('idle');
     }
 
@@ -383,6 +379,38 @@ function AudioRecorderSheet({ onAttach, onOpenChange }: { onAttach: (data: { url
         const seconds = Math.floor(timeInSeconds % 60).toString().padStart(2, '0');
         return `${minutes}:${seconds}`;
     };
+    
+     useEffect(() => {
+        async function processAudioForWaveform() {
+            if (recordingStatus !== 'recorded' || !recordedAudioUrl) return;
+
+            if (!audioContextRef.current || audioContextRef.current.state === 'closed') {
+              audioContextRef.current = new (window.AudioContext || (window as any).webkitAudioContext)();
+            }
+
+            const response = await fetch(recordedAudioUrl);
+            const blob = await response.blob();
+            const arrayBuffer = await blob.arrayBuffer();
+            const decodedBuffer = await audioContextRef.current.decodeAudioData(arrayBuffer);
+            const channelData = decodedBuffer.getChannelData(0);
+            
+            let calculatedWaveform = [];
+            let maxAmp = 0;
+            const blockSize = Math.floor(channelData.length / waveformSamples);
+            for (let i = 0; i < waveformSamples; i++) {
+                let sum = 0;
+                for (let j = 0; j < blockSize; j++) { sum += Math.abs(channelData[i * blockSize + j]); }
+                const amp = sum / blockSize;
+                calculatedWaveform.push(amp);
+                if (amp > maxAmp) maxAmp = amp;
+            }
+            const normalizedWaveform = calculatedWaveform.map(a => maxAmp > 0 ? a / maxAmp : 0);
+            setWaveform(normalizedWaveform);
+            drawWaveform(normalizedWaveform, 0);
+        }
+        processAudioForWaveform();
+    }, [recordingStatus, recordedAudioUrl, drawWaveform]);
+
 
     return (
         <SheetContent side="bottom" className="h-auto p-4 rounded-t-2xl">
@@ -836,5 +864,3 @@ export default function PostPage() {
     </Suspense>
   );
 }
-
-    
