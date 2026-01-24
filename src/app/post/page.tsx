@@ -126,6 +126,11 @@ function AudioRecorderSheet({ onAttach, onOpenChange }: { onAttach: (data: { url
     const analyserRef = useRef<AnalyserNode | null>(null);
     const sourceNodeRef = useRef<MediaStreamAudioSourceNode | null>(null);
     const animationFrameIdRef = useRef<number | null>(null);
+    const recordingStatusRef = useRef(recordingStatus);
+
+    useEffect(() => {
+        recordingStatusRef.current = recordingStatus;
+    }, [recordingStatus]);
     
     const maxDuration = 120; // 2 minutes
 
@@ -153,7 +158,7 @@ function AudioRecorderSheet({ onAttach, onOpenChange }: { onAttach: (data: { url
         }
     }, []);
 
-    const drawLiveWaveform = useCallback((stream: MediaStream) => {
+    const visualize = useCallback((stream: MediaStream) => {
         if (!audioContextRef.current) audioContextRef.current = new AudioContext();
         const audioContext = audioContextRef.current;
         
@@ -270,6 +275,12 @@ function AudioRecorderSheet({ onAttach, onOpenChange }: { onAttach: (data: { url
     // eslint-disable-next-line react-hooks/exhaustive-deps
     }, []);
 
+    useEffect(() => {
+        if (recordingStatus === 'idle' && canvasRef.current) {
+            drawInitialState();
+        }
+    }, [recordingStatus, drawInitialState]);
+
     const startRecording = () => {
         if (mediaRecorderRef.current) {
             if (mediaRecorderRef.current.state === "paused") {
@@ -278,7 +289,7 @@ function AudioRecorderSheet({ onAttach, onOpenChange }: { onAttach: (data: { url
                 setDuration(0);
                 mediaRecorderRef.current.start(100);
             }
-            drawLiveWaveform(mediaRecorderRef.current.stream);
+            visualize(mediaRecorderRef.current.stream);
             setRecordingStatus("recording");
             if(timerIntervalRef.current) clearInterval(timerIntervalRef.current);
             timerIntervalRef.current = setInterval(() => {
@@ -365,11 +376,6 @@ function AudioRecorderSheet({ onAttach, onOpenChange }: { onAttach: (data: { url
         onOpenChange(false);
     }
     
-    useEffect(() => {
-        drawInitialState();
-    }, [drawInitialState]);
-
-
     const formatTime = (seconds: number) => {
         const mins = Math.floor(seconds / 60).toString().padStart(2, '0');
         const secs = Math.floor(seconds % 60).toString().padStart(2, '0');
@@ -382,7 +388,9 @@ function AudioRecorderSheet({ onAttach, onOpenChange }: { onAttach: (data: { url
                 return (
                      <div className="flex flex-col items-center justify-center h-full gap-8">
                         <p className="text-5xl font-mono tabular-nums tracking-tighter">00:00</p>
-                        <div className="w-full h-24 my-4" />
+                        <div className="w-full h-24 my-4">
+                           <canvas ref={canvasRef} width="300" height="100" className="w-full h-full" />
+                        </div>
                         <Button size="icon" className="h-20 w-20 rounded-full bg-red-500 hover:bg-red-600" onClick={handleMicButtonClick}>
                             <Mic className="h-10 w-10" />
                         </Button>
@@ -578,8 +586,8 @@ function PostPageComponent() {
             url: url,
             title: "This is a fetched link title",
             description: "This is a longer description for the link that has been fetched from the website to show a rich preview.",
-            imageUrl: `https://picsum.photos/seed/${Math.random()}/1200/630`,
-            faviconUrl: `https://www.google.com/s2/favicons?sz=64&domain_url=${url}`
+            imageUrl: `https://picsum.photos/seed/${'${'}Math.random()}/1200/630`,
+            faviconUrl: `https://www.google.com/s2/favicons?sz=64&domain_url=${'${'}url}`
         };
         form.setValue("linkMetadata", mockData, { shouldValidate: true });
         setIsFetchingPreview(false);
@@ -783,11 +791,11 @@ function PostPageComponent() {
                                  {isPoll && (
                                     <div className="space-y-2 mt-4">
                                         {fields.map((field, index) => (
-                                            <FormField key={field.id} control={form.control} name={`pollOptions.${index}.option`} render={({ field }) => (
+                                            <FormField key={field.id} control={form.control} name={`pollOptions.${'${'}index}.option`} render={({ field }) => (
                                                 <FormItem>
                                                     <FormControl>
                                                         <div className="flex items-center gap-2">
-                                                            <Input placeholder={`Option ${index + 1}`} {...field} className="bg-secondary"/>
+                                                            <Input placeholder={`Option ${'${'}index + 1}`} {...field} className="bg-secondary"/>
                                                             {fields.length > 2 && <Button variant="ghost" size="icon" type="button" onClick={() => remove(index)} className="rounded-full bg-primary hover:bg-primary/80 text-primary-foreground h-6 w-6"><X className="h-4 w-4" /></Button>}
                                                         </div>
                                                     </FormControl>
@@ -841,6 +849,9 @@ function PostPageComponent() {
             </SheetContent>
         </Sheet>
         <Sheet open={isRecorderOpen} onOpenChange={setIsRecorderOpen}>
+            <SheetHeader>
+                <SheetTitle className='sr-only'>Record Audio</SheetTitle>
+            </SheetHeader>
             <AudioRecorderSheet onAttach={handleAttachAudio} onOpenChange={setIsRecorderOpen} />
         </Sheet>
       </SheetContent>
