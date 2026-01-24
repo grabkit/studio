@@ -36,7 +36,7 @@ import type { LinkMetadata } from "@/lib/types";
 import Image from "next/image";
 import { QuotedPostCard } from "@/components/QuotedPostCard";
 import { useToast } from "@/hooks/use-toast";
-import { Alert, AlertTitle, AlertDescription } from "@/components/ui/alert";
+import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Progress } from "@/components/ui/progress";
 
 const pollOptionSchema = z.object({
@@ -157,7 +157,7 @@ function AudioRecorderSheet({ onAttach, onOpenChange }: { onAttach: (data: { url
             animationFrameIdRef.current = null;
         }
     }, []);
-    
+
     const visualize = useCallback((stream: MediaStream, onSample: (sample: number) => void) => {
         if (!audioContextRef.current || audioContextRef.current.state === 'closed') {
             audioContextRef.current = new (window.AudioContext || (window as any).webkitAudioContext)();
@@ -181,7 +181,7 @@ function AudioRecorderSheet({ onAttach, onOpenChange }: { onAttach: (data: { url
 
         const bufferLength = analyserRef.current.frequencyBinCount;
         const dataArray = new Uint8Array(bufferLength);
-    
+
         const animate = () => {
             animationFrameIdRef.current = requestAnimationFrame(animate);
             
@@ -200,24 +200,42 @@ function AudioRecorderSheet({ onAttach, onOpenChange }: { onAttach: (data: { url
 
     }, []);
 
-    useEffect(() => {
+     useEffect(() => {
         let liveWaveform: number[] = [];
-        const canvas = canvasRef.current;
-        if (!canvas) return;
-        const barWidth = 3;
-        const gap = 2;
-        const maxBars = Math.floor(canvas.clientWidth / (barWidth + gap));
-        
-        if (recordingStatus === 'recording' && mediaRecorderRef.current) {
-            visualize(mediaRecorderRef.current.stream, (sample) => {
-                liveWaveform.push(sample);
-                if (liveWaveform.length > maxBars) {
-                    liveWaveform.shift();
-                }
-                drawWaveform(liveWaveform, 100);
-            });
+        let animationFrameId: number;
+
+        const animate = () => {
+            if (recordingStatus === 'recording' && mediaRecorderRef.current) {
+                 visualize(mediaRecorderRef.current.stream, (sample) => {
+                    const canvas = canvasRef.current;
+                    if (!canvas) return;
+                    const barWidth = 3;
+                    const gap = 2;
+                    const maxBars = Math.floor(canvas.clientWidth / (barWidth + gap));
+                    
+                    liveWaveform.push(sample);
+                    if (liveWaveform.length > maxBars) {
+                        liveWaveform.shift();
+                    }
+                    drawWaveform(liveWaveform, 100);
+                });
+            }
+            animationFrameId = requestAnimationFrame(animate);
+        };
+
+        if (recordingStatus === 'recording') {
+            animate();
+        } else {
+            stopVisualization();
         }
-    }, [recordingStatus, visualize, drawWaveform]);
+        
+        return () => {
+            cancelAnimationFrame(animationFrameId);
+            stopVisualization();
+        };
+
+    }, [recordingStatus, visualize, drawWaveform, stopVisualization]);
+
 
     const handleTimeUpdate = useCallback(() => {
         const player = audioPlayerRef.current;
@@ -253,29 +271,13 @@ function AudioRecorderSheet({ onAttach, onOpenChange }: { onAttach: (data: { url
                 const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
                 setHasPermission(true);
                 setRecordingStatus("idle");
-                
-                const supportedMimeTypes = ['audio/webm;codecs=opus', 'audio/webm', 'audio/ogg;codecs=opus', 'audio/mp4'];
-                const options = { mimeType: 'audio/webm' };
-                const supportedType = supportedMimeTypes.find(type => MediaRecorder.isTypeSupported(type));
 
-                if (!supportedType) {
-                    toast({
-                        variant: 'destructive',
-                        title: "Recording Not Supported",
-                        description: "Your browser doesn't support the necessary audio formats to record."
-                    });
-                    onOpenChange(false);
-                    return;
-                }
-
-                options.mimeType = supportedType;
-
-                mediaRecorderRef.current = new MediaRecorder(stream, options);
+                mediaRecorderRef.current = new MediaRecorder(stream);
                 
                 mediaRecorderRef.current.ondataavailable = (event) => { if (event.data.size > 0) audioChunksRef.current.push(event.data); };
                 
                 mediaRecorderRef.current.onstop = () => {
-                    const audioBlob = new Blob(audioChunksRef.current, { type: options.mimeType });
+                    const audioBlob = new Blob(audioChunksRef.current, { type: 'audio/wav' });
                     const reader = new FileReader();
                     reader.readAsDataURL(audioBlob);
                     reader.onloadend = () => {
