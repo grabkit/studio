@@ -127,7 +127,7 @@ function AudioRecorderSheet({ onAttach, onOpenChange }: { onAttach: (data: { url
     const analyserRef = useRef<AnalyserNode | null>(null);
     const sourceNodeRef = useRef<MediaStreamAudioSourceNode | null>(null);
     const animationFrameIdRef = useRef<number | null>(null);
-    const [isPlayingPreview, setIsPlayingPreview] = useState(isPlayingPreview);
+    const [isPlayingPreview, setIsPlayingPreview] = useState(false);
     const [waveform, setWaveform] = useState<number[]>([]);
     
     const maxDuration = 30; // 30 seconds
@@ -270,13 +270,11 @@ function AudioRecorderSheet({ onAttach, onOpenChange }: { onAttach: (data: { url
                 setHasPermission(true);
                 setRecordingStatus("idle");
 
-                // Let the browser pick the best supported mimeType
                 mediaRecorderRef.current = new MediaRecorder(stream);
                 
                 mediaRecorderRef.current.ondataavailable = (event) => { if (event.data.size > 0) audioChunksRef.current.push(event.data); };
                 
                 mediaRecorderRef.current.onstop = () => {
-                    // Use the mimeType from the recorder, which is the actual format being used
                     const audioBlob = new Blob(audioChunksRef.current, { type: mediaRecorderRef.current?.mimeType });
                     
                     const reader = new FileReader();
@@ -766,7 +764,7 @@ function PostPageComponent() {
                                      </div>
                                 )}
 
-                                {linkMetadata && linkMetadata.imageUrl ? (
+                                {linkMetadata && linkMetadata.url && (
                                     <div className="mt-3 border rounded-lg overflow-hidden relative">
                                         <Button variant="ghost" size="icon" className="absolute top-1 right-1 h-7 w-7 bg-black/50 hover:bg-black/70 text-white hover:text-white rounded-full z-10" onClick={() => form.setValue("linkMetadata", undefined)}>
                                             <X className="h-4 w-4" />
@@ -777,7 +775,9 @@ function PostPageComponent() {
                                             <p className="font-semibold text-sm truncate mt-0.5">{linkMetadata.title || linkMetadata.url}</p>
                                         </div>
                                     </div>
-                                ) : isFetchingPreview ? (
+                                )}
+                                
+                                {isFetchingPreview ? (
                                     <div className="border rounded-lg p-4 flex items-center justify-center">
                                         <Loader2 className="h-5 w-5 animate-spin text-muted-foreground" /><span className="ml-2 text-muted-foreground text-sm">Fetching preview...</span>
                                     </div>
@@ -787,7 +787,7 @@ function PostPageComponent() {
                                             <FormControl>
                                                  <div className="relative">
                                                     <LinkIcon className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-                                                    <Input placeholder="https://..." {...field} className="pl-9 bg-secondary" onBlur={(e) => fetchPreview(e.target.value)} />
+                                                    <Input placeholder="https://..." {...field} value={field.value || ''} className="pl-9 bg-secondary" onBlur={(e) => fetchPreview(e.target.value)} />
                                                  </div>
                                             </FormControl>
                                             <FormMessage />
@@ -1026,10 +1026,12 @@ function EventFormSheet({ onClose, onPost }: { onClose: () => void; onPost: () =
                             <FormItem className="flex flex-col"><FormLabel>Date & Time</FormLabel>
                                 <Popover>
                                     <PopoverTrigger asChild>
-                                        <Button variant={"outline"} className={cn("pl-3 text-left font-normal", !field.value && "text-muted-foreground")}>
-                                            {field.value ? format(field.value, "PPP HH:mm") : <span>Pick a date and time</span>}
-                                            <CalendarClock className="ml-auto h-4 w-4 opacity-50" />
-                                        </Button>
+                                        <FormControl>
+                                            <Button variant={"outline"} className={cn("pl-3 text-left font-normal", !field.value && "text-muted-foreground")}>
+                                                {field.value ? format(field.value, "PPP HH:mm") : <span>Pick a date and time</span>}
+                                                <CalendarClock className="ml-auto h-4 w-4 opacity-50" />
+                                            </Button>
+                                        </FormControl>
                                     </PopoverTrigger>
                                     <PopoverContent className="w-auto p-0" align="start">
                                         <Calendar mode="single" selected={field.value} onSelect={field.onChange} disabled={(date) => date < new Date()} />
