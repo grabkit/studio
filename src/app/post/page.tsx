@@ -270,34 +270,25 @@ function AudioRecorderSheet({ onAttach, onOpenChange }: { onAttach: (data: { url
                 setHasPermission(true);
                 setRecordingStatus("idle");
 
-                // Check for a universally supported MIME type, preferring audio/wav
-                const supportedTypes = ['audio/wav', 'audio/webm', 'audio/mp4'];
-                let selectedMimeType = '';
-                for (const type of supportedTypes) {
-                    if (MediaRecorder.isTypeSupported(type)) {
-                        selectedMimeType = type;
-                        break;
-                    }
-                }
-                
-                if (!selectedMimeType) {
-                    toast({ variant: 'destructive', title: 'No supported audio format found.' });
-                    onOpenChange(false);
-                    return;
-                }
+                // Use audio/wav as a reliable fallback
+                const preferredMimeType = 'audio/webm;codecs=opus';
+                const mimeType = MediaRecorder.isTypeSupported(preferredMimeType) ? preferredMimeType : 'audio/wav';
 
-                const options = { mimeType: selectedMimeType };
+                const options = { mimeType };
                 mediaRecorderRef.current = new MediaRecorder(stream, options);
                 
                 mediaRecorderRef.current.ondataavailable = (event) => { if (event.data.size > 0) audioChunksRef.current.push(event.data); };
                 
                 mediaRecorderRef.current.onstop = () => {
-                    const audioBlob = new Blob(audioChunksRef.current, { type: selectedMimeType });
+                    const audioBlob = new Blob(audioChunksRef.current, { type: mimeType });
+                    
                     const reader = new FileReader();
-                    reader.readAsDataURL(audioBlob);
                     reader.onloadend = () => {
-                        setRecordedAudioUrl(reader.result as string);
+                        const base64data = reader.result as string;
+                        setRecordedAudioUrl(base64data);
                     };
+                    reader.readAsDataURL(audioBlob);
+
                     setRecordingStatus("recorded");
                     audioChunksRef.current = [];
                     stopVisualization();
@@ -1027,7 +1018,7 @@ function EventFormSheet({ onClose, onPost }: { onClose: () => void; onPost: () =
                                     </Button></FormControl>
                                 </PopoverTrigger><PopoverContent className="w-auto p-0" align="start">
                                     <Calendar mode="single" selected={field.value} onSelect={field.onChange} disabled={(date) => date < new Date()} />
-                                    <div className="p-3 border-t"><Input type="time" onChange={e => {
+                                    <div className="p-3 border-t"><Input type="time" value={field.value ? format(field.value, 'HH:mm') : ''} onChange={e => {
                                         const newDate = new Date(field.value || new Date());
                                         const [hours, minutes] = e.target.value.split(':');
                                         newDate.setHours(parseInt(hours), parseInt(minutes));
@@ -1094,3 +1085,5 @@ export default function PostPage() {
     </Suspense>
   );
 }
+
+    
