@@ -135,7 +135,7 @@ function AudioRecorderSheet({ onAttach, onOpenChange }: { onAttach: (data: { url
             animationFrameIdRef.current = null;
         }
     }, []);
-    
+
     const drawLiveWaveform = useCallback((stream: MediaStream) => {
         if (!audioContextRef.current) audioContextRef.current = new AudioContext();
         const audioContext = audioContextRef.current;
@@ -228,18 +228,6 @@ function AudioRecorderSheet({ onAttach, onOpenChange }: { onAttach: (data: { url
         ctx.fillStyle = 'hsl(var(--primary))';
         ctx.fillRect(centerX - 0.5, 0, 1, height);
     }, []);
-    
-    const animatePlayback = useCallback(() => {
-        if (recordingStatusRef.current !== 'playing_preview' || !audioPlayerRef.current || !canvasRef.current) {
-            stopVisualization();
-            return;
-        }
-        
-        const audio = audioPlayerRef.current;
-        drawPreviewWaveform(audio.currentTime, audio.duration);
-        animationFrameIdRef.current = requestAnimationFrame(animatePlayback);
-
-    }, [drawPreviewWaveform, stopVisualization]);
 
     const durationRef = useRef(duration);
     durationRef.current = duration;
@@ -280,10 +268,27 @@ function AudioRecorderSheet({ onAttach, onOpenChange }: { onAttach: (data: { url
 
         const audio = new Audio();
         audioPlayerRef.current = audio;
+
+        const animationCallback = () => {
+            if (audio.paused || audio.ended) return;
+            drawPreviewWaveform(audio.currentTime, audio.duration);
+            animationFrameIdRef.current = requestAnimationFrame(animationCallback);
+        };
+
+        audio.onplay = () => {
+            animationFrameIdRef.current = requestAnimationFrame(animationCallback);
+        };
+        audio.onpause = () => {
+            if (animationFrameIdRef.current) {
+                cancelAnimationFrame(animationFrameIdRef.current);
+            }
+        };
         audio.onended = () => {
             setRecordingStatus('recorded');
             drawPreviewWaveform(0, durationRef.current || 1);
-        }
+        };
+
+        const audioEl = audioPlayerRef.current;
 
         return () => {
             if (timerIntervalRef.current) clearInterval(timerIntervalRef.current);
@@ -293,6 +298,10 @@ function AudioRecorderSheet({ onAttach, onOpenChange }: { onAttach: (data: { url
             }
             if (sourceNodeRef.current) {
                 sourceNodeRef.current.disconnect();
+            }
+            if (audioEl) {
+                audioEl.pause();
+                audioEl.src = '';
             }
         };
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -351,6 +360,9 @@ function AudioRecorderSheet({ onAttach, onOpenChange }: { onAttach: (data: { url
     };
 
     const handleRetake = () => {
+        if (audioPlayerRef.current) {
+            audioPlayerRef.current.pause();
+        }
         setRecordedAudioUrl(null);
         setDuration(0);
         waveformDataRef.current = [];
@@ -363,16 +375,17 @@ function AudioRecorderSheet({ onAttach, onOpenChange }: { onAttach: (data: { url
         if (recordingStatus === 'playing_preview') {
             audioPlayerRef.current.pause();
             setRecordingStatus('recorded');
-            stopVisualization();
         } else {
             audioPlayerRef.current.src = recordedAudioUrl;
-            audioPlayerRef.current.play();
+            audioPlayerRef.current.play().catch(e => console.error("Error playing audio:", e));
             setRecordingStatus('playing_preview');
-            requestAnimationFrame(animatePlayback);
         }
     };
 
     const handleAttach = async () => {
+        if (audioPlayerRef.current) {
+            audioPlayerRef.current.pause();
+        }
         if (!recordedAudioUrl) return;
         setRecordingStatus("attaching");
         
@@ -412,13 +425,13 @@ function AudioRecorderSheet({ onAttach, onOpenChange }: { onAttach: (data: { url
             case 'paused':
                  return (
                     <div className="flex justify-around items-center w-full">
+                        <Button size="icon" variant="secondary" className="h-16 w-16 rounded-full" onClick={handleMicButtonClick}>
+                             {recordingStatus === 'recording' ? <Pause className="h-8 w-8" /> : <Mic className="h-8 w-8" />}
+                        </Button>
+                        <Button size="icon" variant="destructive" className="h-20 w-20 rounded-full" onClick={stopRecording}>
+                            <Check className="h-10 w-10" />
+                        </Button>
                         <div className="w-16 h-16" />
-                        <Button size="icon" className="h-20 w-20 rounded-full" onClick={handleMicButtonClick}>
-                             {recordingStatus === 'recording' ? <Pause className="h-10 w-10" /> : <Mic className="h-10 w-10" />}
-                        </Button>
-                        <Button size="icon" variant="secondary" className="h-16 w-16 rounded-full" onClick={stopRecording}>
-                            <Check className="h-8 w-8" />
-                        </Button>
                     </div>
                 );
             case 'recorded':
@@ -445,7 +458,6 @@ function AudioRecorderSheet({ onAttach, onOpenChange }: { onAttach: (data: { url
         <SheetContent side="bottom" className="rounded-t-2xl h-full flex flex-col p-6 items-center justify-between gap-2 pb-10">
             <SheetHeader className="sr-only">
                 <SheetTitle>Record Audio</SheetTitle>
-                <SheetDescription>Record an audio clip to attach to your post.</SheetDescription>
             </SheetHeader>
             <SheetClose asChild>
                 <Button variant="ghost" size="icon" className="absolute top-4 right-4">
