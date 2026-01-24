@@ -1,3 +1,4 @@
+
 "use client";
 
 import React, { useState, useRef, useEffect, useCallback, useMemo } from 'react';
@@ -38,7 +39,6 @@ export function AudioPostCard({ post, bookmarks, updatePost }: {
     const [progress, setProgress] = useState(0);
     const audioRef = useRef<HTMLAudioElement>(null);
     const canvasRef = useRef<HTMLCanvasElement>(null);
-    const animationFrameId = useRef<number>();
 
     const [isLiking, setIsLiking] = useState(false);
     const [isRepostSheetOpen, setIsRepostSheetOpen] = useState(false);
@@ -60,8 +60,13 @@ export function AudioPostCard({ post, bookmarks, updatePost }: {
         const ctx = canvas.getContext('2d');
         if (!ctx) return;
 
-        const width = canvas.width;
-        const height = canvas.height;
+        const dpr = window.devicePixelRatio || 1;
+        canvas.width = canvas.clientWidth * dpr;
+        canvas.height = canvas.clientHeight * dpr;
+        ctx.scale(dpr, dpr);
+        
+        const width = canvas.clientWidth;
+        const height = canvas.clientHeight;
         const barWidth = 3;
         const gap = 2;
         const numBars = Math.floor(width / (barWidth + gap));
@@ -71,7 +76,7 @@ export function AudioPostCard({ post, bookmarks, updatePost }: {
 
         for (let i = 0; i < numBars; i++) {
             const waveIndex = i * step;
-            const barHeight = (waveform[waveIndex] || 0) * height * 0.8 + height * 0.2;
+            const barHeight = Math.max(1, (waveform[waveIndex] || 0) * height * 0.9);
             const x = i * (barWidth + gap);
 
             const isPlayed = (x / width) * 100 < progress;
@@ -81,8 +86,8 @@ export function AudioPostCard({ post, bookmarks, updatePost }: {
     }, [post.audioWaveform]);
 
     useEffect(() => {
-        drawWaveform();
-    }, [drawWaveform]);
+        drawWaveform(progress);
+    }, [drawWaveform, progress]);
 
     const handlePlayPause = () => {
         if (!audioRef.current) return;
@@ -98,13 +103,12 @@ export function AudioPostCard({ post, bookmarks, updatePost }: {
         if (!audioRef.current) return;
         const newProgress = (audioRef.current.currentTime / audioRef.current.duration) * 100;
         setProgress(newProgress);
-        drawWaveform(newProgress);
     };
 
     const handleAudioEnded = () => {
         setIsPlaying(false);
         setProgress(0);
-        drawWaveform(0);
+        if(audioRef.current) audioRef.current.currentTime = 0;
     };
 
     const isBookmarked = useMemo(() => bookmarks?.some(b => b.postId === post.id), [bookmarks, post.id]);
@@ -277,3 +281,5 @@ export function AudioPostCard({ post, bookmarks, updatePost }: {
         </>
     );
 }
+
+    

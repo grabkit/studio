@@ -55,7 +55,7 @@ service cloud.firestore {
 
     match /posts/{postId} {
       allow get, list: if isSignedIn();
-      allow create: if isSignedIn() && (isNewTextPost() || isNewPollPost() || isNewRepost() || isNewQuotePost());
+      allow create: if isSignedIn() && (isNewTextPost() || isNewPollPost() || isNewRepost() || isNewQuotePost() || isNewAudioPost());
       allow delete: if isSignedIn() && isOwner(resource.data.authorId);
       allow update: if isSignedIn() && (
           (isOwner(resource.data.authorId) && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['content', 'commentsAllowed', 'isPinned', 'expiresAt'])) ||
@@ -134,6 +134,18 @@ service cloud.firestore {
           allow read, list, create: if isSignedIn();
           allow update, delete: if false;
       }
+    }
+
+    function isNewAudioPost() {
+      let data = request.resource.data;
+      let allowedKeys = ['id', 'authorId', 'type', 'content', 'timestamp', 'likes', 'likeCount', 'commentCount', 'repostCount', 'commentsAllowed', 'isPinned', 'expiresAt', 'audioUrl', 'audioWaveform', 'audioDuration'];
+      return data.type == 'audio'
+        && data.authorId == request.auth.uid
+        && data.audioUrl is string
+        && data.audioWaveform is list
+        && data.audioDuration is number
+        && (data.content is string || !data.keys().has('content')) // content is optional
+        && data.keys().hasOnly(allowedKeys);
     }
 
     function isValidNewReport(reportId) {
@@ -229,3 +241,5 @@ service cloud.firestore {
     }
   }
 }
+
+    

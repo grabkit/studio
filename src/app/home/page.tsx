@@ -37,6 +37,7 @@ import { motion } from "framer-motion";
 import { eventBus } from "@/lib/event-bus";
 import { useCollection } from "@/firebase/firestore/use-collection";
 import { Progress } from "@/components/ui/progress";
+import { AudioPostCard } from "@/components/AudioPostCard";
 
 
 function LinkPreview({ metadata }: { metadata: LinkMetadata }) {
@@ -611,6 +612,10 @@ export function PostItem({ post, ...props }: { post: WithId<Post>, bookmarks: Wi
 
     const { data: originalPost, isLoading: isOriginalPostLoading } = useDoc<Post>(originalPostRef);
 
+    if (post.type === 'audio') {
+        return <AudioPostCard post={post} {...props} />;
+    }
+
     if (post.type === 'repost') {
         if (isOriginalPostLoading) {
             return <PostSkeleton />;
@@ -863,3 +868,5 @@ export default function HomePage() {
     </AppLayout>
   );
 }
+
+    
