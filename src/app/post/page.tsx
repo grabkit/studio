@@ -103,7 +103,7 @@ const expirationOptions = [
     { label: '7 Days', value: 7 * 24 * 60 * 60 },
 ];
 
-type AudioRecordingStatus = "idle" | "permission-pending" | "recording" | "paused" | "recorded" | "playing_preview" | "attaching";
+type AudioRecordingStatus = "idle" | "permission-pending" | "recording" | "paused" | "recorded" | "attaching";
 
 function AudioRecorderSheet({ onAttach, onOpenChange }: { onAttach: (data: { url: string, waveform: number[], duration: number }) => void, onOpenChange: (open: boolean) => void }) {
     const { toast } = useToast();
@@ -161,8 +161,13 @@ function AudioRecorderSheet({ onAttach, onOpenChange }: { onAttach: (data: { url
         }
     }, []);
 
-     const visualize = useCallback(() => {
+    const visualize = useCallback(() => {
         if (!analyserRef.current || !canvasRef.current) return;
+        
+        const audioContext = audioContextRef.current;
+        if (audioContext && audioContext.state === 'suspended') {
+            audioContext.resume();
+        }
         
         const bufferLength = analyserRef.current.frequencyBinCount;
         const dataArray = new Uint8Array(bufferLength);
@@ -366,7 +371,7 @@ function AudioRecorderSheet({ onAttach, onOpenChange }: { onAttach: (data: { url
             audio.removeEventListener('pause', handlePause);
             audio.removeEventListener('ended', handleEnded);
         };
-    }, [handleTimeUpdate, onOpenChange, stopVisualization, toast]);
+    }, [handleTimeUpdate, onOpenChange, stopVisualization, toast, visualize]);
 
 
     const startRecording = () => {
@@ -409,6 +414,9 @@ function AudioRecorderSheet({ onAttach, onOpenChange }: { onAttach: (data: { url
     const stopRecording = () => {
         if (mediaRecorderRef.current && (mediaRecorderRef.current.state === "recording" || mediaRecorderRef.current.state === "paused")) {
             mediaRecorderRef.current.stop();
+            if (timerIntervalRef.current) {
+                clearInterval(timerIntervalRef.current);
+            }
         }
     };
     
@@ -499,7 +507,7 @@ function AudioRecorderSheet({ onAttach, onOpenChange }: { onAttach: (data: { url
                            <canvas ref={canvasRef} width="300" height="100" className="w-full h-full" />
                         </div>
                         <div className="flex justify-around items-center w-full max-w-xs">
-                           <div className="w-16 h-16" />
+                           <div className="w-16 h-16" /> {/* Placeholder */}
                             <Button size="icon" variant="secondary" className="h-20 w-20 rounded-full" onClick={handleMicButtonClick}>
                                  {recordingStatus === 'recording' ? <Pause className="h-8 w-8" /> : <Mic className="h-8 w-8" />}
                             </Button>
@@ -547,9 +555,9 @@ function AudioRecorderSheet({ onAttach, onOpenChange }: { onAttach: (data: { url
 
     return (
         <SheetContent side="bottom" className="rounded-t-2xl h-full flex flex-col p-6 items-center justify-between gap-2 pb-10">
-            <SheetHeader>
-                <SheetTitle className="sr-only">Record Audio</SheetTitle>
-                 <SheetDescription className="sr-only">Record a voice note for your post.</SheetDescription>
+            <SheetHeader className="sr-only">
+                <SheetTitle>Record Audio</SheetTitle>
+                 <SheetDescription>Record a voice note for your post.</SheetDescription>
             </SheetHeader>
             <Button variant="ghost" size="icon" className="absolute top-4 right-4" onClick={handleSheetClose}>
                 <X className="h-4 w-4" />
@@ -957,5 +965,3 @@ export default function PostPage() {
     </Suspense>
   );
 }
-
-    
