@@ -108,9 +108,7 @@ function AudioRecorderSheet({ onAttach, onOpenChange }: { onAttach: (data: { url
     const { toast } = useToast();
 
     const [recordingStatus, setRecordingStatus] = useState<AudioRecordingStatus>("permission-pending");
-    const statusRef = useRef(recordingStatus);
-    statusRef.current = recordingStatus;
-
+    
     const [hasPermission, setHasPermission] = useState(false);
     const [recordedAudioUrl, setRecordedAudioUrl] = useState<string | null>(null);
     const [duration, setDuration] = useState(0);
@@ -168,7 +166,7 @@ function AudioRecorderSheet({ onAttach, onOpenChange }: { onAttach: (data: { url
         const draw = () => {
             animationFrameIdRef.current = requestAnimationFrame(draw);
             
-            if (statusRef.current === 'paused') {
+            if (mediaRecorderRef.current?.state !== 'recording') {
                 return;
             }
 
@@ -189,7 +187,7 @@ function AudioRecorderSheet({ onAttach, onOpenChange }: { onAttach: (data: { url
             }
             
             sampleCounter++;
-            if (sampleCounter % 6 === 0 && statusRef.current === 'recording') {
+            if (sampleCounter % 6 === 0) {
                 const normalizedValue = Math.max(...dataArray) / 255;
                 if (waveformDataRef.current.length < 100) {
                      waveformDataRef.current.push(normalizedValue);
@@ -236,7 +234,7 @@ function AudioRecorderSheet({ onAttach, onOpenChange }: { onAttach: (data: { url
             stopVisualization();
             sourceNodeRef.current?.disconnect();
         };
-    }, [onOpenChange, toast, stopVisualization]);
+    }, [onOpenChange, toast, stopVisualization, visualize]);
 
     const startRecording = () => {
         if (mediaRecorderRef.current) {
@@ -272,7 +270,9 @@ function AudioRecorderSheet({ onAttach, onOpenChange }: { onAttach: (data: { url
     const stopRecording = () => {
         if (mediaRecorderRef.current && (mediaRecorderRef.current.state === "recording" || mediaRecorderRef.current.state === "paused")) {
             mediaRecorderRef.current.stop();
-            if (timerIntervalRef.current) clearInterval(timerIntervalRef.current);
+            if (timerIntervalRef.current) {
+                clearInterval(timerIntervalRef.current);
+            }
         }
     };
 
@@ -331,7 +331,7 @@ function AudioRecorderSheet({ onAttach, onOpenChange }: { onAttach: (data: { url
     const getButtonIcon = () => {
         switch(recordingStatus) {
             case 'recording': return <Pause className="h-10 w-10 text-black" fill="black" />;
-            case 'recorded': return <Play className="h-10 w-10 text-primary-foreground" fill="currentColor" onClick={playPreview}/>;
+            case 'recorded': return <Play className="h-10 w-10 text-primary-foreground" fill="currentColor" />;
             default: return <Mic className="h-10 w-10 text-primary-foreground" />;
         }
     };
@@ -360,7 +360,7 @@ function AudioRecorderSheet({ onAttach, onOpenChange }: { onAttach: (data: { url
                     <Button
                         variant={recordingStatus === "recording" ? "secondary" : "default"}
                         size="icon"
-                        onClick={handleMicButtonClick}
+                        onClick={recordingStatus === 'recorded' ? playPreview : handleMicButtonClick}
                         disabled={!hasPermission || recordingStatus === 'permission-pending' || recordingStatus === 'attaching'}
                         className="h-24 w-24 rounded-full shadow-lg"
                     >
@@ -745,7 +745,7 @@ function PostPageComponent() {
                                             <Button type="button" variant="ghost" size="icon" onClick={() => setIsExpirationSheetOpen(true)}>
                                                 <CalendarClock className="h-5 w-5 text-muted-foreground" />
                                             </Button>
-                                            <span className="text-xs text-muted-foreground">{expirationLabel}</span>
+                                            <span className="text-xs text-muted-foreground whitespace-nowrap">{expirationLabel}</span>
                                         </div>
                                             <FormField control={form.control} name="commentsAllowed" render={({ field }) => (
                                                 <FormItem className="flex items-center space-x-2 space-y-0 pl-2">
