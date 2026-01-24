@@ -1,4 +1,3 @@
-
 "use client";
 
 import * as React from "react";
@@ -26,7 +25,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { Form, FormControl, FormField, FormItem, FormMessage, FormLabel } from "@/components/ui/form";
+import { Form, FormControl, FormField, FormItem, FormMessage, FormLabel, FormDescription } from "@/components/ui/form";
 import { Loader2, X, ListOrdered, Plus, Link as LinkIcon, Image as ImageIcon, CalendarClock, Mic, Play, Square, RefreshCw, Send, Pause, StopCircle, Check, Circle, Undo2, CalendarPlus } from "lucide-react";
 import { errorEmitter } from "@/firebase/error-emitter";
 import { FirestorePermissionError } from "@/firebase/errors";
@@ -43,7 +42,6 @@ import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover
 import { Calendar } from "@/components/ui/calendar";
 import { format } from "date-fns";
 import { Slider } from "@/components/ui/slider";
-import { FormDescription } from "@/components/ui/form";
 
 const pollOptionSchema = z.object({
   option: z.string().min(1, "Option cannot be empty.").max(100, "Option is too long."),
@@ -129,7 +127,7 @@ function AudioRecorderSheet({ onAttach, onOpenChange }: { onAttach: (data: { url
     const analyserRef = useRef<AnalyserNode | null>(null);
     const sourceNodeRef = useRef<MediaStreamAudioSourceNode | null>(null);
     const animationFrameIdRef = useRef<number | null>(null);
-    const [isPlayingPreview, setIsPlayingPreview] = useState(false);
+    const [isPlayingPreview, setIsPlayingPreview] = useState(isPlayingPreview);
     const [waveform, setWaveform] = useState<number[]>([]);
     
     const maxDuration = 30; // 30 seconds
@@ -768,7 +766,7 @@ function PostPageComponent() {
                                      </div>
                                 )}
 
-                                {linkMetadata ? (
+                                {linkMetadata && linkMetadata.imageUrl ? (
                                     <div className="mt-3 border rounded-lg overflow-hidden relative">
                                         <Button variant="ghost" size="icon" className="absolute top-1 right-1 h-7 w-7 bg-black/50 hover:bg-black/70 text-white hover:text-white rounded-full z-10" onClick={() => form.setValue("linkMetadata", undefined)}>
                                             <X className="h-4 w-4" />
