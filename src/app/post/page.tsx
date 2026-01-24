@@ -114,11 +114,12 @@ function AudioRecorderSheet({ onAttach, onOpenChange }: { onAttach: (data: { url
 
     const mediaRecorderRef = useRef<MediaRecorder | null>(null);
     const audioChunksRef = useRef<Blob[]>([]);
-    const audioContextRef = useRef<AudioContext | null>(null);
-    const analyserRef = useRef<AnalyserNode | null>(null);
     const timerRef = useRef<number>();
     const audioPlayerRef = useRef<HTMLAudioElement | null>(null);
     const canvasRef = useRef<HTMLCanvasElement | null>(null);
+    
+    const audioContextRef = useRef<AudioContext | null>(null);
+    const analyserRef = useRef<AnalyserNode | null>(null);
     
     const drawStaticWaveform = useCallback((progress: number = 0) => {
         const canvas = canvasRef.current;
@@ -130,7 +131,7 @@ function AudioRecorderSheet({ onAttach, onOpenChange }: { onAttach: (data: { url
         
         ctx.clearRect(0, 0, canvas.width, canvas.height);
         
-        if (!waveform && status === 'idle') {
+        if (!waveform && (status === 'idle' || status === 'permission-pending')) {
             const barWidth = 3;
             const gap = 2;
             const numBars = Math.floor(canvas.width / (barWidth + gap));
@@ -165,62 +166,39 @@ function AudioRecorderSheet({ onAttach, onOpenChange }: { onAttach: (data: { url
     }, [recordedAudio?.waveform, status]);
 
     useEffect(() => {
-        async function getPermission() {
-            try {
-                const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
-                mediaRecorderRef.current = new MediaRecorder(stream);
-
-                audioContextRef.current = new (window.AudioContext || (window as any).webkitAudioContext)();
-                analyserRef.current = audioContextRef.current.createAnalyser();
-                analyserRef.current.fftSize = 256;
-                const source = audioContextRef.current.createMediaStreamSource(stream);
-                source.connect(analyserRef.current);
-                
-                mediaRecorderRef.current.ondataavailable = (e) => { if (e.data.size > 0) audioChunksRef.current.push(e.data); };
-                mediaRecorderRef.current.onstop = async () => {
-                    const blob = new Blob(audioChunksRef.current, { type: 'audio/webm' });
-                    const url = URL.createObjectURL(blob);
-
-                    if (!audioContextRef.current) return;
-                    const decodedBuffer = await audioContextRef.current.decodeAudioData(await blob.arrayBuffer());
-                    const channelData = decodedBuffer.getChannelData(0);
-                    const samples = 300;
-                    const blockSize = Math.floor(channelData.length / samples);
-                    const waveform = [];
-                    let maxAmp = 0;
-                    for (let i = 0; i < samples; i++) {
-                        let sum = 0;
-                        for (let j = 0; j < blockSize; j++) { sum += Math.abs(channelData[i * blockSize + j]); }
-                        const amp = sum / blockSize;
-                        waveform.push(amp);
-                        if (amp > maxAmp) maxAmp = amp;
-                    }
-                    const normalizedWaveform = waveform.map(a => a / maxAmp);
-                    setRecordedAudio({ url, blob, waveform: normalizedWaveform });
-                    setStatus('recorded');
-                };
-
-                setStatus('idle');
-            } catch (err) {
-                toast({ variant: 'destructive', title: 'Microphone access denied.' });
-                onOpenChange(false);
-            }
+        if (status === 'idle' || status === 'permission-pending') {
+            drawStaticWaveform();
+        } else if (status === 'recorded') {
+            drawStaticWaveform(0);
         }
-        getPermission();
-        return () => { mediaRecorderRef.current?.stream.getTracks().forEach(track => track.stop()); }
-    }, [onOpenChange, toast]);
+    }, [status, drawStaticWaveform]);
 
+    const handleTimeUpdate = useCallback(() => {
+        if (!audioPlayerRef.current || !isPlayingPreview) return;
+        const progress = (audioPlayerRef.current.currentTime / audioPlayerRef.current.duration) * 100;
+        drawStaticWaveform(progress);
+    }, [isPlayingPreview, drawStaticWaveform]);
+
+    useEffect(() => {
+        const player = audioPlayerRef.current;
+        const onEnded = () => { setIsPlayingPreview(false); if (player) player.currentTime = 0; drawStaticWaveform(0); };
+        player?.addEventListener('timeupdate', handleTimeUpdate);
+        player?.addEventListener('ended', onEnded);
+        return () => {
+            player?.removeEventListener('timeupdate', handleTimeUpdate);
+            player?.removeEventListener('ended', onEnded);
+        }
+    }, [handleTimeUpdate, drawStaticWaveform]);
+    
     useEffect(() => {
         let animationFrameId: number;
     
         const animate = () => {
-            if (analyserRef.current && canvasRef.current) {
+            if (analyserRef.current && canvasRef.current && status === 'recording') {
                 const analyser = analyserRef.current;
                 const canvas = canvasRef.current;
                 const canvasCtx = canvas.getContext('2d');
-                if (!canvasCtx) {
-                    return;
-                }
+                if (!canvasCtx) return;
     
                 const bufferLength = analyser.frequencyBinCount;
                 const dataArray = new Uint8Array(bufferLength);
@@ -241,11 +219,11 @@ function AudioRecorderSheet({ onAttach, onOpenChange }: { onAttach: (data: { url
             }
             animationFrameId = requestAnimationFrame(animate);
         };
-    
+        
         if (status === 'recording') {
             animate();
         } else {
-            const canvas = canvasRef.current;
+             const canvas = canvasRef.current;
             if (canvas) {
                 const ctx = canvas.getContext('2d');
                 if (ctx && status !== 'recorded') {
@@ -261,31 +239,60 @@ function AudioRecorderSheet({ onAttach, onOpenChange }: { onAttach: (data: { url
         };
     }, [status]);
     
-
     useEffect(() => {
-        if (status === 'idle' || status === 'permission-pending') {
-            drawStaticWaveform();
-        } else if (status === 'recorded') {
-            drawStaticWaveform(0);
-        }
-    }, [status, drawStaticWaveform]);
-    
-    const handleTimeUpdate = useCallback(() => {
-        if (!audioPlayerRef.current || !isPlayingPreview) return;
-        const progress = (audioPlayerRef.current.currentTime / audioPlayerRef.current.duration) * 100;
-        drawStaticWaveform(progress);
-    }, [isPlayingPreview, drawStaticWaveform]);
+        async function getPermission() {
+            try {
+                const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+                mediaRecorderRef.current = new MediaRecorder(stream);
 
-    useEffect(() => {
-        const player = audioPlayerRef.current;
-        const onEnded = () => { setIsPlayingPreview(false); if (player) player.currentTime = 0; drawStaticWaveform(0); };
-        player?.addEventListener('timeupdate', handleTimeUpdate);
-        player?.addEventListener('ended', onEnded);
-        return () => {
-            player?.removeEventListener('timeupdate', handleTimeUpdate);
-            player?.removeEventListener('ended', onEnded);
+                audioContextRef.current = new (window.AudioContext || (window as any).webkitAudioContext)();
+                analyserRef.current = audioContextRef.current.createAnalyser();
+                analyserRef.current.fftSize = 256;
+                const source = audioContextRef.current.createMediaStreamSource(stream);
+                source.connect(analyserRef.current);
+                
+                mediaRecorderRef.current.ondataavailable = (e) => { if (e.data.size > 0) audioChunksRef.current.push(e.data); };
+                mediaRecorderRef.current.onstop = async () => {
+                    const blob = new Blob(audioChunksRef.current, { type: 'audio/webm' });
+                    
+                    const reader = new FileReader();
+                    reader.readAsDataURL(blob);
+                    reader.onloadend = async () => {
+                        const base64Audio = reader.result as string;
+
+                        if (!audioContextRef.current) return;
+                        // For waveform, we still need to decode the audio data from the blob
+                        const arrayBuffer = await blob.arrayBuffer();
+                        const decodedBuffer = await audioContextRef.current.decodeAudioData(arrayBuffer);
+                        const channelData = decodedBuffer.getChannelData(0);
+                        const samples = 300;
+                        const blockSize = Math.floor(channelData.length / samples);
+                        const waveform = [];
+                        let maxAmp = 0;
+                        for (let i = 0; i < samples; i++) {
+                            let sum = 0;
+                            for (let j = 0; j < blockSize; j++) { sum += Math.abs(channelData[i * blockSize + j]); }
+                            const amp = sum / blockSize;
+                            waveform.push(amp);
+                            if (amp > maxAmp) maxAmp = amp;
+                        }
+                        const normalizedWaveform = waveform.map(a => a / maxAmp);
+
+                        // Set the state with the base64 URL
+                        setRecordedAudio({ url: base64Audio, blob, waveform: normalizedWaveform });
+                        setStatus('recorded');
+                    };
+                };
+
+                setStatus('idle');
+            } catch (err) {
+                toast({ variant: 'destructive', title: 'Microphone access denied.' });
+                onOpenChange(false);
+            }
         }
-    }, [handleTimeUpdate, drawStaticWaveform]);
+        getPermission();
+        return () => { mediaRecorderRef.current?.stream.getTracks().forEach(track => track.stop()); }
+    }, [onOpenChange, toast]);
 
     const startRecording = async () => {
         if(audioContextRef.current?.state === 'suspended') { await audioContextRef.current.resume(); }
@@ -368,7 +375,7 @@ function AudioRecorderSheet({ onAttach, onOpenChange }: { onAttach: (data: { url
                 </p>
 
                 <div className="w-full h-24 bg-secondary rounded-lg">
-                    <canvas ref={canvasRef} className="w-full h-full" />
+                     <canvas ref={canvasRef} className="w-full h-full" />
                 </div>
                 
                 {status === 'idle' || status === 'permission-pending' ? (
@@ -803,5 +810,3 @@ export default function PostPage() {
     </Suspense>
   );
 }
-
-    
