@@ -31,6 +31,7 @@ import { Loader2, X, ListOrdered, Plus, Link as LinkIcon, Image as ImageIcon, Ca
 import { errorEmitter } from "@/firebase/error-emitter";
 import { FirestorePermissionError } from "@/firebase/errors";
 import { Switch } from "@/components/ui/switch";
+import { Label } from "@/components/ui/label";
 import { cn, getAvatar, formatUserId, getCoordsForCity } from "@/lib/utils";
 import type { LinkMetadata } from "@/lib/types";
 import Image from "next/image";
@@ -269,13 +270,29 @@ function AudioRecorderSheet({ onAttach, onOpenChange }: { onAttach: (data: { url
                 setHasPermission(true);
                 setRecordingStatus("idle");
 
-                const options = { mimeType: 'audio/wav' };
+                // Check for a universally supported MIME type, preferring audio/wav
+                const supportedTypes = ['audio/wav', 'audio/webm', 'audio/mp4'];
+                let selectedMimeType = '';
+                for (const type of supportedTypes) {
+                    if (MediaRecorder.isTypeSupported(type)) {
+                        selectedMimeType = type;
+                        break;
+                    }
+                }
+                
+                if (!selectedMimeType) {
+                    toast({ variant: 'destructive', title: 'No supported audio format found.' });
+                    onOpenChange(false);
+                    return;
+                }
+
+                const options = { mimeType: selectedMimeType };
                 mediaRecorderRef.current = new MediaRecorder(stream, options);
                 
                 mediaRecorderRef.current.ondataavailable = (event) => { if (event.data.size > 0) audioChunksRef.current.push(event.data); };
                 
                 mediaRecorderRef.current.onstop = () => {
-                    const audioBlob = new Blob(audioChunksRef.current, { type: 'audio/wav' });
+                    const audioBlob = new Blob(audioChunksRef.current, { type: selectedMimeType });
                     const reader = new FileReader();
                     reader.readAsDataURL(audioBlob);
                     reader.onloadend = () => {
