@@ -26,7 +26,7 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Form, FormControl, FormField, FormItem, FormMessage } from "@/components/ui/form";
-import { Loader2, X, ListOrdered, Plus, Link as LinkIcon, Image as ImageIcon, CalendarClock, Mic, Play, Square, RefreshCw, Send, Pause, StopCircle, Check } from "lucide-react";
+import { Loader2, X, ListOrdered, Plus, Link as LinkIcon, Image as ImageIcon, CalendarClock, Mic, Play, Square, RefreshCw, Send, Pause, StopCircle, Check, Circle, Undo2 } from "lucide-react";
 import { errorEmitter } from "@/firebase/error-emitter";
 import { FirestorePermissionError } from "@/firebase/errors";
 import { Switch } from "@/components/ui/switch";
@@ -103,13 +103,13 @@ const expirationOptions = [
     { label: '7 Days', value: 7 * 24 * 60 * 60 },
 ];
 
-type AudioRecordingStatus = "idle" | "permission-pending" | "recording" | "paused" | "recorded";
+type AudioRecordingStatus = "idle" | "permission-pending" | "recording" | "paused" | "recorded" | "sharing";
 
 function AudioRecorderSheet({ onAttach, onOpenChange }: { onAttach: (data: { url: string, waveform: number[], duration: number }) => void, onOpenChange: (open: boolean) => void }) {
     const { toast } = useToast();
     const [status, setStatus] = useState<AudioRecordingStatus>("permission-pending");
     const [duration, setDuration] = useState(0); // in seconds
-    const [recordedAudio, setRecordedAudio] = useState<{ url: string; blob: Blob; waveform: number[] } | null>(null);
+    const [recordedAudio, setRecordedAudio] = useState<{ url: string; waveform: number[] } | null>(null);
     const [isPlayingPreview, setIsPlayingPreview] = useState(false);
 
     const mediaRecorderRef = useRef<MediaRecorder | null>(null);
@@ -120,10 +120,11 @@ function AudioRecorderSheet({ onAttach, onOpenChange }: { onAttach: (data: { url
     
     const audioContextRef = useRef<AudioContext | null>(null);
     const analyserRef = useRef<AnalyserNode | null>(null);
+    const animationFrameIdRef = useRef<number | null>(null);
     
-    const drawStaticWaveform = useCallback((progress: number = 0) => {
+    const drawWaveform = useCallback((progress: number = 0) => {
         const canvas = canvasRef.current;
-        const waveform = recordedAudio?.waveform;
+        const waveformData = recordedAudio?.waveform;
         if (!canvas) return;
 
         const ctx = canvas.getContext('2d');
@@ -131,8 +132,8 @@ function AudioRecorderSheet({ onAttach, onOpenChange }: { onAttach: (data: { url
         
         ctx.clearRect(0, 0, canvas.width, canvas.height);
         
-        if (!waveform && (status === 'idle' || status === 'permission-pending')) {
-            const barWidth = 3;
+        if (!waveformData) {
+             const barWidth = 3;
             const gap = 2;
             const numBars = Math.floor(canvas.width / (barWidth + gap));
              for (let i = 0; i < numBars; i++) {
@@ -143,143 +144,132 @@ function AudioRecorderSheet({ onAttach, onOpenChange }: { onAttach: (data: { url
             }
             return;
         }
-        
-        if (!waveform) return;
 
         const barWidth = 3;
         const gap = 2;
         const numBars = Math.floor(canvas.width / (barWidth + gap));
-        const step = Math.max(1, Math.floor(waveform.length / numBars));
+        const step = Math.max(1, Math.floor(waveformData.length / numBars));
         
         for (let i = 0; i < numBars; i++) {
-            let barHeight: number;
             const waveIndex = i * step;
-            barHeight = Math.max(1, (waveform[waveIndex] || 0) * canvas.height * 0.9);
-            
+            const barHeight = Math.max(1, (waveformData[waveIndex] || 0) * canvas.height * 0.9);
             const x = i * (barWidth + gap);
             const isPlayed = (i / numBars) * 100 < progress;
             
             ctx.fillStyle = isPlayed ? 'hsl(var(--primary))' : 'hsl(var(--muted-foreground))';
-
             ctx.fillRect(x, (canvas.height - barHeight) / 2, barWidth, barHeight);
         }
-    }, [recordedAudio?.waveform, status]);
+    }, [recordedAudio?.waveform]);
 
-    useEffect(() => {
-        if (status === 'idle' || status === 'permission-pending') {
-            drawStaticWaveform();
-        } else if (status === 'recorded') {
-            drawStaticWaveform(0);
+    const stopVisualization = useCallback(() => {
+        if (animationFrameIdRef.current) {
+            cancelAnimationFrame(animationFrameIdRef.current);
+            animationFrameIdRef.current = null;
         }
-    }, [status, drawStaticWaveform]);
+    }, []);
+    
+    const startVisualization = useCallback((stream: MediaStream) => {
+        if (!audioContextRef.current) {
+            audioContextRef.current = new (window.AudioContext || (window as any).webkitAudioContext)();
+        }
+        if(audioContextRef.current.state === 'suspended') { audioContextRef.current.resume(); }
+
+        analyserRef.current = audioContextRef.current.createAnalyser();
+        analyserRef.current.fftSize = 256;
+        const source = audioContextRef.current.createMediaStreamSource(stream);
+        source.connect(analyserRef.current);
+    
+        const bufferLength = analyserRef.current.frequencyBinCount;
+        const dataArray = new Uint8Array(bufferLength);
+        const canvas = canvasRef.current;
+        if (!canvas) return;
+        const canvasCtx = canvas.getContext('2d');
+        if (!canvasCtx) return;
+    
+        const animate = () => {
+            animationFrameIdRef.current = requestAnimationFrame(animate);
+            if (status !== 'recording') return;
+            
+            analyserRef.current?.getByteFrequencyData(dataArray);
+            canvasCtx.clearRect(0, 0, canvas.width, canvas.height);
+            
+            const barWidth = 3;
+            const gap = 2;
+            const centerX = canvas.width / 2;
+    
+            for (let i = 0; i < bufferLength; i++) {
+                const barHeight = (dataArray[i] / 255) * canvas.height * 0.9;
+                if (barHeight < 1) continue;
+                canvasCtx.fillStyle = 'hsl(var(--primary))';
+                canvasCtx.fillRect(centerX + (i * (barWidth + gap)), (canvas.height - barHeight) / 2, barWidth, barHeight);
+                canvasCtx.fillRect(centerX - (i * (barWidth + gap)) - barWidth, (canvas.height - barHeight) / 2, barWidth, barHeight);
+            }
+        };
+        animate();
+    }, [status]);
+    
+    useEffect(() => {
+        if (status === 'recording') {
+            if (mediaRecorderRef.current) startVisualization(mediaRecorderRef.current.stream);
+        } else {
+            stopVisualization();
+            if (status === 'idle' || status === 'permission-pending') {
+                drawWaveform(0);
+            }
+        }
+    }, [status, startVisualization, stopVisualization, drawWaveform]);
+
 
     const handleTimeUpdate = useCallback(() => {
         if (!audioPlayerRef.current || !isPlayingPreview) return;
         const progress = (audioPlayerRef.current.currentTime / audioPlayerRef.current.duration) * 100;
-        drawStaticWaveform(progress);
-    }, [isPlayingPreview, drawStaticWaveform]);
+        drawWaveform(progress);
+    }, [isPlayingPreview, drawWaveform]);
 
     useEffect(() => {
         const player = audioPlayerRef.current;
-        const onEnded = () => { setIsPlayingPreview(false); if (player) player.currentTime = 0; drawStaticWaveform(0); };
+        const onEnded = () => { setIsPlayingPreview(false); if (player) player.currentTime = 0; drawWaveform(0); };
         player?.addEventListener('timeupdate', handleTimeUpdate);
         player?.addEventListener('ended', onEnded);
         return () => {
             player?.removeEventListener('timeupdate', handleTimeUpdate);
             player?.removeEventListener('ended', onEnded);
         }
-    }, [handleTimeUpdate, drawStaticWaveform]);
-    
-    useEffect(() => {
-        let animationFrameId: number;
-    
-        const animate = () => {
-            if (analyserRef.current && canvasRef.current && status === 'recording') {
-                const analyser = analyserRef.current;
-                const canvas = canvasRef.current;
-                const canvasCtx = canvas.getContext('2d');
-                if (!canvasCtx) return;
-    
-                const bufferLength = analyser.frequencyBinCount;
-                const dataArray = new Uint8Array(bufferLength);
-                analyser.getByteFrequencyData(dataArray);
-    
-                canvasCtx.clearRect(0, 0, canvas.width, canvas.height);
-                const barWidth = 3;
-                const gap = 2;
-                const centerX = canvas.width / 2;
-    
-                for (let i = 0; i < bufferLength; i++) {
-                    const barHeight = (dataArray[i] / 255) * canvas.height;
-                    if (barHeight < 1) continue;
-                    canvasCtx.fillStyle = 'hsl(var(--primary))';
-                    canvasCtx.fillRect(centerX + (i * (barWidth + gap)), (canvas.height - barHeight) / 2, barWidth, barHeight);
-                    canvasCtx.fillRect(centerX - (i * (barWidth + gap)) - barWidth, (canvas.height - barHeight) / 2, barWidth, barHeight);
-                }
-            }
-            animationFrameId = requestAnimationFrame(animate);
-        };
-        
-        if (status === 'recording') {
-            animate();
-        } else {
-             const canvas = canvasRef.current;
-            if (canvas) {
-                const ctx = canvas.getContext('2d');
-                if (ctx && status !== 'recorded') {
-                    ctx.clearRect(0, 0, canvas.width, canvas.height);
-                }
-            }
-        }
-    
-        return () => {
-            if (animationFrameId) {
-                cancelAnimationFrame(animationFrameId);
-            }
-        };
-    }, [status]);
+    }, [handleTimeUpdate, drawWaveform]);
     
     useEffect(() => {
         async function getPermission() {
             try {
                 const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
                 mediaRecorderRef.current = new MediaRecorder(stream);
-
-                audioContextRef.current = new (window.AudioContext || (window as any).webkitAudioContext)();
-                analyserRef.current = audioContextRef.current.createAnalyser();
-                analyserRef.current.fftSize = 256;
-                const source = audioContextRef.current.createMediaStreamSource(stream);
-                source.connect(analyserRef.current);
                 
                 mediaRecorderRef.current.ondataavailable = (e) => { if (e.data.size > 0) audioChunksRef.current.push(e.data); };
                 mediaRecorderRef.current.onstop = async () => {
-                    const blob = new Blob(audioChunksRef.current, { type: 'audio/webm' });
+                    const mimeType = mediaRecorderRef.current?.mimeType || 'audio/webm';
+                    const audioBlob = new Blob(audioChunksRef.current, { type: mimeType });
+                    
+                    if (!audioContextRef.current) audioContextRef.current = new (window.AudioContext || (window as any).webkitAudioContext)();
+                    
+                    const arrayBuffer = await audioBlob.arrayBuffer();
+                    const decodedBuffer = await audioContextRef.current.decodeAudioData(arrayBuffer);
+                    const channelData = decodedBuffer.getChannelData(0);
+                    const samples = 300;
+                    const blockSize = Math.floor(channelData.length / samples);
+                    const waveform = [];
+                    let maxAmp = 0;
+                    for (let i = 0; i < samples; i++) {
+                        let sum = 0;
+                        for (let j = 0; j < blockSize; j++) { sum += Math.abs(channelData[i * blockSize + j]); }
+                        const amp = sum / blockSize;
+                        waveform.push(amp);
+                        if (amp > maxAmp) maxAmp = amp;
+                    }
+                    const normalizedWaveform = waveform.map(a => a / maxAmp);
                     
                     const reader = new FileReader();
-                    reader.readAsDataURL(blob);
-                    reader.onloadend = async () => {
-                        const base64Audio = reader.result as string;
-
-                        if (!audioContextRef.current) return;
-                        // For waveform, we still need to decode the audio data from the blob
-                        const arrayBuffer = await blob.arrayBuffer();
-                        const decodedBuffer = await audioContextRef.current.decodeAudioData(arrayBuffer);
-                        const channelData = decodedBuffer.getChannelData(0);
-                        const samples = 300;
-                        const blockSize = Math.floor(channelData.length / samples);
-                        const waveform = [];
-                        let maxAmp = 0;
-                        for (let i = 0; i < samples; i++) {
-                            let sum = 0;
-                            for (let j = 0; j < blockSize; j++) { sum += Math.abs(channelData[i * blockSize + j]); }
-                            const amp = sum / blockSize;
-                            waveform.push(amp);
-                            if (amp > maxAmp) maxAmp = amp;
-                        }
-                        const normalizedWaveform = waveform.map(a => a / maxAmp);
-
-                        // Set the state with the base64 URL
-                        setRecordedAudio({ url: base64Audio, blob, waveform: normalizedWaveform });
+                    reader.readAsDataURL(audioBlob);
+                    reader.onloadend = () => {
+                        setRecordedAudio({ url: reader.result as string, waveform: normalizedWaveform });
                         setStatus('recorded');
                     };
                 };
@@ -350,10 +340,10 @@ function AudioRecorderSheet({ onAttach, onOpenChange }: { onAttach: (data: { url
         setRecordedAudio(null);
         setDuration(0);
         setStatus('idle');
+        drawWaveform(0);
     }
 
     const formatTime = (timeInSeconds: number) => {
-        if (isNaN(timeInSeconds) || !isFinite(timeInSeconds)) return "00:00";
         const minutes = Math.floor(timeInSeconds / 60).toString().padStart(2, '0');
         const seconds = Math.floor(timeInSeconds % 60).toString().padStart(2, '0');
         return `${minutes}:${seconds}`;
@@ -386,24 +376,24 @@ function AudioRecorderSheet({ onAttach, onOpenChange }: { onAttach: (data: { url
 
                 {(status === 'recording' || status === 'paused') && (
                     <div className="flex items-center justify-center gap-4">
-                        <Button size="icon" variant="secondary" className="h-16 w-16 rounded-full" onClick={status === 'recording' ? pauseRecording : startRecording}>
-                            {status === 'recording' ? <Pause className="h-7 w-7" fill="currentColor" /> : <Mic className="h-7 w-7" />}
+                         <Button size="icon" variant="secondary" className="h-12 w-12 rounded-full" onClick={status === 'recording' ? pauseRecording : startRecording}>
+                            {status === 'recording' ? <Pause className="h-6 w-6" fill="currentColor" /> : <Mic className="h-6 w-6" />}
                         </Button>
-                        <Button size="icon" variant="default" className="h-14 w-14 rounded-full" onClick={stopRecording}>
-                            <Check className="h-7 w-7" />
+                        <Button size="icon" variant="default" className="h-12 w-12 rounded-full" onClick={stopRecording}>
+                            <Check className="h-6 w-6" />
                         </Button>
                     </div>
                 )}
                 
                 {status === 'recorded' && (
                      <div className="flex items-center justify-center gap-4">
-                        <Button size="icon" variant="secondary" className="h-14 w-14 rounded-full" onClick={handleRetake}>
-                            <RefreshCw className="h-6 w-6" />
+                        <Button size="icon" variant="secondary" className="h-12 w-12 rounded-full" onClick={handleRetake}>
+                            <Undo2 className="h-6 w-6" />
                         </Button>
                         <Button size="icon" variant="secondary" className="h-16 w-16 rounded-full" onClick={handlePlayPausePreview}>
                             {isPlayingPreview ? <Pause className="h-7 w-7" fill="currentColor" /> : <Play className="h-7 w-7" fill="currentColor" />}
                         </Button>
-                        <Button size="icon" variant="default" className="h-14 w-14 rounded-full" onClick={handleAttach}>
+                        <Button size="icon" variant="default" className="h-12 w-12 rounded-full" onClick={handleAttach}>
                             <Send className="h-6 w-6" />
                         </Button>
                     </div>
@@ -795,9 +785,7 @@ function PostPageComponent() {
                 </div>
             </SheetContent>
         </Sheet>
-        <Sheet open={isRecorderOpen} onOpenChange={setIsRecorderOpen}>
-            <AudioRecorderSheet onAttach={handleAttachAudio} onOpenChange={setIsRecorderOpen} />
-        </Sheet>
+        <AudioRecorderSheet onAttach={handleAttachAudio} onOpenChange={setIsRecorderOpen} />
       </SheetContent>
     </Sheet>
   );
