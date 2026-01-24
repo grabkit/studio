@@ -202,7 +202,6 @@ function AudioRecorderSheet({ onAttach, onOpenChange }: { onAttach: (data: { url
 
      useEffect(() => {
         let liveWaveform: number[] = [];
-        let animationFrameId: number;
 
         const animate = () => {
             if (recordingStatus === 'recording' && mediaRecorderRef.current) {
@@ -220,20 +219,14 @@ function AudioRecorderSheet({ onAttach, onOpenChange }: { onAttach: (data: { url
                     drawWaveform(liveWaveform, 100);
                 });
             }
-            animationFrameId = requestAnimationFrame(animate);
         };
 
         if (recordingStatus === 'recording') {
-            animate();
+            const id = requestAnimationFrame(animate);
+            return () => cancelAnimationFrame(id);
         } else {
             stopVisualization();
         }
-        
-        return () => {
-            cancelAnimationFrame(animationFrameId);
-            stopVisualization();
-        };
-
     }, [recordingStatus, visualize, drawWaveform, stopVisualization]);
 
 
@@ -272,7 +265,8 @@ function AudioRecorderSheet({ onAttach, onOpenChange }: { onAttach: (data: { url
                 setHasPermission(true);
                 setRecordingStatus("idle");
 
-                mediaRecorderRef.current = new MediaRecorder(stream);
+                const options = { mimeType: 'audio/webm' };
+                mediaRecorderRef.current = new MediaRecorder(stream, options);
                 
                 mediaRecorderRef.current.ondataavailable = (event) => { if (event.data.size > 0) audioChunksRef.current.push(event.data); };
                 
@@ -418,10 +412,6 @@ function AudioRecorderSheet({ onAttach, onOpenChange }: { onAttach: (data: { url
         <SheetContent side="bottom" className="h-auto p-4 rounded-t-2xl">
             <SheetHeader className="text-center mb-4">
                 <SheetTitle>Voice Post</SheetTitle>
-                <SheetClose className="absolute right-4 top-4 rounded-sm opacity-70 ring-offset-background transition-opacity hover:opacity-100 focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 disabled:pointer-events-none data-[state=open]:bg-secondary">
-                    <X className="h-4 w-4" />
-                    <span className="sr-only">Close</span>
-                </SheetClose>
             </SheetHeader>
             
             <div className="flex flex-col items-center gap-4">
