@@ -171,6 +171,44 @@
       },
       "required": ["url"]
     },
+    "Event": {
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "title": "Event",
+      "type": "object",
+      "description": "Represents a user-created event.",
+      "properties": {
+        "id": { "type": "string" },
+        "authorId": { "type": "string" },
+        "name": { "type": "string" },
+        "description": { "type": "string" },
+        "type": { "type": "string", "enum": ["public", "private"] },
+        "isPaid": { "type": "boolean" },
+        "eventTimestamp": { "type": "string", "format": "date-time" },
+        "location": { "type": "string" },
+        "geohash": { "type": "string" },
+        "coordinates": {
+            "type": "object",
+            "properties": {
+                "latitude": { "type": "number" },
+                "longitude": { "type": "number" }
+            }
+        },
+        "reach": { "type": "number" }
+      },
+      "required": ["id", "authorId", "name", "eventTimestamp", "location", "geohash", "coordinates", "reach"]
+    },
+    "EventDetails": {
+        "title": "Event Details",
+        "type": "object",
+        "description": "Denormalized, lightweight snapshot of an event for embedding in a post.",
+        "properties": {
+            "id": { "type": "string" },
+            "name": { "type": "string" },
+            "eventTimestamp": { "type": "string", "format": "date-time" },
+            "location": { "type": "string" }
+        },
+        "required": ["id", "name", "eventTimestamp", "location"]
+    },
     "Post": {
       "$schema": "http://json-schema.org/draft-07/schema#",
       "title": "Post",
@@ -205,7 +243,7 @@
         "commentsAllowed": { "type": "boolean" },
         "type": {
           "type": "string",
-          "enum": ["text", "poll", "repost", "quote"],
+          "enum": ["text", "poll", "repost", "quote", "audio", "event"],
           "description": "The type of the post."
         },
         "pollOptions": {
@@ -233,6 +271,24 @@
             "type": "string",
             "format": "date-time",
             "description": "Timestamp indicating when the post will automatically expire and be deleted."
+        },
+         "audioUrl": {
+            "type": "string",
+            "format": "uri",
+            "description": "URL to the audio file for an audio post."
+        },
+        "audioWaveform": {
+            "type": "array",
+            "items": { "type": "number" },
+            "description": "An array of numbers representing the audio waveform for visualization."
+        },
+        "audioDuration": {
+            "type": "number",
+            "description": "The duration of the audio in seconds."
+        },
+        "eventDetails": {
+            "$ref": "#/backend/entities/EventDetails",
+            "description": "Denormalized data of the event, if this is an event post."
         }
       },
       "required": [
@@ -590,6 +646,17 @@
               "description": "The unique identifier for the post."
             }
           ]
+        }
+      },
+      {
+        "path": "/events/{eventId}",
+        "definition": {
+            "entityName": "Event",
+            "schema": { "$ref": "#/backend/entities/Event" },
+            "description": "Stores all user-created events.",
+            "params": [
+                { "name": "eventId", "description": "The unique identifier for the event." }
+            ]
         }
       },
       {

@@ -26,6 +26,33 @@ export interface QuotedPost {
     timestamp: Timestamp;
 }
 
+export interface GeoPoint {
+    latitude: number;
+    longitude: number;
+}
+
+export interface Event {
+    id: string;
+    authorId: string;
+    name: string;
+    description: string;
+    type: 'public' | 'private';
+    isPaid: boolean;
+    eventTimestamp: Timestamp;
+    location: string;
+    geohash: string;
+    coordinates: GeoPoint;
+    reach: number; // in kilometers
+}
+
+export interface EventDetails {
+    id: string;
+    name: string;
+    eventTimestamp: Timestamp;
+    location: string;
+}
+
+
 export interface Post {
     id: string;
     timestamp: Timestamp;
@@ -40,7 +67,7 @@ export interface Post {
     expiresAt?: Timestamp;
 
     // Type of post
-    type?: 'text' | 'poll' | 'repost' | 'quote' | 'audio';
+    type?: 'text' | 'poll' | 'repost' | 'quote' | 'audio' | 'event';
 
     // Poll specific fields
     pollOptions?: PollOption[];
@@ -57,6 +84,9 @@ export interface Post {
     audioUrl?: string;
     audioWaveform?: number[];
     audioDuration?: number;
+
+    // Event specific fields
+    eventDetails?: EventDetails;
 }
 
 export interface Comment {
@@ -210,5 +240,3 @@ export interface VideoIceCandidate {
     sdpMLineIndex: number | null;
     usernameFragment: string | null;
 }
-
-    

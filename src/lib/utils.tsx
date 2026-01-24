@@ -198,3 +198,23 @@ export function formatExpiry(date: Date): string {
 
   return formatDistanceStrict(date, now);
 }
+
+export const MOCK_CITIES: { [key: string]: { latitude: number, longitude: number } } = {
+  "hyderabad": { latitude: 17.3850, longitude: 78.4867 },
+  "mumbai": { latitude: 19.0760, longitude: 72.8777 },
+  "delhi": { latitude: 28.7041, longitude: 77.1025 },
+  "bangalore": { latitude: 12.9716, longitude: 77.5946 },
+  "chennai": { latitude: 13.0827, longitude: 80.2707 },
+  "kolkata": { latitude: 22.5726, longitude: 88.3639 },
+  "vijayawada": { latitude: 16.5062, longitude: 80.6480 },
+};
+
+export const getCoordsForCity = (city: string): { latitude: number, longitude: number } | null => {
+  const lowerCity = city.toLowerCase();
+  for (const key in MOCK_CITIES) {
+    if (key.includes(lowerCity)) {
+      return MOCK_CITIES[key];
+    }
+  }
+  return null;
+};
