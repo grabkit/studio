@@ -11,43 +11,43 @@ import { Badge } from '@/components/ui/badge';
 
 const colorSchemes = [
     {
-        line: 'bg-red-500',
+        line: 'bg-red-800 dark:bg-red-300',
         bg: 'bg-red-500/10',
         text: 'text-red-800 dark:text-red-300',
         durationBg: 'bg-red-100 text-red-800 dark:bg-red-900/50 dark:text-red-300',
     },
     {
-        line: 'bg-pink-500',
+        line: 'bg-pink-800 dark:bg-pink-300',
         bg: 'bg-pink-500/10',
         text: 'text-pink-800 dark:text-pink-300',
         durationBg: 'bg-pink-100 text-pink-800 dark:bg-pink-900/50 dark:text-pink-300',
     },
     {
-        line: 'bg-blue-500',
+        line: 'bg-blue-800 dark:bg-blue-300',
         bg: 'bg-blue-500/10',
         text: 'text-blue-800 dark:text-blue-300',
         durationBg: 'bg-blue-100 text-blue-800 dark:bg-blue-900/50 dark:text-blue-300',
     },
     {
-        line: 'bg-green-500',
+        line: 'bg-green-800 dark:bg-green-300',
         bg: 'bg-green-500/10',
         text: 'text-green-800 dark:text-green-300',
         durationBg: 'bg-green-100 text-green-800 dark:bg-green-900/50 dark:text-green-300',
     },
     {
-        line: 'bg-purple-500',
+        line: 'bg-purple-800 dark:bg-purple-300',
         bg: 'bg-purple-500/10',
         text: 'text-purple-800 dark:text-purple-300',
         durationBg: 'bg-purple-100 text-purple-800 dark:bg-purple-900/50 dark:text-purple-300',
     },
     {
-        line: 'bg-indigo-500',
+        line: 'bg-indigo-800 dark:bg-indigo-300',
         bg: 'bg-indigo-500/10',
         text: 'text-indigo-800 dark:text-indigo-300',
         durationBg: 'bg-indigo-100 text-indigo-800 dark:bg-indigo-900/50 dark:text-indigo-300',
     },
     {
-        line: 'bg-yellow-500',
+        line: 'bg-yellow-800 dark:bg-yellow-300',
         bg: 'bg-yellow-500/10',
         text: 'text-yellow-800 dark:text-yellow-300',
         durationBg: 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900/50 dark:text-yellow-300',
