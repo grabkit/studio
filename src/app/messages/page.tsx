@@ -1,4 +1,3 @@
-
 "use client";
 
 import AppLayout from "@/components/AppLayout";
@@ -6,7 +5,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { getAvatar, formatMessageTimestamp, formatUserId } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
-import { MessageSquare, Mail, Trash2, BellOff, CheckCircle, User as UserIcon, Bell, Mic, Loader2 } from "lucide-react";
+import { MessageSquare, Mail, Trash2, BellOff, CheckCircle, User as UserIcon, Bell, Mic, Loader2, Radio } from "lucide-react";
 import { useFirebase, useMemoFirebase, useDoc } from "@/firebase";
 import { collection, query, where, doc, updateDoc, deleteDoc, arrayUnion, arrayRemove, getDocs, documentId, getDocsFromCache, orderBy } from "firebase/firestore";
 import type { Conversation, User } from "@/lib/types";
@@ -641,8 +640,11 @@ export default function MessagesPage() {
                     </div>
                     
                     <div className="flex-grow flex flex-col p-2 overflow-hidden">
-                        <Tabs defaultValue="chats" className="w-full flex flex-col flex-grow" onValueChange={handleTabChange}>
-                            <TabsList className="grid w-full grid-cols-2 rounded-full flex-shrink-0">
+                        <Tabs defaultValue="rooms" className="w-full flex flex-col flex-grow" onValueChange={handleTabChange}>
+                            <TabsList className="grid w-full grid-cols-3 rounded-full flex-shrink-0">
+                                <TabsTrigger value="rooms" className="relative flex items-center justify-center gap-2 rounded-full font-bold">
+                                    Rooms
+                                </TabsTrigger>
                                 <TabsTrigger value="chats" className="relative flex items-center justify-center gap-2 rounded-full font-bold">
                                     {hasUnreadChats && (
                                         <div className="w-2 h-2 rounded-full bg-destructive"></div>
@@ -657,6 +659,20 @@ export default function MessagesPage() {
                                 </TabsTrigger>
                             </TabsList>
                             <div className="flex-grow overflow-y-auto">
+                                <TabsContent value="rooms">
+                                    <div className="text-center py-20 px-4">
+                                        <div className="inline-block p-4 bg-secondary rounded-full">
+                                            <Radio className="h-10 w-10 text-primary" />
+                                        </div>
+                                        <h2 className="mt-6 text-xl font-headline text-primary">No Rooms Yet</h2>
+                                        <p className="text-muted-foreground mt-2 max-w-sm mx-auto">
+                                           Create or join rooms to start a group conversation.
+                                        </p>
+                                        <Button className="mt-6 bg-primary text-primary-foreground hover:bg-primary/90 rounded-full font-bold">
+                                            Create a Room
+                                        </Button>
+                                    </div>
+                                </TabsContent>
                                 <TabsContent value="chats">
                                     <ConversationsList 
                                         conversations={chats}
