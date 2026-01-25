@@ -1,8 +1,7 @@
-
 "use client";
 
 import * as React from "react";
-import { useState, Suspense, useEffect, useMemo } from "react";
+import { useState, Suspense, useEffect, useMemo, useRef, useCallback } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { useForm, useFieldArray } from "react-hook-form";
 import * as z from "zod";
@@ -771,7 +770,7 @@ function PostPageComponent() {
                                         </Button>
                                         {linkMetadata.imageUrl && <div className="relative aspect-video bg-secondary"><Image src={linkMetadata.imageUrl} alt={linkMetadata.title || 'Link preview'} fill className="object-cover"/></div>}
                                         <div className="p-3 bg-secondary/50">
-                                            <p className="text-xs text-muted-foreground uppercase tracking-wider">{linkMetadata.url ? new URL(linkMetadata.url).hostname.replace('www.','') : ''}</p>
+                                            {linkMetadata.url && <p className="text-xs text-muted-foreground uppercase tracking-wider">{new URL(linkMetadata.url).hostname.replace('www.','')}</p>}
                                             <p className="font-semibold text-sm truncate mt-0.5">{linkMetadata.title || linkMetadata.url}</p>
                                         </div>
                                     </div>
