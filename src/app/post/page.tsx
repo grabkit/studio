@@ -613,7 +613,7 @@ function EventFormSheet({ isOpen, onOpenChange, form, toast }: { isOpen: boolean
                                       <div className="flex items-start gap-4">
                                           <CalendarDays className="h-5 w-5 text-muted-foreground mt-2.5" />
                                           <div className="w-full">
-                                            <Popover>
+                                            <Popover modal={true}>
                                                 <PopoverTrigger asChild>
                                                     <FormControl>
                                                         <Button
