@@ -860,17 +860,17 @@ function PostPageComponent() {
     let finalEventDetails: Partial<EventDetails> | undefined = undefined;
     if(processedValues.eventDetails && processedValues.eventDetails.name && processedValues.eventDetails.location) {
         const { startTime, endTime, name, location, isAllDay, eventTimestamp, description, isPaid } = processedValues.eventDetails;
+        
         let finalEventTimestamp = eventTimestamp;
-        let finalEndTimestamp = undefined;
-
         if (!isAllDay && startTime && eventTimestamp) {
             finalEventTimestamp = combineDateAndTime(eventTimestamp, startTime);
         }
-        if (!isAllDay && endTime && finalEventTimestamp) {
-            finalEndTimestamp = combineDateAndTime(new Date(finalEventTimestamp), endTime);
-        }
         
-        finalEventDetails = { name, location, isAllDay, eventTimestamp: finalEventTimestamp, endTimestamp: finalEndTimestamp, description, isPaid };
+        finalEventDetails = { name, location, isAllDay, eventTimestamp: finalEventTimestamp, description, isPaid };
+
+        if (!isAllDay && endTime && finalEventTimestamp) {
+            finalEventDetails.endTimestamp = combineDateAndTime(new Date(finalEventTimestamp), endTime);
+        }
     }
 
 
