@@ -1,4 +1,3 @@
-
 'use client';
 
 import type { EventDetails } from '@/lib/types';
@@ -8,46 +7,51 @@ import { Sheet, SheetTrigger, SheetContent, SheetHeader, SheetTitle } from '@/co
 import { MapPin, CalendarDays, AlignLeft } from 'lucide-react';
 
 
-const eventColors = [
-    'border-l-red-500',
-    'border-l-pink-500',
-    'border-l-blue-500',
-    'border-l-green-500',
-    'border-l-purple-500',
-    'border-l-indigo-500',
-    'border-l-yellow-500',
+const colorSchemes = [
+    {
+        border: 'border-l-red-500',
+        bg: 'bg-red-500/10',
+        text: 'text-red-500',
+        durationBg: 'bg-red-100 text-red-800 dark:bg-red-900/50 dark:text-red-300',
+    },
+    {
+        border: 'border-l-pink-500',
+        bg: 'bg-pink-500/10',
+        text: 'text-pink-500',
+        durationBg: 'bg-pink-100 text-pink-800 dark:bg-pink-900/50 dark:text-pink-300',
+    },
+    {
+        border: 'border-l-blue-500',
+        bg: 'bg-blue-500/10',
+        text: 'text-blue-500',
+        durationBg: 'bg-blue-100 text-blue-800 dark:bg-blue-900/50 dark:text-blue-300',
+    },
+    {
+        border: 'border-l-green-500',
+        bg: 'bg-green-500/10',
+        text: 'text-green-500',
+        durationBg: 'bg-green-100 text-green-800 dark:bg-green-900/50 dark:text-green-300',
+    },
+    {
+        border: 'border-l-purple-500',
+        bg: 'bg-purple-500/10',
+        text: 'text-purple-500',
+        durationBg: 'bg-purple-100 text-purple-800 dark:bg-purple-900/50 dark:text-purple-300',
+    },
+    {
+        border: 'border-l-indigo-500',
+        bg: 'bg-indigo-500/10',
+        text: 'text-indigo-500',
+        durationBg: 'bg-indigo-100 text-indigo-800 dark:bg-indigo-900/50 dark:text-indigo-300',
+    },
+    {
+        border: 'border-l-yellow-500',
+        bg: 'bg-yellow-500/10',
+        text: 'text-yellow-500',
+        durationBg: 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900/50 dark:text-yellow-300',
+    },
 ];
 
-const eventBgColors = [
-    'bg-red-500/10',
-    'bg-pink-500/10',
-    'bg-blue-500/10',
-    'bg-green-500/10',
-    'bg-purple-500/10',
-    'bg-indigo-500/10',
-    'bg-yellow-500/10',
-];
-
-const eventTextColors = [
-    'text-red-500',
-    'text-pink-500',
-    'text-blue-500',
-    'text-green-500',
-    'text-purple-500',
-    'text-indigo-500',
-    'text-yellow-500',
-];
-
-
-const durationBgColors = [
-    'bg-red-100 text-red-800',
-    'bg-pink-100 text-pink-800',
-    'bg-blue-100 text-blue-800',
-    'bg-green-100 text-green-800',
-    'bg-purple-100 text-purple-800',
-    'bg-indigo-100 text-indigo-800',
-    'bg-yellow-100 text-yellow-800',
-]
 
 export function EventCard({ eventDetails }: { eventDetails: EventDetails }) {
     const [isOpen, setIsOpen] = useState(false);
@@ -60,13 +64,10 @@ export function EventCard({ eventDetails }: { eventDetails: EventDetails }) {
         for (let i = 0; i < eventDetails.name.length; i++) {
             hash = eventDetails.name.charCodeAt(i) + ((hash << 5) - hash);
         }
-        return Math.abs(hash % eventColors.length);
+        return Math.abs(hash % colorSchemes.length);
     }, [eventDetails.name]);
 
-    const borderColorClass = eventColors[colorIndex];
-    const bgColorClass = eventBgColors[colorIndex];
-    const textColorClass = eventTextColors[colorIndex];
-    const durationBgClass = durationBgColors[colorIndex];
+    const scheme = colorSchemes[colorIndex];
     const duration = formatEventDuration(startDate, endDate);
 
     return (
@@ -80,13 +81,13 @@ export function EventCard({ eventDetails }: { eventDetails: EventDetails }) {
                     <div className="px-4">
                         <div className="border-b border-dashed border-border"></div>
                     </div>
-                    <div className={cn("p-4 flex items-start gap-3 pl-3", borderColorClass, bgColorClass, 'border-l-4')}>
+                    <div className={cn("p-4 flex items-start gap-3 pl-3", scheme.border, scheme.bg, 'border-l-4')}>
                         <div className="flex-1 pl-1">
-                            <p className={cn("font-semibold", textColorClass)}>{eventDetails.name}</p>
-                            <p className={cn("text-sm opacity-90", textColorClass)}>{formatEventTimeRange(startDate, endDate, eventDetails.isAllDay)}</p>
+                            <p className={cn("font-semibold", scheme.text)}>{eventDetails.name}</p>
+                            <p className={cn("text-sm opacity-90", scheme.text)}>{formatEventTimeRange(startDate, endDate, eventDetails.isAllDay)}</p>
                         </div>
                         {duration && (
-                            <div className={cn("text-xs font-bold px-2 py-0.5 rounded-md", durationBgClass)}>
+                            <div className={cn("text-xs font-bold px-2 py-0.5 rounded-md", scheme.durationBg)}>
                                 {duration}
                             </div>
                         )}
