@@ -41,6 +41,7 @@ export interface Event {
 export interface EventDetails {
     id: string;
     name: string;
+    description?: string;
     eventTimestamp: Timestamp;
     endTimestamp?: Timestamp;
     isAllDay: boolean;

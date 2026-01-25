@@ -28,7 +28,7 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Form, FormControl, FormField, FormItem, FormMessage, FormLabel } from "@/components/ui/form";
-import { Loader2, X, ListOrdered, Plus, Link as LinkIcon, Image as ImageIcon, CalendarClock, Mic, Play, Square, RefreshCw, Send, Pause, StopCircle, Check, Circle, Undo2, CalendarDays, MapPin, Clock, DollarSign, Info } from "lucide-react";
+import { Loader2, X, ListOrdered, Plus, Link as LinkIcon, Image as ImageIcon, CalendarClock, Mic, Play, Square, RefreshCw, Send, Pause, StopCircle, Check, Circle, Undo2, CalendarDays, MapPin, Clock, DollarSign, Info, AlignLeft } from "lucide-react";
 import { errorEmitter } from "@/firebase/error-emitter";
 import { FirestorePermissionError } from "@/firebase/errors";
 import { Switch } from "@/components/ui/switch";
@@ -554,7 +554,18 @@ function EventFormSheet({ isOpen, onOpenChange, form, toast }: { isOpen: boolean
                                   <div className="flex items-start gap-4">
                                       <Info className="h-5 w-5 text-muted-foreground mt-2" />
                                       <div className="w-full">
-                                          <FormControl><Input placeholder="Event Name" {...field} className="text-base border-0 border-b-2 rounded-none focus-visible:ring-0 px-0 pb-1" /></FormControl>
+                                          <FormControl><Input placeholder="Event Name" {...field} value={field.value || ''} className="text-base border-0 border-b-2 rounded-none focus-visible:ring-0 px-0 pb-1" /></FormControl>
+                                          <FormMessage />
+                                      </div>
+                                  </div>
+                              </FormItem>
+                          )}/>
+                          <FormField control={form.control} name="eventDetails.description" render={({ field }) => (
+                              <FormItem>
+                                  <div className="flex items-start gap-4">
+                                      <AlignLeft className="h-5 w-5 text-muted-foreground mt-2" />
+                                      <div className="w-full">
+                                          <FormControl><Textarea placeholder="Short Description (Optional)" {...field} value={field.value || ''} className="text-base border-0 border-b-2 rounded-none focus-visible:ring-0 px-0 pb-1 bg-transparent" rows={1} /></FormControl>
                                           <FormMessage />
                                       </div>
                                   </div>
@@ -821,7 +832,7 @@ function PostPageComponent() {
     // Process event details
     let finalEventDetails: Partial<EventDetails> | undefined = undefined;
     if(processedValues.eventDetails) {
-        const { startTime, endTime, name, location, isAllDay, eventTimestamp } = processedValues.eventDetails;
+        const { startTime, endTime, name, location, isAllDay, eventTimestamp, description } = processedValues.eventDetails;
         let finalEventTimestamp = eventTimestamp;
         let finalEndTimestamp = undefined;
 
@@ -832,7 +843,7 @@ function PostPageComponent() {
             finalEndTimestamp = combineDateAndTime(new Date(finalEventTimestamp), endTime);
         }
         
-        finalEventDetails = { name, location, isAllDay, eventTimestamp: finalEventTimestamp, endTimestamp: finalEndTimestamp };
+        finalEventDetails = { name, location, isAllDay, eventTimestamp: finalEventTimestamp, endTimestamp: finalEndTimestamp, description };
     }
 
 
