@@ -205,7 +205,7 @@ function AudioRecorderSheet({ onAttach, onOpenChange, isRecorderOpen }: { onAtta
         const animate = () => {
             animationFrameIdRef.current = requestAnimationFrame(animate);
 
-            analyserRef.current?.getByteFrequencyFrequencyData(dataArray);
+            analyserRef.current?.getByteFrequencyData(dataArray);
             let sum = 0;
             for(let i=0; i<bufferLength; i++) {
                 sum += dataArray[i];
@@ -1184,5 +1184,7 @@ export default function PostPage() {
     </Suspense>
   );
 }
+
+    
 
     
