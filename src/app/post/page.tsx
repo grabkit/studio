@@ -65,10 +65,10 @@ const quotedPostSchema = z.object({
 }).optional();
 
 const eventDetailsSchema = z.object({
-  name: z.string().min(1, "Event name cannot be empty."),
+  name: z.string().min(1, "Event name cannot be empty.").optional(),
   description: z.string().optional(),
-  location: z.string().min(1, "Location cannot be empty."),
-  eventTimestamp: z.date({ required_error: "Please select a date." }),
+  location: z.string().min(1, "Location cannot be empty.").optional(),
+  eventTimestamp: z.date({ required_error: "Please select a date." }).optional(),
   isAllDay: z.boolean().default(true),
   isPaid: z.boolean().default(false),
   startTime: z.string().optional(),
@@ -125,16 +125,16 @@ function AudioRecorderSheet({ onAttach, onOpenChange, isRecorderOpen }: { onAtta
     const [recordedAudioUrl, setRecordedAudioUrl] = useState<string | null>(null);
     const [duration, setDuration] = useState(0);
 
-    const mediaRecorderRef = React.useRef<MediaRecorder | null>(null);
-    const audioChunksRef = React.useRef<Blob[]>([]);
-    const timerIntervalRef = React.useRef<NodeJS.Timeout | null>(null);
-    const audioPlayerRef = React.useRef<HTMLAudioElement | null>(null);
+    const mediaRecorderRef = useRef<MediaRecorder | null>(null);
+    const audioChunksRef = useRef<Blob[]>([]);
+    const timerIntervalRef = useRef<NodeJS.Timeout | null>(null);
+    const audioPlayerRef = useRef<HTMLAudioElement | null>(null);
 
-    const canvasRef = React.useRef<HTMLCanvasElement | null>(null);
-    const audioContextRef = React.useRef<AudioContext | null>(null);
-    const analyserRef = React.useRef<AnalyserNode | null>(null);
-    const sourceNodeRef = React.useRef<MediaStreamAudioSourceNode | null>(null);
-    const animationFrameIdRef = React.useRef<number | null>(null);
+    const canvasRef = useRef<HTMLCanvasElement | null>(null);
+    const audioContextRef = useRef<AudioContext | null>(null);
+    const analyserRef = useRef<AnalyserNode | null>(null);
+    const sourceNodeRef = useRef<MediaStreamAudioSourceNode | null>(null);
+    const animationFrameIdRef = useRef<number | null>(null);
     const [isPlayingPreview, setIsPlayingPreview] = useState(false);
     const [waveform, setWaveform] = useState<number[]>([]);
 
@@ -565,14 +565,14 @@ function EventFormSheet({ isOpen, onOpenChange, form, toast }: { isOpen: boolean
                                   <FormField control={form.control} name="eventDetails.startTime" render={({ field }) => (
                                       <FormItem>
                                           <FormLabel>Start time</FormLabel>
-                                          <FormControl><Input type="time" {...field} className="text-base" /></FormControl>
+                                          <FormControl><Input type="time" {...field} value={field.value ?? ''} className="text-base" /></FormControl>
                                           <FormMessage />
                                       </FormItem>
                                   )}/>
                                   <FormField control={form.control} name="eventDetails.endTime" render={({ field }) => (
                                       <FormItem>
                                           <FormLabel>End time</FormLabel>
-                                          <FormControl><Input type="time" {...field} className="text-base" /></FormControl>
+                                          <FormControl><Input type="time" {...field} value={field.value ?? ''} className="text-base" /></FormControl>
                                           <FormMessage />
                                       </FormItem>
                                   )}/>
@@ -799,7 +799,7 @@ function PostPageComponent() {
         if (processedValues.isPoll) type = 'poll';
         else if (processedValues.quotedPost) type = 'quote';
         else if (processedValues.audioUrl) type = 'audio';
-        else if (processedValues.eventDetails) type = 'event';
+        else if (processedValues.eventDetails?.name) type = 'event';
 
         const newPostData: any = {
           id: newPostRef.id,
@@ -912,7 +912,7 @@ function PostPageComponent() {
                                   <FormField control={form.control} name="content" render={({ field }) => (
                                       <FormItem>
                                           <FormControl>
-                                              <Textarea placeholder={isPoll ? "Ask a question..." : eventDetails ? "Add a comment about this event..." : "What's on your mind?"} className="border-none focus-visible:ring-0 !outline-none text-base resize-none -ml-2" rows={3} onPaste={handlePaste} {...field}/>
+                                              <Textarea placeholder={isPoll ? "Ask a question..." : eventDetails?.name ? "Add a comment about this event..." : "What's on your mind?"} className="border-none focus-visible:ring-0 !outline-none text-base resize-none -ml-2" rows={3} onPaste={handlePaste} {...field}/>
                                           </FormControl>
                                           <FormMessage />
                                       </FormItem>
@@ -940,7 +940,7 @@ function PostPageComponent() {
                                        </div>
                                   )}
                                   
-                                  {eventDetails && (
+                                  {eventDetails?.name && (
                                       <div className="relative border rounded-xl p-3">
                                         <Button variant="ghost" size="icon" className="absolute top-1 right-1 h-7 w-7 bg-black/50 hover:bg-black/70 text-white hover:text-white rounded-full z-10" onClick={handleClearEvent}>
                                             <X className="h-4 w-4" />
@@ -1007,16 +1007,16 @@ function PostPageComponent() {
 
                                   <div className="p-4 border-t bg-background w-full fixed bottom-0 left-0 right-0">
                                       <div className="flex items-center space-x-1">
-                                          <Button type="button" variant="ghost" size="icon" onClick={() => setShowLinkInput(!showLinkInput)} disabled={!!linkMetadata || isEditMode || !!audioUrl || !!eventDetails}>
+                                          <Button type="button" variant="ghost" size="icon" onClick={() => setShowLinkInput(!showLinkInput)} disabled={!!linkMetadata || isEditMode || !!audioUrl || !!eventDetails?.name}>
                                               <LinkIcon className="h-5 w-5 text-muted-foreground" />
                                           </Button>
-                                          <Button type="button" variant="ghost" size="icon" onClick={() => { if(!isEditMode && !audioUrl && !isPoll && !linkMetadata && !eventDetails){setIsRecorderOpen(true)}}} disabled={isEditMode || !!audioUrl || isPoll || !!linkMetadata || !!eventDetails}>
+                                          <Button type="button" variant="ghost" size="icon" onClick={() => { if(!isEditMode && !audioUrl && !isPoll && !linkMetadata && !eventDetails?.name){setIsRecorderOpen(true)}}} disabled={isEditMode || !!audioUrl || isPoll || !!linkMetadata || !!eventDetails?.name}>
                                               <Mic className="h-5 w-5 text-muted-foreground" />
                                           </Button>
-                                          <Button type="button" variant="ghost" size="icon" onClick={() => setIsEventSheetOpen(true)} disabled={isEditMode || !!audioUrl || isPoll || !!linkMetadata || !!quotedPost || !!eventDetails}>
+                                          <Button type="button" variant="ghost" size="icon" onClick={() => setIsEventSheetOpen(true)} disabled={isEditMode || !!audioUrl || isPoll || !!linkMetadata || !!quotedPost || !!eventDetails?.name}>
                                             <CalendarDays className="h-5 w-5 text-muted-foreground" />
                                           </Button>
-                                          <Button type="button" variant="ghost" size="icon" onClick={handlePollToggle} disabled={isEditMode || !!audioUrl || !!eventDetails}>
+                                          <Button type="button" variant="ghost" size="icon" onClick={handlePollToggle} disabled={isEditMode || !!audioUrl || !!eventDetails?.name}>
                                               <ListOrdered className={cn("h-5 w-5 text-muted-foreground", isPoll && "text-primary")} />
                                           </Button>
                                           <div className="flex items-center gap-1">
@@ -1044,10 +1044,8 @@ function PostPageComponent() {
       
       <EventFormSheet form={form} isOpen={isEventSheetOpen} onOpenChange={setIsEventSheetOpen} toast={toast} />
 
-      <Sheet open={isOpen && isRecorderOpen} onOpenChange={setIsRecorderOpen}>
-        <AudioRecorderSheet onAttach={handleAttachAudio} onOpenChange={setIsRecorderOpen} isRecorderOpen={isOpen && isRecorderOpen} />
-      </Sheet>
-
+      <AudioRecorderSheet onAttach={handleAttachAudio} onOpenChange={setIsRecorderOpen} isRecorderOpen={isRecorderOpen} />
+      
       <Sheet open={isExpirationSheetOpen} onOpenChange={setIsExpirationSheetOpen}>
           <SheetContent side="bottom" className="rounded-t-2xl">
               <SheetHeader className="pb-4">
