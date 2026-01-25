@@ -11,7 +11,6 @@ import { collection, serverTimestamp, setDoc, doc, updateDoc, getDoc, writeBatch
 import { useFirebase, useDoc, useMemoFirebase } from "@/firebase";
 import type { Post, QuotedPost, Notification, Event, EventDetails } from "@/lib/types";
 import { WithId } from "@/firebase/firestore/use-collection";
-import ngeohash from "ngeohash";
 
 
 import {
@@ -31,8 +30,7 @@ import { Loader2, X, ListOrdered, Plus, Link as LinkIcon, Image as ImageIcon, Ca
 import { errorEmitter } from "@/firebase/error-emitter";
 import { FirestorePermissionError } from "@/firebase/errors";
 import { Switch } from "@/components/ui/switch";
-import { Label } from "@/components/ui/label";
-import { cn, getAvatar, formatUserId, getCoordsForCity } from "@/lib/utils";
+import { cn, getAvatar, formatUserId } from "@/lib/utils";
 import type { LinkMetadata } from "@/lib/types";
 import Image from "next/image";
 import { QuotedPostCard } from "@/components/QuotedPostCard";
@@ -467,6 +465,251 @@ function AudioRecorderSheet({ onAttach, onOpenChange }: { onAttach: (data: { url
     );
 }
 
+const eventSchema = z.object({
+    name: z.string().min(3, "Event name must be at least 3 characters.").max(100),
+    description: z.string().max(1000).optional(),
+    type: z.enum(['public', 'private']),
+    isPaid: z.boolean(),
+    eventDate: z.date({ required_error: "Please select a date." }),
+    eventTime: z.string({ required_error: "Please select a time." }).regex(/^([0-1]?[0-9]|2[0-3]):[0-5][0-9]$/, "Invalid time format."),
+    location: z.string().min(3, "Please enter a location."),
+    reach: z.number().min(1).max(100),
+    expiration: z.number().optional(),
+}).refine(data => {
+    if (!data.eventDate || !data.eventTime) return true; // Let individual validators handle this
+    const [hours, minutes] = data.eventTime.split(':');
+    const combinedDateTime = new Date(data.eventDate);
+    combinedDateTime.setHours(parseInt(hours), parseInt(minutes));
+    return combinedDateTime > new Date();
+}, {
+    message: "Event date and time must be in the future.",
+    path: ["eventTime"],
+});
+
+
+function EventFormSheet({ onClose, onPost }: { onClose: () => void; onPost: () => void; }) {
+    const { user, firestore } = useFirebase();
+    const { toast } = useToast();
+    const [expirationLabel, setExpirationLabel] = useState("Never");
+    const [isExpirationSheetOpen, setIsExpirationSheetOpen] = useState(false);
+    const [isDatePickerOpen, setIsDatePickerOpen] = useState(false);
+    
+    const form = useForm<z.infer<typeof eventSchema>>({
+        resolver: zodResolver(eventSchema),
+        defaultValues: {
+            name: "",
+            description: "",
+            type: "public",
+            isPaid: false,
+            reach: 10,
+            location: "",
+            eventTime: "",
+        },
+    });
+
+
+    const onSubmit = async (values: z.infer<typeof eventSchema>) => {
+        if (!user || !firestore) return;
+
+        const [hours, minutes] = values.eventTime.split(':');
+        const eventTimestamp = new Date(values.eventDate);
+        eventTimestamp.setHours(parseInt(hours), parseInt(minutes));
+
+        const eventRef = doc(collection(firestore, 'events'));
+        const postRef = doc(collection(firestore, 'posts'));
+        
+        const eventData: Omit<Event, 'id' | 'geohash' | 'coordinates'> = {
+            authorId: user.uid,
+            name: values.name,
+            description: values.description || '',
+            type: values.type,
+            isPaid: values.isPaid,
+            eventTimestamp: Timestamp.fromDate(eventTimestamp),
+            location: values.location,
+            reach: values.reach,
+        };
+
+        const eventDetails: EventDetails = {
+            id: eventRef.id,
+            name: values.name,
+            eventTimestamp: Timestamp.fromDate(eventTimestamp),
+            location: values.location,
+        };
+        
+        const postData: Partial<Post> = {
+            id: postRef.id,
+            authorId: user.uid,
+            type: 'event',
+            timestamp: serverTimestamp(),
+            eventDetails: eventDetails,
+            likes: [],
+            likeCount: 0,
+            commentCount: 0,
+            repostCount: 0,
+            commentsAllowed: true,
+            isPinned: false,
+        };
+        
+        if (values.expiration) {
+            postData.expiresAt = Timestamp.fromMillis(Date.now() + values.expiration * 1000);
+        }
+
+        const batch = writeBatch(firestore);
+        batch.set(eventRef, { ...eventData, id: eventRef.id });
+        batch.set(postRef, postData);
+        
+        try {
+            await batch.commit();
+            toast({ title: "Event Created", description: "Your event has been posted." });
+            onPost();
+        } catch (error) {
+            console.error("Error creating event:", error);
+            const permissionError = new FirestorePermissionError({
+                path: eventRef.path,
+                operation: 'create',
+                requestResourceData: { eventData, postData },
+            });
+            errorEmitter.emit('permission-error', permissionError);
+            toast({ variant: "destructive", title: "Error", description: "Could not create your event." });
+        }
+    };
+    
+    const handleSelectExpiration = (seconds: number, label: string) => {
+        form.setValue('expiration', seconds);
+        setExpirationLabel(label);
+        setIsExpirationSheetOpen(false);
+    };
+
+    const handleClearExpiration = () => {
+        form.setValue('expiration', undefined);
+        setExpirationLabel('Never');
+        setIsExpirationSheetOpen(false);
+    };
+
+    return (
+        <>
+        <SheetContent side="bottom" className="h-screen flex flex-col p-0 rounded-t-2xl">
+            <SheetHeader className="sr-only"><SheetTitle>Create Event</SheetTitle></SheetHeader>
+             <div className="z-10 flex items-center justify-between p-2 border-b bg-background sticky top-0 h-14">
+                <div className="flex items-center gap-2">
+                    <Button variant="ghost" size="icon" onClick={onClose}><X className="h-4 w-4" /></Button>
+                    <h2 className="text-base font-bold">Create Event</h2>
+                </div>
+                <Button form="event-form" type="submit" disabled={form.formState.isSubmitting} className="rounded-full px-6 font-bold">
+                    {form.formState.isSubmitting ? <Loader2 className="h-4 w-4 animate-spin" /> : 'Post Event'}
+                </Button>
+            </div>
+             <div className="flex-grow overflow-y-auto px-4 pb-20">
+                <Form {...form}>
+                    <form id="event-form" onSubmit={form.handleSubmit(onSubmit)} className="space-y-6 pt-4">
+                        <FormField control={form.control} name="name" render={({ field }) => (
+                            <FormItem><FormLabel>Event Name</FormLabel><FormControl><Input placeholder="e.g. Weekend Tech Meetup" {...field} /></FormControl><FormMessage /></FormItem>
+                        )}/>
+                        <FormField control={form.control} name="description" render={({ field }) => (
+                            <FormItem><FormLabel>Short Description</FormLabel><FormControl><Textarea placeholder="What's your event about?" {...field} /></FormControl><FormMessage /></FormItem>
+                        )}/>
+                        <div className="grid grid-cols-2 gap-4">
+                            <FormField
+                                control={form.control}
+                                name="eventDate"
+                                render={({ field }) => (
+                                    <FormItem className="flex flex-col">
+                                        <FormLabel>Date</FormLabel>
+                                         <Sheet open={isDatePickerOpen} onOpenChange={setIsDatePickerOpen}>
+                                            <SheetTrigger asChild>
+                                                <FormControl>
+                                                    <Button variant={"outline"} className={cn("pl-3 text-left font-normal", !field.value && "text-muted-foreground")}>
+                                                        {field.value ? format(field.value, "PPP") : <span>Pick a date</span>}
+                                                        <CalendarClock className="ml-auto h-4 w-4 opacity-50" />
+                                                    </Button>
+                                                </FormControl>
+                                            </SheetTrigger>
+                                            <SheetContent side="bottom" className="h-auto rounded-t-2xl">
+                                                 <Calendar
+                                                    mode="single"
+                                                    selected={field.value}
+                                                    onSelect={(date) => {
+                                                        field.onChange(date);
+                                                        setIsDatePickerOpen(false);
+                                                    }}
+                                                    disabled={(date) => date < new Date(new Date().setDate(new Date().getDate() - 1))}
+                                                    initialFocus
+                                                />
+                                            </SheetContent>
+                                        </Sheet>
+                                        <FormMessage />
+                                    </FormItem>
+                                )}
+                            />
+                            <FormField
+                                control={form.control}
+                                name="eventTime"
+                                render={({ field }) => (
+                                    <FormItem>
+                                        <FormLabel>Time</FormLabel>
+                                        <FormControl>
+                                            <Input type="time" {...field} />
+                                        </FormControl>
+                                        <FormMessage />
+                                    </FormItem>
+                                )}
+                            />
+                        </div>
+                        <FormField control={form.control} name="location" render={({ field }) => (
+                             <FormItem><FormLabel>Location</FormLabel><FormControl>
+                                <Input placeholder="e.g. Starbucks, Jubilee Hills" {...field} />
+                             </FormControl>
+                             <FormDescription>Enter a specific address or place name.</FormDescription>
+                             <FormMessage /></FormItem>
+                        )}/>
+                        <FormField control={form.control} name="reach" render={({ field }) => (
+                            <FormItem>
+                                <FormLabel>Reach ({field.value} km)</FormLabel>
+                                <FormControl>
+                                    <Slider defaultValue={[field.value]} min={1} max={100} step={1} onValueChange={(value) => field.onChange(value[0])} />
+                                </FormControl>
+                            </FormItem>
+                        )}/>
+                        <div className="grid grid-cols-2 gap-4">
+                            <FormField control={form.control} name="type" render={({ field }) => (
+                                <FormItem className="space-y-0"><FormLabel>Type</FormLabel><FormControl><div className="flex items-center space-x-2 pt-2">
+                                    <Button type="button" variant={field.value === 'public' ? 'default' : 'outline'} onClick={() => field.onChange('public')} className="flex-1">Public</Button>
+                                    <Button type="button" variant={field.value === 'private' ? 'default' : 'outline'} onClick={() => field.onChange('private')} className="flex-1">Private</Button>
+                                </div></FormControl></FormItem>
+                            )}/>
+                            <FormField control={form.control} name="isPaid" render={({ field }) => (
+                                <FormItem className="space-y-0"><FormLabel>Cost</FormLabel><FormControl><div className="flex items-center space-x-2 pt-2">
+                                    <Button type="button" variant={!field.value ? 'default' : 'outline'} onClick={() => field.onChange(false)} className="flex-1">Free</Button>
+                                    <Button type="button" variant={field.value ? 'default' : 'outline'} onClick={() => field.onChange(true)} className="flex-1">Paid</Button>
+                                </div></FormControl></FormItem>
+                            )}/>
+                        </div>
+                         <FormItem className="flex flex-row items-center justify-between rounded-lg border p-4">
+                            <div className="space-y-0.5">
+                                <FormLabel className="text-base">Post Expiration</FormLabel>
+                                <FormDescription>{expirationLabel}</FormDescription>
+                            </div>
+                            <FormControl>
+                                <Button type="button" variant="outline" onClick={() => setIsExpirationSheetOpen(true)}>Change</Button>
+                            </FormControl>
+                        </FormItem>
+                    </form>
+                </Form>
+             </div>
+        </SheetContent>
+        <Sheet open={isExpirationSheetOpen} onOpenChange={setIsExpirationSheetOpen}>
+            <SheetContent side="bottom" className="rounded-t-2xl">
+                <SheetHeader className="pb-4"><SheetTitle>Post Expiration</SheetTitle><SheetDescription>The post will be deleted after this duration.</SheetDescription></SheetHeader>
+                <div className="flex flex-col space-y-2">
+                    {expirationOptions.map(opt => (<Button key={opt.value} variant="outline" className="justify-start rounded-[5px]" onClick={() => handleSelectExpiration(opt.value, opt.label)}>{opt.label}</Button>))}
+                    <Button variant="outline" className="justify-start rounded-[5px]" onClick={handleClearExpiration}>Never Expire</Button>
+                </div>
+            </SheetContent>
+        </Sheet>
+        </>
+    );
+}
+
 function PostPageComponent() {
   const [isOpen, setIsOpen] = useState(true);
   const [isEventSheetOpen, setIsEventSheetOpen] = useState(false);
@@ -575,7 +818,7 @@ function PostPageComponent() {
     try {
         const url = new URL(pastedText);
         setShowLinkInput(true);
-        form.setValue("linkMetadata.url", url.href);
+        form.setValue("linkMetadata", {url: url.href});
         fetchPreview(url.href);
     } catch (error) {
         // Not a valid URL
@@ -769,16 +1012,16 @@ function PostPageComponent() {
                                      </div>
                                 )}
 
-                                {linkMetadata && linkMetadata.url && (
+                                {linkMetadata && (
                                     <div className="mt-3 border rounded-lg overflow-hidden relative">
                                         <Button variant="ghost" size="icon" className="absolute top-1 right-1 h-7 w-7 bg-black/50 hover:bg-black/70 text-white hover:text-white rounded-full z-10" onClick={() => form.setValue("linkMetadata", undefined)}>
                                             <X className="h-4 w-4" />
                                         </Button>
                                         {linkMetadata.imageUrl && <div className="relative aspect-video bg-secondary"><Image src={linkMetadata.imageUrl} alt={linkMetadata.title || 'Link preview'} fill className="object-cover"/></div>}
-                                        <div className="p-3 bg-secondary/50">
-                                            {linkMetadata.url && linkMetadata.url.startsWith("http") && <p className="text-xs text-muted-foreground uppercase tracking-wider">{new URL(linkMetadata.url).hostname.replace('www.','')}</p>}
+                                        {linkMetadata.url && <div className="p-3 bg-secondary/50">
+                                            <p className="text-xs text-muted-foreground uppercase tracking-wider">{new URL(linkMetadata.url).hostname.replace('www.','')}</p>
                                             <p className="font-semibold text-sm truncate mt-0.5">{linkMetadata.title || linkMetadata.url}</p>
-                                        </div>
+                                        </div>}
                                     </div>
                                 )}
                                 
@@ -825,7 +1068,7 @@ function PostPageComponent() {
                                         <Button type="button" variant="ghost" size="icon" onClick={() => setShowLinkInput(!showLinkInput)} disabled={!!linkMetadata || isEditMode || !!audioUrl}>
                                             <LinkIcon className="h-5 w-5 text-muted-foreground" />
                                         </Button>
-                                        <Button type="button" variant="ghost" size="icon" onClick={() => setIsRecorderOpen(true)} disabled={isEditMode || !!audioUrl || isPoll || !!linkMetadata}>
+                                        <Button type="button" variant="ghost" size="icon" onClick={() => { if(!isEditMode && !audioUrl && !isPoll && !linkMetadata){setIsRecorderOpen(true)}}} disabled={isEditMode || !!audioUrl || isPoll || !!linkMetadata}>
                                             <Mic className="h-5 w-5 text-muted-foreground" />
                                         </Button>
                                         <Button type="button" variant="ghost" size="icon" onClick={() => setIsEventSheetOpen(true)}>
@@ -843,7 +1086,7 @@ function PostPageComponent() {
                                             <FormField control={form.control} name="commentsAllowed" render={({ field }) => (
                                                 <FormItem className="flex items-center space-x-2 space-y-0 pl-2">
                                                     <Switch id="comments-allowed" checked={field.value} onCheckedChange={field.onChange}/>
-                                                    <Label htmlFor="comments-allowed" className="text-sm">Replies</Label>
+                                                    <FormLabel htmlFor="comments-allowed" className="text-sm">Replies</FormLabel>
                                                 </FormItem>
                                             )}/>
                                     </div>
@@ -874,266 +1117,9 @@ function PostPageComponent() {
             </div>
         </SheetContent>
     </Sheet>
-    <Sheet open={isRecorderOpen} onOpenChange={setIsRecorderOpen}>
-       {isRecorderOpen && <AudioRecorderSheet onAttach={handleAttachAudio} onOpenChange={setIsRecorderOpen} />}
-    </Sheet>
+    {isRecorderOpen && <AudioRecorderSheet onAttach={handleAttachAudio} onOpenChange={setIsRecorderOpen} />}
     </>
   );
-}
-
-const eventSchema = z.object({
-    name: z.string().min(3, "Event name must be at least 3 characters.").max(100),
-    description: z.string().max(1000).optional(),
-    type: z.enum(['public', 'private']),
-    isPaid: z.boolean(),
-    eventDate: z.date({ required_error: "Please select a date." }),
-    eventTime: z.string({ required_error: "Please select a time." }).regex(/^([0-1]?[0-9]|2[0-3]):[0-5][0-9]$/, "Invalid time format."),
-    location: z.string().min(3, "Please enter a location.").refine(city => getCoordsForCity(city) !== null, { message: "Sorry, only major Indian cities are supported for now." }),
-    reach: z.number().min(1).max(100),
-    expiration: z.number().optional(),
-}).refine(data => {
-    if (!data.eventDate || !data.eventTime) return true; // Let individual validators handle this
-    const [hours, minutes] = data.eventTime.split(':');
-    const combinedDateTime = new Date(data.eventDate);
-    combinedDateTime.setHours(parseInt(hours), parseInt(minutes));
-    return combinedDateTime > new Date();
-}, {
-    message: "Event date and time must be in the future.",
-    path: ["eventTime"],
-});
-
-
-function EventFormSheet({ onClose, onPost }: { onClose: () => void; onPost: () => void; }) {
-    const { user, firestore } = useFirebase();
-    const { toast } = useToast();
-    const [expirationLabel, setExpirationLabel] = useState("Never");
-    const [isExpirationSheetOpen, setIsExpirationSheetOpen] = useState(false);
-    
-    const form = useForm<z.infer<typeof eventSchema>>({
-        resolver: zodResolver(eventSchema),
-        defaultValues: {
-            name: "",
-            description: "",
-            type: "public",
-            isPaid: false,
-            reach: 10,
-            location: "",
-            eventTime: "",
-        },
-    });
-    
-    const locationValue = form.watch('location');
-    const isLocationValid = useMemo(() => getCoordsForCity(locationValue) !== null, [locationValue]);
-
-
-    const onSubmit = async (values: z.infer<typeof eventSchema>) => {
-        if (!user || !firestore) return;
-
-        const [hours, minutes] = values.eventTime.split(':');
-        const eventTimestamp = new Date(values.eventDate);
-        eventTimestamp.setHours(parseInt(hours), parseInt(minutes));
-        
-        const coords = getCoordsForCity(values.location);
-        if (!coords) {
-            form.setError("location", { message: "Invalid city location." });
-            return;
-        }
-
-        const eventRef = doc(collection(firestore, 'events'));
-        const postRef = doc(collection(firestore, 'posts'));
-        
-        const eventData: Omit<Event, 'id'> = {
-            authorId: user.uid,
-            name: values.name,
-            description: values.description || '',
-            type: values.type,
-            isPaid: values.isPaid,
-            eventTimestamp: Timestamp.fromDate(eventTimestamp),
-            location: values.location,
-            coordinates: coords,
-            geohash: ngeohash.encode(coords.latitude, coords.longitude, 9),
-            reach: values.reach,
-        };
-
-        const eventDetails: EventDetails = {
-            id: eventRef.id,
-            name: values.name,
-            eventTimestamp: Timestamp.fromDate(eventTimestamp),
-            location: values.location,
-        };
-        
-        const postData: Partial<Post> = {
-            id: postRef.id,
-            authorId: user.uid,
-            type: 'event',
-            timestamp: serverTimestamp(),
-            eventDetails: eventDetails,
-            likes: [],
-            likeCount: 0,
-            commentCount: 0,
-            repostCount: 0,
-            commentsAllowed: true,
-            isPinned: false,
-        };
-        
-        if (values.expiration) {
-            postData.expiresAt = Timestamp.fromMillis(Date.now() + values.expiration * 1000);
-        }
-
-        const batch = writeBatch(firestore);
-        batch.set(eventRef, { ...eventData, id: eventRef.id });
-        batch.set(postRef, postData);
-        
-        try {
-            await batch.commit();
-            toast({ title: "Event Created", description: "Your event has been posted." });
-            onPost();
-        } catch (error) {
-            console.error("Error creating event:", error);
-            const permissionError = new FirestorePermissionError({
-                path: eventRef.path,
-                operation: 'create',
-                requestResourceData: { eventData, postData },
-            });
-            errorEmitter.emit('permission-error', permissionError);
-            toast({ variant: "destructive", title: "Error", description: "Could not create your event." });
-        }
-    };
-    
-    const handleSelectExpiration = (seconds: number, label: string) => {
-        form.setValue('expiration', seconds);
-        setExpirationLabel(label);
-        setIsExpirationSheetOpen(false);
-    };
-
-    const handleClearExpiration = () => {
-        form.setValue('expiration', undefined);
-        setExpirationLabel('Never');
-        setIsExpirationSheetOpen(false);
-    };
-
-    return (
-        <>
-        <SheetContent side="bottom" className="h-screen flex flex-col p-0 rounded-t-2xl">
-            <SheetHeader className="sr-only"><SheetTitle>Create Event</SheetTitle></SheetHeader>
-             <div className="z-10 flex items-center justify-between p-2 border-b bg-background sticky top-0 h-14">
-                <div className="flex items-center gap-2">
-                    <Button variant="ghost" size="icon" onClick={onClose}><X className="h-4 w-4" /></Button>
-                    <h2 className="text-base font-bold">Create Event</h2>
-                </div>
-                <Button form="event-form" type="submit" disabled={form.formState.isSubmitting} className="rounded-full px-6 font-bold">
-                    {form.formState.isSubmitting ? <Loader2 className="h-4 w-4 animate-spin" /> : 'Post Event'}
-                </Button>
-            </div>
-             <div className="flex-grow overflow-y-auto px-4 pb-20">
-                <Form {...form}>
-                    <form id="event-form" onSubmit={form.handleSubmit(onSubmit)} className="space-y-6 pt-4">
-                        <FormField control={form.control} name="name" render={({ field }) => (
-                            <FormItem><FormLabel>Event Name</FormLabel><FormControl><Input placeholder="e.g. Weekend Tech Meetup" {...field} /></FormControl><FormMessage /></FormItem>
-                        )}/>
-                        <FormField control={form.control} name="description" render={({ field }) => (
-                            <FormItem><FormLabel>Short Description</FormLabel><FormControl><Textarea placeholder="What's your event about?" {...field} /></FormControl><FormMessage /></FormItem>
-                        )}/>
-                        <div className="grid grid-cols-2 gap-4">
-                            <FormField
-                                control={form.control}
-                                name="eventDate"
-                                render={({ field }) => (
-                                    <FormItem className="flex flex-col">
-                                        <FormLabel>Date</FormLabel>
-                                        <Popover>
-                                            <PopoverTrigger asChild>
-                                                <FormControl>
-                                                    <Button variant={"outline"} className={cn("pl-3 text-left font-normal", !field.value && "text-muted-foreground")}>
-                                                        {field.value ? format(field.value, "PPP") : <span>Pick a date</span>}
-                                                        <CalendarClock className="ml-auto h-4 w-4 opacity-50" />
-                                                    </Button>
-                                                </FormControl>
-                                            </PopoverTrigger>
-                                            <PopoverContent className="w-auto p-0" align="start">
-                                                <Calendar
-                                                    mode="single"
-                                                    selected={field.value}
-                                                    onSelect={field.onChange}
-                                                    disabled={(date) => date < new Date(new Date().setDate(new Date().getDate() - 1))}
-                                                    initialFocus
-                                                />
-                                            </PopoverContent>
-                                        </Popover>
-                                        <FormMessage />
-                                    </FormItem>
-                                )}
-                            />
-                            <FormField
-                                control={form.control}
-                                name="eventTime"
-                                render={({ field }) => (
-                                    <FormItem>
-                                        <FormLabel>Time</FormLabel>
-                                        <FormControl>
-                                            <Input type="time" {...field} />
-                                        </FormControl>
-                                        <FormMessage />
-                                    </FormItem>
-                                )}
-                            />
-                        </div>
-                        <FormField control={form.control} name="location" render={({ field }) => (
-                             <FormItem><FormLabel>Location</FormLabel><FormControl>
-                                <div className="relative">
-                                    <Input placeholder="e.g. Hyderabad" {...field} />
-                                    {isLocationValid && (
-                                        <Check className="absolute right-3 top-1/2 -translate-y-1/2 h-5 w-5 text-green-500" />
-                                    )}
-                                </div>
-                             </FormControl><FormMessage /></FormItem>
-                        )}/>
-                        <FormField control={form.control} name="reach" render={({ field }) => (
-                            <FormItem>
-                                <FormLabel>Reach ({field.value} km)</FormLabel>
-                                <FormControl>
-                                    <Slider defaultValue={[field.value]} min={1} max={100} step={1} onValueChange={(value) => field.onChange(value[0])} />
-                                </FormControl>
-                            </FormItem>
-                        )}/>
-                        <div className="grid grid-cols-2 gap-4">
-                            <FormField control={form.control} name="type" render={({ field }) => (
-                                <FormItem className="space-y-0"><FormLabel>Type</FormLabel><FormControl><div className="flex items-center space-x-2 pt-2">
-                                    <Button type="button" variant={field.value === 'public' ? 'default' : 'outline'} onClick={() => field.onChange('public')} className="flex-1">Public</Button>
-                                    <Button type="button" variant={field.value === 'private' ? 'default' : 'outline'} onClick={() => field.onChange('private')} className="flex-1">Private</Button>
-                                </div></FormControl></FormItem>
-                            )}/>
-                            <FormField control={form.control} name="isPaid" render={({ field }) => (
-                                <FormItem className="space-y-0"><FormLabel>Cost</FormLabel><FormControl><div className="flex items-center space-x-2 pt-2">
-                                    <Button type="button" variant={!field.value ? 'default' : 'outline'} onClick={() => field.onChange(false)} className="flex-1">Free</Button>
-                                    <Button type="button" variant={field.value ? 'default' : 'outline'} onClick={() => field.onChange(true)} className="flex-1">Paid</Button>
-                                </div></FormControl></FormItem>
-                            )}/>
-                        </div>
-                         <FormItem className="flex flex-row items-center justify-between rounded-lg border p-4">
-                            <div className="space-y-0.5">
-                                <FormLabel className="text-base">Post Expiration</FormLabel>
-                                <FormDescription>{expirationLabel}</FormDescription>
-                            </div>
-                            <FormControl>
-                                <Button type="button" variant="outline" onClick={() => setIsExpirationSheetOpen(true)}>Change</Button>
-                            </FormControl>
-                        </FormItem>
-                    </form>
-                </Form>
-             </div>
-        </SheetContent>
-        <Sheet open={isExpirationSheetOpen} onOpenChange={setIsExpirationSheetOpen}>
-            <SheetContent side="bottom" className="rounded-t-2xl">
-                <SheetHeader className="pb-4"><SheetTitle>Post Expiration</SheetTitle><SheetDescription>The post will be deleted after this duration.</SheetDescription></SheetHeader>
-                <div className="flex flex-col space-y-2">
-                    {expirationOptions.map(opt => (<Button key={opt.value} variant="outline" className="justify-start rounded-[5px]" onClick={() => handleSelectExpiration(opt.value, opt.label)}>{opt.label}</Button>))}
-                    <Button variant="outline" className="justify-start rounded-[5px]" onClick={handleClearExpiration}>Never Expire</Button>
-                </div>
-            </SheetContent>
-        </Sheet>
-        </>
-    );
 }
 
 export default function PostPage() {

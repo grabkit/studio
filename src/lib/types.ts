@@ -26,11 +26,6 @@ export interface QuotedPost {
     timestamp: Timestamp;
 }
 
-export interface GeoPoint {
-    latitude: number;
-    longitude: number;
-}
-
 export interface Event {
     id: string;
     authorId: string;
@@ -40,8 +35,6 @@ export interface Event {
     isPaid: boolean;
     eventTimestamp: Timestamp;
     location: string;
-    geohash: string;
-    coordinates: GeoPoint;
     reach: number; // in kilometers
 }
 
