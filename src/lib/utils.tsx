@@ -197,14 +197,28 @@ export function formatEventDate(date: Date): string {
   return format(date, 'd MMM').toUpperCase();
 }
 
-export function formatEventDay(date: Date): string {
+export function formatEventDay(date: Date): React.ReactNode {
   if (isToday(date)) {
-    return `Today, ${format(date, 'E').toUpperCase()}`;
+    return (
+      <>
+        Today, <span className="font-bold">{format(date, 'E').toUpperCase()}</span>
+      </>
+    );
   }
   if (isYesterday(date)) {
-    return `Yesterday, ${format(date, 'E').toUpperCase()}`;
+    return (
+      <>
+        Yesterday, <span className="font-bold">{format(date, 'E').toUpperCase()}</span>
+      </>
+    );
   }
-  return format(date, 'E, d MMM').toUpperCase();
+  const dayOfWeek = format(date, 'E').toUpperCase();
+  const restOfDay = format(date, 'd MMM').toUpperCase();
+  return (
+    <>
+      <span className="font-bold">{dayOfWeek}</span>, {restOfDay}
+    </>
+  );
 }
 
 export function formatEventTimeRange(start: Date, end: Date | undefined, isAllDay: boolean): string {
