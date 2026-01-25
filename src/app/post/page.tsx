@@ -68,7 +68,7 @@ const eventDetailsSchema = z.object({
   name: z.string().min(1, "Event name cannot be empty.").optional(),
   description: z.string().optional(),
   location: z.string().min(1, "Location cannot be empty.").optional(),
-  eventTimestamp: z.date({ required_error: "Please select a date." }).optional(),
+  eventTimestamp: z.date({ required_error: "Please select a date." }),
   isAllDay: z.boolean().default(true),
   isPaid: z.boolean().default(false),
   startTime: z.string().optional(),
@@ -135,7 +135,7 @@ function AudioRecorderSheet({ onAttach, onOpenChange, isRecorderOpen }: { onAtta
     const analyserRef = useRef<AnalyserNode | null>(null);
     const sourceNodeRef = useRef<MediaStreamAudioSourceNode | null>(null);
     const animationFrameIdRef = useRef<number | null>(null);
-    const [isPlayingPreview, setIsPlayingPreview] = useState(false);
+    const [isPlayingPreview, setIsPlayingPreview] = useState(isPlayingPreview);
     const [waveform, setWaveform] = useState<number[]>([]);
 
     const maxDuration = 30; // 30 seconds
@@ -603,6 +603,36 @@ function EventFormSheet({ isOpen, onOpenChange, form, toast }: { isOpen: boolean
                                     </div>
                                 </div>
                           </FormItem>
+                           <FormField
+                                control={form.control}
+                                name="eventDetails.eventTimestamp"
+                                render={({ field }) => (
+                                    <FormItem>
+                                        <Popover>
+                                            <PopoverTrigger asChild>
+                                                <div className="flex items-center gap-4 cursor-pointer">
+                                                    <CalendarDays className="h-5 w-5 text-muted-foreground" />
+                                                    <FormControl>
+                                                        <div className={cn("w-full text-left font-normal text-base", !field.value && "text-muted-foreground")}>
+                                                            {field.value ? format(field.value, "PPP") : <span>Date</span>}
+                                                        </div>
+                                                    </FormControl>
+                                                </div>
+                                            </PopoverTrigger>
+                                            <PopoverContent className="w-auto p-0" align="start">
+                                                <Calendar
+                                                    mode="single"
+                                                    selected={field.value}
+                                                    onSelect={field.onChange}
+                                                    disabled={(date) => date < new Date(new Date().setDate(new Date().getDate() - 1))}
+                                                    initialFocus
+                                                />
+                                            </PopoverContent>
+                                        </Popover>
+                                        <FormMessage className="pl-9" />
+                                    </FormItem>
+                                )}
+                            />
 
                           <FormField control={form.control} name="eventDetails.isAllDay" render={({ field }) => (
                               <FormItem className="flex items-center justify-between gap-4">
@@ -611,26 +641,6 @@ function EventFormSheet({ isOpen, onOpenChange, form, toast }: { isOpen: boolean
                                       <FormLabel className="text-base font-normal">All-day</FormLabel>
                                   </div>
                                   <FormControl><Switch checked={field.value} onCheckedChange={field.onChange} /></FormControl>
-                              </FormItem>
-                          )}/>
-                          <FormField control={form.control} name="eventDetails.eventTimestamp" render={({ field }) => (
-                              <FormItem>
-                                  <Popover>
-                                      <PopoverTrigger asChild>
-                                          <div className="flex items-center gap-4 cursor-pointer">
-                                              <CalendarDays className="h-5 w-5 text-muted-foreground" />
-                                              <FormControl>
-                                                  <div className={cn("w-full text-left font-normal text-base", !field.value && "text-muted-foreground")}>
-                                                      {field.value ? format(field.value, "PPP") : <span>Date</span>}
-                                                  </div>
-                                              </FormControl>
-                                          </div>
-                                      </PopoverTrigger>
-                                      <PopoverContent className="w-auto p-0" align="start">
-                                          <Calendar mode="single" selected={field.value} onSelect={field.onChange} disabled={(date) => date < new Date(new Date().setDate(new Date().getDate() - 1))} initialFocus/>
-                                      </PopoverContent>
-                                  </Popover>
-                                  <FormMessage className="pl-9" />
                               </FormItem>
                           )}/>
                           {!isAllDay && (
@@ -836,7 +846,7 @@ function PostPageComponent() {
         let finalEventTimestamp = eventTimestamp;
         let finalEndTimestamp = undefined;
 
-        if (!isAllDay && startTime) {
+        if (!isAllDay && startTime && eventTimestamp) {
             finalEventTimestamp = combineDateAndTime(eventTimestamp, startTime);
         }
         if (!isAllDay && endTime && finalEventTimestamp) {
@@ -1141,3 +1151,5 @@ export default function PostPage() {
     </Suspense>
   );
 }
+
+    
