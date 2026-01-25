@@ -10,10 +10,7 @@ export function RoomCard() {
         <div className="bg-violet-500/10 border border-violet-500/20 rounded-[15px] p-4 flex flex-col gap-4">
             <div className="flex justify-between items-start">
                 <div className="inline-flex items-center gap-2 rounded-full border bg-background px-2.5 py-0.5 text-xs font-semibold">
-                    <span
-                        className="h-2 w-2 rounded-full bg-[hsl(var(--online-glow-color))] animate-online-indicator-glow"
-                        style={{ '--online-glow-color': '135 58% 49%' } as React.CSSProperties}
-                    />
+                    <span className="h-2 w-2 rounded-full bg-[hsl(var(--online-glow-color))] animate-online-indicator-glow" />
                     <span>Room active</span>
                 </div>
             </div>
