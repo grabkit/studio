@@ -20,6 +20,7 @@ import {
   SheetDescription,
   SheetClose,
   SheetHeader,
+  SheetTrigger,
 } from "@/components/ui/sheet";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -518,7 +519,7 @@ function EventFormSheet({ onClose, onPost }: { onClose: () => void; onPost: () =
         const eventRef = doc(collection(firestore, 'events'));
         const postRef = doc(collection(firestore, 'posts'));
         
-        const eventData: Omit<Event, 'id' | 'geohash' | 'coordinates'> = {
+        const eventData: Omit<Event, 'id'> = {
             authorId: user.uid,
             name: values.name,
             description: values.description || '',
