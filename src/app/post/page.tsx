@@ -135,7 +135,7 @@ function AudioRecorderSheet({ onAttach, onOpenChange, isRecorderOpen }: { onAtta
     const analyserRef = useRef<AnalyserNode | null>(null);
     const sourceNodeRef = useRef<MediaStreamAudioSourceNode | null>(null);
     const animationFrameIdRef = useRef<number | null>(null);
-    const [isPlayingPreview, setIsPlayingPreview] = useState(isPlayingPreview);
+    const [isPlayingPreview, setIsPlayingPreview] = useState(false);
     const [waveform, setWaveform] = useState<number[]>([]);
 
     const maxDuration = 30; // 30 seconds
@@ -571,6 +571,7 @@ function EventFormSheet({ isOpen, onOpenChange, form, toast }: { isOpen: boolean
                                   </div>
                               </FormItem>
                           )}/>
+                          <FormField control={form.control} name="eventDetails.location" render={({ field }) => (
                           <FormItem>
                                 <div className="flex items-start gap-4">
                                     <MapPin className="h-5 w-5 text-muted-foreground mt-2" />
@@ -603,6 +604,7 @@ function EventFormSheet({ isOpen, onOpenChange, form, toast }: { isOpen: boolean
                                     </div>
                                 </div>
                           </FormItem>
+                          )}/>
                            <FormField
                                 control={form.control}
                                 name="eventDetails.eventTimestamp"
@@ -1151,5 +1153,7 @@ export default function PostPage() {
     </Suspense>
   );
 }
+
+    
 
     
