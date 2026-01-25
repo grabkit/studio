@@ -493,6 +493,46 @@ function AudioRecorderSheet({ onAttach, onOpenChange, isRecorderOpen }: { onAtta
 function EventFormSheet({ isOpen, onOpenChange, form, toast }: { isOpen: boolean, onOpenChange: (open: boolean) => void, form: UseFormReturn<z.infer<typeof postSchema>>, toast: any }) {
     const isAllDay = form.watch("eventDetails.isAllDay");
 
+    const [locationQuery, setLocationQuery] = useState(form.getValues("eventDetails.location") || "");
+    const [suggestions, setSuggestions] = useState<any[]>([]);
+    const [isSearching, setIsSearching] = useState(false);
+
+    useEffect(() => {
+        const handler = setTimeout(() => {
+            if (locationQuery.trim().length > 2 && locationQuery !== form.getValues("eventDetails.location")) {
+                searchLocations(locationQuery);
+            } else {
+                setSuggestions([]);
+            }
+        }, 500);
+
+        return () => {
+            clearTimeout(handler);
+        };
+    }, [locationQuery, form]);
+
+    const searchLocations = async (query: string) => {
+        setIsSearching(true);
+        try {
+            const response = await fetch(`https://nominatim.openstreetmap.org/search?q=${encodeURIComponent(query)}&format=json&limit=5`);
+            if (!response.ok) throw new Error('Network response was not ok');
+            const data = await response.json();
+            setSuggestions(data);
+        } catch (error) {
+            console.error("Failed to fetch locations:", error);
+            toast({ variant: 'destructive', title: 'Could not fetch locations.' });
+        } finally {
+            setIsSearching(false);
+        }
+    };
+    
+    const handleSuggestionClick = (suggestion: any) => {
+        const displayName = suggestion.display_name;
+        form.setValue("eventDetails.location", displayName, { shouldValidate: true });
+        setLocationQuery(displayName);
+        setSuggestions([]);
+    };
+
     useEffect(() => {
         if (isAllDay) {
             form.setValue("eventDetails.startTime", undefined);
@@ -520,17 +560,39 @@ function EventFormSheet({ isOpen, onOpenChange, form, toast }: { isOpen: boolean
                                   </div>
                               </FormItem>
                           )}/>
-                          <FormField control={form.control} name="eventDetails.location" render={({ field }) => (
-                              <FormItem>
-                                  <div className="flex items-start gap-4">
-                                      <MapPin className="h-5 w-5 text-muted-foreground mt-2" />
-                                      <div className="w-full">
-                                          <FormControl><Input placeholder="Location or URL" {...field} className="text-base border-0 border-b-2 rounded-none focus-visible:ring-0 px-0 pb-1" /></FormControl>
-                                          <FormMessage />
-                                      </div>
-                                  </div>
-                              </FormItem>
-                          )}/>
+                          <FormItem>
+                                <div className="flex items-start gap-4">
+                                    <MapPin className="h-5 w-5 text-muted-foreground mt-2" />
+                                    <div className="w-full relative">
+                                        <FormControl>
+                                            <div className="relative">
+                                                <Input
+                                                    placeholder="Search for a location"
+                                                    value={locationQuery}
+                                                    onChange={(e) => setLocationQuery(e.target.value)}
+                                                    className="text-base border-0 border-b-2 rounded-none focus-visible:ring-0 px-0 pb-1"
+                                                />
+                                                {isSearching && <Loader2 className="absolute right-0 top-1/2 -translate-y-1/2 h-4 w-4 animate-spin" />}
+                                            </div>
+                                        </FormControl>
+                                        <FormMessage />
+                                        {suggestions.length > 0 && (
+                                            <div className="absolute top-full mt-1 w-full bg-background border rounded-md shadow-lg z-50 max-h-48 overflow-y-auto">
+                                                {suggestions.map((suggestion) => (
+                                                    <div
+                                                        key={suggestion.place_id}
+                                                        onClick={() => handleSuggestionClick(suggestion)}
+                                                        className="p-3 hover:bg-accent cursor-pointer text-sm"
+                                                    >
+                                                        {suggestion.display_name}
+                                                    </div>
+                                                ))}
+                                            </div>
+                                        )}
+                                    </div>
+                                </div>
+                          </FormItem>
+
                           <FormField control={form.control} name="eventDetails.isAllDay" render={({ field }) => (
                               <FormItem className="flex items-center justify-between gap-4">
                                   <div className="flex items-center gap-4">
@@ -1013,7 +1075,7 @@ function PostPageComponent() {
                                           <Button type="button" variant="ghost" size="icon" onClick={() => { if(!isEditMode && !audioUrl && !isPoll && !linkMetadata && !eventDetails?.name){setIsRecorderOpen(true)}}} disabled={isEditMode || !!audioUrl || isPoll || !!linkMetadata || !!eventDetails?.name}>
                                               <Mic className="h-5 w-5 text-muted-foreground" />
                                           </Button>
-                                          <Button type="button" variant="ghost" size="icon" onClick={() => setIsEventSheetOpen(true)} disabled={isEditMode || !!audioUrl || isPoll || !!linkMetadata || !!quotedPost || !!eventDetails?.name}>
+                                          <Button type="button" variant="ghost" size="icon" onClick={() => setIsEventSheetOpen(true)} disabled={isEditMode || !!audioUrl || isPoll || !!linkMetadata || !!quotedPost}>
                                             <CalendarDays className="h-5 w-5 text-muted-foreground" />
                                           </Button>
                                           <Button type="button" variant="ghost" size="icon" onClick={handlePollToggle} disabled={isEditMode || !!audioUrl || !!eventDetails?.name}>
