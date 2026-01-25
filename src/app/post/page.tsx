@@ -1,3 +1,4 @@
+
 "use client";
 
 import * as React from "react";
@@ -584,6 +585,10 @@ function PostPageComponent() {
   const fetchPreview = async (url: string) => {
     setIsFetchingPreview(true);
     setTimeout(() => {
+        if(!url || !url.startsWith("http")) {
+            setIsFetchingPreview(false);
+            return;
+        }
         const mockData: LinkMetadata = {
             url: url,
             title: "This is a fetched link title",
@@ -771,7 +776,7 @@ function PostPageComponent() {
                                         </Button>
                                         {linkMetadata.imageUrl && <div className="relative aspect-video bg-secondary"><Image src={linkMetadata.imageUrl} alt={linkMetadata.title || 'Link preview'} fill className="object-cover"/></div>}
                                         <div className="p-3 bg-secondary/50">
-                                            <p className="text-xs text-muted-foreground uppercase tracking-wider">{new URL(linkMetadata.url).hostname.replace('www.','')}</p>
+                                            <p className="text-xs text-muted-foreground uppercase tracking-wider">{linkMetadata.url && linkMetadata.url.startsWith("http") ? new URL(linkMetadata.url).hostname.replace('www.','') : ''}</p>
                                             <p className="font-semibold text-sm truncate mt-0.5">{linkMetadata.title || linkMetadata.url}</p>
                                         </div>
                                     </div>
@@ -881,10 +886,20 @@ const eventSchema = z.object({
     description: z.string().max(1000).optional(),
     type: z.enum(['public', 'private']),
     isPaid: z.boolean(),
-    eventTimestamp: z.date({ required_error: "Please select a date and time."}),
-    location: z.string().min(3, "Please enter a location."),
+    eventDate: z.date({ required_error: "Please select a date." }),
+    eventTime: z.string({ required_error: "Please select a time." }).regex(/^([0-1]?[0-9]|2[0-3]):[0-5][0-9]$/, "Invalid time format."),
+    location: z.string().min(3, "Please enter a location.").refine(city => getCoordsForCity(city) !== null, { message: "Sorry, only major Indian cities are supported for now." }),
     reach: z.number().min(1).max(100),
     expiration: z.number().optional(),
+}).refine(data => {
+    if (!data.eventDate || !data.eventTime) return true; // Let individual validators handle this
+    const [hours, minutes] = data.eventTime.split(':');
+    const combinedDateTime = new Date(data.eventDate);
+    combinedDateTime.setHours(parseInt(hours), parseInt(minutes));
+    return combinedDateTime > new Date();
+}, {
+    message: "Event date and time must be in the future.",
+    path: ["eventTime"],
 });
 
 
@@ -893,7 +908,6 @@ function EventFormSheet({ onClose, onPost }: { onClose: () => void; onPost: () =
     const { toast } = useToast();
     const [expirationLabel, setExpirationLabel] = useState("Never");
     const [isExpirationSheetOpen, setIsExpirationSheetOpen] = useState(false);
-    const [isLocationValid, setIsLocationValid] = useState(false);
     
     const form = useForm<z.infer<typeof eventSchema>>({
         resolver: zodResolver(eventSchema),
@@ -904,26 +918,24 @@ function EventFormSheet({ onClose, onPost }: { onClose: () => void; onPost: () =
             isPaid: false,
             reach: 10,
             location: "",
+            eventTime: "",
         },
     });
     
     const locationValue = form.watch('location');
-
-    useEffect(() => {
-        if (getCoordsForCity(locationValue)) {
-            setIsLocationValid(true);
-        } else {
-            setIsLocationValid(false);
-        }
-    }, [locationValue]);
+    const isLocationValid = useMemo(() => getCoordsForCity(locationValue) !== null, [locationValue]);
 
 
     const onSubmit = async (values: z.infer<typeof eventSchema>) => {
         if (!user || !firestore) return;
 
+        const [hours, minutes] = values.eventTime.split(':');
+        const eventTimestamp = new Date(values.eventDate);
+        eventTimestamp.setHours(parseInt(hours), parseInt(minutes));
+        
         const coords = getCoordsForCity(values.location);
         if (!coords) {
-            form.setError("location", { message: "Sorry, only major Indian cities are supported for now." });
+            form.setError("location", { message: "Invalid city location." });
             return;
         }
 
@@ -936,7 +948,7 @@ function EventFormSheet({ onClose, onPost }: { onClose: () => void; onPost: () =
             description: values.description || '',
             type: values.type,
             isPaid: values.isPaid,
-            eventTimestamp: Timestamp.fromDate(values.eventTimestamp),
+            eventTimestamp: Timestamp.fromDate(eventTimestamp),
             location: values.location,
             coordinates: coords,
             geohash: ngeohash.encode(coords.latitude, coords.longitude, 9),
@@ -946,7 +958,7 @@ function EventFormSheet({ onClose, onPost }: { onClose: () => void; onPost: () =
         const eventDetails: EventDetails = {
             id: eventRef.id,
             name: values.name,
-            eventTimestamp: Timestamp.fromDate(values.eventTimestamp),
+            eventTimestamp: Timestamp.fromDate(eventTimestamp),
             location: values.location,
         };
         
@@ -1022,37 +1034,44 @@ function EventFormSheet({ onClose, onPost }: { onClose: () => void; onPost: () =
                         <FormField control={form.control} name="description" render={({ field }) => (
                             <FormItem><FormLabel>Short Description</FormLabel><FormControl><Textarea placeholder="What's your event about?" {...field} /></FormControl><FormMessage /></FormItem>
                         )}/>
-                        <FormField control={form.control} name="eventTimestamp" render={({ field }) => (
-                            <FormItem className="flex flex-col"><FormLabel>Date & Time</FormLabel>
-                                <Popover>
-                                    <PopoverTrigger asChild>
+                        <div className="grid grid-cols-2 gap-4">
+                            <FormField
+                                control={form.control}
+                                name="eventDate"
+                                render={({ field }) => (
+                                    <FormItem className="flex flex-col">
+                                        <FormLabel>Date</FormLabel>
+                                        <Popover>
+                                            <PopoverTrigger asChild>
+                                                <FormControl>
+                                                    <Button variant={"outline"} className={cn("pl-3 text-left font-normal", !field.value && "text-muted-foreground")}>
+                                                        {field.value ? format(field.value, "PPP") : <span>Pick a date</span>}
+                                                        <CalendarClock className="ml-auto h-4 w-4 opacity-50" />
+                                                    </Button>
+                                                </FormControl>
+                                            </PopoverTrigger>
+                                            <PopoverContent className="w-auto p-0" align="start">
+                                                <Calendar mode="single" selected={field.value} onSelect={field.onChange} disabled={(date) => date < new Date(new Date().setDate(new Date().getDate() - 1))} />
+                                            </PopoverContent>
+                                        </Popover>
+                                        <FormMessage />
+                                    </FormItem>
+                                )}
+                            />
+                            <FormField
+                                control={form.control}
+                                name="eventTime"
+                                render={({ field }) => (
+                                    <FormItem className="flex flex-col">
+                                        <FormLabel>Time</FormLabel>
                                         <FormControl>
-                                            <Button variant={"outline"} className={cn("pl-3 text-left font-normal", !field.value && "text-muted-foreground")}>
-                                                {field.value ? format(field.value, "PPP HH:mm") : <span>Pick a date and time</span>}
-                                                <CalendarClock className="ml-auto h-4 w-4 opacity-50" />
-                                            </Button>
+                                            <Input type="time" {...field} />
                                         </FormControl>
-                                    </PopoverTrigger>
-                                    <PopoverContent className="w-auto p-0" align="start">
-                                        <Calendar mode="single" selected={field.value} onSelect={field.onChange} disabled={(date) => date < new Date()} />
-                                        <div className="p-3 border-t">
-                                            <Input
-                                                type="time"
-                                                value={field.value ? format(field.value, 'HH:mm') : ''}
-                                                onChange={e => {
-                                                    const newDate = field.value ? new Date(field.value) : new Date();
-                                                    const [hours, minutes] = e.target.value.split(':');
-                                                    if(!isNaN(parseInt(hours)) && !isNaN(parseInt(minutes))) {
-                                                        newDate.setHours(parseInt(hours), parseInt(minutes));
-                                                        field.onChange(newDate);
-                                                    }
-                                                }}
-                                            />
-                                        </div>
-                                    </PopoverContent>
-                                </Popover>
-                            <FormMessage /></FormItem>
-                        )}/>
+                                        <FormMessage />
+                                    </FormItem>
+                                )}
+                            />
+                        </div>
                         <FormField control={form.control} name="location" render={({ field }) => (
                              <FormItem><FormLabel>Location</FormLabel><FormControl>
                                 <div className="relative">
