@@ -610,28 +610,42 @@ function EventFormSheet({ isOpen, onOpenChange, form, toast }: { isOpen: boolean
                                 name="eventDetails.eventTimestamp"
                                 render={({ field }) => (
                                     <FormItem>
-                                        <Popover>
-                                            <PopoverTrigger asChild>
-                                                <div className="flex items-center gap-4 cursor-pointer">
-                                                    <CalendarDays className="h-5 w-5 text-muted-foreground" />
+                                      <div className="flex items-start gap-4">
+                                          <CalendarDays className="h-5 w-5 text-muted-foreground mt-2.5" />
+                                          <div className="w-full">
+                                            <Popover>
+                                                <PopoverTrigger asChild>
                                                     <FormControl>
-                                                        <div className={cn("w-full text-left font-normal text-base", !field.value && "text-muted-foreground")}>
-                                                            {field.value ? format(field.value, "PPP") : <span>Date</span>}
-                                                        </div>
+                                                        <Button
+                                                            variant={"ghost"}
+                                                            className={cn(
+                                                                "w-full justify-start text-left font-normal text-base border-0 border-b-2 rounded-none focus-visible:ring-0 px-0 pb-1 h-auto",
+                                                                !field.value && "text-muted-foreground"
+                                                            )}
+                                                        >
+                                                            {field.value ? (
+                                                                format(field.value, "PPP")
+                                                            ) : (
+                                                                <span>Date</span>
+                                                            )}
+                                                        </Button>
                                                     </FormControl>
-                                                </div>
-                                            </PopoverTrigger>
-                                            <PopoverContent className="w-auto p-0" align="start">
-                                                <Calendar
-                                                    mode="single"
-                                                    selected={field.value}
-                                                    onSelect={field.onChange}
-                                                    disabled={(date) => date < new Date(new Date().setDate(new Date().getDate() - 1))}
-                                                    initialFocus
-                                                />
-                                            </PopoverContent>
-                                        </Popover>
-                                        <FormMessage className="pl-9" />
+                                                </PopoverTrigger>
+                                                <PopoverContent className="w-auto p-0" align="start">
+                                                    <Calendar
+                                                        mode="single"
+                                                        selected={field.value}
+                                                        onSelect={field.onChange}
+                                                        disabled={(date) =>
+                                                            date < new Date(new Date().setDate(new Date().getDate() - 1))
+                                                        }
+                                                        initialFocus
+                                                    />
+                                                </PopoverContent>
+                                            </Popover>
+                                            <FormMessage />
+                                          </div>
+                                      </div>
                                     </FormItem>
                                 )}
                             />
@@ -1153,9 +1167,3 @@ export default function PostPage() {
     </Suspense>
   );
 }
-
-    
-
-    
-
-    
