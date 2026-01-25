@@ -23,6 +23,7 @@ import { ScrollArea } from "@/components/ui/scroll-area";
 import { motion, AnimatePresence } from "framer-motion";
 import { eventBus } from "@/lib/event-bus";
 import { WithId, useCollection } from "@/firebase/firestore/use-collection";
+import { RoomCard } from "@/components/RoomCard";
 
 
 function FollowedUserSkeleton() {
@@ -659,19 +660,8 @@ export default function MessagesPage() {
                                 </TabsTrigger>
                             </TabsList>
                             <div className="flex-grow overflow-y-auto">
-                                <TabsContent value="rooms">
-                                    <div className="text-center py-20 px-4">
-                                        <div className="inline-block p-4 bg-secondary rounded-full">
-                                            <Radio className="h-10 w-10 text-primary" />
-                                        </div>
-                                        <h2 className="mt-6 text-xl font-headline text-primary">No Rooms Yet</h2>
-                                        <p className="text-muted-foreground mt-2 max-w-sm mx-auto">
-                                           Create or join rooms to start a group conversation.
-                                        </p>
-                                        <Button className="mt-6 bg-primary text-primary-foreground hover:bg-primary/90 rounded-full font-bold">
-                                            Create a Room
-                                        </Button>
-                                    </div>
+                                <TabsContent value="rooms" className="p-4">
+                                     <RoomCard />
                                 </TabsContent>
                                 <TabsContent value="chats">
                                     <ConversationsList 
