@@ -19,9 +19,6 @@ const hashCode = (s: string) => s.split('').reduce((a, b) => {
     return a & a;
 }, 0);
 
-// మీ యాప్‌లో ఏ యూజర్లకైతే వెరిఫైడ్ బ్యాడ్జ్ చూపించాలనుకుంటున్నారో,
-// వారి యూజర్ IDలను ఈ కింది జాబితాలో జోడించండి.
-// ఉదాహరణ: const VERIFIED_USER_IDS = ['user_id_1', 'user_id_2'];
 const VERIFIED_USER_IDS = ['j2OfaN33r2SMyg5N7lYdFkS3lA52'];
 const ADMIN_USER_ID = 'e9ZGHMjgnmO3ueSbf1ao3Crvlr02';
 
@@ -49,7 +46,6 @@ export function getFormattedUserIdString(uid: string | undefined): string {
 export function formatUserId(uid: string | undefined): React.ReactNode {
   if (!uid) return "Anonymous-User-0000";
 
-  // Special case for the admin user
   if (uid === ADMIN_USER_ID) {
     return (
       <span className="inline-flex items-center gap-0.5">
@@ -74,7 +70,6 @@ export function formatUserId(uid: string | undefined): React.ReactNode {
 export function formatTimestamp(date: Date): string {
   const now = new Date();
   const distance = formatDistanceToNowStrict(date, { addSuffix: false });
-  // formatDistanceToNowStrict returns string like '5 months', '1 day', '10 hours', '1minute'
   
   const [value, unit] = distance.split(' ');
 
@@ -97,7 +92,6 @@ export function formatTimestamp(date: Date): string {
     return `${value}y`;
   }
 
-  // Fallback for units not explicitly handled, though the above covers date-fns output
   return distance;
 }
 
@@ -143,13 +137,6 @@ export const getInitials = (name: string | null | undefined) => {
       .toUpperCase();
 };
 
-/**
- * Gets a user's avatar. If they have chosen a custom one, it's returned.
- * Otherwise, a deterministic emoji is generated from their user ID.
- * For the admin user, it returns a specific logo URL.
- * @param user The user object or user ID string.
- * @returns An emoji string or an image URL.
- */
 export const getAvatar = (user: Partial<User> | string | null | undefined): string => {
     const uid = typeof user === 'string' ? user : user?.id;
 
@@ -157,17 +144,14 @@ export const getAvatar = (user: Partial<User> | string | null | undefined): stri
         return 'https://blogger.googleusercontent.com/img/b/R29vZ2xl/AVvXsEhGPvFRvSSGSSTOcF45ESTNHx-z9iFQ_oZMCHDbsgRsPcztHHRUbMbD8GXNN109hzQpxLQRndngO1LoZEe2j3GkFEXrJGxfrk6UUR_dFUo5cBiz7I3tZ4n-lROEcWNLCsr3SuB_eeOh-BR8gTUUmX6B34PY_tcbf0wA35tOHa2lVDjzm2n8J6pawYy9Qm4i/s320/Blur%20Logo.PNG';
     }
     
-    // Handle case where user object is passed and has a custom avatar
     if (typeof user === 'object' && user?.avatar) {
         return user.avatar;
     }
 
     if (!uid) {
-        // Return a generic default if no UID is available
         return '👤';
     }
 
-    // A simple hashing function to convert string to a number
     const hash = hashCode(uid);
     const index = Math.abs(hash) % defaultAvatars.length;
     
@@ -197,4 +181,14 @@ export function formatExpiry(date: Date): string {
   }
 
   return formatDistanceStrict(date, now);
+}
+
+export function combineDateAndTime(date: Date, time: string): Date {
+  const [hours, minutes] = time.split(':').map(Number);
+  const newDate = new Date(date);
+  newDate.setHours(hours);
+  newDate.setMinutes(minutes);
+  newDate.setSeconds(0);
+  newDate.setMilliseconds(0);
+  return newDate;
 }

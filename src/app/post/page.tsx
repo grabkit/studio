@@ -9,7 +9,7 @@ import * as z from "zod";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { collection, serverTimestamp, setDoc, doc, updateDoc, getDoc, writeBatch, Timestamp } from "firebase/firestore";
 import { useFirebase, useDoc, useMemoFirebase } from "@/firebase";
-import type { Post, QuotedPost, Notification } from "@/lib/types";
+import type { Post, QuotedPost, Notification, Event, EventDetails } from "@/lib/types";
 import { WithId } from "@/firebase/firestore/use-collection";
 
 
@@ -27,11 +27,11 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Form, FormControl, FormField, FormItem, FormMessage, FormLabel } from "@/components/ui/form";
-import { Loader2, X, ListOrdered, Plus, Link as LinkIcon, Image as ImageIcon, CalendarClock, Mic, Play, Square, RefreshCw, Send, Pause, StopCircle, Check, Circle, Undo2 } from "lucide-react";
+import { Loader2, X, ListOrdered, Plus, Link as LinkIcon, Image as ImageIcon, CalendarClock, Mic, Play, Square, RefreshCw, Send, Pause, StopCircle, Check, Circle, Undo2, MapPin, ClockIcon, Ticket, CalendarPlus, FileText } from "lucide-react";
 import { errorEmitter } from "@/firebase/error-emitter";
 import { FirestorePermissionError } from "@/firebase/errors";
 import { Switch } from "@/components/ui/switch";
-import { cn, getAvatar, formatUserId } from "@/lib/utils";
+import { cn, getAvatar, formatUserId, combineDateAndTime } from "@/lib/utils";
 import type { LinkMetadata } from "@/lib/types";
 import Image from "next/image";
 import { QuotedPostCard } from "@/components/QuotedPostCard";
@@ -40,6 +40,7 @@ import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Progress } from "@/components/ui/progress";
 import { format } from "date-fns";
 import { Calendar } from "@/components/ui/calendar";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 
 const pollOptionSchema = z.object({
   option: z.string().min(1, "Option cannot be empty.").max(100, "Option is too long."),
@@ -68,18 +69,16 @@ const baseSchema = z.object({
   commentsAllowed: z.boolean().default(true),
   linkMetadata: linkMetadataSchema,
   quotedPost: quotedPostSchema,
-  expiration: z.number().optional(), // duration in seconds
+  expiration: z.number().optional(), 
   audioUrl: z.string().optional(),
   audioWaveform: z.array(z.number()).optional(),
   audioDuration: z.number().optional(),
 });
 
-// Schema for a standard text post
 const textPostSchema = baseSchema.extend({
   isPoll: z.literal(false),
 });
 
-// Schema for a poll post
 const pollPostSchema = baseSchema.extend({
   isPoll: z.literal(true),
   pollOptions: z
@@ -88,7 +87,6 @@ const pollPostSchema = baseSchema.extend({
     .max(4, "A poll can have at most 4 options."),
 });
 
-// Use a discriminated union to validate based on the `isPoll` flag
 const postSchema = z.discriminatedUnion("isPoll", [
   textPostSchema,
   pollPostSchema,
@@ -476,12 +474,186 @@ function AudioRecorderSheet({ onAttach, onOpenChange, isRecorderOpen }: { onAtta
     );
 }
 
+const eventSchema = z.object({
+    name: z.string().min(3, "Event name must be at least 3 characters.").max(100),
+    description: z.string().max(500).optional(),
+    location: z.string().min(3, "Location is required.").max(100),
+    date: z.date({ required_error: "Please select a date." }),
+    time: z.string({ required_error: "Please select a time." }),
+    isPaid: z.boolean().default(false),
+    content: z.string().max(560).optional(),
+});
+
+function EventFormSheet({ isOpen, onOpenChange }: { isOpen: boolean, onOpenChange: (open: boolean) => void }) {
+    const { user, firestore } = useFirebase();
+    const { toast } = useToast();
+    const router = useRouter();
+
+    const form = useForm<z.infer<typeof eventSchema>>({
+        resolver: zodResolver(eventSchema),
+        defaultValues: {
+            isPaid: false,
+        },
+    });
+
+    const onEventSubmit = async (values: z.infer<typeof eventSchema>) => {
+        if (!user || !firestore) return;
+
+        const eventTimestamp = combineDateAndTime(values.date, values.time);
+
+        const eventRef = doc(collection(firestore, 'events'));
+        const postRef = doc(collection(firestore, 'posts'));
+
+        const newEvent: Event = {
+            id: eventRef.id,
+            authorId: user.uid,
+            name: values.name,
+            description: values.description,
+            location: values.location,
+            eventTimestamp: Timestamp.fromDate(eventTimestamp),
+            isPaid: values.isPaid,
+        };
+
+        const newPost: Post = {
+            id: postRef.id,
+            authorId: user.uid,
+            type: 'event',
+            timestamp: serverTimestamp() as Timestamp,
+            content: values.content,
+            eventDetails: {
+                id: eventRef.id,
+                name: values.name,
+                location: values.location,
+                eventTimestamp: Timestamp.fromDate(eventTimestamp),
+            },
+            likeCount: 0,
+            likes: [],
+            commentCount: 0,
+            repostCount: 0,
+        };
+        
+        try {
+            const batch = writeBatch(firestore);
+            batch.set(eventRef, newEvent);
+            batch.set(postRef, newPost);
+            await batch.commit();
+
+            toast({ title: "Event Created", description: "Your event has been posted." });
+            onOpenChange(false);
+            router.push('/home');
+
+        } catch (error) {
+            console.error("Failed to create event:", error);
+            toast({ variant: 'destructive', title: "Error", description: "Could not create the event." });
+        }
+    };
+
+    return (
+        <Sheet open={isOpen} onOpenChange={onOpenChange}>
+            <SheetContent side="bottom" className="h-screen flex flex-col p-0 rounded-t-2xl">
+                <SheetHeader className="sr-only">
+                    <SheetTitle>Create Event</SheetTitle>
+                </SheetHeader>
+                 <div className="z-10 flex items-center justify-between p-2 border-b bg-background sticky top-0 h-14">
+                    <div className="flex items-center gap-2">
+                        <SheetClose asChild><Button variant="ghost" size="icon"><X className="h-4 w-4" /></Button></SheetClose>
+                        <h2 className="text-base font-bold">Create Event</h2>
+                    </div>
+                    <Button form="event-form" type="submit" disabled={form.formState.isSubmitting} className="rounded-full px-6 font-bold">
+                        {form.formState.isSubmitting ? <Loader2 className="h-4 w-4 animate-spin" /> : 'Post'}
+                    </Button>
+                </div>
+                <div className="flex-grow overflow-y-auto p-4">
+                    <Form {...form}>
+                        <form id="event-form" onSubmit={form.handleSubmit(onEventSubmit)} className="space-y-6">
+                            <div className="space-y-4 p-4 border rounded-lg">
+                                <FormField control={form.control} name="name" render={({ field }) => (
+                                    <FormItem>
+                                        <FormLabel>Event Name</FormLabel>
+                                        <FormControl><Input placeholder="e.g., Weekend Tech Meetup" {...field} /></FormControl>
+                                        <FormMessage />
+                                    </FormItem>
+                                )}/>
+                                 <FormField control={form.control} name="description" render={({ field }) => (
+                                    <FormItem>
+                                        <FormLabel>Description (optional)</FormLabel>
+                                        <FormControl><Textarea placeholder="Tell us more about the event" {...field} /></FormControl>
+                                        <FormMessage />
+                                    </FormItem>
+                                )}/>
+                            </div>
+                            <div className="space-y-1 p-4 border rounded-lg">
+                                <FormField control={form.control} name="location" render={({ field }) => (
+                                    <FormItem>
+                                        <FormLabel>Location</FormLabel>
+                                        <FormControl><Input placeholder="e.g., Jubilee Hills, Hyderabad" {...field} /></FormControl>
+                                        <FormMessage />
+                                    </FormItem>
+                                )}/>
+                                <div className="grid grid-cols-2 gap-4 pt-2">
+                                     <FormField control={form.control} name="date" render={({ field }) => (
+                                        <FormItem>
+                                            <FormLabel>Date</FormLabel>
+                                            <Popover>
+                                                <PopoverTrigger asChild>
+                                                    <FormControl>
+                                                        <Button variant={"outline"} className={cn("w-full pl-3 text-left font-normal", !field.value && "text-muted-foreground")}>
+                                                            {field.value ? format(field.value, "PPP") : <span>Pick a date</span>}
+                                                            <CalendarPlus className="ml-auto h-4 w-4 opacity-50" />
+                                                        </Button>
+                                                    </FormControl>
+                                                </PopoverTrigger>
+                                                <PopoverContent className="w-auto p-0" align="start">
+                                                    <Calendar mode="single" selected={field.value} onSelect={field.onChange} disabled={(date) => date < new Date() || date < new Date("1900-01-01")} initialFocus />
+                                                </PopoverContent>
+                                            </Popover>
+                                            <FormMessage />
+                                        </FormItem>
+                                    )}/>
+                                     <FormField control={form.control} name="time" render={({ field }) => (
+                                        <FormItem>
+                                            <FormLabel>Time</FormLabel>
+                                            <FormControl><Input type="time" {...field} /></FormControl>
+                                            <FormMessage />
+                                        </FormItem>
+                                    )}/>
+                                </div>
+                            </div>
+                            <div className="p-4 border rounded-lg flex items-center justify-between">
+                                <FormField control={form.control} name="isPaid" render={({ field }) => (
+                                    <FormItem className="flex items-center justify-between w-full">
+                                        <div className="space-y-0.5">
+                                            <FormLabel>Paid Event?</FormLabel>
+                                            <p className="text-xs text-muted-foreground">Is there a ticket or entry fee?</p>
+                                        </div>
+                                        <FormControl><Switch checked={field.value} onCheckedChange={field.onChange} /></FormControl>
+                                    </FormItem>
+                                )}/>
+                            </div>
+                            <div className="space-y-2 p-4 border rounded-lg">
+                                <FormLabel>Additional thoughts (optional)</FormLabel>
+                                <FormField control={form.control} name="content" render={({ field }) => (
+                                    <FormItem>
+                                        <FormControl><Textarea placeholder="Share any extra details or thoughts about the event..." {...field} /></FormControl>
+                                        <FormMessage />
+                                    </FormItem>
+                                )}/>
+                            </div>
+                        </form>
+                    </Form>
+                </div>
+            </SheetContent>
+        </Sheet>
+    );
+}
+
 function PostPageComponent() {
   const [isOpen, setIsOpen] = useState(true);
   const [showLinkInput, setShowLinkInput] = useState(false);
   const [isFetchingPreview, setIsFetchingPreview] = useState(false);
   const [isExpirationSheetOpen, setIsExpirationSheetOpen] = useState(false);
   const [isRecorderOpen, setIsRecorderOpen] = useState(false);
+  const [isEventSheetOpen, setIsEventSheetOpen] = useState(false);
   const [expirationLabel, setExpirationLabel] = useState("Never");
   const router = useRouter();
   const searchParams = useSearchParams();
@@ -512,7 +684,7 @@ function PostPageComponent() {
     name: "pollOptions",
   });
   
-    const [isDatePickerOpen, setIsDatePickerOpen] = useState(false);
+  const [isDatePickerOpen, setIsDatePickerOpen] = useState(false);
 
   useEffect(() => {
     if (isEditMode && firestore && postId) {
@@ -587,7 +759,6 @@ function PostPageComponent() {
         form.setValue("linkMetadata.url", url.href, { shouldValidate: true });
         fetchPreview(url.href);
     } catch (error) {
-        // Not a valid URL
     }
   };
 
@@ -631,7 +802,6 @@ function PostPageComponent() {
       };
       if (expiration) updatedData.expiresAt = Timestamp.fromMillis(Date.now() + expiration * 1000);
       else updatedData.expiresAt = undefined;
-      // ...
       updateDoc(postRef, updatedData).then(() => {
             form.reset();
             setIsOpen(false);
@@ -674,7 +844,6 @@ function PostPageComponent() {
         }
 
         setDoc(newPostRef, newPostData).then(() => {
-            // ... (notification logic)
             form.reset();
             setIsOpen(false);
           }).catch((serverError) => {
@@ -711,7 +880,7 @@ function PostPageComponent() {
     form.setValue('audioUrl', data.url);
     form.setValue('audioWaveform', data.waveform);
     form.setValue('audioDuration', data.duration);
-    form.trigger('content'); // Re-validate the form
+    form.trigger('content'); 
   };
 
   const formatAudioDuration = (seconds: number | undefined) => {
@@ -839,6 +1008,9 @@ function PostPageComponent() {
                                           <Button type="button" variant="ghost" size="icon" onClick={() => { if(!isEditMode && !audioUrl && !isPoll && !linkMetadata){setIsRecorderOpen(true)}}} disabled={isEditMode || !!audioUrl || isPoll || !!linkMetadata}>
                                               <Mic className="h-5 w-5 text-muted-foreground" />
                                           </Button>
+                                          <Button type="button" variant="ghost" size="icon" onClick={() => setIsEventSheetOpen(true)} disabled={isEditMode}>
+                                              <CalendarPlus className="h-5 w-5 text-muted-foreground" />
+                                          </Button>
                                           <Button type="button" variant="ghost" size="icon" onClick={handlePollToggle} disabled={isEditMode || !!audioUrl}>
                                               <ListOrdered className={cn("h-5 w-5 text-muted-foreground", isPoll && "text-primary")} />
                                           </Button>
@@ -865,6 +1037,7 @@ function PostPageComponent() {
         </SheetContent>
       </Sheet>
       <AudioRecorderSheet onAttach={handleAttachAudio} onOpenChange={setIsRecorderOpen} isRecorderOpen={isRecorderOpen} />
+      <EventFormSheet isOpen={isEventSheetOpen} onOpenChange={setIsEventSheetOpen} />
       <Sheet open={isExpirationSheetOpen} onOpenChange={setIsExpirationSheetOpen}>
           <SheetContent side="bottom" className="rounded-t-2xl">
               <SheetHeader className="pb-4"><SheetTitle>Post Expiration</SheetTitle><SheetDescription>The post will be deleted after this duration.</SheetDescription></SheetHeader>
@@ -885,5 +1058,3 @@ export default function PostPage() {
     </Suspense>
   );
 }
-
-    

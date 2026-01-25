@@ -15,15 +15,32 @@ export interface PollOption {
     votes: number;
 }
 
-// Represents the essential data of a post being quoted.
-// Stored denormalized within a quote post.
 export interface QuotedPost {
     id: string;
     authorId: string;
-    authorName: string; // e.g., formatUserId(authorId)
-    authorAvatar: string; // e.g., getAvatar(author)
+    authorName: string; 
+    authorAvatar: string; 
     content: string;
     timestamp: Timestamp;
+}
+
+export interface Event {
+    id: string;
+    authorId: string;
+    name: string;
+    description?: string;
+    isPaid: boolean;
+    eventTimestamp: Timestamp;
+    location: string;
+    reach?: number; // Optional, for future use
+    type?: 'public' | 'private'; // Optional, for future use
+}
+
+export interface EventDetails {
+    id: string;
+    name: string;
+    eventTimestamp: Timestamp;
+    location: string;
 }
 
 export interface Post {
@@ -39,24 +56,21 @@ export interface Post {
     isPinned?: boolean;
     expiresAt?: Timestamp;
 
-    // Type of post
-    type?: 'text' | 'poll' | 'repost' | 'quote' | 'audio';
+    type?: 'text' | 'poll' | 'repost' | 'quote' | 'audio' | 'event';
 
-    // Poll specific fields
     pollOptions?: PollOption[];
-    voters?: Record<string, number>; // maps userId to option index
+    voters?: Record<string, number>; 
 
-    // Link specific fields
     linkMetadata?: LinkMetadata;
 
-    // Repost/Quote specific fields
-    repostOf?: string; // ID of the original post, for simple reposts
-    quotedPost?: QuotedPost; // Denormalized data for a quoted post
+    repostOf?: string; 
+    quotedPost?: QuotedPost; 
 
-    // Audio post specific fields
     audioUrl?: string;
     audioWaveform?: number[];
     audioDuration?: number;
+
+    eventDetails?: EventDetails;
 }
 
 export interface Comment {
@@ -65,7 +79,7 @@ export interface Comment {
     authorId: string;
     content: string;
     timestamp: Timestamp;
-    postAuthorId?: string; // This might be added in the fetch logic
+    postAuthorId?: string;
     status: 'approved' | 'pending_approval';
     lastEdited?: Timestamp;
 }
@@ -110,7 +124,6 @@ export interface Bookmark {
 }
 
 export interface UserPost extends Post {
-    // This can be extended with user-specific post data if needed in future
 }
 
 export interface Notification {
@@ -127,7 +140,7 @@ export interface Conversation {
     id: string;
     participantIds: string[];
     lastMessage: string;
-    lastUpdated: any; // Can be Timestamp or FieldValue
+    lastUpdated: any; 
     status: 'pending' | 'accepted';
     requesterId: string;
     unreadCounts?: Record<string, number>;
@@ -142,7 +155,7 @@ export interface Message {
     id: string;
     senderId: string;
     text: string;
-    timestamp: any; // Can be Timestamp or FieldValue
+    timestamp: any; 
     replyToMessageId?: string;
     replyToMessageText?: string;
     postId?: string;
@@ -151,7 +164,6 @@ export interface Message {
 }
 
 
-// Specific type for the replies list
 export interface ReplyItem extends Comment {
     postContent: string;
 }
@@ -165,11 +177,11 @@ export interface ProblemReport {
 }
 
 export interface Report {
-    id: string;
+    id:string;
     reporterUserId: string;
     reportedUserId: string;
     reason: string;
-    timestamp: any; // Can be Timestamp or FieldValue
+    timestamp: any; 
     status: 'pending' | 'reviewed' | 'action-taken';
 }
 

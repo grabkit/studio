@@ -55,7 +55,7 @@ service cloud.firestore {
 
     match /posts/{postId} {
       allow get, list: if isSignedIn();
-      allow create: if isSignedIn() && (isNewTextPost() || isNewPollPost() || isNewRepost() || isNewQuotePost() || isNewAudioPost());
+      allow create: if isSignedIn() && (isNewTextPost() || isNewPollPost() || isNewRepost() || isNewQuotePost() || isNewAudioPost() || isNewEventPost());
       allow delete: if isSignedIn() && isOwner(resource.data.authorId);
       allow update: if isSignedIn() && (
           (isOwner(resource.data.authorId) && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['content', 'commentsAllowed', 'isPinned', 'expiresAt'])) ||
@@ -74,6 +74,11 @@ service cloud.firestore {
             (isOwner(get(/databases/$(database)/documents/posts/$(postId)).data.authorId) && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['status']))
         );
       }
+    }
+
+    match /events/{eventId} {
+        allow read: if isSignedIn();
+        allow create: if isSignedIn() && isOwner(request.resource.data.authorId);
     }
     
     match /conversations/{conversationId} {
@@ -136,6 +141,17 @@ service cloud.firestore {
       }
     }
 
+    function isNewEventPost() {
+        let data = request.resource.data;
+        let allowedKeys = ['id', 'authorId', 'type', 'content', 'timestamp', 'likes', 'likeCount', 'commentCount', 'repostCount', 'commentsAllowed', 'eventDetails', 'isPinned', 'expiresAt'];
+        return data.type == 'event'
+            && data.authorId == request.auth.uid
+            && data.eventDetails is map
+            && data.eventDetails.keys().hasAll(['id', 'name', 'eventTimestamp', 'location'])
+            && (data.content is string || !data.keys().has('content'))
+            && data.keys().hasOnly(allowedKeys);
+    }
+
     function isNewAudioPost() {
       let data = request.resource.data;
       let allowedKeys = ['id', 'authorId', 'type', 'content', 'timestamp', 'likes', 'likeCount', 'commentCount', 'repostCount', 'commentsAllowed', 'isPinned', 'expiresAt', 'audioUrl', 'audioWaveform', 'audioDuration'];
@@ -144,7 +160,7 @@ service cloud.firestore {
         && data.audioUrl is string
         && data.audioWaveform is list
         && data.audioDuration is number
-        && (data.content is string || !data.keys().has('content')) // content is optional
+        && (data.content is string || !data.keys().has('content')) 
         && !data.keys().hasAny(['pollOptions', 'voters', 'repostOf', 'quotedPost'])
         && data.keys().hasOnly(allowedKeys);
     }
@@ -199,7 +215,7 @@ service cloud.firestore {
     function isNewTextPost() {
       let data = request.resource.data;
       let allowedKeys = ['id', 'authorId', 'type', 'content', 'timestamp', 'likes', 'likeCount', 'commentCount', 'repostCount', 'commentsAllowed', 'isPinned', 'linkMetadata', 'expiresAt'];
-      return (data.type == 'text' || !data.keys().has('type')) // for backwards compatibility
+      return (data.type == 'text' || !data.keys().has('type')) 
         && data.authorId == request.auth.uid
         && (data.content is string && data.content.size() > 0 && data.content.size() <= 560 || data.keys().has('linkMetadata'))
         && data.commentCount == 0
