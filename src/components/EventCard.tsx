@@ -59,13 +59,13 @@ export function EventCard({ eventDetails }: { eventDetails: EventDetails }) {
     const endDate = useMemo(() => eventDetails.endTimestamp?.toDate(), [eventDetails.endTimestamp]);
 
     const colorIndex = useMemo(() => {
-        if (!eventDetails.name) return 0;
+        if (!eventDetails.id) return 0;
         let hash = 0;
-        for (let i = 0; i < eventDetails.name.length; i++) {
-            hash = eventDetails.name.charCodeAt(i) + ((hash << 5) - hash);
+        for (let i = 0; i < eventDetails.id.length; i++) {
+            hash = eventDetails.id.charCodeAt(i) + ((hash << 5) - hash);
         }
         return Math.abs(hash % colorSchemes.length);
-    }, [eventDetails.name]);
+    }, [eventDetails.id]);
 
     const scheme = colorSchemes[colorIndex];
     const duration = formatEventDuration(startDate, endDate);
@@ -73,7 +73,7 @@ export function EventCard({ eventDetails }: { eventDetails: EventDetails }) {
     return (
         <Sheet open={isOpen} onOpenChange={setIsOpen}>
             <SheetTrigger asChild>
-                <div className="mt-2 border rounded-xl bg-secondary/30 text-card-foreground shadow-sm overflow-hidden cursor-pointer hover:bg-secondary/50 transition-colors">
+                <div className="mt-2 border rounded-xl bg-background text-card-foreground shadow-sm overflow-hidden cursor-pointer hover:bg-secondary/50 transition-colors">
                     <div className="px-4 py-2 flex justify-between items-center text-xs font-medium text-muted-foreground uppercase tracking-wide">
                         <span>{formatEventDay(startDate)}</span>
                         <span>{formatEventDate(startDate)}</span>
