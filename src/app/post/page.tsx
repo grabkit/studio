@@ -2,7 +2,7 @@
 "use client";
 
 import * as React from "react";
-import { useState, Suspense, useEffect, useRef, useCallback } from "react";
+import { useState, Suspense, useEffect, useRef, useCallback, useMemo } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { useForm, useFieldArray } from "react-hook-form";
 import * as z from "zod";
@@ -776,7 +776,7 @@ function PostPageComponent() {
                                         </Button>
                                         {linkMetadata.imageUrl && <div className="relative aspect-video bg-secondary"><Image src={linkMetadata.imageUrl} alt={linkMetadata.title || 'Link preview'} fill className="object-cover"/></div>}
                                         <div className="p-3 bg-secondary/50">
-                                            <p className="text-xs text-muted-foreground uppercase tracking-wider">{linkMetadata.url && linkMetadata.url.startsWith("http") ? new URL(linkMetadata.url).hostname.replace('www.','') : ''}</p>
+                                            {linkMetadata.url && linkMetadata.url.startsWith("http") && <p className="text-xs text-muted-foreground uppercase tracking-wider">{new URL(linkMetadata.url).hostname.replace('www.','')}</p>}
                                             <p className="font-semibold text-sm truncate mt-0.5">{linkMetadata.title || linkMetadata.url}</p>
                                         </div>
                                     </div>
@@ -1062,7 +1062,7 @@ function EventFormSheet({ onClose, onPost }: { onClose: () => void; onPost: () =
                                 control={form.control}
                                 name="eventTime"
                                 render={({ field }) => (
-                                    <FormItem className="flex flex-col">
+                                    <FormItem>
                                         <FormLabel>Time</FormLabel>
                                         <FormControl>
                                             <Input type="time" {...field} />
