@@ -2,15 +2,16 @@
 "use client";
 
 import * as React from "react";
-import { useState, Suspense, useEffect, useMemo, useRef, useCallback } from "react";
+import { useState, Suspense, useEffect, useMemo, useRef, useCallback, type Dispatch, type SetStateAction } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
-import { useForm, useFieldArray } from "react-hook-form";
+import { useForm, useFieldArray, type UseFormReturn } from "react-hook-form";
 import * as z from "zod";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { collection, serverTimestamp, setDoc, doc, updateDoc, getDoc, writeBatch, Timestamp } from "firebase/firestore";
 import { useFirebase, useDoc, useMemoFirebase } from "@/firebase";
-import type { Post, QuotedPost, Notification } from "@/lib/types";
+import type { Post, QuotedPost, Notification, EventDetails } from "@/lib/types";
 import { WithId } from "@/firebase/firestore/use-collection";
+import { format } from "date-fns";
 
 
 import {
@@ -27,17 +28,20 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Form, FormControl, FormField, FormItem, FormMessage, FormLabel } from "@/components/ui/form";
-import { Loader2, X, ListOrdered, Plus, Link as LinkIcon, Image as ImageIcon, CalendarClock, Mic, Play, Square, RefreshCw, Send, Pause, StopCircle, Check, Circle, Undo2 } from "lucide-react";
+import { Loader2, X, ListOrdered, Plus, Link as LinkIcon, Image as ImageIcon, CalendarClock, Mic, Play, Square, RefreshCw, Send, Pause, StopCircle, Check, Circle, Undo2, CalendarDays, MapPin, Clock, DollarSign, Info } from "lucide-react";
 import { errorEmitter } from "@/firebase/error-emitter";
 import { FirestorePermissionError } from "@/firebase/errors";
 import { Switch } from "@/components/ui/switch";
-import { cn, getAvatar, formatUserId } from "@/lib/utils";
+import { cn, getAvatar, formatUserId, combineDateAndTime } from "@/lib/utils";
 import type { LinkMetadata } from "@/lib/types";
 import Image from "next/image";
 import { QuotedPostCard } from "@/components/QuotedPostCard";
 import { useToast } from "@/hooks/use-toast";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Progress } from "@/components/ui/progress";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { Calendar } from "@/components/ui/calendar";
+import { ScrollArea } from "@/components/ui/scroll-area";
 
 const pollOptionSchema = z.object({
   option: z.string().min(1, "Option cannot be empty.").max(100, "Option is too long."),
@@ -60,6 +64,18 @@ const quotedPostSchema = z.object({
     timestamp: z.any(),
 }).optional();
 
+const eventDetailsSchema = z.object({
+  name: z.string().min(1, "Event name cannot be empty."),
+  description: z.string().optional(),
+  location: z.string().min(1, "Location cannot be empty."),
+  eventTimestamp: z.date({ required_error: "Please select a date." }),
+  isAllDay: z.boolean().default(true),
+  isPaid: z.boolean().default(false),
+  startTime: z.string().optional(),
+  endTime: z.string().optional(),
+});
+
+
 const baseSchema = z.object({
   content: z.string().max(560, "Post is too long.").optional(),
   commentsAllowed: z.boolean().default(true),
@@ -69,6 +85,7 @@ const baseSchema = z.object({
   audioUrl: z.string().optional(),
   audioWaveform: z.array(z.number()).optional(),
   audioDuration: z.number().optional(),
+  eventDetails: eventDetailsSchema.optional(),
 });
 
 const textPostSchema = baseSchema.extend({
@@ -86,7 +103,7 @@ const pollPostSchema = baseSchema.extend({
 const postSchema = z.discriminatedUnion("isPoll", [
   textPostSchema,
   pollPostSchema,
-]).refine(data => !!data.content || !!data.linkMetadata || !!data.quotedPost || !!data.audioUrl, {
+]).refine(data => !!data.content || !!data.linkMetadata || !!data.quotedPost || !!data.audioUrl || !!data.eventDetails, {
     message: "Post cannot be empty.",
     path: ["content"],
 });
@@ -274,7 +291,8 @@ function AudioRecorderSheet({ onAttach, onOpenChange, isRecorderOpen }: { onAtta
 
                 mediaRecorderRef.current.onstop = () => {
                     if (!mediaRecorderRef.current) return;
-                    const audioBlob = new Blob(audioChunksRef.current, { type: mediaRecorderRef.current.mimeType || 'audio/webm' });
+                    const mimeType = mediaRecorderRef.current.stream.getAudioTracks()[0].getSettings().mimeType || 'audio/webm';
+                    const audioBlob = new Blob(audioChunksRef.current, { type: mimeType });
 
                     const reader = new FileReader();
                     reader.onloadend = () => {
@@ -469,16 +487,135 @@ function AudioRecorderSheet({ onAttach, onOpenChange, isRecorderOpen }: { onAtta
     );
 }
 
+function EventFormSheet({ isOpen, onOpenChange, form, toast }: { isOpen: boolean, onOpenChange: (open: boolean) => void, form: UseFormReturn<z.infer<typeof postSchema>>, toast: any }) {
+    const isAllDay = form.watch("eventDetails.isAllDay");
+
+    useEffect(() => {
+        if (isAllDay) {
+            form.setValue("eventDetails.startTime", undefined);
+            form.setValue("eventDetails.endTime", undefined);
+        }
+    }, [isAllDay, form]);
+    
+    return (
+        <Sheet open={isOpen} onOpenChange={onOpenChange}>
+            <SheetContent side="bottom" className="h-[90dvh] flex flex-col p-0">
+                <SheetHeader className="p-4 border-b">
+                    <SheetTitle className="text-center">Create Event</SheetTitle>
+                </SheetHeader>
+                <ScrollArea className="flex-grow">
+                    <div className="p-4 space-y-8">
+                        <FormField control={form.control} name="eventDetails.name" render={({ field }) => (
+                            <FormItem>
+                                <div className="flex items-start gap-4">
+                                    <Info className="h-5 w-5 text-muted-foreground mt-2" />
+                                    <div className="w-full">
+                                        <FormControl><Input placeholder="Event Name" {...field} className="text-base border-0 border-b-2 rounded-none focus-visible:ring-0 px-0 pb-1" /></FormControl>
+                                        <FormMessage />
+                                    </div>
+                                </div>
+                            </FormItem>
+                        )}/>
+                        <FormField control={form.control} name="eventDetails.location" render={({ field }) => (
+                            <FormItem>
+                                 <div className="flex items-start gap-4">
+                                    <MapPin className="h-5 w-5 text-muted-foreground mt-2" />
+                                     <div className="w-full">
+                                        <FormControl><Input placeholder="Location or URL" {...field} className="text-base border-0 border-b-2 rounded-none focus-visible:ring-0 px-0 pb-1" /></FormControl>
+                                        <FormMessage />
+                                    </div>
+                                </div>
+                            </FormItem>
+                        )}/>
+                        <FormField control={form.control} name="eventDetails.isAllDay" render={({ field }) => (
+                            <FormItem className="flex items-center justify-between gap-4">
+                                <div className="flex items-center gap-4">
+                                    <Clock className="h-5 w-5 text-muted-foreground" />
+                                    <FormLabel className="text-base font-normal">All-day</FormLabel>
+                                </div>
+                                <FormControl><Switch checked={field.value} onCheckedChange={field.onChange} /></FormControl>
+                            </FormItem>
+                        )}/>
+                         <FormField control={form.control} name="eventDetails.eventTimestamp" render={({ field }) => (
+                            <FormItem>
+                                <Popover>
+                                    <PopoverTrigger asChild>
+                                        <div className="flex items-center gap-4 cursor-pointer">
+                                            <CalendarDays className="h-5 w-5 text-muted-foreground" />
+                                            <FormControl>
+                                                <div className={cn("w-full text-left font-normal text-base", !field.value && "text-muted-foreground")}>
+                                                    {field.value ? format(field.value, "PPP") : <span>Date</span>}
+                                                </div>
+                                            </FormControl>
+                                        </div>
+                                    </PopoverTrigger>
+                                    <PopoverContent className="w-auto p-0" align="start">
+                                        <Calendar mode="single" selected={field.value} onSelect={field.onChange} disabled={(date) => date < new Date(new Date().setDate(new Date().getDate() - 1))} initialFocus/>
+                                    </PopoverContent>
+                                </Popover>
+                                <FormMessage className="pl-9" />
+                            </FormItem>
+                        )}/>
+                        {!isAllDay && (
+                            <div className="pl-9 space-y-6">
+                                <FormField control={form.control} name="eventDetails.startTime" render={({ field }) => (
+                                    <FormItem>
+                                        <FormLabel>Start time</FormLabel>
+                                        <FormControl><Input type="time" {...field} className="text-base" /></FormControl>
+                                        <FormMessage />
+                                    </FormItem>
+                                )}/>
+                                <FormField control={form.control} name="eventDetails.endTime" render={({ field }) => (
+                                    <FormItem>
+                                        <FormLabel>End time</FormLabel>
+                                        <FormControl><Input type="time" {...field} className="text-base" /></FormControl>
+                                        <FormMessage />
+                                    </FormItem>
+                                )}/>
+                            </div>
+                        )}
+                        <FormField control={form.control} name="eventDetails.isPaid" render={({ field }) => (
+                             <FormItem className="flex items-center justify-between gap-4">
+                                <div className="flex items-center gap-4">
+                                    <DollarSign className="h-5 w-5 text-muted-foreground" />
+                                    <FormLabel className="text-base font-normal">This is a paid event</FormLabel>
+                                </div>
+                                <FormControl><Switch checked={field.value} onCheckedChange={field.onChange} /></FormControl>
+                            </FormItem>
+                        )}/>
+                    </div>
+                </ScrollArea>
+                <div className="p-4 border-t">
+                    <Button onClick={() => {
+                        form.trigger("eventDetails");
+                        const eventErrors = form.formState.errors.eventDetails;
+                        if (!eventErrors || Object.keys(eventErrors).length === 0) {
+                             onOpenChange(false)
+                        } else {
+                            toast({
+                                variant: 'destructive',
+                                title: 'Please fill all required event fields.'
+                            })
+                        }
+                    }} className="w-full rounded-full font-bold">Attach Event</Button>
+                </div>
+            </SheetContent>
+        </Sheet>
+    )
+}
+
 function PostPageComponent() {
   const [isOpen, setIsOpen] = useState(true);
   const [showLinkInput, setShowLinkInput] = useState(false);
   const [isFetchingPreview, setIsFetchingPreview] = useState(false);
   const [isExpirationSheetOpen, setIsExpirationSheetOpen] = useState(false);
   const [isRecorderOpen, setIsRecorderOpen] = useState(false);
+  const [isEventSheetOpen, setIsEventSheetOpen] = useState(false);
   const [expirationLabel, setExpirationLabel] = useState("Never");
   const router = useRouter();
   const searchParams = useSearchParams();
   const { user, userProfile, firestore } = useFirebase();
+  const { toast } = useToast();
 
   const postId = searchParams.get('postId');
   const quotePostId = searchParams.get('quotePostId');
@@ -560,6 +697,7 @@ function PostPageComponent() {
   const quotedPost = form.watch("quotedPost");
   const audioUrl = form.watch("audioUrl");
   const audioDuration = form.watch("audioDuration");
+  const eventDetails = form.watch("eventDetails");
 
   const avatar = getAvatar(userProfile);
   const isAvatarUrl = avatar.startsWith('http');
@@ -610,15 +748,36 @@ function PostPageComponent() {
     if (!user || !firestore) return;
 
     form.trigger();
-    const { expiration, ...postValues } = values;
+    
+    let processedValues = { ...values };
+
+    // Process event details
+    let finalEventDetails: Partial<EventDetails> | undefined = undefined;
+    if(processedValues.eventDetails) {
+        const { startTime, endTime, name, location, isAllDay, eventTimestamp } = processedValues.eventDetails;
+        let finalEventTimestamp = eventTimestamp;
+        let finalEndTimestamp = undefined;
+
+        if (!isAllDay && startTime) {
+            finalEventTimestamp = combineDateAndTime(eventTimestamp, startTime);
+        }
+        if (!isAllDay && endTime && finalEventTimestamp) {
+            finalEndTimestamp = combineDateAndTime(new Date(finalEventTimestamp), endTime);
+        }
+        
+        finalEventDetails = { name, location, isAllDay, eventTimestamp: finalEventTimestamp, endTimestamp: finalEndTimestamp };
+    }
+
+
+    const { expiration, ...postValues } = processedValues;
 
     if (isEditMode && postId) {
       const postRef = doc(firestore, `posts`, postId);
       const updatedData: Partial<Post> = {
-        content: values.content,
-        commentsAllowed: values.commentsAllowed,
-        linkMetadata: values.linkMetadata,
-        quotedPost: values.quotedPost,
+        content: processedValues.content,
+        commentsAllowed: processedValues.commentsAllowed,
+        linkMetadata: processedValues.linkMetadata,
+        quotedPost: processedValues.quotedPost,
       };
       if (expiration) updatedData.expiresAt = Timestamp.fromMillis(Date.now() + expiration * 1000);
       else updatedData.expiresAt = undefined;
@@ -632,34 +791,36 @@ function PostPageComponent() {
     } else {
         const newPostRef = doc(collection(firestore, `posts`));
         let type: Post['type'] = 'text';
-        if (values.isPoll) type = 'poll';
-        else if (values.quotedPost) type = 'quote';
-        else if (values.audioUrl) type = 'audio';
+        if (processedValues.isPoll) type = 'poll';
+        else if (processedValues.quotedPost) type = 'quote';
+        else if (processedValues.audioUrl) type = 'audio';
+        else if (processedValues.eventDetails) type = 'event';
 
         const newPostData: any = {
           id: newPostRef.id,
           authorId: user.uid,
-          content: values.content,
+          content: processedValues.content,
           timestamp: serverTimestamp(),
           likes: [],
           likeCount: 0,
           commentCount: 0,
           repostCount: 0,
-          commentsAllowed: values.commentsAllowed,
+          commentsAllowed: processedValues.commentsAllowed,
           isPinned: false,
           type: type,
-          ...(values.linkMetadata && { linkMetadata: values.linkMetadata }),
-          ...(values.quotedPost && { quotedPost: values.quotedPost }),
-          ...(values.audioUrl && {
-              audioUrl: values.audioUrl,
-              audioWaveform: values.audioWaveform,
-              audioDuration: values.audioDuration
+          ...(processedValues.linkMetadata && { linkMetadata: processedValues.linkMetadata }),
+          ...(processedValues.quotedPost && { quotedPost: processedValues.quotedPost }),
+          ...(processedValues.audioUrl && {
+              audioUrl: processedValues.audioUrl,
+              audioWaveform: processedValues.audioWaveform,
+              audioDuration: processedValues.audioDuration
           }),
+          ...(finalEventDetails && { eventDetails: { ...finalEventDetails, id: newPostRef.id } }),
         };
 
         if (expiration) newPostData.expiresAt = Timestamp.fromMillis(Date.now() + expiration * 1000);
-        if (values.isPoll) {
-            newPostData.pollOptions = values.pollOptions.map(opt => ({ option: opt.option, votes: 0 }));
+        if (processedValues.isPoll) {
+            newPostData.pollOptions = processedValues.pollOptions.map(opt => ({ option: opt.option, votes: 0 }));
             newPostData.voters = {};
         }
 
@@ -710,6 +871,11 @@ function PostPageComponent() {
     return `${m}:${s}`;
   };
 
+  const handleClearEvent = () => {
+      form.setValue('eventDetails', undefined);
+      form.trigger(); // Re-validate the form
+  }
+
   return (
     <>
       <Sheet open={isOpen} onOpenChange={setIsOpen}>
@@ -741,7 +907,7 @@ function PostPageComponent() {
                                   <FormField control={form.control} name="content" render={({ field }) => (
                                       <FormItem>
                                           <FormControl>
-                                              <Textarea placeholder={isPoll ? "Ask a question..." : "What's on your mind?"} className="border-none focus-visible:ring-0 !outline-none text-base resize-none -ml-2" rows={3} onPaste={handlePaste} {...field}/>
+                                              <Textarea placeholder={isPoll ? "Ask a question..." : eventDetails ? "Add a comment about this event..." : "What's on your mind?"} className="border-none focus-visible:ring-0 !outline-none text-base resize-none -ml-2" rows={3} onPaste={handlePaste} {...field}/>
                                           </FormControl>
                                           <FormMessage />
                                       </FormItem>
@@ -768,6 +934,20 @@ function PostPageComponent() {
                                           <QuotedPostCard post={quotedPost} />
                                        </div>
                                   )}
+                                  
+                                  {eventDetails && (
+                                      <div className="relative border rounded-xl p-3">
+                                        <Button variant="ghost" size="icon" className="absolute top-1 right-1 h-7 w-7 bg-black/50 hover:bg-black/70 text-white hover:text-white rounded-full z-10" onClick={handleClearEvent}>
+                                            <X className="h-4 w-4" />
+                                        </Button>
+                                        <div className="flex items-center space-x-2 mb-2">
+                                            <CalendarDays className="h-5 w-5 text-muted-foreground"/>
+                                            <span className="text-sm font-semibold">{eventDetails.name}</span>
+                                        </div>
+                                        <p className="text-sm text-muted-foreground line-clamp-2">{eventDetails.location}</p>
+                                      </div>
+                                  )}
+
 
                                   {linkMetadata?.url && (
                                       <div className="mt-3 border rounded-lg overflow-hidden relative">
@@ -822,13 +1002,16 @@ function PostPageComponent() {
 
                                   <div className="p-4 border-t bg-background w-full fixed bottom-0 left-0 right-0">
                                       <div className="flex items-center space-x-1">
-                                          <Button type="button" variant="ghost" size="icon" onClick={() => setShowLinkInput(!showLinkInput)} disabled={!!linkMetadata || isEditMode || !!audioUrl}>
+                                          <Button type="button" variant="ghost" size="icon" onClick={() => setShowLinkInput(!showLinkInput)} disabled={!!linkMetadata || isEditMode || !!audioUrl || !!eventDetails}>
                                               <LinkIcon className="h-5 w-5 text-muted-foreground" />
                                           </Button>
-                                          <Button type="button" variant="ghost" size="icon" onClick={() => { if(!isEditMode && !audioUrl && !isPoll && !linkMetadata){setIsRecorderOpen(true)}}} disabled={isEditMode || !!audioUrl || isPoll || !!linkMetadata}>
+                                          <Button type="button" variant="ghost" size="icon" onClick={() => { if(!isEditMode && !audioUrl && !isPoll && !linkMetadata && !eventDetails){setIsRecorderOpen(true)}}} disabled={isEditMode || !!audioUrl || isPoll || !!linkMetadata || !!eventDetails}>
                                               <Mic className="h-5 w-5 text-muted-foreground" />
                                           </Button>
-                                          <Button type="button" variant="ghost" size="icon" onClick={handlePollToggle} disabled={isEditMode || !!audioUrl}>
+                                          <Button type="button" variant="ghost" size="icon" onClick={() => setIsEventSheetOpen(true)} disabled={isEditMode || !!audioUrl || isPoll || !!linkMetadata || !!quotedPost || !!eventDetails}>
+                                            <CalendarDays className="h-5 w-5 text-muted-foreground" />
+                                          </Button>
+                                          <Button type="button" variant="ghost" size="icon" onClick={handlePollToggle} disabled={isEditMode || !!audioUrl || !!eventDetails}>
                                               <ListOrdered className={cn("h-5 w-5 text-muted-foreground", isPoll && "text-primary")} />
                                           </Button>
                                           <div className="flex items-center gap-1">
@@ -854,6 +1037,7 @@ function PostPageComponent() {
         </SheetContent>
       </Sheet>
       <AudioRecorderSheet onAttach={handleAttachAudio} onOpenChange={setIsRecorderOpen} isRecorderOpen={isRecorderOpen} />
+      <EventFormSheet form={form} isOpen={isEventSheetOpen} onOpenChange={setIsEventSheetOpen} toast={toast} />
       <Sheet open={isExpirationSheetOpen} onOpenChange={setIsExpirationSheetOpen}>
           <SheetContent side="bottom" className="rounded-t-2xl">
               <SheetHeader className="pb-4">
