@@ -17,7 +17,7 @@ export function RoomCard() {
 
             <div className="space-y-1">
                 <h3 className="text-xl font-bold font-headline text-white">After Dark</h3>
-                <p className="text-sm text-violet-200">
+                <p className="text-sm text-white">
                     Join late-night conversations from 12 AM to 4 AM — meet new people and enjoy real-time chats.
                 </p>
             </div>
@@ -37,10 +37,10 @@ export function RoomCard() {
                         <AvatarFallback>C</AvatarFallback>
                     </Avatar>
                 </div>
-                <span className="text-xs text-violet-300 font-semibold">345 joined in already</span>
+                <span className="text-xs text-white/80 font-semibold">345 joined in already</span>
             </div>
 
-            <Button className="w-full font-bold bg-violet-600 hover:bg-violet-700 text-white rounded-[25px]">
+            <Button className="w-full font-bold bg-white hover:bg-white/90 text-violet-600 rounded-[25px]">
                 Join Room
             </Button>
         </div>
