@@ -1,16 +1,15 @@
 
-
 "use client";
 
 import * as React from "react";
-import { useState, Suspense, useEffect, useMemo, useRef } from "react";
+import { useState, Suspense, useEffect, useMemo, useRef, useCallback } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { useForm, useFieldArray } from "react-hook-form";
 import * as z from "zod";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { collection, serverTimestamp, setDoc, doc, updateDoc, getDoc, writeBatch, Timestamp } from "firebase/firestore";
 import { useFirebase, useDoc, useMemoFirebase } from "@/firebase";
-import type { Post, QuotedPost, Notification, EventDetails, Event } from "@/lib/types";
+import type { Post, QuotedPost, Notification } from "@/lib/types";
 import { WithId } from "@/firebase/firestore/use-collection";
 
 
@@ -28,20 +27,17 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Form, FormControl, FormField, FormItem, FormMessage, FormLabel } from "@/components/ui/form";
-import { Loader2, X, ListOrdered, Plus, Link as LinkIcon, Image as ImageIcon, CalendarClock, Mic, Play, Square, RefreshCw, Send, Pause, StopCircle, Check, Circle, Undo2, CalendarDays, MapPin, Clock, Ticket } from "lucide-react";
+import { Loader2, X, ListOrdered, Plus, Link as LinkIcon, Image as ImageIcon, CalendarClock, Mic, Play, Square, RefreshCw, Send, Pause, StopCircle, Check, Circle, Undo2 } from "lucide-react";
 import { errorEmitter } from "@/firebase/error-emitter";
 import { FirestorePermissionError } from "@/firebase/errors";
 import { Switch } from "@/components/ui/switch";
-import { cn, getAvatar, formatUserId, combineDateAndTime } from "@/lib/utils";
+import { cn, getAvatar, formatUserId } from "@/lib/utils";
 import type { LinkMetadata } from "@/lib/types";
 import Image from "next/image";
 import { QuotedPostCard } from "@/components/QuotedPostCard";
 import { useToast } from "@/hooks/use-toast";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Progress } from "@/components/ui/progress";
-import { format } from "date-fns";
-import { Calendar } from "@/components/ui/calendar";
-import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 
 const pollOptionSchema = z.object({
   option: z.string().min(1, "Option cannot be empty.").max(100, "Option is too long."),
@@ -64,25 +60,15 @@ const quotedPostSchema = z.object({
     timestamp: z.any(),
 }).optional();
 
-const eventDetailsSchema = z.object({
-    id: z.string(),
-    name: z.string(),
-    eventTimestamp: z.custom<Timestamp>(),
-    endTimestamp: z.custom<Timestamp>().optional(),
-    isAllDay: z.boolean(),
-    location: z.string(),
-}).optional();
-
 const baseSchema = z.object({
   content: z.string().max(560, "Post is too long.").optional(),
   commentsAllowed: z.boolean().default(true),
   linkMetadata: linkMetadataSchema,
   quotedPost: quotedPostSchema,
-  expiration: z.number().optional(), 
+  expiration: z.number().optional(),
   audioUrl: z.string().optional(),
   audioWaveform: z.array(z.number()).optional(),
   audioDuration: z.number().optional(),
-  eventDetails: eventDetailsSchema,
 });
 
 const textPostSchema = baseSchema.extend({
@@ -100,7 +86,7 @@ const pollPostSchema = baseSchema.extend({
 const postSchema = z.discriminatedUnion("isPoll", [
   textPostSchema,
   pollPostSchema,
-]).refine(data => !!data.content || !!data.linkMetadata || !!data.quotedPost || !!data.audioUrl || !!data.eventDetails, {
+]).refine(data => !!data.content || !!data.linkMetadata || !!data.quotedPost || !!data.audioUrl, {
     message: "Post cannot be empty.",
     path: ["content"],
 });
@@ -126,7 +112,7 @@ function AudioRecorderSheet({ onAttach, onOpenChange, isRecorderOpen }: { onAtta
     const audioChunksRef = useRef<Blob[]>([]);
     const timerIntervalRef = useRef<NodeJS.Timeout | null>(null);
     const audioPlayerRef = useRef<HTMLAudioElement | null>(null);
-    
+
     const canvasRef = useRef<HTMLCanvasElement | null>(null);
     const audioContextRef = useRef<AudioContext | null>(null);
     const analyserRef = useRef<AnalyserNode | null>(null);
@@ -134,7 +120,7 @@ function AudioRecorderSheet({ onAttach, onOpenChange, isRecorderOpen }: { onAtta
     const animationFrameIdRef = useRef<number | null>(null);
     const [isPlayingPreview, setIsPlayingPreview] = useState(false);
     const [waveform, setWaveform] = useState<number[]>([]);
-    
+
     const maxDuration = 30; // 30 seconds
     const waveformSamples = 100;
 
@@ -144,23 +130,23 @@ function AudioRecorderSheet({ onAttach, onOpenChange, isRecorderOpen }: { onAtta
 
         const ctx = canvas.getContext('2d');
         if (!ctx) return;
-        
+
         ctx.clearRect(0, 0, canvas.width, canvas.height);
-        
+
         const barWidth = 3;
         const gap = 2;
         const numBars = waveformData.length;
-        
+
         for (let i = 0; i < numBars; i++) {
             const barHeight = Math.max(1, (waveformData[i] || 0) * canvas.height * 0.9);
             const x = i * (barWidth + gap);
             const isPlayed = (i / numBars) * 100 < progress;
-            
+
             ctx.fillStyle = isPlayed ? 'hsl(var(--primary))' : 'hsl(var(--muted-foreground))';
             ctx.fillRect(x, (canvas.height - barHeight) / 2, barWidth, barHeight);
         }
     }, []);
-    
+
     const stopVisualization = useCallback(() => {
         if (animationFrameIdRef.current) {
             cancelAnimationFrame(animationFrameIdRef.current);
@@ -180,7 +166,7 @@ function AudioRecorderSheet({ onAttach, onOpenChange, isRecorderOpen }: { onAtta
             analyserRef.current.fftSize = 256;
             analyserRef.current.smoothingTimeConstant = 0.6;
         }
-        
+
         if (!sourceNodeRef.current || sourceNodeRef.current.mediaStream.id !== stream.id) {
             if (sourceNodeRef.current) {
                 sourceNodeRef.current.disconnect();
@@ -194,7 +180,7 @@ function AudioRecorderSheet({ onAttach, onOpenChange, isRecorderOpen }: { onAtta
 
         const animate = () => {
             animationFrameIdRef.current = requestAnimationFrame(animate);
-            
+
             analyserRef.current?.getByteFrequencyData(dataArray);
             let sum = 0;
             for(let i=0; i<bufferLength; i++) {
@@ -203,7 +189,7 @@ function AudioRecorderSheet({ onAttach, onOpenChange, isRecorderOpen }: { onAtta
             const average = sum / bufferLength;
             onSample(average / 255);
         };
-        
+
         if (animationFrameIdRef.current === null) {
           animate();
         }
@@ -221,7 +207,7 @@ function AudioRecorderSheet({ onAttach, onOpenChange, isRecorderOpen }: { onAtta
                     const barWidth = 3;
                     const gap = 2;
                     const maxBars = Math.floor(canvas.clientWidth / (barWidth + gap));
-                    
+
                     liveWaveform.push(sample);
                     if (liveWaveform.length > maxBars) {
                         liveWaveform.shift();
@@ -246,7 +232,7 @@ function AudioRecorderSheet({ onAttach, onOpenChange, isRecorderOpen }: { onAtta
         const progress = (player.currentTime / player.duration) * 100;
         drawWaveform(waveform, progress);
     }, [waveform, drawWaveform]);
-    
+
     useEffect(() => {
         const player = audioPlayerRef.current;
         const onEnded = () => {
@@ -283,13 +269,13 @@ function AudioRecorderSheet({ onAttach, onOpenChange, isRecorderOpen }: { onAtta
                     recorder = new MediaRecorder(stream);
                 }
                 mediaRecorderRef.current = recorder;
-                
+
                 mediaRecorderRef.current.ondataavailable = (event) => { if (event.data.size > 0) audioChunksRef.current.push(event.data); };
-                
+
                 mediaRecorderRef.current.onstop = () => {
                     if (!mediaRecorderRef.current) return;
                     const audioBlob = new Blob(audioChunksRef.current, { type: mediaRecorderRef.current.mimeType || 'audio/webm' });
-                    
+
                     const reader = new FileReader();
                     reader.onloadend = () => {
                         const base64data = reader.result as string;
@@ -309,7 +295,7 @@ function AudioRecorderSheet({ onAttach, onOpenChange, isRecorderOpen }: { onAtta
         if(isRecorderOpen) {
           getPermission();
         }
-        return () => { 
+        return () => {
             mediaRecorderRef.current?.stream.getTracks().forEach(track => track.stop());
             if (audioContextRef.current && audioContextRef.current.state !== 'closed') {
                 audioContextRef.current.close();
@@ -334,7 +320,7 @@ function AudioRecorderSheet({ onAttach, onOpenChange, isRecorderOpen }: { onAtta
                 setDuration(0);
                 mediaRecorderRef.current.start(100);
             }
-            
+
             setRecordingStatus('recording');
             timerIntervalRef.current = setInterval(() => {
                 setDuration(prev => {
@@ -347,7 +333,7 @@ function AudioRecorderSheet({ onAttach, onOpenChange, isRecorderOpen }: { onAtta
             }, 1000);
         }
     };
-    
+
     const pauseRecording = () => {
         if (mediaRecorderRef.current?.state === "recording") {
             mediaRecorderRef.current.pause();
@@ -362,12 +348,12 @@ function AudioRecorderSheet({ onAttach, onOpenChange, isRecorderOpen }: { onAtta
             if (timerIntervalRef.current) clearInterval(timerIntervalRef.current);
         }
     }
-    
+
     const handlePlayPausePreview = () => {
         if (!audioPlayerRef.current) audioPlayerRef.current = new Audio();
         const player = audioPlayerRef.current;
         if (!player || !recordedAudioUrl) return;
-        
+
         if (player.paused) {
             player.src = recordedAudioUrl;
             player.play();
@@ -375,15 +361,15 @@ function AudioRecorderSheet({ onAttach, onOpenChange, isRecorderOpen }: { onAtta
             player.pause();
         }
     };
-    
+
     const handleAttach = async () => {
         if (!recordedAudioUrl) return;
         if (audioPlayerRef.current) audioPlayerRef.current.pause();
-        
+
         onAttach({ url: recordedAudioUrl, waveform: waveform, duration: Math.floor(duration) });
         onOpenChange(false);
     }
-    
+
     const handleRetake = () => {
         if (audioPlayerRef.current) audioPlayerRef.current.pause();
         setRecordedAudioUrl(null);
@@ -397,7 +383,7 @@ function AudioRecorderSheet({ onAttach, onOpenChange, isRecorderOpen }: { onAtta
         const seconds = Math.floor(timeInSeconds % 60).toString().padStart(2, '0');
         return `${minutes}:${seconds}`;
     };
-    
+
      useEffect(() => {
         async function processAudioForWaveform() {
             if (recordingStatus !== 'recorded' || !recordedAudioUrl) return;
@@ -411,7 +397,7 @@ function AudioRecorderSheet({ onAttach, onOpenChange, isRecorderOpen }: { onAtta
             const arrayBuffer = await blob.arrayBuffer();
             const decodedBuffer = await audioContextRef.current.decodeAudioData(arrayBuffer);
             const channelData = decodedBuffer.getChannelData(0);
-            
+
             let calculatedWaveform = [];
             let maxAmp = 0;
             const blockSize = Math.floor(channelData.length / waveformSamples);
@@ -436,7 +422,7 @@ function AudioRecorderSheet({ onAttach, onOpenChange, isRecorderOpen }: { onAtta
                 <SheetHeader className="text-center mb-4">
                     <SheetTitle>Voice Post</SheetTitle>
                 </SheetHeader>
-                
+
                 <div className="flex flex-col items-center gap-4">
                     <p className="text-2xl font-mono tracking-tighter text-center h-8">
                         {formatTime(duration)} / {formatTime(maxDuration)}
@@ -445,7 +431,7 @@ function AudioRecorderSheet({ onAttach, onOpenChange, isRecorderOpen }: { onAtta
                     <div className="w-full h-20 bg-secondary rounded-lg">
                         <canvas ref={canvasRef} className="w-full h-full" />
                     </div>
-                    
+
                     {recordingStatus === 'idle' && (
                         <Button size="icon" className="h-16 w-16 rounded-full" onClick={startRecording}>
                             <Mic className="h-8 w-8" />
@@ -462,7 +448,7 @@ function AudioRecorderSheet({ onAttach, onOpenChange, isRecorderOpen }: { onAtta
                             </Button>
                         </div>
                     )}
-                    
+
                     {recordingStatus === 'recorded' && (
                         <div className="flex items-center justify-center gap-4">
                             <Button size="icon" variant="outline" className="h-12 w-12 rounded-full" onClick={handleRetake}>
@@ -483,198 +469,12 @@ function AudioRecorderSheet({ onAttach, onOpenChange, isRecorderOpen }: { onAtta
     );
 }
 
-const eventFormSchema = z.object({
-  name: z.string().min(3, "Event name must be at least 3 characters.").max(70, "Event name is too long."),
-  description: z.string().max(280, "Description is too long.").optional(),
-  location: z.string().min(3, "Location is required."),
-  eventDate: z.date({ required_error: "An event date is required." }),
-  isAllDay: z.boolean().default(false),
-  startTime: z.string().optional(),
-  endTime: z.string().optional(),
-  isPaid: z.boolean().default(false),
-}).refine(data => data.isAllDay || (!!data.startTime && !!data.endTime), {
-  message: "Start and end times are required for non-all-day events.",
-  path: ["startTime"], // You can point to startTime or a general path
-});
-
-
-function EventFormSheet({ isOpen, onOpenChange, onAttach }: { isOpen: boolean, onOpenChange: (open: boolean) => void, onAttach: (details: EventDetails) => void }) {
-    const { user, firestore } = useFirebase();
-    const { toast } = useToast();
-    const [isSubmitting, setIsSubmitting] = useState(false);
-
-    const form = useForm<z.infer<typeof eventFormSchema>>({
-        resolver: zodResolver(eventFormSchema),
-        defaultValues: {
-            name: "",
-            description: "",
-            location: "",
-            eventDate: new Date(),
-            isAllDay: false,
-            startTime: format(new Date(), "HH:mm"),
-            endTime: format(new Date(new Date().getTime() + 60 * 60 * 1000), "HH:mm"), // Default to 1 hour later
-            isPaid: false,
-        },
-    });
-    
-    const isAllDay = form.watch("isAllDay");
-
-    const onSubmitEvent = async (values: z.infer<typeof eventFormSchema>) => {
-        if (!user || !firestore) return;
-        setIsSubmitting(true);
-        try {
-            const newEventRef = doc(collection(firestore, "events"));
-            
-            const startTimestamp = values.isAllDay 
-                ? Timestamp.fromDate(values.eventDate) 
-                : Timestamp.fromDate(combineDateAndTime(values.eventDate, values.startTime!));
-                
-            const endTimestamp = values.isAllDay 
-                ? null
-                : Timestamp.fromDate(combineDateAndTime(values.eventDate, values.endTime!));
-
-            const newEventData: Omit<Event, 'id'> = {
-                authorId: user.uid,
-                name: values.name,
-                description: values.description,
-                location: values.location,
-                eventTimestamp: startTimestamp,
-                endTimestamp: endTimestamp || undefined,
-                isAllDay: values.isAllDay,
-                isPaid: values.isPaid,
-            };
-
-            await setDoc(newEventRef, newEventData);
-
-            onAttach({ id: newEventRef.id, ...newEventData });
-            toast({ title: "Event Attached", description: "Your event has been linked to the post." });
-            onOpenChange(false);
-            form.reset();
-
-        } catch (error) {
-            console.error("Error creating event:", error);
-            const permissionError = new FirestorePermissionError({ path: 'events', operation: 'create', requestResourceData: values });
-            errorEmitter.emit('permission-error', permissionError);
-            toast({ variant: "destructive", title: "Error", description: "Could not create event." });
-        } finally {
-            setIsSubmitting(false);
-        }
-    }
-    
-    return (
-        <Sheet open={isOpen} onOpenChange={onOpenChange}>
-            <SheetContent side="bottom" className="h-[95dvh] flex flex-col p-0 rounded-t-2xl">
-                <div className="z-10 flex items-center justify-between p-2 border-b bg-background sticky top-0 h-14">
-                    <Button variant="ghost" size="icon" onClick={() => onOpenChange(false)}><X className="h-4 w-4" /></Button>
-                    <h2 className="text-base font-bold">Create Event</h2>
-                    <Button form="event-form" type="submit" disabled={isSubmitting} className="rounded-full px-6 font-bold">
-                        {isSubmitting ? <Loader2 className="h-4 w-4 animate-spin" /> : 'Attach'}
-                    </Button>
-                </div>
-                <div className="flex-grow overflow-y-auto">
-                    <Form {...form}>
-                        <form id="event-form" onSubmit={form.handleSubmit(onSubmitEvent)}>
-                            <div className="p-4">
-                                <FormField control={form.control} name="name" render={({ field }) => (
-                                    <FormItem>
-                                        <FormControl>
-                                            <Input 
-                                                placeholder="Event Name" 
-                                                {...field} 
-                                                className="border-0 border-b rounded-none shadow-none text-2xl font-bold h-auto p-0 focus-visible:ring-0" 
-                                            />
-                                        </FormControl>
-                                        <FormMessage />
-                                    </FormItem>
-                                )} />
-                            </div>
-                            <div className="divide-y border-y">
-                                <div className="p-4 space-y-4">
-                                     <h3 className="text-sm font-semibold text-muted-foreground">DATE & TIME</h3>
-                                      <FormField control={form.control} name="eventDate" render={({ field }) => (
-                                        <FormItem className="flex items-center">
-                                            <CalendarDays className="h-5 w-5 mr-3 text-muted-foreground" />
-                                            <Popover>
-                                                <PopoverTrigger asChild>
-                                                    <FormControl>
-                                                        <Button variant={"ghost"} className={cn("pl-1 text-left font-normal w-full justify-start", !field.value && "text-muted-foreground")}>
-                                                            {field.value ? format(field.value, "EEEE, MMMM d") : <span>Pick a date</span>}
-                                                        </Button>
-                                                    </FormControl>
-                                                </PopoverTrigger>
-                                                <PopoverContent className="w-auto p-0" align="start">
-                                                    <Calendar mode="single" selected={field.value} onSelect={field.onChange} initialFocus />
-                                                </PopoverContent>
-                                            </Popover>
-                                        </FormItem>
-                                    )} />
-                                     <FormField control={form.control} name="isAllDay" render={({ field }) => (
-                                        <FormItem className="flex items-center justify-between">
-                                            <div className="flex items-center">
-                                                <Clock className="h-5 w-5 mr-3 text-muted-foreground invisible" />
-                                                <FormLabel>All day</FormLabel>
-                                            </div>
-                                            <FormControl><Switch checked={field.value} onCheckedChange={field.onChange} /></FormControl>
-                                        </FormItem>
-                                    )} />
-                                    {!isAllDay && (
-                                        <div className="flex items-center gap-2">
-                                            <Clock className="h-5 w-5 mr-3 text-muted-foreground" />
-                                             <FormField control={form.control} name="startTime" render={({ field }) => (
-                                                <FormItem className="flex-1">
-                                                    <FormControl><Input type="time" {...field} className="text-center" /></FormControl>
-                                                </FormItem>
-                                            )} />
-                                            <span>→</span>
-                                            <FormField control={form.control} name="endTime" render={({ field }) => (
-                                                <FormItem className="flex-1">
-                                                    <FormControl><Input type="time" {...field} className="text-center" /></FormControl>
-                                                </FormItem>
-                                            )} />
-                                        </div>
-                                    )}
-                                </div>
-                                <div className="p-4 space-y-4">
-                                    <h3 className="text-sm font-semibold text-muted-foreground">DETAILS</h3>
-                                     <FormField control={form.control} name="location" render={({ field }) => (
-                                        <FormItem className="flex items-center">
-                                             <MapPin className="h-5 w-5 mr-3 text-muted-foreground" />
-                                            <FormControl><Input placeholder="Location" {...field} className="border-0 shadow-none focus-visible:ring-0 p-0" /></FormControl>
-                                        </FormItem>
-                                    )} />
-                                </div>
-                                 <div className="p-4 space-y-4">
-                                     <FormField control={form.control} name="isPaid" render={({ field }) => (
-                                        <FormItem className="flex items-center justify-between">
-                                            <div className="flex items-center">
-                                                <Ticket className="h-5 w-5 mr-3 text-muted-foreground" />
-                                                <FormLabel>Ticketed Event</FormLabel>
-                                            </div>
-                                            <FormControl><Switch checked={field.value} onCheckedChange={field.onChange} /></FormControl>
-                                        </FormItem>
-                                    )} />
-                                 </div>
-                                <FormField control={form.control} name="description" render={({ field }) => (
-                                    <FormItem className="p-4">
-                                        <FormControl><Textarea placeholder="Add description, notes, or links..." {...field} className="border-0 shadow-none focus-visible:ring-0 p-0 min-h-[100px]" /></FormControl>
-                                    </FormItem>
-                                )} />
-                            </div>
-                        </form>
-                    </Form>
-                </div>
-            </SheetContent>
-        </Sheet>
-    );
-}
-
 function PostPageComponent() {
   const [isOpen, setIsOpen] = useState(true);
   const [showLinkInput, setShowLinkInput] = useState(false);
   const [isFetchingPreview, setIsFetchingPreview] = useState(false);
   const [isExpirationSheetOpen, setIsExpirationSheetOpen] = useState(false);
   const [isRecorderOpen, setIsRecorderOpen] = useState(false);
-  const [isEventSheetOpen, setIsEventSheetOpen] = useState(false);
   const [expirationLabel, setExpirationLabel] = useState("Never");
   const router = useRouter();
   const searchParams = useSearchParams();
@@ -688,7 +488,7 @@ function PostPageComponent() {
     if (!quotePostId || !firestore) return null;
     return doc(firestore, 'posts', quotePostId);
   }, [quotePostId, firestore]);
-  
+
   const { data: quotePostData } = useDoc<Post>(quotePostRef);
 
   const form = useForm<z.infer<typeof postSchema>>({
@@ -704,7 +504,7 @@ function PostPageComponent() {
     control: form.control,
     name: "pollOptions",
   });
-  
+
 
   useEffect(() => {
     if (isEditMode && firestore && postId) {
@@ -713,7 +513,7 @@ function PostPageComponent() {
         const postSnap = await getDoc(postRef);
         if (postSnap.exists()) {
           const postData = postSnap.data() as Post;
-          
+
           let expirationInSeconds;
           let currentLabel = 'Never';
           if (postData.expiresAt) {
@@ -733,7 +533,6 @@ function PostPageComponent() {
             audioUrl: postData.audioUrl,
             audioWaveform: postData.audioWaveform,
             audioDuration: postData.audioDuration,
-            eventDetails: postData.eventDetails,
           });
           setExpirationLabel(currentLabel);
         }
@@ -761,7 +560,6 @@ function PostPageComponent() {
   const quotedPost = form.watch("quotedPost");
   const audioUrl = form.watch("audioUrl");
   const audioDuration = form.watch("audioDuration");
-  const eventDetails = form.watch("eventDetails");
 
   const avatar = getAvatar(userProfile);
   const isAvatarUrl = avatar.startsWith('http');
@@ -813,7 +611,7 @@ function PostPageComponent() {
 
     form.trigger();
     const { expiration, ...postValues } = values;
-    
+
     if (isEditMode && postId) {
       const postRef = doc(firestore, `posts`, postId);
       const updatedData: Partial<Post> = {
@@ -821,7 +619,6 @@ function PostPageComponent() {
         commentsAllowed: values.commentsAllowed,
         linkMetadata: values.linkMetadata,
         quotedPost: values.quotedPost,
-        eventDetails: values.eventDetails,
       };
       if (expiration) updatedData.expiresAt = Timestamp.fromMillis(Date.now() + expiration * 1000);
       else updatedData.expiresAt = undefined;
@@ -838,7 +635,6 @@ function PostPageComponent() {
         if (values.isPoll) type = 'poll';
         else if (values.quotedPost) type = 'quote';
         else if (values.audioUrl) type = 'audio';
-        else if (values.eventDetails) type = 'event';
 
         const newPostData: any = {
           id: newPostRef.id,
@@ -854,12 +650,11 @@ function PostPageComponent() {
           type: type,
           ...(values.linkMetadata && { linkMetadata: values.linkMetadata }),
           ...(values.quotedPost && { quotedPost: values.quotedPost }),
-          ...(values.audioUrl && { 
+          ...(values.audioUrl && {
               audioUrl: values.audioUrl,
               audioWaveform: values.audioWaveform,
               audioDuration: values.audioDuration
           }),
-          ...(values.eventDetails && { eventDetails: values.eventDetails }),
         };
 
         if (expiration) newPostData.expiresAt = Timestamp.fromMillis(Date.now() + expiration * 1000);
@@ -877,7 +672,7 @@ function PostPageComponent() {
           });
       }
   };
-  
+
   const handlePollToggle = () => {
     const currentIsPoll = form.getValues('isPoll');
     form.setValue('isPoll', !currentIsPoll, { shouldValidate: true });
@@ -888,7 +683,7 @@ function PostPageComponent() {
         remove();
     }
   };
-  
+
   const handleSelectExpiration = (seconds: number, label: string) => {
     form.setValue('expiration', seconds);
     setExpirationLabel(label);
@@ -905,11 +700,6 @@ function PostPageComponent() {
     form.setValue('audioUrl', data.url);
     form.setValue('audioWaveform', data.waveform);
     form.setValue('audioDuration', data.duration);
-    form.trigger('content'); 
-  };
-  
-  const handleAttachEvent = (details: EventDetails) => {
-    form.setValue('eventDetails', details);
     form.trigger('content');
   };
 
@@ -936,7 +726,7 @@ function PostPageComponent() {
               {form.formState.isSubmitting ? <Loader2 className="h-4 w-4 animate-spin" /> : isEditMode ? 'Save' : 'Post'}
             </Button>
           </div>
-          
+
           <div className="flex-grow flex flex-col">
               <div className="flex-grow overflow-y-auto px-4">
                   <div className="flex items-start space-x-4">
@@ -969,19 +759,6 @@ function PostPageComponent() {
                                           </Button>
                                       </div>
                                   )}
-                                  
-                                  {eventDetails && (
-                                    <div className="relative p-3 border rounded-lg flex items-center gap-3">
-                                        <CalendarDays className="h-5 w-5 text-muted-foreground" />
-                                        <div className="flex-1">
-                                            <p className="text-sm font-medium">Event: {eventDetails.name}</p>
-                                            <p className="text-xs text-muted-foreground">{eventDetails.location}</p>
-                                        </div>
-                                        <Button variant="ghost" size="icon" className="h-7 w-7 rounded-full" onClick={() => form.setValue('eventDetails', undefined)}>
-                                            <X className="h-4 w-4" />
-                                        </Button>
-                                    </div>
-                                  )}
 
                                   {quotedPost && (
                                        <div className="relative">
@@ -1004,7 +781,7 @@ function PostPageComponent() {
                                           </div>
                                       </div>
                                   )}
-                                  
+
                                   {isFetchingPreview ? (
                                       <div className="border rounded-lg p-4 flex items-center justify-center">
                                           <Loader2 className="h-5 w-5 animate-spin text-muted-foreground" /><span className="ml-2 text-muted-foreground text-sm">Fetching preview...</span>
@@ -1042,20 +819,17 @@ function PostPageComponent() {
                                           <FormMessage>{form.formState.errors.pollOptions?.root?.message || form.formState.errors.pollOptions?.message}</FormMessage>
                                       </div>
                                    )}
-                                   
+
                                   <div className="p-4 border-t bg-background w-full fixed bottom-0 left-0 right-0">
                                       <div className="flex items-center space-x-1">
-                                          <Button type="button" variant="ghost" size="icon" onClick={() => setShowLinkInput(!showLinkInput)} disabled={!!linkMetadata || isEditMode || !!audioUrl || !!eventDetails}>
+                                          <Button type="button" variant="ghost" size="icon" onClick={() => setShowLinkInput(!showLinkInput)} disabled={!!linkMetadata || isEditMode || !!audioUrl}>
                                               <LinkIcon className="h-5 w-5 text-muted-foreground" />
                                           </Button>
-                                          <Button type="button" variant="ghost" size="icon" onClick={() => { if(!isEditMode && !audioUrl && !isPoll && !linkMetadata && !eventDetails){setIsRecorderOpen(true)}}} disabled={isEditMode || !!audioUrl || isPoll || !!linkMetadata || !!eventDetails}>
+                                          <Button type="button" variant="ghost" size="icon" onClick={() => { if(!isEditMode && !audioUrl && !isPoll && !linkMetadata){setIsRecorderOpen(true)}}} disabled={isEditMode || !!audioUrl || isPoll || !!linkMetadata}>
                                               <Mic className="h-5 w-5 text-muted-foreground" />
                                           </Button>
-                                          <Button type="button" variant="ghost" size="icon" onClick={handlePollToggle} disabled={isEditMode || !!audioUrl || !!eventDetails}>
+                                          <Button type="button" variant="ghost" size="icon" onClick={handlePollToggle} disabled={isEditMode || !!audioUrl}>
                                               <ListOrdered className={cn("h-5 w-5 text-muted-foreground", isPoll && "text-primary")} />
-                                          </Button>
-                                           <Button type="button" variant="ghost" size="icon" onClick={() => setIsEventSheetOpen(true)} disabled={isEditMode || !!audioUrl || isPoll || !!linkMetadata || !!quotedPost}>
-                                                <CalendarDays className="h-5 w-5 text-muted-foreground" />
                                           </Button>
                                           <div className="flex items-center gap-1">
                                               <Button type="button" variant="ghost" size="icon" onClick={() => setIsExpirationSheetOpen(true)}>
@@ -1080,7 +854,6 @@ function PostPageComponent() {
         </SheetContent>
       </Sheet>
       <AudioRecorderSheet onAttach={handleAttachAudio} onOpenChange={setIsRecorderOpen} isRecorderOpen={isRecorderOpen} />
-      <EventFormSheet isOpen={isEventSheetOpen} onOpenChange={setIsEventSheetOpen} onAttach={handleAttachEvent} />
       <Sheet open={isExpirationSheetOpen} onOpenChange={setIsExpirationSheetOpen}>
           <SheetContent side="bottom" className="rounded-t-2xl">
               <SheetHeader className="pb-4">
