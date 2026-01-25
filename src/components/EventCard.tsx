@@ -9,23 +9,33 @@ import { MapPin, CalendarDays, AlignLeft } from 'lucide-react';
 
 
 const eventColors = [
-    'border-l-red-400',
-    'border-l-pink-400',
-    'border-l-blue-400',
-    'border-l-green-400',
-    'border-l-purple-400',
-    'border-l-indigo-400',
-    'border-l-yellow-400',
+    'border-l-red-500',
+    'border-l-pink-500',
+    'border-l-blue-500',
+    'border-l-green-500',
+    'border-l-purple-500',
+    'border-l-indigo-500',
+    'border-l-yellow-500',
 ];
 
 const eventBgColors = [
-    'bg-red-400/10',
-    'bg-pink-400/10',
-    'bg-blue-400/10',
-    'bg-green-400/10',
-    'bg-purple-400/10',
-    'bg-indigo-400/10',
-    'bg-yellow-400/10',
+    'bg-red-500/10',
+    'bg-pink-500/10',
+    'bg-blue-500/10',
+    'bg-green-500/10',
+    'bg-purple-500/10',
+    'bg-indigo-500/10',
+    'bg-yellow-500/10',
+];
+
+const eventTextColors = [
+    'text-red-500',
+    'text-pink-500',
+    'text-blue-500',
+    'text-green-500',
+    'text-purple-500',
+    'text-indigo-500',
+    'text-yellow-500',
 ];
 
 
@@ -55,6 +65,7 @@ export function EventCard({ eventDetails }: { eventDetails: EventDetails }) {
 
     const borderColorClass = eventColors[colorIndex];
     const bgColorClass = eventBgColors[colorIndex];
+    const textColorClass = eventTextColors[colorIndex];
     const durationBgClass = durationBgColors[colorIndex];
     const duration = formatEventDuration(startDate, endDate);
 
@@ -71,8 +82,8 @@ export function EventCard({ eventDetails }: { eventDetails: EventDetails }) {
                     </div>
                     <div className={cn("p-4 flex items-start gap-3 pl-3", borderColorClass, bgColorClass, 'border-l-4')}>
                         <div className="flex-1 pl-1">
-                            <p className="font-semibold text-card-foreground">{eventDetails.name}</p>
-                            <p className="text-sm text-muted-foreground">{formatEventTimeRange(startDate, endDate, eventDetails.isAllDay)}</p>
+                            <p className={cn("font-semibold", textColorClass)}>{eventDetails.name}</p>
+                            <p className={cn("text-sm opacity-90", textColorClass)}>{formatEventTimeRange(startDate, endDate, eventDetails.isAllDay)}</p>
                         </div>
                         {duration && (
                             <div className={cn("text-xs font-bold px-2 py-0.5 rounded-md", durationBgClass)}>
