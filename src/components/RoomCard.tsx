@@ -18,7 +18,7 @@ export function RoomCard() {
             <div className="space-y-1">
                 <h3 className="text-xl font-bold font-headline text-violet-900 dark:text-violet-200">After Dark</h3>
                 <p className="text-sm text-violet-700 dark:text-violet-400">
-                    A place to unwind and share your late-night thoughts.
+                    Join late-night conversations from 12 AM to 4 AM — meet new people and enjoy real-time chats.
                 </p>
             </div>
 
