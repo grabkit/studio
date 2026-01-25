@@ -26,7 +26,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { Form, FormControl, FormField, FormItem, FormMessage, FormLabel, FormDescription } from "@/components/ui/form";
+import { Form, FormControl, FormField, FormItem, FormMessage, FormLabel } from "@/components/ui/form";
 import { Loader2, X, ListOrdered, Plus, Link as LinkIcon, Image as ImageIcon, CalendarClock, Mic, Play, Square, RefreshCw, Send, Pause, StopCircle, Check, Circle, Undo2 } from "lucide-react";
 import { errorEmitter } from "@/firebase/error-emitter";
 import { FirestorePermissionError } from "@/firebase/errors";
@@ -267,7 +267,14 @@ function AudioRecorderSheet({ onAttach, onOpenChange, isRecorderOpen }: { onAtta
                 setHasPermission(true);
                 setRecordingStatus("idle");
 
-                mediaRecorderRef.current = new MediaRecorder(stream, { mimeType: 'audio/webm' });
+                const options = { mimeType: 'audio/webm;codecs=opus' };
+                let recorder: MediaRecorder;
+                if (MediaRecorder.isTypeSupported(options.mimeType)) {
+                    recorder = new MediaRecorder(stream, options);
+                } else {
+                    recorder = new MediaRecorder(stream);
+                }
+                mediaRecorderRef.current = recorder;
                 
                 mediaRecorderRef.current.ondataavailable = (event) => { if (event.data.size > 0) audioChunksRef.current.push(event.data); };
                 
@@ -506,7 +513,6 @@ function PostPageComponent() {
   });
   
     const [isDatePickerOpen, setIsDatePickerOpen] = useState(false);
-    const [eventDate, setEventDate] = useState<Date | undefined>();
 
   useEffect(() => {
     if (isEditMode && firestore && postId) {
@@ -861,7 +867,7 @@ function PostPageComponent() {
       <AudioRecorderSheet onAttach={handleAttachAudio} onOpenChange={setIsRecorderOpen} isRecorderOpen={isRecorderOpen} />
       <Sheet open={isExpirationSheetOpen} onOpenChange={setIsExpirationSheetOpen}>
           <SheetContent side="bottom" className="rounded-t-2xl">
-              <SheetHeader className="pb-4"><SheetTitle>Post Expiration</SheetTitle><FormDescription>The post will be deleted after this duration.</FormDescription></SheetHeader>
+              <SheetHeader className="pb-4"><SheetTitle>Post Expiration</SheetTitle><SheetDescription>The post will be deleted after this duration.</SheetDescription></SheetHeader>
               <div className="flex flex-col space-y-2">
                   {expirationOptions.map(opt => (<Button key={opt.value} variant="outline" className="justify-start rounded-[5px]" onClick={() => handleSelectExpiration(opt.value, opt.label)}>{opt.label}</Button>))}
                   <Button variant="outline" className="justify-start rounded-[5px]" onClick={handleClearExpiration}>Never Expire</Button>
@@ -879,3 +885,5 @@ export default function PostPage() {
     </Suspense>
   );
 }
+
+    
