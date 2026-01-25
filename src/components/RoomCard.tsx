@@ -1,4 +1,3 @@
-
 'use client';
 
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
@@ -24,15 +23,15 @@ export function RoomCard() {
 
             <div className="flex items-center gap-2">
                 <div className="flex -space-x-3">
-                    <Avatar className="border-2 border-background">
+                    <Avatar className="h-8 w-8 border-2 border-background">
                         <AvatarImage src="https://i.pravatar.cc/150?u=a042581f4e29026704d" />
                         <AvatarFallback>A</AvatarFallback>
                     </Avatar>
-                    <Avatar className="border-2 border-background">
+                    <Avatar className="h-8 w-8 border-2 border-background">
                         <AvatarImage src="https://i.pravatar.cc/150?u=a042581f4e29026705d" />
                         <AvatarFallback>B</AvatarFallback>
                     </Avatar>
-                    <Avatar className="border-2 border-background">
+                    <Avatar className="h-8 w-8 border-2 border-background">
                         <AvatarImage src="https://i.pravatar.cc/150?u=a042581f4e29026706d" />
                         <AvatarFallback>C</AvatarFallback>
                     </Avatar>
@@ -40,7 +39,7 @@ export function RoomCard() {
                 <span className="text-xs text-muted-foreground font-semibold">345 joined in already</span>
             </div>
 
-            <Button className="w-full font-bold bg-violet-600 hover:bg-violet-700 text-white rounded-md">
+            <Button className="w-full font-bold bg-violet-600 hover:bg-violet-700 text-white rounded-[25px]">
                 Join Room
             </Button>
         </div>
