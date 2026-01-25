@@ -32,14 +32,14 @@ export function RoomCard({ title, description, attendees, avatars, theme }: Room
         <div className={cn("rounded-[15px] p-4 flex flex-col gap-4", currentTheme.container)}>
             <div className="flex justify-between items-start">
                 <div className="inline-flex items-center gap-2 rounded-full border border-white/30 bg-white/20 px-2.5 py-0.5 text-xs font-semibold text-white">
-                    <span className="h-2 w-2 rounded-full bg-red-500 animate-fade-in-out" />
+                    <span className="h-2 w-2 rounded-full bg-red-500 animate-fade-in-out border border-white" />
                     <span>Room active</span>
                 </div>
             </div>
 
             <div className="space-y-1">
                 <h3 className="text-xl font-bold font-headline text-white">{title}</h3>
-                <p className="text-sm text-white">
+                <p className="text-sm text-white/90">
                     {description}
                 </p>
             </div>
@@ -47,7 +47,7 @@ export function RoomCard({ title, description, attendees, avatars, theme }: Room
             <div className="flex items-center gap-2">
                 <div className="flex -space-x-2">
                     {avatars.map((src, i) => (
-                        <Avatar key={i} className="h-5 w-5 border-2 border-white">
+                        <Avatar key={i} className="h-5 w-5 border-2 border-white/80">
                             <AvatarImage src={src} />
                             <AvatarFallback>{title.charAt(0)}</AvatarFallback>
                         </Avatar>
