@@ -79,7 +79,7 @@ export function EventCard({ eventDetails }: { eventDetails: EventDetails }) {
                     <div className="px-4 py-2 flex justify-between items-center text-xs font-medium text-muted-foreground uppercase tracking-wide">
                         <span>{formatEventDay(startDate)}</span>
                         {eventDetails.isPaid ? (
-                            <Badge variant="outline" className="uppercase font-bold">Paid</Badge>
+                            <Badge variant="default" className="uppercase font-bold">Paid</Badge>
                         ) : (
                             <Badge variant="secondary" className="uppercase">Free</Badge>
                         )}
