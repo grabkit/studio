@@ -18,6 +18,17 @@ const eventColors = [
     'border-l-yellow-400',
 ];
 
+const eventBgColors = [
+    'bg-red-400/10',
+    'bg-pink-400/10',
+    'bg-blue-400/10',
+    'bg-green-400/10',
+    'bg-purple-400/10',
+    'bg-indigo-400/10',
+    'bg-yellow-400/10',
+];
+
+
 const durationBgColors = [
     'bg-red-100 text-red-800',
     'bg-pink-100 text-pink-800',
@@ -43,6 +54,7 @@ export function EventCard({ eventDetails }: { eventDetails: EventDetails }) {
     }, [eventDetails.name]);
 
     const borderColorClass = eventColors[colorIndex];
+    const bgColorClass = eventBgColors[colorIndex];
     const durationBgClass = durationBgColors[colorIndex];
     const duration = formatEventDuration(startDate, endDate);
 
@@ -57,7 +69,7 @@ export function EventCard({ eventDetails }: { eventDetails: EventDetails }) {
                     <div className="px-4">
                         <div className="border-b border-dashed border-border"></div>
                     </div>
-                    <div className={cn("p-4 flex items-start gap-3 bg-secondary pl-3", borderColorClass, 'border-l-2')}>
+                    <div className={cn("p-4 flex items-start gap-3 pl-3", borderColorClass, bgColorClass, 'border-l-4')}>
                         <div className="flex-1 pl-1">
                             <p className="font-semibold text-card-foreground">{eventDetails.name}</p>
                             <p className="text-sm text-muted-foreground">{formatEventTimeRange(startDate, endDate, eventDetails.isAllDay)}</p>
