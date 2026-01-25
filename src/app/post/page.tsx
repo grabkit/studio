@@ -71,8 +71,8 @@ const eventDetailsSchema = z.object({
   eventTimestamp: z.date({ required_error: "Please select a date." }),
   isAllDay: z.boolean().default(true),
   isPaid: z.boolean().default(false),
-  startTime: z.string().optional(),
-  endTime: z.string().optional(),
+  startTime: z.string().optional().refine((val) => val === undefined || val === '' || /^(0[0-9]|1[0-9]|2[0-3]):[0-5][0-9]$/.test(val), { message: "Invalid time format" }),
+  endTime: z.string().optional().refine((val) => val === undefined || val === '' || /^(0[0-9]|1[0-9]|2[0-3]):[0-5][0-9]$/.test(val), { message: "Invalid time format" }),
 });
 
 
@@ -497,21 +497,7 @@ function EventFormSheet({ isOpen, onOpenChange, form, toast }: { isOpen: boolean
     const [suggestions, setSuggestions] = useState<any[]>([]);
     const [isSearching, setIsSearching] = useState(false);
 
-    useEffect(() => {
-        const handler = setTimeout(() => {
-            if (locationQuery.trim().length > 2 && locationQuery !== form.getValues("eventDetails.location")) {
-                searchLocations(locationQuery);
-            } else {
-                setSuggestions([]);
-            }
-        }, 500);
-
-        return () => {
-            clearTimeout(handler);
-        };
-    }, [locationQuery, form]);
-
-    const searchLocations = async (query: string) => {
+    const searchLocations = useCallback(async (query: string) => {
         setIsSearching(true);
         try {
             const response = await fetch(`https://nominatim.openstreetmap.org/search?q=${encodeURIComponent(query)}&format=json&limit=5`);
@@ -524,7 +510,21 @@ function EventFormSheet({ isOpen, onOpenChange, form, toast }: { isOpen: boolean
         } finally {
             setIsSearching(false);
         }
-    };
+    }, [toast]);
+
+    useEffect(() => {
+        const handler = setTimeout(() => {
+            if (locationQuery.trim().length > 2 && locationQuery !== form.getValues("eventDetails.location")) {
+                searchLocations(locationQuery);
+            } else {
+                setSuggestions([]);
+            }
+        }, 500);
+
+        return () => {
+            clearTimeout(handler);
+        };
+    }, [locationQuery, form, searchLocations]);
     
     const handleSuggestionClick = (suggestion: any) => {
         const displayName = suggestion.display_name;
@@ -637,7 +637,7 @@ function EventFormSheet({ isOpen, onOpenChange, form, toast }: { isOpen: boolean
                                                         selected={field.value}
                                                         onSelect={field.onChange}
                                                         disabled={(date) =>
-                                                            date < new Date(new Date().setDate(new Date().getDate() - 1))
+                                                            date < new Date(new Date().setHours(0, 0, 0, 0))
                                                         }
                                                         initialFocus
                                                     />
@@ -774,6 +774,7 @@ function PostPageComponent() {
             audioUrl: postData.audioUrl,
             audioWaveform: postData.audioWaveform,
             audioDuration: postData.audioDuration,
+            eventDetails: postData.eventDetails,
           });
           setExpirationLabel(currentLabel);
         }
@@ -857,8 +858,8 @@ function PostPageComponent() {
 
     // Process event details
     let finalEventDetails: Partial<EventDetails> | undefined = undefined;
-    if(processedValues.eventDetails) {
-        const { startTime, endTime, name, location, isAllDay, eventTimestamp, description } = processedValues.eventDetails;
+    if(processedValues.eventDetails && processedValues.eventDetails.name && processedValues.eventDetails.location) {
+        const { startTime, endTime, name, location, isAllDay, eventTimestamp, description, isPaid } = processedValues.eventDetails;
         let finalEventTimestamp = eventTimestamp;
         let finalEndTimestamp = undefined;
 
@@ -869,7 +870,7 @@ function PostPageComponent() {
             finalEndTimestamp = combineDateAndTime(new Date(finalEventTimestamp), endTime);
         }
         
-        finalEventDetails = { name, location, isAllDay, eventTimestamp: finalEventTimestamp, endTimestamp: finalEndTimestamp, description };
+        finalEventDetails = { name, location, isAllDay, eventTimestamp: finalEventTimestamp, endTimestamp: finalEndTimestamp, description, isPaid };
     }
 
 
@@ -882,6 +883,7 @@ function PostPageComponent() {
         commentsAllowed: processedValues.commentsAllowed,
         linkMetadata: processedValues.linkMetadata,
         quotedPost: processedValues.quotedPost,
+        eventDetails: finalEventDetails as EventDetails,
       };
       if (expiration) updatedData.expiresAt = Timestamp.fromMillis(Date.now() + expiration * 1000);
       else updatedData.expiresAt = undefined;
@@ -898,7 +900,7 @@ function PostPageComponent() {
         if (processedValues.isPoll) type = 'poll';
         else if (processedValues.quotedPost) type = 'quote';
         else if (processedValues.audioUrl) type = 'audio';
-        else if (processedValues.eventDetails?.name) type = 'event';
+        else if (finalEventDetails?.name) type = 'event';
 
         const newPostData: any = {
           id: newPostRef.id,
