@@ -7,7 +7,7 @@ import { Badge } from "@/components/ui/badge";
 export function RoomCard() {
 
     return (
-        <div className="bg-violet-500/10 border border-violet-500/20 rounded-[10px] p-4 flex flex-col gap-4">
+        <div className="bg-violet-500/10 border border-violet-500/20 rounded-[15px] p-4 flex flex-col gap-4">
             <div className="flex justify-between items-start">
                 <Badge variant="secondary" className="bg-violet-200 text-violet-800 dark:bg-violet-900/50 dark:text-violet-300">
                     Room active
