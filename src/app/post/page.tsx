@@ -26,8 +26,8 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { Form, FormControl, FormField, FormItem, FormMessage, FormLabel, FormDescription } from "@/components/ui/form";
-import { Loader2, X, ListOrdered, Plus, Link as LinkIcon, Image as ImageIcon, CalendarClock, Mic, Play, Square, RefreshCw, Send, Pause, StopCircle, Check, Circle, Undo2, CalendarPlus } from "lucide-react";
+import { Form, FormControl, FormField, FormItem, FormMessage, FormLabel } from "@/components/ui/form";
+import { Loader2, X, ListOrdered, Plus, Link as LinkIcon, Image as ImageIcon, CalendarClock, Mic, Play, Square, RefreshCw, Send, Pause, StopCircle, Check, Circle, Undo2, CalendarPlus, CheckCircle } from "lucide-react";
 import { errorEmitter } from "@/firebase/error-emitter";
 import { FirestorePermissionError } from "@/firebase/errors";
 import { Switch } from "@/components/ui/switch";
@@ -293,14 +293,16 @@ function AudioRecorderSheet({ onAttach, onOpenChange }: { onAttach: (data: { url
                 onOpenChange(false);
             }
         }
-        getPermission();
+        if(isRecorderOpen) {
+          getPermission();
+        }
         return () => { 
             mediaRecorderRef.current?.stream.getTracks().forEach(track => track.stop());
             if (audioContextRef.current && audioContextRef.current.state !== 'closed') {
                 audioContextRef.current.close();
             }
          }
-    }, [onOpenChange, toast, stopVisualization]);
+    }, [onOpenChange, toast, stopVisualization, isRecorderOpen]);
 
     const startRecording = async () => {
         if (mediaRecorderRef.current) {
@@ -466,6 +468,26 @@ function AudioRecorderSheet({ onAttach, onOpenChange }: { onAttach: (data: { url
     );
 }
 
+// A simple lookup for city coordinates. In a real app, this would be an API call.
+const cityCoordinates: { [key: string]: { lat: number; lon: number } } = {
+    "mumbai": { "lat": 19.0760, "lon": 72.8777 },
+    "delhi": { "lat": 28.7041, "lon": 77.1025 },
+    "bangalore": { "lat": 12.9716, "lon": 77.5946 },
+    "hyderabad": { "lat": 17.3850, "lon": 78.4867 },
+    "ahmedabad": { "lat": 23.0225, "lon": 72.5714 },
+    "chennai": { "lat": 13.0827, "lon": 80.2707 },
+    "kolkata": { "lat": 22.5726, "lon": 88.3639 },
+    "surat": { "lat": 21.1702, "lon": 72.8311 },
+    "pune": { "lat": 18.5204, "lon": 73.8567 },
+    "jaipur": { "lat": 26.9124, "lon": 75.7873 },
+};
+
+const getCoordsForCity = (city: string | undefined) => {
+    if (!city) return null;
+    return cityCoordinates[city.toLowerCase()] || null;
+}
+
+
 const eventSchema = z.object({
     name: z.string().min(3, "Event name must be at least 3 characters.").max(100),
     description: z.string().max(1000).optional(),
@@ -507,10 +529,19 @@ function EventFormSheet({ onClose, onPost }: { onClose: () => void; onPost: () =
             eventTime: "",
         },
     });
+    
+    const locationValue = form.watch('location');
+    const isLocationValid = useMemo(() => getCoordsForCity(locationValue) !== null, [locationValue]);
 
 
     const onSubmit = async (values: z.infer<typeof eventSchema>) => {
         if (!user || !firestore) return;
+
+        const coordinates = getCoordsForCity(values.location);
+        if (!coordinates) {
+            form.setError("location", { message: "Sorry, only major Indian cities are supported for now." });
+            return;
+        }
 
         const [hours, minutes] = values.eventTime.split(':');
         const eventTimestamp = new Date(values.eventDate);
@@ -519,7 +550,7 @@ function EventFormSheet({ onClose, onPost }: { onClose: () => void; onPost: () =
         const eventRef = doc(collection(firestore, 'events'));
         const postRef = doc(collection(firestore, 'posts'));
         
-        const eventData: Omit<Event, 'id'> = {
+        const eventData: Omit<Event, 'id' | 'geohash' | 'coordinates'> = {
             authorId: user.uid,
             name: values.name,
             description: values.description || '',
@@ -626,6 +657,10 @@ function EventFormSheet({ onClose, onPost }: { onClose: () => void; onPost: () =
                                                 </FormControl>
                                             </SheetTrigger>
                                             <SheetContent side="bottom" className="h-auto rounded-t-2xl">
+                                                <SheetHeader className="sr-only">
+                                                    <SheetTitle>Select Date</SheetTitle>
+                                                    <SheetDescription>Choose a date for your event from the calendar.</SheetDescription>
+                                                </SheetHeader>
                                                  <Calendar
                                                     mode="single"
                                                     selected={field.value}
@@ -656,13 +691,22 @@ function EventFormSheet({ onClose, onPost }: { onClose: () => void; onPost: () =
                                 )}
                             />
                         </div>
-                        <FormField control={form.control} name="location" render={({ field }) => (
-                             <FormItem><FormLabel>Location</FormLabel><FormControl>
-                                <Input placeholder="e.g. Starbucks, Jubilee Hills" {...field} />
-                             </FormControl>
-                             <FormDescription>Enter a specific address or place name.</FormDescription>
-                             <FormMessage /></FormItem>
-                        )}/>
+                         <FormField
+                            control={form.control}
+                            name="location"
+                            render={({ field }) => (
+                                <FormItem>
+                                <FormLabel>Location</FormLabel>
+                                <FormControl>
+                                    <div className="relative">
+                                        <Input placeholder="e.g. Hyderabad" {...field} />
+                                        {isLocationValid && <CheckCircle className="absolute right-3 top-1/2 -translate-y-1/2 h-5 w-5 text-green-500" />}
+                                    </div>
+                                </FormControl>
+                                <FormMessage />
+                                </FormItem>
+                            )}
+                        />
                         <FormField control={form.control} name="reach" render={({ field }) => (
                             <FormItem>
                                 <FormLabel>Reach ({field.value} km)</FormLabel>
@@ -819,7 +863,7 @@ function PostPageComponent() {
     try {
         const url = new URL(pastedText);
         setShowLinkInput(true);
-        form.setValue("linkMetadata", {url: url.href});
+        form.setValue("linkMetadata.url", url.href);
         fetchPreview(url.href);
     } catch (error) {
         // Not a valid URL
@@ -1013,16 +1057,16 @@ function PostPageComponent() {
                                      </div>
                                 )}
 
-                                {linkMetadata && (
+                                {linkMetadata?.url && (
                                     <div className="mt-3 border rounded-lg overflow-hidden relative">
                                         <Button variant="ghost" size="icon" className="absolute top-1 right-1 h-7 w-7 bg-black/50 hover:bg-black/70 text-white hover:text-white rounded-full z-10" onClick={() => form.setValue("linkMetadata", undefined)}>
                                             <X className="h-4 w-4" />
                                         </Button>
                                         {linkMetadata.imageUrl && <div className="relative aspect-video bg-secondary"><Image src={linkMetadata.imageUrl} alt={linkMetadata.title || 'Link preview'} fill className="object-cover"/></div>}
-                                        {linkMetadata.url && <div className="p-3 bg-secondary/50">
+                                        <div className="p-3 bg-secondary/50">
                                             <p className="text-xs text-muted-foreground uppercase tracking-wider">{new URL(linkMetadata.url).hostname.replace('www.','')}</p>
                                             <p className="font-semibold text-sm truncate mt-0.5">{linkMetadata.title || linkMetadata.url}</p>
-                                        </div>}
+                                        </div>
                                     </div>
                                 )}
                                 
@@ -1118,7 +1162,7 @@ function PostPageComponent() {
             </div>
         </SheetContent>
     </Sheet>
-    {isRecorderOpen && <AudioRecorderSheet onAttach={handleAttachAudio} onOpenChange={setIsRecorderOpen} />}
+    <AudioRecorderSheet onAttach={handleAttachAudio} onOpenChange={setIsRecorderOpen} />
     </>
   );
 }
