@@ -85,7 +85,7 @@ export function EventCard({ eventDetails }: { eventDetails: EventDetails }) {
                         )}
                     </div>
                     <div className="px-4">
-                        <div className="border-b border-dashed border-border"></div>
+                        <div className="border-b-2 border-dashed border-border"></div>
                     </div>
                     <div className={cn("relative p-4 overflow-hidden", scheme.bg)}>
                         <div className={cn(
