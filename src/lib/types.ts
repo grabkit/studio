@@ -46,6 +46,7 @@ export interface EventDetails {
     endTimestamp?: Timestamp;
     isAllDay: boolean;
     location: string;
+    isPaid?: boolean;
 }
 
 export interface Post {

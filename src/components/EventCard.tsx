@@ -5,6 +5,7 @@ import { cn, formatEventDate, formatEventDay, formatEventTimeRange, formatEventD
 import { useMemo, useState } from 'react';
 import { Sheet, SheetTrigger, SheetContent, SheetHeader, SheetTitle } from '@/components/ui/sheet';
 import { MapPin, CalendarDays, AlignLeft } from 'lucide-react';
+import { Badge } from '@/components/ui/badge';
 
 
 const colorSchemes = [
@@ -76,7 +77,11 @@ export function EventCard({ eventDetails }: { eventDetails: EventDetails }) {
                 <div className="mt-2 border rounded-xl bg-background text-card-foreground shadow-sm overflow-hidden cursor-pointer hover:bg-secondary/50 transition-colors">
                     <div className="px-4 py-2 flex justify-between items-center text-xs font-medium text-muted-foreground uppercase tracking-wide">
                         <span>{formatEventDay(startDate)}</span>
-                        <span>{formatEventDate(startDate)}</span>
+                        {eventDetails.isPaid ? (
+                            <Badge variant="default" className="uppercase">Paid</Badge>
+                        ) : (
+                            <Badge variant="secondary" className="uppercase">Free</Badge>
+                        )}
                     </div>
                     <div className="px-4">
                         <div className="border-b border-dashed border-border"></div>
