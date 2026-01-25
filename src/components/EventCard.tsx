@@ -1,3 +1,4 @@
+
 'use client';
 
 import type { EventDetails } from '@/lib/types';
@@ -54,9 +55,9 @@ export function EventCard({ eventDetails }: { eventDetails: EventDetails }) {
                         <span>{formatEventDate(startDate)}</span>
                     </div>
                     <div className="px-4">
-                        <div className="border-b border-dashed border-border/50"></div>
+                        <div className="border-b border-dashed border-border"></div>
                     </div>
-                    <div className={cn("p-4 flex items-start gap-3 bg-card pl-3", borderColorClass, 'border-l-2')}>
+                    <div className={cn("p-4 flex items-start gap-3 bg-secondary pl-3", borderColorClass, 'border-l-2')}>
                         <div className="flex-1 pl-1">
                             <p className="font-semibold text-card-foreground">{eventDetails.name}</p>
                             <p className="text-sm text-muted-foreground">{formatEventTimeRange(startDate, endDate, eventDetails.isAllDay)}</p>
