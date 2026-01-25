@@ -39,6 +39,8 @@ import { useToast } from "@/hooks/use-toast";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Progress } from "@/components/ui/progress";
 import { FormDescription } from "@/components/ui/form";
+import { format } from "date-fns";
+import { Calendar } from "@/components/ui/calendar";
 
 const pollOptionSchema = z.object({
   option: z.string().min(1, "Option cannot be empty.").max(100, "Option is too long."),
@@ -271,7 +273,9 @@ function AudioRecorderSheet({ onAttach, onOpenChange, isRecorderOpen }: { onAtta
                 mediaRecorderRef.current.ondataavailable = (event) => { if (event.data.size > 0) audioChunksRef.current.push(event.data); };
                 
                 mediaRecorderRef.current.onstop = () => {
-                    const audioBlob = new Blob(audioChunksRef.current);
+                    if (!mediaRecorderRef.current) return;
+                    const mimeType = mediaRecorderRef.current.mimeType;
+                    const audioBlob = new Blob(audioChunksRef.current, { type: mimeType });
                     
                     const reader = new FileReader();
                     reader.onloadend = () => {
@@ -298,7 +302,7 @@ function AudioRecorderSheet({ onAttach, onOpenChange, isRecorderOpen }: { onAtta
                 audioContextRef.current.close();
             }
          }
-    }, [onOpenChange, toast, stopVisualization, isRecorderOpen]);
+    }, [isRecorderOpen, onOpenChange, stopVisualization, toast]);
 
     const startRecording = async () => {
         if (mediaRecorderRef.current) {
@@ -502,6 +506,9 @@ function PostPageComponent() {
     name: "pollOptions",
   });
   
+    const [isDatePickerOpen, setIsDatePickerOpen] = useState(false);
+    const [eventDate, setEventDate] = useState<Date | undefined>();
+
   useEffect(() => {
     if (isEditMode && firestore && postId) {
       const fetchPostData = async () => {
@@ -710,7 +717,6 @@ function PostPageComponent() {
   };
 
   return (
-    <>
     <Sheet open={isOpen} onOpenChange={setIsOpen}>
       <SheetContent side="bottom" className="h-screen flex flex-col p-0 rounded-t-2xl">
         <SheetHeader className="sr-only">
@@ -775,7 +781,7 @@ function PostPageComponent() {
                                         </Button>
                                         {linkMetadata.imageUrl && <div className="relative aspect-video bg-secondary"><Image src={linkMetadata.imageUrl} alt={linkMetadata.title || 'Link preview'} fill className="object-cover"/></div>}
                                         <div className="p-3 bg-secondary/50">
-                                            <p className="text-xs text-muted-foreground uppercase tracking-wider">{new URL(linkMetadata.url).hostname.replace('www.','')}</p>
+                                            <p className="text-xs text-muted-foreground uppercase tracking-wider">{form.getValues("linkMetadata.url") ? new URL(form.getValues("linkMetadata.url")!).hostname.replace('www.','') : ''}</p>
                                             <p className="font-semibold text-sm truncate mt-0.5">{linkMetadata.title || linkMetadata.url}</p>
                                         </div>
                                     </div>
@@ -855,7 +861,7 @@ function PostPageComponent() {
     <AudioRecorderSheet onAttach={handleAttachAudio} onOpenChange={setIsRecorderOpen} isRecorderOpen={isRecorderOpen} />
     <Sheet open={isExpirationSheetOpen} onOpenChange={setIsExpirationSheetOpen}>
         <SheetContent side="bottom" className="rounded-t-2xl">
-            <SheetHeader className="pb-4"><SheetTitle>Post Expiration</SheetTitle><SheetDescription>The post will be deleted after this duration.</SheetDescription></SheetHeader>
+            <SheetHeader className="pb-4"><SheetTitle>Post Expiration</SheetTitle><FormDescription>The post will be deleted after this duration.</FormDescription></SheetHeader>
             <div className="flex flex-col space-y-2">
                 {expirationOptions.map(opt => (<Button key={opt.value} variant="outline" className="justify-start rounded-[5px]" onClick={() => handleSelectExpiration(opt.value, opt.label)}>{opt.label}</Button>))}
                 <Button variant="outline" className="justify-start rounded-[5px]" onClick={handleClearExpiration}>Never Expire</Button>
@@ -873,3 +879,5 @@ export default function PostPage() {
     </Suspense>
   );
 }
+
+    

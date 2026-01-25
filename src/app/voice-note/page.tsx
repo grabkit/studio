@@ -130,7 +130,9 @@ export default function VoiceNotePage() {
                     audioChunksRef.current.push(event.data);
                 };
                 mediaRecorderRef.current.onstop = () => {
-                    const audioBlob = new Blob(audioChunksRef.current, { type: 'audio/wav' });
+                    if (!mediaRecorderRef.current) return;
+                    const mimeType = mediaRecorderRef.current.mimeType;
+                    const audioBlob = new Blob(audioChunksRef.current, { type: mimeType });
                     const reader = new FileReader();
                     reader.readAsDataURL(audioBlob);
                     reader.onloadend = () => {
@@ -348,3 +350,5 @@ export default function VoiceNotePage() {
         </Sheet>
     );
 }
+
+    
