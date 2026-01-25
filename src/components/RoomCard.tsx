@@ -1,3 +1,4 @@
+
 'use client';
 
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
@@ -31,7 +32,7 @@ export function RoomCard({ title, description, attendees, avatars, theme }: Room
         <div className={cn("rounded-[15px] p-4 flex flex-col gap-4", currentTheme.container)}>
             <div className="flex justify-between items-start">
                 <div className="inline-flex items-center gap-2 rounded-full border border-white/30 bg-white/20 px-2.5 py-0.5 text-xs font-semibold text-white">
-                    <span className="h-2 w-2 rounded-full bg-green-400 animate-fade-in-out" />
+                    <span className="h-2 w-2 rounded-full bg-red-500 animate-fade-in-out" />
                     <span>Room active</span>
                 </div>
             </div>
