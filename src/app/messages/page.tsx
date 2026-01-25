@@ -661,9 +661,35 @@ export default function MessagesPage() {
                                 </TabsTrigger>
                             </TabsList>
                             <div className="flex-grow overflow-y-auto">
-                                <TabsContent value="rooms" className="p-4">
-                                     <h2 className="text-lg font-bold font-headline mb-3">Insomnia</h2>
-                                     <RoomCard />
+                                <TabsContent value="rooms" className="p-4 space-y-6">
+                                     <div>
+                                        <h2 className="text-lg font-bold font-headline mb-3">Insomnia</h2>
+                                        <RoomCard 
+                                            title="After Dark"
+                                            description="Join late-night conversations from 12 AM to 4 AM — meet new people and enjoy real-time chats."
+                                            attendees={345}
+                                            avatars={[
+                                                "https://i.pravatar.cc/150?u=a042581f4e29026704d",
+                                                "https://i.pravatar.cc/150?u=a042581f4e29026705d",
+                                                "https://i.pravatar.cc/150?u=a042581f4e29026706d"
+                                            ]}
+                                            theme="violet"
+                                        />
+                                    </div>
+                                    <div>
+                                        <h2 className="text-lg font-bold font-headline mb-3">Q&A</h2>
+                                        <RoomCard 
+                                            title="Ask & Answer"
+                                            description="A place for curious minds. Ask questions, get answers, and learn something new."
+                                            attendees={123}
+                                            avatars={[
+                                                "https://i.pravatar.cc/150?u=a042581f4e29026707d",
+                                                "https://i.pravatar.cc/150?u=a042581f4e29026708d",
+                                                "https://i.pravatar.cc/150?u=a042581f4e29026709d"
+                                            ]}
+                                            theme="teal"
+                                        />
+                                    </div>
                                 </TabsContent>
                                 <TabsContent value="chats">
                                     <ConversationsList 
