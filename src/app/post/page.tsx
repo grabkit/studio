@@ -2,7 +2,7 @@
 "use client";
 
 import * as React from "react";
-import { useState, Suspense, useEffect, useMemo, useRef, useCallback, type Dispatch, type SetStateAction } from "react";
+import { useState, Suspense, useEffect, useMemo, useCallback, type Dispatch, type SetStateAction } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { useForm, useFieldArray, type UseFormReturn } from "react-hook-form";
 import * as z from "zod";
@@ -125,16 +125,16 @@ function AudioRecorderSheet({ onAttach, onOpenChange, isRecorderOpen }: { onAtta
     const [recordedAudioUrl, setRecordedAudioUrl] = useState<string | null>(null);
     const [duration, setDuration] = useState(0);
 
-    const mediaRecorderRef = useRef<MediaRecorder | null>(null);
-    const audioChunksRef = useRef<Blob[]>([]);
-    const timerIntervalRef = useRef<NodeJS.Timeout | null>(null);
-    const audioPlayerRef = useRef<HTMLAudioElement | null>(null);
+    const mediaRecorderRef = React.useRef<MediaRecorder | null>(null);
+    const audioChunksRef = React.useRef<Blob[]>([]);
+    const timerIntervalRef = React.useRef<NodeJS.Timeout | null>(null);
+    const audioPlayerRef = React.useRef<HTMLAudioElement | null>(null);
 
-    const canvasRef = useRef<HTMLCanvasElement | null>(null);
-    const audioContextRef = useRef<AudioContext | null>(null);
-    const analyserRef = useRef<AnalyserNode | null>(null);
-    const sourceNodeRef = useRef<MediaStreamAudioSourceNode | null>(null);
-    const animationFrameIdRef = useRef<number | null>(null);
+    const canvasRef = React.useRef<HTMLCanvasElement | null>(null);
+    const audioContextRef = React.useRef<AudioContext | null>(null);
+    const analyserRef = React.useRef<AnalyserNode | null>(null);
+    const sourceNodeRef = React.useRef<MediaStreamAudioSourceNode | null>(null);
+    const animationFrameIdRef = React.useRef<number | null>(null);
     const [isPlayingPreview, setIsPlayingPreview] = useState(false);
     const [waveform, setWaveform] = useState<number[]>([]);
 
@@ -280,10 +280,14 @@ function AudioRecorderSheet({ onAttach, onOpenChange, isRecorderOpen }: { onAtta
 
                 const options = { mimeType: 'audio/webm;codecs=opus' };
                 let recorder: MediaRecorder;
-                if (MediaRecorder.isTypeSupported(options.mimeType)) {
-                    recorder = new MediaRecorder(stream, options);
-                } else {
-                    recorder = new MediaRecorder(stream);
+                try {
+                    if (MediaRecorder.isTypeSupported(options.mimeType)) {
+                        recorder = new MediaRecorder(stream, options);
+                    } else {
+                         recorder = new MediaRecorder(stream);
+                    }
+                } catch(e) {
+                     recorder = new MediaRecorder(stream);
                 }
                 mediaRecorderRef.current = recorder;
 
@@ -291,8 +295,7 @@ function AudioRecorderSheet({ onAttach, onOpenChange, isRecorderOpen }: { onAtta
 
                 mediaRecorderRef.current.onstop = () => {
                     if (!mediaRecorderRef.current) return;
-                    const mimeType = mediaRecorderRef.current.stream.getAudioTracks()[0].getSettings().mimeType || 'audio/webm';
-                    const audioBlob = new Blob(audioChunksRef.current, { type: mimeType });
+                    const audioBlob = new Blob(audioChunksRef.current, { type: mediaRecorderRef.current.mimeType });
 
                     const reader = new FileReader();
                     reader.onloadend = () => {
@@ -503,88 +506,90 @@ function EventFormSheet({ isOpen, onOpenChange, form, toast }: { isOpen: boolean
                 <SheetHeader className="p-4 border-b">
                     <SheetTitle className="text-center">Create Event</SheetTitle>
                 </SheetHeader>
-                <ScrollArea className="flex-grow">
-                    <div className="p-4 space-y-8">
-                        <FormField control={form.control} name="eventDetails.name" render={({ field }) => (
-                            <FormItem>
-                                <div className="flex items-start gap-4">
-                                    <Info className="h-5 w-5 text-muted-foreground mt-2" />
-                                    <div className="w-full">
-                                        <FormControl><Input placeholder="Event Name" {...field} className="text-base border-0 border-b-2 rounded-none focus-visible:ring-0 px-0 pb-1" /></FormControl>
-                                        <FormMessage />
-                                    </div>
-                                </div>
-                            </FormItem>
-                        )}/>
-                        <FormField control={form.control} name="eventDetails.location" render={({ field }) => (
-                            <FormItem>
-                                 <div className="flex items-start gap-4">
-                                    <MapPin className="h-5 w-5 text-muted-foreground mt-2" />
-                                     <div className="w-full">
-                                        <FormControl><Input placeholder="Location or URL" {...field} className="text-base border-0 border-b-2 rounded-none focus-visible:ring-0 px-0 pb-1" /></FormControl>
-                                        <FormMessage />
-                                    </div>
-                                </div>
-                            </FormItem>
-                        )}/>
-                        <FormField control={form.control} name="eventDetails.isAllDay" render={({ field }) => (
-                            <FormItem className="flex items-center justify-between gap-4">
-                                <div className="flex items-center gap-4">
-                                    <Clock className="h-5 w-5 text-muted-foreground" />
-                                    <FormLabel className="text-base font-normal">All-day</FormLabel>
-                                </div>
-                                <FormControl><Switch checked={field.value} onCheckedChange={field.onChange} /></FormControl>
-                            </FormItem>
-                        )}/>
-                         <FormField control={form.control} name="eventDetails.eventTimestamp" render={({ field }) => (
-                            <FormItem>
-                                <Popover>
-                                    <PopoverTrigger asChild>
-                                        <div className="flex items-center gap-4 cursor-pointer">
-                                            <CalendarDays className="h-5 w-5 text-muted-foreground" />
-                                            <FormControl>
-                                                <div className={cn("w-full text-left font-normal text-base", !field.value && "text-muted-foreground")}>
-                                                    {field.value ? format(field.value, "PPP") : <span>Date</span>}
-                                                </div>
-                                            </FormControl>
-                                        </div>
-                                    </PopoverTrigger>
-                                    <PopoverContent className="w-auto p-0" align="start">
-                                        <Calendar mode="single" selected={field.value} onSelect={field.onChange} disabled={(date) => date < new Date(new Date().setDate(new Date().getDate() - 1))} initialFocus/>
-                                    </PopoverContent>
-                                </Popover>
-                                <FormMessage className="pl-9" />
-                            </FormItem>
-                        )}/>
-                        {!isAllDay && (
-                            <div className="pl-9 space-y-6">
-                                <FormField control={form.control} name="eventDetails.startTime" render={({ field }) => (
-                                    <FormItem>
-                                        <FormLabel>Start time</FormLabel>
-                                        <FormControl><Input type="time" {...field} className="text-base" /></FormControl>
-                                        <FormMessage />
-                                    </FormItem>
-                                )}/>
-                                <FormField control={form.control} name="eventDetails.endTime" render={({ field }) => (
-                                    <FormItem>
-                                        <FormLabel>End time</FormLabel>
-                                        <FormControl><Input type="time" {...field} className="text-base" /></FormControl>
-                                        <FormMessage />
-                                    </FormItem>
-                                )}/>
-                            </div>
-                        )}
-                        <FormField control={form.control} name="eventDetails.isPaid" render={({ field }) => (
-                             <FormItem className="flex items-center justify-between gap-4">
-                                <div className="flex items-center gap-4">
-                                    <DollarSign className="h-5 w-5 text-muted-foreground" />
-                                    <FormLabel className="text-base font-normal">This is a paid event</FormLabel>
-                                </div>
-                                <FormControl><Switch checked={field.value} onCheckedChange={field.onChange} /></FormControl>
-                            </FormItem>
-                        )}/>
-                    </div>
-                </ScrollArea>
+                <Form {...form}>
+                  <ScrollArea className="flex-grow">
+                      <div className="p-4 space-y-8">
+                          <FormField control={form.control} name="eventDetails.name" render={({ field }) => (
+                              <FormItem>
+                                  <div className="flex items-start gap-4">
+                                      <Info className="h-5 w-5 text-muted-foreground mt-2" />
+                                      <div className="w-full">
+                                          <FormControl><Input placeholder="Event Name" {...field} className="text-base border-0 border-b-2 rounded-none focus-visible:ring-0 px-0 pb-1" /></FormControl>
+                                          <FormMessage />
+                                      </div>
+                                  </div>
+                              </FormItem>
+                          )}/>
+                          <FormField control={form.control} name="eventDetails.location" render={({ field }) => (
+                              <FormItem>
+                                  <div className="flex items-start gap-4">
+                                      <MapPin className="h-5 w-5 text-muted-foreground mt-2" />
+                                      <div className="w-full">
+                                          <FormControl><Input placeholder="Location or URL" {...field} className="text-base border-0 border-b-2 rounded-none focus-visible:ring-0 px-0 pb-1" /></FormControl>
+                                          <FormMessage />
+                                      </div>
+                                  </div>
+                              </FormItem>
+                          )}/>
+                          <FormField control={form.control} name="eventDetails.isAllDay" render={({ field }) => (
+                              <FormItem className="flex items-center justify-between gap-4">
+                                  <div className="flex items-center gap-4">
+                                      <Clock className="h-5 w-5 text-muted-foreground" />
+                                      <FormLabel className="text-base font-normal">All-day</FormLabel>
+                                  </div>
+                                  <FormControl><Switch checked={field.value} onCheckedChange={field.onChange} /></FormControl>
+                              </FormItem>
+                          )}/>
+                          <FormField control={form.control} name="eventDetails.eventTimestamp" render={({ field }) => (
+                              <FormItem>
+                                  <Popover>
+                                      <PopoverTrigger asChild>
+                                          <div className="flex items-center gap-4 cursor-pointer">
+                                              <CalendarDays className="h-5 w-5 text-muted-foreground" />
+                                              <FormControl>
+                                                  <div className={cn("w-full text-left font-normal text-base", !field.value && "text-muted-foreground")}>
+                                                      {field.value ? format(field.value, "PPP") : <span>Date</span>}
+                                                  </div>
+                                              </FormControl>
+                                          </div>
+                                      </PopoverTrigger>
+                                      <PopoverContent className="w-auto p-0" align="start">
+                                          <Calendar mode="single" selected={field.value} onSelect={field.onChange} disabled={(date) => date < new Date(new Date().setDate(new Date().getDate() - 1))} initialFocus/>
+                                      </PopoverContent>
+                                  </Popover>
+                                  <FormMessage className="pl-9" />
+                              </FormItem>
+                          )}/>
+                          {!isAllDay && (
+                              <div className="pl-9 space-y-6">
+                                  <FormField control={form.control} name="eventDetails.startTime" render={({ field }) => (
+                                      <FormItem>
+                                          <FormLabel>Start time</FormLabel>
+                                          <FormControl><Input type="time" {...field} className="text-base" /></FormControl>
+                                          <FormMessage />
+                                      </FormItem>
+                                  )}/>
+                                  <FormField control={form.control} name="eventDetails.endTime" render={({ field }) => (
+                                      <FormItem>
+                                          <FormLabel>End time</FormLabel>
+                                          <FormControl><Input type="time" {...field} className="text-base" /></FormControl>
+                                          <FormMessage />
+                                      </FormItem>
+                                  )}/>
+                              </div>
+                          )}
+                          <FormField control={form.control} name="eventDetails.isPaid" render={({ field }) => (
+                              <FormItem className="flex items-center justify-between gap-4">
+                                  <div className="flex items-center gap-4">
+                                      <DollarSign className="h-5 w-5 text-muted-foreground" />
+                                      <FormLabel className="text-base font-normal">This is a paid event</FormLabel>
+                                  </div>
+                                  <FormControl><Switch checked={field.value} onCheckedChange={field.onChange} /></FormControl>
+                              </FormItem>
+                          )}/>
+                      </div>
+                  </ScrollArea>
+                </Form>
                 <div className="p-4 border-t">
                     <Button onClick={() => {
                         form.trigger("eventDetails");
@@ -1036,13 +1041,20 @@ function PostPageComponent() {
           </div>
         </SheetContent>
       </Sheet>
-      <AudioRecorderSheet onAttach={handleAttachAudio} onOpenChange={setIsRecorderOpen} isRecorderOpen={isRecorderOpen} />
+      
       <EventFormSheet form={form} isOpen={isEventSheetOpen} onOpenChange={setIsEventSheetOpen} toast={toast} />
+
+      <Sheet open={isOpen && isRecorderOpen} onOpenChange={setIsRecorderOpen}>
+        <AudioRecorderSheet onAttach={handleAttachAudio} onOpenChange={setIsRecorderOpen} isRecorderOpen={isOpen && isRecorderOpen} />
+      </Sheet>
+
       <Sheet open={isExpirationSheetOpen} onOpenChange={setIsExpirationSheetOpen}>
           <SheetContent side="bottom" className="rounded-t-2xl">
               <SheetHeader className="pb-4">
                 <SheetTitle>Post Expiration</SheetTitle>
-                <SheetDescription>The post will be deleted after this duration.</SheetDescription>
+                <SheetDescription>
+                  This post will be deleted after this duration.
+                </SheetDescription>
               </SheetHeader>
               <div className="flex flex-col space-y-2">
                   {expirationOptions.map(opt => (<Button key={opt.value} variant="outline" className="justify-start rounded-[5px]" onClick={() => handleSelectExpiration(opt.value, opt.label)}>{opt.label}</Button>))}
