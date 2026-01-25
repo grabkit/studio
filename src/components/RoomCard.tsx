@@ -10,7 +10,7 @@ export function RoomCard() {
         <div className="bg-violet-500 border border-violet-500/20 rounded-[15px] p-4 flex flex-col gap-4">
             <div className="flex justify-between items-start">
                 <div className="inline-flex items-center gap-2 rounded-full border border-white/30 bg-white/20 px-2.5 py-0.5 text-xs font-semibold text-white">
-                    <span className="h-2 w-2 rounded-full bg-green-400 animate-online-indicator-glow" />
+                    <span className="h-2 w-2 rounded-full bg-green-400 animate-fade-in-out" />
                     <span>Room active</span>
                 </div>
             </div>

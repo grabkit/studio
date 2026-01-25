@@ -253,6 +253,14 @@
     }
   }
 
+  @keyframes fade-in-out {
+    0%, 100% { opacity: 0.3; }
+    50% { opacity: 1; }
+  }
+  .animate-fade-in-out {
+      animation: fade-in-out 2s ease-in-out infinite;
+  }
+
   /* Page Transition Animations */
   @keyframes slide-in-right {
       from {
