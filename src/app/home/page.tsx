@@ -38,6 +38,7 @@ import { eventBus } from "@/lib/event-bus";
 import { useCollection } from "@/firebase/firestore/use-collection";
 import { Progress } from "@/components/ui/progress";
 import { AudioPostCard } from "@/components/AudioPostCard";
+import { EventCard } from "@/components/EventCard";
 
 
 function LinkPreview({ metadata }: { metadata: LinkMetadata }) {
@@ -550,6 +551,10 @@ function InnerPostItem({ post, bookmarks, updatePost, onDelete, onPin, showPinSt
             <Link href={`/post/${post.id}`} className="block">
                 {post.content && <p className="text-foreground text-sm whitespace-pre-wrap">{post.content}</p>}
             </Link>
+
+            {post.type === 'event' && post.eventDetails && (
+                <EventCard eventDetails={post.eventDetails} />
+            )}
 
             {post.type === 'quote' && post.quotedPost && (
                 <div className="mt-2">

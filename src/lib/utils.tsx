@@ -2,7 +2,7 @@
 
 import { clsx, type ClassValue } from "clsx"
 import { twMerge } from "tailwind-merge"
-import { formatDistanceToNowStrict, isToday, isYesterday, format, isThisWeek, fromUnixTime, formatDistanceStrict } from "date-fns";
+import { formatDistanceToNowStrict, isToday, isYesterday, format, isThisWeek, fromUnixTime, formatDistanceStrict, differenceInMinutes } from "date-fns";
 import { defaultAvatars } from "./avatars";
 import type { User } from "./types";
 import { adjectives, nouns } from './names';
@@ -191,4 +191,64 @@ export function combineDateAndTime(date: Date, time: string): Date {
   newDate.setSeconds(0);
   newDate.setMilliseconds(0);
   return newDate;
+}
+
+export function formatEventDate(date: Date): string {
+  return format(date, 'd MMM').toUpperCase();
+}
+
+export function formatEventDay(date: Date): string {
+  if (isToday(date)) {
+    return `Today, ${format(date, 'E').toUpperCase()}`;
+  }
+  if (isYesterday(date)) {
+    return `Yesterday, ${format(date, 'E').toUpperCase()}`;
+  }
+  return format(date, 'E, d MMM').toUpperCase();
+}
+
+export function formatEventTimeRange(start: Date, end: Date | undefined, isAllDay: boolean): string {
+  if (isAllDay) {
+    return 'All-day';
+  }
+
+  if (!end) {
+    return format(start, 'p').toLowerCase();
+  }
+
+  const startTimeStr = format(start, 'h:mm');
+  const endTimeStr = format(end, 'h:mm');
+  const endMeridian = format(end, 'a').toLowerCase();
+
+  const startMeridian = format(start, 'a');
+  const endMeridianCheck = format(end, 'a');
+
+  if (startMeridian === endMeridianCheck) {
+    return `${startTimeStr} - ${endTimeStr} ${endMeridian}`;
+  } else {
+    const startTimeWithMeridian = format(start, 'h:mm a').toLowerCase();
+    const endTimeWithMeridian = format(end, 'h:mm a').toLowerCase();
+    return `${startTimeWithMeridian} - ${endTimeWithMeridian}`;
+  }
+}
+
+export function formatEventDuration(start: Date, end?: Date): string | null {
+  if (!end) return null;
+  const diffMinutes = differenceInMinutes(end, start);
+
+  if (diffMinutes <= 0) {
+    return null;
+  }
+  if (diffMinutes < 60) {
+    return `${diffMinutes}m`;
+  }
+
+  const hours = Math.floor(diffMinutes / 60);
+  const minutes = diffMinutes % 60;
+
+  if (minutes === 0) {
+    return `${hours}h`;
+  }
+
+  return `${hours}h ${minutes}m`;
 }

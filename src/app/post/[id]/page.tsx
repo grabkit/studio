@@ -57,6 +57,7 @@ import {
 } from "@/components/ui/sheet";
 import { QuotedPostCard } from "@/components/QuotedPostCard";
 import { AnimatedCount } from "@/components/AnimatedCount";
+import { EventCard } from "@/components/EventCard";
 
 function PostExpiryInfo({ post }: { post: WithId<Post> }) {
   const [expiryText, setExpiryText] = useState(() => {
@@ -516,6 +517,10 @@ function PostDetailItem({ post, updatePost }: { post: WithId<Post>, updatePost: 
             </div>
 
             {post.content && <p className="text-foreground text-base whitespace-pre-wrap">{post.content}</p>}
+
+            {post.type === 'event' && post.eventDetails && (
+                <EventCard eventDetails={post.eventDetails} />
+            )}
 
             {post.type === 'quote' && post.quotedPost && (
               <div className="mt-2">
@@ -1133,6 +1138,7 @@ export default function PostDetailPage() {
 }
 
     
+
 
 
 
