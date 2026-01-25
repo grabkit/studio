@@ -22,16 +22,16 @@ export function RoomCard() {
             </div>
 
             <div className="flex items-center gap-2">
-                <div className="flex -space-x-3">
-                    <Avatar className="h-8 w-8 border-2 border-background">
+                <div className="flex -space-x-2">
+                    <Avatar className="h-6 w-6 border-2 border-background">
                         <AvatarImage src="https://i.pravatar.cc/150?u=a042581f4e29026704d" />
                         <AvatarFallback>A</AvatarFallback>
                     </Avatar>
-                    <Avatar className="h-8 w-8 border-2 border-background">
+                    <Avatar className="h-6 w-6 border-2 border-background">
                         <AvatarImage src="https://i.pravatar.cc/150?u=a042581f4e29026705d" />
                         <AvatarFallback>B</AvatarFallback>
                     </Avatar>
-                    <Avatar className="h-8 w-8 border-2 border-background">
+                    <Avatar className="h-6 w-6 border-2 border-background">
                         <AvatarImage src="https://i.pravatar.cc/150?u=a042581f4e29026706d" />
                         <AvatarFallback>C</AvatarFallback>
                     </Avatar>
