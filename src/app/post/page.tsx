@@ -1,8 +1,9 @@
 
+
 "use client";
 
 import * as React from "react";
-import { useState, Suspense, useEffect, useMemo } from "react";
+import { useState, Suspense, useEffect, useMemo, useRef } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { useForm, useFieldArray } from "react-hook-form";
 import * as z from "zod";
@@ -67,6 +68,8 @@ const eventDetailsSchema = z.object({
     id: z.string(),
     name: z.string(),
     eventTimestamp: z.custom<Timestamp>(),
+    endTimestamp: z.custom<Timestamp>().optional(),
+    isAllDay: z.boolean(),
     location: z.string(),
 }).optional();
 
@@ -119,23 +122,23 @@ function AudioRecorderSheet({ onAttach, onOpenChange, isRecorderOpen }: { onAtta
     const [recordedAudioUrl, setRecordedAudioUrl] = useState<string | null>(null);
     const [duration, setDuration] = useState(0);
 
-    const mediaRecorderRef = React.useRef<MediaRecorder | null>(null);
-    const audioChunksRef = React.useRef<Blob[]>([]);
-    const timerIntervalRef = React.useRef<NodeJS.Timeout | null>(null);
-    const audioPlayerRef = React.useRef<HTMLAudioElement | null>(null);
+    const mediaRecorderRef = useRef<MediaRecorder | null>(null);
+    const audioChunksRef = useRef<Blob[]>([]);
+    const timerIntervalRef = useRef<NodeJS.Timeout | null>(null);
+    const audioPlayerRef = useRef<HTMLAudioElement | null>(null);
     
-    const canvasRef = React.useRef<HTMLCanvasElement | null>(null);
-    const audioContextRef = React.useRef<AudioContext | null>(null);
-    const analyserRef = React.useRef<AnalyserNode | null>(null);
-    const sourceNodeRef = React.useRef<MediaStreamAudioSourceNode | null>(null);
-    const animationFrameIdRef = React.useRef<number | null>(null);
+    const canvasRef = useRef<HTMLCanvasElement | null>(null);
+    const audioContextRef = useRef<AudioContext | null>(null);
+    const analyserRef = useRef<AnalyserNode | null>(null);
+    const sourceNodeRef = useRef<MediaStreamAudioSourceNode | null>(null);
+    const animationFrameIdRef = useRef<number | null>(null);
     const [isPlayingPreview, setIsPlayingPreview] = useState(false);
     const [waveform, setWaveform] = useState<number[]>([]);
     
     const maxDuration = 30; // 30 seconds
     const waveformSamples = 100;
 
-    const drawWaveform = React.useCallback((waveformData: number[], progress: number = 0) => {
+    const drawWaveform = useCallback((waveformData: number[], progress: number = 0) => {
         const canvas = canvasRef.current;
         if (!canvas) return;
 
@@ -158,14 +161,14 @@ function AudioRecorderSheet({ onAttach, onOpenChange, isRecorderOpen }: { onAtta
         }
     }, []);
     
-    const stopVisualization = React.useCallback(() => {
+    const stopVisualization = useCallback(() => {
         if (animationFrameIdRef.current) {
             cancelAnimationFrame(animationFrameIdRef.current);
             animationFrameIdRef.current = null;
         }
     }, []);
 
-    const visualize = React.useCallback((stream: MediaStream, onSample: (sample: number) => void) => {
+    const visualize = useCallback((stream: MediaStream, onSample: (sample: number) => void) => {
         if (!audioContextRef.current || audioContextRef.current.state === 'closed') {
             audioContextRef.current = new (window.AudioContext || (window as any).webkitAudioContext)();
         }
@@ -237,7 +240,7 @@ function AudioRecorderSheet({ onAttach, onOpenChange, isRecorderOpen }: { onAtta
     }, [recordingStatus, visualize, drawWaveform, stopVisualization]);
 
 
-    const handleTimeUpdate = React.useCallback(() => {
+    const handleTimeUpdate = useCallback(() => {
         const player = audioPlayerRef.current;
         if (!player || player.paused) return;
         const progress = (player.currentTime / player.duration) * 100;
@@ -485,15 +488,20 @@ const eventFormSchema = z.object({
   description: z.string().max(280, "Description is too long.").optional(),
   location: z.string().min(3, "Location is required."),
   eventDate: z.date({ required_error: "An event date is required." }),
-  eventTime: z.string({ required_error: "An event time is required." }),
+  isAllDay: z.boolean().default(false),
+  startTime: z.string().optional(),
+  endTime: z.string().optional(),
   isPaid: z.boolean().default(false),
+}).refine(data => data.isAllDay || (!!data.startTime && !!data.endTime), {
+  message: "Start and end times are required for non-all-day events.",
+  path: ["startTime"], // You can point to startTime or a general path
 });
+
 
 function EventFormSheet({ isOpen, onOpenChange, onAttach }: { isOpen: boolean, onOpenChange: (open: boolean) => void, onAttach: (details: EventDetails) => void }) {
     const { user, firestore } = useFirebase();
     const { toast } = useToast();
     const [isSubmitting, setIsSubmitting] = useState(false);
-    const [isDatePickerOpen, setIsDatePickerOpen] = useState(false);
 
     const form = useForm<z.infer<typeof eventFormSchema>>({
         resolver: zodResolver(eventFormSchema),
@@ -502,24 +510,37 @@ function EventFormSheet({ isOpen, onOpenChange, onAttach }: { isOpen: boolean, o
             description: "",
             location: "",
             eventDate: new Date(),
-            eventTime: format(new Date(), "HH:mm"),
+            isAllDay: false,
+            startTime: format(new Date(), "HH:mm"),
+            endTime: format(new Date(new Date().getTime() + 60 * 60 * 1000), "HH:mm"), // Default to 1 hour later
             isPaid: false,
         },
     });
+    
+    const isAllDay = form.watch("isAllDay");
 
     const onSubmitEvent = async (values: z.infer<typeof eventFormSchema>) => {
         if (!user || !firestore) return;
         setIsSubmitting(true);
         try {
             const newEventRef = doc(collection(firestore, "events"));
-            const combinedTimestamp = combineDateAndTime(values.eventDate, values.eventTime);
+            
+            const startTimestamp = values.isAllDay 
+                ? Timestamp.fromDate(values.eventDate) 
+                : Timestamp.fromDate(combineDateAndTime(values.eventDate, values.startTime!));
+                
+            const endTimestamp = values.isAllDay 
+                ? null
+                : Timestamp.fromDate(combineDateAndTime(values.eventDate, values.endTime!));
 
             const newEventData: Omit<Event, 'id'> = {
                 authorId: user.uid,
                 name: values.name,
                 description: values.description,
                 location: values.location,
-                eventTimestamp: Timestamp.fromDate(combinedTimestamp),
+                eventTimestamp: startTimestamp,
+                endTimestamp: endTimestamp || undefined,
+                isAllDay: values.isAllDay,
                 isPaid: values.isPaid,
             };
 
@@ -542,10 +563,7 @@ function EventFormSheet({ isOpen, onOpenChange, onAttach }: { isOpen: boolean, o
     
     return (
         <Sheet open={isOpen} onOpenChange={onOpenChange}>
-            <SheetContent side="bottom" className="h-screen flex flex-col p-0 rounded-t-2xl">
-                <SheetHeader className="sr-only">
-                    <SheetTitle>Create Event</SheetTitle>
-                </SheetHeader>
+            <SheetContent side="bottom" className="h-[95dvh] flex flex-col p-0 rounded-t-2xl">
                 <div className="z-10 flex items-center justify-between p-2 border-b bg-background sticky top-0 h-14">
                     <Button variant="ghost" size="icon" onClick={() => onOpenChange(false)}><X className="h-4 w-4" /></Button>
                     <h2 className="text-base font-bold">Create Event</h2>
@@ -555,54 +573,93 @@ function EventFormSheet({ isOpen, onOpenChange, onAttach }: { isOpen: boolean, o
                 </div>
                 <div className="flex-grow overflow-y-auto">
                     <Form {...form}>
-                        <form id="event-form" onSubmit={form.handleSubmit(onSubmitEvent)} className="divide-y">
-                            <FormField control={form.control} name="name" render={({ field }) => (
-                                <FormItem className="flex items-center justify-between p-4">
-                                    <FormLabel>Name</FormLabel>
-                                    <FormControl><Input placeholder="Event Name" {...field} className="text-right border-0 shadow-none focus-visible:ring-0 max-w-[70%]" /></FormControl>
-                                </FormItem>
-                            )} />
-                             <FormField control={form.control} name="location" render={({ field }) => (
-                                <FormItem className="flex items-center justify-between p-4">
-                                    <FormLabel>Location</FormLabel>
-                                    <FormControl><Input placeholder="e.g., Online or City" {...field} className="text-right border-0 shadow-none focus-visible:ring-0 max-w-[70%]" /></FormControl>
-                                </FormItem>
-                            )} />
-                            <FormField control={form.control} name="eventDate" render={({ field }) => (
-                                <FormItem className="flex items-center justify-between p-4">
-                                    <FormLabel>Date</FormLabel>
-                                     <Popover open={isDatePickerOpen} onOpenChange={setIsDatePickerOpen}>
-                                        <PopoverTrigger asChild>
-                                            <FormControl>
-                                                <Button variant={"outline"} className={cn("pl-3 text-left font-normal", !field.value && "text-muted-foreground")}>
-                                                    {field.value ? format(field.value, "PPP") : <span>Pick a date</span>}
-                                                </Button>
-                                            </FormControl>
-                                        </PopoverTrigger>
-                                        <PopoverContent className="w-auto p-0" align="end">
-                                            <Calendar mode="single" selected={field.value} onSelect={(date) => { field.onChange(date); setIsDatePickerOpen(false); }} initialFocus />
-                                        </PopoverContent>
-                                    </Popover>
-                                </FormItem>
-                            )} />
-                            <FormField control={form.control} name="eventTime" render={({ field }) => (
-                                <FormItem className="flex items-center justify-between p-4">
-                                    <FormLabel>Time</FormLabel>
-                                    <FormControl><Input type="time" {...field} className="text-right border-0 shadow-none focus-visible:ring-0 max-w-[70%]" /></FormControl>
-                                </FormItem>
-                            )} />
-                             <FormField control={form.control} name="isPaid" render={({ field }) => (
-                                <FormItem className="flex items-center justify-between p-4">
-                                    <FormLabel>Ticketed Event</FormLabel>
-                                    <FormControl><Switch checked={field.value} onCheckedChange={field.onChange} /></FormControl>
-                                </FormItem>
-                            )} />
-                            <FormField control={form.control} name="description" render={({ field }) => (
-                                <FormItem className="p-4">
-                                    <FormLabel>Description (Optional)</FormLabel>
-                                    <FormControl><Textarea placeholder="Add more details about your event" {...field} /></FormControl>
-                                </FormItem>
-                            )} />
+                        <form id="event-form" onSubmit={form.handleSubmit(onSubmitEvent)}>
+                            <div className="p-4">
+                                <FormField control={form.control} name="name" render={({ field }) => (
+                                    <FormItem>
+                                        <FormControl>
+                                            <Input 
+                                                placeholder="Event Name" 
+                                                {...field} 
+                                                className="border-0 border-b rounded-none shadow-none text-2xl font-bold h-auto p-0 focus-visible:ring-0" 
+                                            />
+                                        </FormControl>
+                                        <FormMessage />
+                                    </FormItem>
+                                )} />
+                            </div>
+                            <div className="divide-y border-y">
+                                <div className="p-4 space-y-4">
+                                     <h3 className="text-sm font-semibold text-muted-foreground">DATE & TIME</h3>
+                                      <FormField control={form.control} name="eventDate" render={({ field }) => (
+                                        <FormItem className="flex items-center">
+                                            <CalendarDays className="h-5 w-5 mr-3 text-muted-foreground" />
+                                            <Popover>
+                                                <PopoverTrigger asChild>
+                                                    <FormControl>
+                                                        <Button variant={"ghost"} className={cn("pl-1 text-left font-normal w-full justify-start", !field.value && "text-muted-foreground")}>
+                                                            {field.value ? format(field.value, "EEEE, MMMM d") : <span>Pick a date</span>}
+                                                        </Button>
+                                                    </FormControl>
+                                                </PopoverTrigger>
+                                                <PopoverContent className="w-auto p-0" align="start">
+                                                    <Calendar mode="single" selected={field.value} onSelect={field.onChange} initialFocus />
+                                                </PopoverContent>
+                                            </Popover>
+                                        </FormItem>
+                                    )} />
+                                     <FormField control={form.control} name="isAllDay" render={({ field }) => (
+                                        <FormItem className="flex items-center justify-between">
+                                            <div className="flex items-center">
+                                                <Clock className="h-5 w-5 mr-3 text-muted-foreground invisible" />
+                                                <FormLabel>All day</FormLabel>
+                                            </div>
+                                            <FormControl><Switch checked={field.value} onCheckedChange={field.onChange} /></FormControl>
+                                        </FormItem>
+                                    )} />
+                                    {!isAllDay && (
+                                        <div className="flex items-center gap-2">
+                                            <Clock className="h-5 w-5 mr-3 text-muted-foreground" />
+                                             <FormField control={form.control} name="startTime" render={({ field }) => (
+                                                <FormItem className="flex-1">
+                                                    <FormControl><Input type="time" {...field} className="text-center" /></FormControl>
+                                                </FormItem>
+                                            )} />
+                                            <span>→</span>
+                                            <FormField control={form.control} name="endTime" render={({ field }) => (
+                                                <FormItem className="flex-1">
+                                                    <FormControl><Input type="time" {...field} className="text-center" /></FormControl>
+                                                </FormItem>
+                                            )} />
+                                        </div>
+                                    )}
+                                </div>
+                                <div className="p-4 space-y-4">
+                                    <h3 className="text-sm font-semibold text-muted-foreground">DETAILS</h3>
+                                     <FormField control={form.control} name="location" render={({ field }) => (
+                                        <FormItem className="flex items-center">
+                                             <MapPin className="h-5 w-5 mr-3 text-muted-foreground" />
+                                            <FormControl><Input placeholder="Location" {...field} className="border-0 shadow-none focus-visible:ring-0 p-0" /></FormControl>
+                                        </FormItem>
+                                    )} />
+                                </div>
+                                 <div className="p-4 space-y-4">
+                                     <FormField control={form.control} name="isPaid" render={({ field }) => (
+                                        <FormItem className="flex items-center justify-between">
+                                            <div className="flex items-center">
+                                                <Ticket className="h-5 w-5 mr-3 text-muted-foreground" />
+                                                <FormLabel>Ticketed Event</FormLabel>
+                                            </div>
+                                            <FormControl><Switch checked={field.value} onCheckedChange={field.onChange} /></FormControl>
+                                        </FormItem>
+                                    )} />
+                                 </div>
+                                <FormField control={form.control} name="description" render={({ field }) => (
+                                    <FormItem className="p-4">
+                                        <FormControl><Textarea placeholder="Add description, notes, or links..." {...field} className="border-0 shadow-none focus-visible:ring-0 p-0 min-h-[100px]" /></FormControl>
+                                    </FormItem>
+                                )} />
+                            </div>
                         </form>
                     </Form>
                 </div>

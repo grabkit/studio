@@ -31,15 +31,19 @@ export interface Event {
     description?: string;
     isPaid: boolean;
     eventTimestamp: Timestamp;
+    endTimestamp?: Timestamp;
+    isAllDay: boolean;
     location: string;
-    reach?: number; // Optional, for future use
-    type?: 'public' | 'private'; // Optional, for future use
+    reach?: number;
+    type?: 'public' | 'private';
 }
 
 export interface EventDetails {
     id: string;
     name: string;
     eventTimestamp: Timestamp;
+    endTimestamp?: Timestamp;
+    isAllDay: boolean;
     location: string;
 }
 

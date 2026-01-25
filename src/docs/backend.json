@@ -183,7 +183,9 @@
         "description": { "type": "string" },
         "type": { "type": "string", "enum": ["public", "private"] },
         "isPaid": { "type": "boolean" },
+        "isAllDay": { "type": "boolean" },
         "eventTimestamp": { "type": "string", "format": "date-time" },
+        "endTimestamp": { "type": "string", "format": "date-time" },
         "location": { "type": "string" },
         "reach": { "type": "number" }
       },
@@ -196,7 +198,9 @@
         "properties": {
             "id": { "type": "string" },
             "name": { "type": "string" },
+            "isAllDay": { "type": "boolean" },
             "eventTimestamp": { "type": "string", "format": "date-time" },
+            "endTimestamp": { "type": "string", "format": "date-time" },
             "location": { "type": "string" }
         },
         "required": ["id", "name", "eventTimestamp", "location"]
