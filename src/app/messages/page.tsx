@@ -1,3 +1,4 @@
+
 "use client";
 
 import AppLayout from "@/components/AppLayout";
@@ -661,6 +662,7 @@ export default function MessagesPage() {
                             </TabsList>
                             <div className="flex-grow overflow-y-auto">
                                 <TabsContent value="rooms" className="p-4">
+                                     <h2 className="text-lg font-bold font-headline mb-3">Moonlight</h2>
                                      <RoomCard />
                                 </TabsContent>
                                 <TabsContent value="chats">
