@@ -2,14 +2,14 @@
 "use client";
 
 import * as React from "react";
-import { useState, Suspense, useEffect, useRef, useCallback, useMemo } from "react";
+import { useState, Suspense, useEffect, useMemo } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { useForm, useFieldArray } from "react-hook-form";
 import * as z from "zod";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { collection, serverTimestamp, setDoc, doc, updateDoc, getDoc, writeBatch, Timestamp } from "firebase/firestore";
 import { useFirebase, useDoc, useMemoFirebase } from "@/firebase";
-import type { Post, QuotedPost, Notification } from "@/lib/types";
+import type { Post, QuotedPost, Notification, EventDetails, Event } from "@/lib/types";
 import { WithId } from "@/firebase/firestore/use-collection";
 
 
@@ -27,7 +27,7 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Form, FormControl, FormField, FormItem, FormMessage, FormLabel } from "@/components/ui/form";
-import { Loader2, X, ListOrdered, Plus, Link as LinkIcon, Image as ImageIcon, CalendarClock, Mic, Play, Square, RefreshCw, Send, Pause, StopCircle, Check, Circle, Undo2 } from "lucide-react";
+import { Loader2, X, ListOrdered, Plus, Link as LinkIcon, Image as ImageIcon, CalendarClock, Mic, Play, Square, RefreshCw, Send, Pause, StopCircle, Check, Circle, Undo2, CalendarDays, MapPin, Clock, Ticket } from "lucide-react";
 import { errorEmitter } from "@/firebase/error-emitter";
 import { FirestorePermissionError } from "@/firebase/errors";
 import { Switch } from "@/components/ui/switch";
@@ -63,6 +63,12 @@ const quotedPostSchema = z.object({
     timestamp: z.any(),
 }).optional();
 
+const eventDetailsSchema = z.object({
+    id: z.string(),
+    name: z.string(),
+    eventTimestamp: z.custom<Timestamp>(),
+    location: z.string(),
+}).optional();
 
 const baseSchema = z.object({
   content: z.string().max(560, "Post is too long.").optional(),
@@ -73,6 +79,7 @@ const baseSchema = z.object({
   audioUrl: z.string().optional(),
   audioWaveform: z.array(z.number()).optional(),
   audioDuration: z.number().optional(),
+  eventDetails: eventDetailsSchema,
 });
 
 const textPostSchema = baseSchema.extend({
@@ -90,7 +97,7 @@ const pollPostSchema = baseSchema.extend({
 const postSchema = z.discriminatedUnion("isPoll", [
   textPostSchema,
   pollPostSchema,
-]).refine(data => !!data.content || !!data.linkMetadata || !!data.quotedPost || !!data.audioUrl, {
+]).refine(data => !!data.content || !!data.linkMetadata || !!data.quotedPost || !!data.audioUrl || !!data.eventDetails, {
     message: "Post cannot be empty.",
     path: ["content"],
 });
@@ -112,23 +119,23 @@ function AudioRecorderSheet({ onAttach, onOpenChange, isRecorderOpen }: { onAtta
     const [recordedAudioUrl, setRecordedAudioUrl] = useState<string | null>(null);
     const [duration, setDuration] = useState(0);
 
-    const mediaRecorderRef = useRef<MediaRecorder | null>(null);
-    const audioChunksRef = useRef<Blob[]>([]);
-    const timerIntervalRef = useRef<NodeJS.Timeout | null>(null);
-    const audioPlayerRef = useRef<HTMLAudioElement | null>(null);
+    const mediaRecorderRef = React.useRef<MediaRecorder | null>(null);
+    const audioChunksRef = React.useRef<Blob[]>([]);
+    const timerIntervalRef = React.useRef<NodeJS.Timeout | null>(null);
+    const audioPlayerRef = React.useRef<HTMLAudioElement | null>(null);
     
-    const canvasRef = useRef<HTMLCanvasElement | null>(null);
-    const audioContextRef = useRef<AudioContext | null>(null);
-    const analyserRef = useRef<AnalyserNode | null>(null);
-    const sourceNodeRef = useRef<MediaStreamAudioSourceNode | null>(null);
-    const animationFrameIdRef = useRef<number | null>(null);
+    const canvasRef = React.useRef<HTMLCanvasElement | null>(null);
+    const audioContextRef = React.useRef<AudioContext | null>(null);
+    const analyserRef = React.useRef<AnalyserNode | null>(null);
+    const sourceNodeRef = React.useRef<MediaStreamAudioSourceNode | null>(null);
+    const animationFrameIdRef = React.useRef<number | null>(null);
     const [isPlayingPreview, setIsPlayingPreview] = useState(false);
     const [waveform, setWaveform] = useState<number[]>([]);
     
     const maxDuration = 30; // 30 seconds
     const waveformSamples = 100;
 
-    const drawWaveform = useCallback((waveformData: number[], progress: number = 0) => {
+    const drawWaveform = React.useCallback((waveformData: number[], progress: number = 0) => {
         const canvas = canvasRef.current;
         if (!canvas) return;
 
@@ -151,14 +158,14 @@ function AudioRecorderSheet({ onAttach, onOpenChange, isRecorderOpen }: { onAtta
         }
     }, []);
     
-    const stopVisualization = useCallback(() => {
+    const stopVisualization = React.useCallback(() => {
         if (animationFrameIdRef.current) {
             cancelAnimationFrame(animationFrameIdRef.current);
             animationFrameIdRef.current = null;
         }
     }, []);
 
-    const visualize = useCallback((stream: MediaStream, onSample: (sample: number) => void) => {
+    const visualize = React.useCallback((stream: MediaStream, onSample: (sample: number) => void) => {
         if (!audioContextRef.current || audioContextRef.current.state === 'closed') {
             audioContextRef.current = new (window.AudioContext || (window as any).webkitAudioContext)();
         }
@@ -230,7 +237,7 @@ function AudioRecorderSheet({ onAttach, onOpenChange, isRecorderOpen }: { onAtta
     }, [recordingStatus, visualize, drawWaveform, stopVisualization]);
 
 
-    const handleTimeUpdate = useCallback(() => {
+    const handleTimeUpdate = React.useCallback(() => {
         const player = audioPlayerRef.current;
         if (!player || player.paused) return;
         const progress = (player.currentTime / player.duration) * 100;
@@ -473,12 +480,144 @@ function AudioRecorderSheet({ onAttach, onOpenChange, isRecorderOpen }: { onAtta
     );
 }
 
+const eventFormSchema = z.object({
+  name: z.string().min(3, "Event name must be at least 3 characters.").max(70, "Event name is too long."),
+  description: z.string().max(280, "Description is too long.").optional(),
+  location: z.string().min(3, "Location is required."),
+  eventDate: z.date({ required_error: "An event date is required." }),
+  eventTime: z.string({ required_error: "An event time is required." }),
+  isPaid: z.boolean().default(false),
+});
+
+function EventFormSheet({ isOpen, onOpenChange, onAttach }: { isOpen: boolean, onOpenChange: (open: boolean) => void, onAttach: (details: EventDetails) => void }) {
+    const { user, firestore } = useFirebase();
+    const { toast } = useToast();
+    const [isSubmitting, setIsSubmitting] = useState(false);
+    const [isDatePickerOpen, setIsDatePickerOpen] = useState(false);
+
+    const form = useForm<z.infer<typeof eventFormSchema>>({
+        resolver: zodResolver(eventFormSchema),
+        defaultValues: {
+            name: "",
+            description: "",
+            location: "",
+            eventDate: new Date(),
+            eventTime: format(new Date(), "HH:mm"),
+            isPaid: false,
+        },
+    });
+
+    const onSubmitEvent = async (values: z.infer<typeof eventFormSchema>) => {
+        if (!user || !firestore) return;
+        setIsSubmitting(true);
+        try {
+            const newEventRef = doc(collection(firestore, "events"));
+            const combinedTimestamp = combineDateAndTime(values.eventDate, values.eventTime);
+
+            const newEventData: Omit<Event, 'id'> = {
+                authorId: user.uid,
+                name: values.name,
+                description: values.description,
+                location: values.location,
+                eventTimestamp: Timestamp.fromDate(combinedTimestamp),
+                isPaid: values.isPaid,
+            };
+
+            await setDoc(newEventRef, newEventData);
+
+            onAttach({ id: newEventRef.id, ...newEventData });
+            toast({ title: "Event Attached", description: "Your event has been linked to the post." });
+            onOpenChange(false);
+            form.reset();
+
+        } catch (error) {
+            console.error("Error creating event:", error);
+            const permissionError = new FirestorePermissionError({ path: 'events', operation: 'create', requestResourceData: values });
+            errorEmitter.emit('permission-error', permissionError);
+            toast({ variant: "destructive", title: "Error", description: "Could not create event." });
+        } finally {
+            setIsSubmitting(false);
+        }
+    }
+    
+    return (
+        <Sheet open={isOpen} onOpenChange={onOpenChange}>
+            <SheetContent side="bottom" className="h-screen flex flex-col p-0 rounded-t-2xl">
+                <SheetHeader className="sr-only">
+                    <SheetTitle>Create Event</SheetTitle>
+                </SheetHeader>
+                <div className="z-10 flex items-center justify-between p-2 border-b bg-background sticky top-0 h-14">
+                    <Button variant="ghost" size="icon" onClick={() => onOpenChange(false)}><X className="h-4 w-4" /></Button>
+                    <h2 className="text-base font-bold">Create Event</h2>
+                    <Button form="event-form" type="submit" disabled={isSubmitting} className="rounded-full px-6 font-bold">
+                        {isSubmitting ? <Loader2 className="h-4 w-4 animate-spin" /> : 'Attach'}
+                    </Button>
+                </div>
+                <div className="flex-grow overflow-y-auto">
+                    <Form {...form}>
+                        <form id="event-form" onSubmit={form.handleSubmit(onSubmitEvent)} className="divide-y">
+                            <FormField control={form.control} name="name" render={({ field }) => (
+                                <FormItem className="flex items-center justify-between p-4">
+                                    <FormLabel>Name</FormLabel>
+                                    <FormControl><Input placeholder="Event Name" {...field} className="text-right border-0 shadow-none focus-visible:ring-0 max-w-[70%]" /></FormControl>
+                                </FormItem>
+                            )} />
+                             <FormField control={form.control} name="location" render={({ field }) => (
+                                <FormItem className="flex items-center justify-between p-4">
+                                    <FormLabel>Location</FormLabel>
+                                    <FormControl><Input placeholder="e.g., Online or City" {...field} className="text-right border-0 shadow-none focus-visible:ring-0 max-w-[70%]" /></FormControl>
+                                </FormItem>
+                            )} />
+                            <FormField control={form.control} name="eventDate" render={({ field }) => (
+                                <FormItem className="flex items-center justify-between p-4">
+                                    <FormLabel>Date</FormLabel>
+                                     <Popover open={isDatePickerOpen} onOpenChange={setIsDatePickerOpen}>
+                                        <PopoverTrigger asChild>
+                                            <FormControl>
+                                                <Button variant={"outline"} className={cn("pl-3 text-left font-normal", !field.value && "text-muted-foreground")}>
+                                                    {field.value ? format(field.value, "PPP") : <span>Pick a date</span>}
+                                                </Button>
+                                            </FormControl>
+                                        </PopoverTrigger>
+                                        <PopoverContent className="w-auto p-0" align="end">
+                                            <Calendar mode="single" selected={field.value} onSelect={(date) => { field.onChange(date); setIsDatePickerOpen(false); }} initialFocus />
+                                        </PopoverContent>
+                                    </Popover>
+                                </FormItem>
+                            )} />
+                            <FormField control={form.control} name="eventTime" render={({ field }) => (
+                                <FormItem className="flex items-center justify-between p-4">
+                                    <FormLabel>Time</FormLabel>
+                                    <FormControl><Input type="time" {...field} className="text-right border-0 shadow-none focus-visible:ring-0 max-w-[70%]" /></FormControl>
+                                </FormItem>
+                            )} />
+                             <FormField control={form.control} name="isPaid" render={({ field }) => (
+                                <FormItem className="flex items-center justify-between p-4">
+                                    <FormLabel>Ticketed Event</FormLabel>
+                                    <FormControl><Switch checked={field.value} onCheckedChange={field.onChange} /></FormControl>
+                                </FormItem>
+                            )} />
+                            <FormField control={form.control} name="description" render={({ field }) => (
+                                <FormItem className="p-4">
+                                    <FormLabel>Description (Optional)</FormLabel>
+                                    <FormControl><Textarea placeholder="Add more details about your event" {...field} /></FormControl>
+                                </FormItem>
+                            )} />
+                        </form>
+                    </Form>
+                </div>
+            </SheetContent>
+        </Sheet>
+    );
+}
+
 function PostPageComponent() {
   const [isOpen, setIsOpen] = useState(true);
   const [showLinkInput, setShowLinkInput] = useState(false);
   const [isFetchingPreview, setIsFetchingPreview] = useState(false);
   const [isExpirationSheetOpen, setIsExpirationSheetOpen] = useState(false);
   const [isRecorderOpen, setIsRecorderOpen] = useState(false);
+  const [isEventSheetOpen, setIsEventSheetOpen] = useState(false);
   const [expirationLabel, setExpirationLabel] = useState("Never");
   const router = useRouter();
   const searchParams = useSearchParams();
@@ -537,6 +676,7 @@ function PostPageComponent() {
             audioUrl: postData.audioUrl,
             audioWaveform: postData.audioWaveform,
             audioDuration: postData.audioDuration,
+            eventDetails: postData.eventDetails,
           });
           setExpirationLabel(currentLabel);
         }
@@ -564,6 +704,7 @@ function PostPageComponent() {
   const quotedPost = form.watch("quotedPost");
   const audioUrl = form.watch("audioUrl");
   const audioDuration = form.watch("audioDuration");
+  const eventDetails = form.watch("eventDetails");
 
   const avatar = getAvatar(userProfile);
   const isAvatarUrl = avatar.startsWith('http');
@@ -623,6 +764,7 @@ function PostPageComponent() {
         commentsAllowed: values.commentsAllowed,
         linkMetadata: values.linkMetadata,
         quotedPost: values.quotedPost,
+        eventDetails: values.eventDetails,
       };
       if (expiration) updatedData.expiresAt = Timestamp.fromMillis(Date.now() + expiration * 1000);
       else updatedData.expiresAt = undefined;
@@ -639,6 +781,7 @@ function PostPageComponent() {
         if (values.isPoll) type = 'poll';
         else if (values.quotedPost) type = 'quote';
         else if (values.audioUrl) type = 'audio';
+        else if (values.eventDetails) type = 'event';
 
         const newPostData: any = {
           id: newPostRef.id,
@@ -659,6 +802,7 @@ function PostPageComponent() {
               audioWaveform: values.audioWaveform,
               audioDuration: values.audioDuration
           }),
+          ...(values.eventDetails && { eventDetails: values.eventDetails }),
         };
 
         if (expiration) newPostData.expiresAt = Timestamp.fromMillis(Date.now() + expiration * 1000);
@@ -705,6 +849,11 @@ function PostPageComponent() {
     form.setValue('audioWaveform', data.waveform);
     form.setValue('audioDuration', data.duration);
     form.trigger('content'); 
+  };
+  
+  const handleAttachEvent = (details: EventDetails) => {
+    form.setValue('eventDetails', details);
+    form.trigger('content');
   };
 
   const formatAudioDuration = (seconds: number | undefined) => {
@@ -762,6 +911,19 @@ function PostPageComponent() {
                                               <X className="h-4 w-4" />
                                           </Button>
                                       </div>
+                                  )}
+                                  
+                                  {eventDetails && (
+                                    <div className="relative p-3 border rounded-lg flex items-center gap-3">
+                                        <CalendarDays className="h-5 w-5 text-muted-foreground" />
+                                        <div className="flex-1">
+                                            <p className="text-sm font-medium">Event: {eventDetails.name}</p>
+                                            <p className="text-xs text-muted-foreground">{eventDetails.location}</p>
+                                        </div>
+                                        <Button variant="ghost" size="icon" className="h-7 w-7 rounded-full" onClick={() => form.setValue('eventDetails', undefined)}>
+                                            <X className="h-4 w-4" />
+                                        </Button>
+                                    </div>
                                   )}
 
                                   {quotedPost && (
@@ -826,14 +988,17 @@ function PostPageComponent() {
                                    
                                   <div className="p-4 border-t bg-background w-full fixed bottom-0 left-0 right-0">
                                       <div className="flex items-center space-x-1">
-                                          <Button type="button" variant="ghost" size="icon" onClick={() => setShowLinkInput(!showLinkInput)} disabled={!!linkMetadata || isEditMode || !!audioUrl}>
+                                          <Button type="button" variant="ghost" size="icon" onClick={() => setShowLinkInput(!showLinkInput)} disabled={!!linkMetadata || isEditMode || !!audioUrl || !!eventDetails}>
                                               <LinkIcon className="h-5 w-5 text-muted-foreground" />
                                           </Button>
-                                          <Button type="button" variant="ghost" size="icon" onClick={() => { if(!isEditMode && !audioUrl && !isPoll && !linkMetadata){setIsRecorderOpen(true)}}} disabled={isEditMode || !!audioUrl || isPoll || !!linkMetadata}>
+                                          <Button type="button" variant="ghost" size="icon" onClick={() => { if(!isEditMode && !audioUrl && !isPoll && !linkMetadata && !eventDetails){setIsRecorderOpen(true)}}} disabled={isEditMode || !!audioUrl || isPoll || !!linkMetadata || !!eventDetails}>
                                               <Mic className="h-5 w-5 text-muted-foreground" />
                                           </Button>
-                                          <Button type="button" variant="ghost" size="icon" onClick={handlePollToggle} disabled={isEditMode || !!audioUrl}>
+                                          <Button type="button" variant="ghost" size="icon" onClick={handlePollToggle} disabled={isEditMode || !!audioUrl || !!eventDetails}>
                                               <ListOrdered className={cn("h-5 w-5 text-muted-foreground", isPoll && "text-primary")} />
+                                          </Button>
+                                           <Button type="button" variant="ghost" size="icon" onClick={() => setIsEventSheetOpen(true)} disabled={isEditMode || !!audioUrl || isPoll || !!linkMetadata || !!quotedPost}>
+                                                <CalendarDays className="h-5 w-5 text-muted-foreground" />
                                           </Button>
                                           <div className="flex items-center gap-1">
                                               <Button type="button" variant="ghost" size="icon" onClick={() => setIsExpirationSheetOpen(true)}>
@@ -858,6 +1023,7 @@ function PostPageComponent() {
         </SheetContent>
       </Sheet>
       <AudioRecorderSheet onAttach={handleAttachAudio} onOpenChange={setIsRecorderOpen} isRecorderOpen={isRecorderOpen} />
+      <EventFormSheet isOpen={isEventSheetOpen} onOpenChange={setIsEventSheetOpen} onAttach={handleAttachEvent} />
       <Sheet open={isExpirationSheetOpen} onOpenChange={setIsExpirationSheetOpen}>
           <SheetContent side="bottom" className="rounded-t-2xl">
               <SheetHeader className="pb-4">

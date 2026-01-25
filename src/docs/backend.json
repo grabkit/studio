@@ -187,7 +187,7 @@
         "location": { "type": "string" },
         "reach": { "type": "number" }
       },
-      "required": ["id", "authorId", "name", "eventTimestamp", "location", "reach"]
+      "required": ["id", "authorId", "name", "eventTimestamp", "location"]
     },
     "EventDetails": {
         "title": "Event Details",
@@ -810,4 +810,3 @@
   }
 }
 
-    
