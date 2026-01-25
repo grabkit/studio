@@ -677,9 +677,9 @@ export default function MessagesPage() {
                                         />
                                     </div>
                                     <div>
-                                        <h2 className="text-lg font-bold font-headline mb-3">Q&A</h2>
+                                        <h2 className="text-lg font-bold font-headline mb-3">Ask space</h2>
                                         <RoomCard 
-                                            title="Ask & Answer"
+                                            title="Ask space"
                                             description="A place for curious minds. Ask questions, get answers, and learn something new."
                                             attendees={123}
                                             avatars={[
