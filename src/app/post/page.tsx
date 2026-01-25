@@ -2,7 +2,7 @@
 "use client";
 
 import * as React from "react";
-import { useState, Suspense, useEffect, useMemo, useCallback, type Dispatch, type SetStateAction } from "react";
+import { useState, Suspense, useEffect, useMemo, useCallback, useRef, type Dispatch, type SetStateAction } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { useForm, useFieldArray, type UseFormReturn } from "react-hook-form";
 import * as z from "zod";
@@ -1041,11 +1041,8 @@ function PostPageComponent() {
           </div>
         </SheetContent>
       </Sheet>
-      
       <EventFormSheet form={form} isOpen={isEventSheetOpen} onOpenChange={setIsEventSheetOpen} toast={toast} />
-
       <AudioRecorderSheet onAttach={handleAttachAudio} onOpenChange={setIsRecorderOpen} isRecorderOpen={isRecorderOpen} />
-      
       <Sheet open={isExpirationSheetOpen} onOpenChange={setIsExpirationSheetOpen}>
           <SheetContent side="bottom" className="rounded-t-2xl">
               <SheetHeader className="pb-4">
