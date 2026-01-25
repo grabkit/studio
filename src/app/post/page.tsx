@@ -103,8 +103,15 @@ const pollPostSchema = baseSchema.extend({
 const postSchema = z.discriminatedUnion("isPoll", [
   textPostSchema,
   pollPostSchema,
-]).refine(data => !!data.content || !!data.linkMetadata || !!data.quotedPost || !!data.audioUrl || !!data.eventDetails, {
-    message: "Post cannot be empty.",
+]).refine(data => {
+    if (data.eventDetails) {
+        // If eventDetails exists, it must have the required fields to be considered valid content
+        return !!data.eventDetails.name && !!data.eventDetails.location && !!data.eventDetails.eventTimestamp;
+    }
+    // Otherwise, check for other types of content
+    return !!data.content || !!data.linkMetadata || !!data.quotedPost || !!data.audioUrl;
+}, {
+    message: "Post cannot be empty. If creating an event, name and location are required.",
     path: ["content"],
 });
 
@@ -198,7 +205,7 @@ function AudioRecorderSheet({ onAttach, onOpenChange, isRecorderOpen }: { onAtta
         const animate = () => {
             animationFrameIdRef.current = requestAnimationFrame(animate);
 
-            analyserRef.current?.getByteFrequencyData(dataArray);
+            analyserRef.current?.getByteFrequencyFrequencyData(dataArray);
             let sum = 0;
             for(let i=0; i<bufferLength; i++) {
                 sum += dataArray[i];
@@ -869,7 +876,10 @@ function PostPageComponent() {
         finalEventDetails = { name, location, isAllDay, eventTimestamp: finalEventTimestamp, description, isPaid };
 
         if (!isAllDay && endTime && finalEventTimestamp) {
-            finalEventDetails.endTimestamp = combineDateAndTime(new Date(finalEventTimestamp), endTime);
+            const endTimestamp = combineDateAndTime(new Date(finalEventTimestamp), endTime);
+            if (endTimestamp) {
+                finalEventDetails.endTimestamp = endTimestamp;
+            }
         }
     }
 
@@ -900,7 +910,12 @@ function PostPageComponent() {
         if (processedValues.isPoll) type = 'poll';
         else if (processedValues.quotedPost) type = 'quote';
         else if (processedValues.audioUrl) type = 'audio';
-        else if (finalEventDetails?.name) type = 'event';
+        else if (finalEventDetails?.name) {
+            type = 'event';
+            if (finalEventDetails) {
+                finalEventDetails.id = newPostRef.id;
+            }
+        }
 
         const newPostData: any = {
           id: newPostRef.id,
@@ -921,7 +936,7 @@ function PostPageComponent() {
               audioWaveform: processedValues.audioWaveform,
               audioDuration: processedValues.audioDuration
           }),
-          ...(finalEventDetails && { eventDetails: { ...finalEventDetails, id: newPostRef.id } }),
+          ...(finalEventDetails && { eventDetails: { ...finalEventDetails } }),
         };
 
         if (expiration) newPostData.expiresAt = Timestamp.fromMillis(Date.now() + expiration * 1000);
@@ -1169,3 +1184,5 @@ export default function PostPage() {
     </Suspense>
   );
 }
+
+    
