@@ -26,7 +26,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { Form, FormControl, FormField, FormItem, FormMessage, FormLabel } from "@/components/ui/form";
+import { Form, FormControl, FormField, FormItem, FormMessage, FormLabel, FormDescription } from "@/components/ui/form";
 import { Loader2, X, ListOrdered, Plus, Link as LinkIcon, Image as ImageIcon, CalendarClock, Mic, Play, Square, RefreshCw, Send, Pause, StopCircle, Check, Circle, Undo2 } from "lucide-react";
 import { errorEmitter } from "@/firebase/error-emitter";
 import { FirestorePermissionError } from "@/firebase/errors";
@@ -38,7 +38,6 @@ import { QuotedPostCard } from "@/components/QuotedPostCard";
 import { useToast } from "@/hooks/use-toast";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Progress } from "@/components/ui/progress";
-import { FormDescription } from "@/components/ui/form";
 import { format } from "date-fns";
 import { Calendar } from "@/components/ui/calendar";
 
@@ -268,7 +267,7 @@ function AudioRecorderSheet({ onAttach, onOpenChange, isRecorderOpen }: { onAtta
                 setHasPermission(true);
                 setRecordingStatus("idle");
 
-                mediaRecorderRef.current = new MediaRecorder(stream);
+                mediaRecorderRef.current = new MediaRecorder(stream, { mimeType: 'audio/webm' });
                 
                 mediaRecorderRef.current.ondataavailable = (event) => { if (event.data.size > 0) audioChunksRef.current.push(event.data); };
                 
@@ -717,157 +716,158 @@ function PostPageComponent() {
   };
 
   return (
-    <Sheet open={isOpen} onOpenChange={setIsOpen}>
-      <SheetContent side="bottom" className="h-screen flex flex-col p-0 rounded-t-2xl">
-        <SheetHeader className="sr-only">
-            <SheetTitle>{isEditMode ? 'Edit Post' : 'Create Post'}</SheetTitle>
-        </SheetHeader>
-        <div className="z-10 flex items-center justify-between p-2 border-b bg-background sticky top-0 h-14">
-          <div className="flex items-center gap-2">
-            <SheetClose asChild><Button variant="ghost" size="icon"><X className="h-4 w-4" /></Button></SheetClose>
-            <h2 className="text-base font-bold">{isEditMode ? 'Edit Post' : 'Create Post'}</h2>
+    <>
+      <Sheet open={isOpen} onOpenChange={setIsOpen}>
+        <SheetContent side="bottom" className="h-screen flex flex-col p-0 rounded-t-2xl">
+          <SheetHeader className="sr-only">
+              <SheetTitle>{isEditMode ? 'Edit Post' : 'Create Post'}</SheetTitle>
+          </SheetHeader>
+          <div className="z-10 flex items-center justify-between p-2 border-b bg-background sticky top-0 h-14">
+            <div className="flex items-center gap-2">
+              <SheetClose asChild><Button variant="ghost" size="icon"><X className="h-4 w-4" /></Button></SheetClose>
+              <h2 className="text-base font-bold">{isEditMode ? 'Edit Post' : 'Create Post'}</h2>
+            </div>
+            <Button form="post-form" type="submit" disabled={form.formState.isSubmitting} className="rounded-full px-6 font-bold">
+              {form.formState.isSubmitting ? <Loader2 className="h-4 w-4 animate-spin" /> : isEditMode ? 'Save' : 'Post'}
+            </Button>
           </div>
-          <Button form="post-form" type="submit" disabled={form.formState.isSubmitting} className="rounded-full px-6 font-bold">
-            {form.formState.isSubmitting ? <Loader2 className="h-4 w-4 animate-spin" /> : isEditMode ? 'Save' : 'Post'}
-          </Button>
-        </div>
-        
-        <div className="flex-grow flex flex-col">
-            <div className="flex-grow overflow-y-auto px-4">
-                <div className="flex items-start space-x-4">
-                    <Avatar>
-                        <AvatarImage src={isAvatarUrl ? avatar : undefined} alt={formatUserId(user?.uid).toString()} />
-                        <AvatarFallback>{!isAvatarUrl ? avatar : ''}</AvatarFallback>
-                    </Avatar>
-                     <div className="w-full">
-                        <div className="flex justify-between items-center"><span className="font-semibold text-sm">{formatUserId(user?.uid)}</span></div>
-                        <Form {...form}>
-                            <form id="post-form" onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
-                                <FormField control={form.control} name="content" render={({ field }) => (
-                                    <FormItem>
-                                        <FormControl>
-                                            <Textarea placeholder={isPoll ? "Ask a question..." : "What's on your mind?"} className="border-none focus-visible:ring-0 !outline-none text-base resize-none -ml-2" rows={3} onPaste={handlePaste} {...field}/>
-                                        </FormControl>
-                                        <FormMessage />
-                                    </FormItem>
-                                )}/>
+          
+          <div className="flex-grow flex flex-col">
+              <div className="flex-grow overflow-y-auto px-4">
+                  <div className="flex items-start space-x-4">
+                      <Avatar>
+                          <AvatarImage src={isAvatarUrl ? avatar : undefined} alt={formatUserId(user?.uid).toString()} />
+                          <AvatarFallback>{!isAvatarUrl ? avatar : ''}</AvatarFallback>
+                      </Avatar>
+                       <div className="w-full">
+                          <div className="flex justify-between items-center"><span className="font-semibold text-sm">{formatUserId(user?.uid)}</span></div>
+                          <Form {...form}>
+                              <form id="post-form" onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
+                                  <FormField control={form.control} name="content" render={({ field }) => (
+                                      <FormItem>
+                                          <FormControl>
+                                              <Textarea placeholder={isPoll ? "Ask a question..." : "What's on your mind?"} className="border-none focus-visible:ring-0 !outline-none text-base resize-none -ml-2" rows={3} onPaste={handlePaste} {...field}/>
+                                          </FormControl>
+                                          <FormMessage />
+                                      </FormItem>
+                                  )}/>
 
-                                {audioUrl && (
-                                    <div className="relative p-3 border rounded-lg flex items-center gap-3">
-                                        <Play className="h-5 w-5 text-muted-foreground" />
-                                        <div className="flex-1">
-                                            <p className="text-sm font-medium">Voice Recording</p>
-                                            <p className="text-xs text-muted-foreground">{formatAudioDuration(audioDuration)}</p>
-                                        </div>
-                                        <Button variant="ghost" size="icon" className="h-7 w-7 rounded-full" onClick={() => handleAttachAudio({ url: '', waveform: [], duration: 0 })}>
-                                            <X className="h-4 w-4" />
-                                        </Button>
-                                    </div>
-                                )}
+                                  {audioUrl && (
+                                      <div className="relative p-3 border rounded-lg flex items-center gap-3">
+                                          <Play className="h-5 w-5 text-muted-foreground" />
+                                          <div className="flex-1">
+                                              <p className="text-sm font-medium">Voice Recording</p>
+                                              <p className="text-xs text-muted-foreground">{formatAudioDuration(audioDuration)}</p>
+                                          </div>
+                                          <Button variant="ghost" size="icon" className="h-7 w-7 rounded-full" onClick={() => handleAttachAudio({ url: '', waveform: [], duration: 0 })}>
+                                              <X className="h-4 w-4" />
+                                          </Button>
+                                      </div>
+                                  )}
 
-                                {quotedPost && (
-                                     <div className="relative">
-                                         <Button variant="ghost" size="icon" className="absolute top-1 right-1 h-7 w-7 bg-black/50 hover:bg-black/70 text-white hover:text-white rounded-full z-10" onClick={() => form.setValue("quotedPost", undefined)}>
-                                            <X className="h-4 w-4" />
-                                        </Button>
-                                        <QuotedPostCard post={quotedPost} />
-                                     </div>
-                                )}
+                                  {quotedPost && (
+                                       <div className="relative">
+                                           <Button variant="ghost" size="icon" className="absolute top-1 right-1 h-7 w-7 bg-black/50 hover:bg-black/70 text-white hover:text-white rounded-full z-10" onClick={() => form.setValue("quotedPost", undefined)}>
+                                              <X className="h-4 w-4" />
+                                          </Button>
+                                          <QuotedPostCard post={quotedPost} />
+                                       </div>
+                                  )}
 
-                                {linkMetadata?.url && (
-                                    <div className="mt-3 border rounded-lg overflow-hidden relative">
-                                        <Button variant="ghost" size="icon" className="absolute top-1 right-1 h-7 w-7 bg-black/50 hover:bg-black/70 text-white hover:text-white rounded-full z-10" onClick={() => form.setValue("linkMetadata", undefined)}>
-                                            <X className="h-4 w-4" />
-                                        </Button>
-                                        {linkMetadata.imageUrl && <div className="relative aspect-video bg-secondary"><Image src={linkMetadata.imageUrl} alt={linkMetadata.title || 'Link preview'} fill className="object-cover"/></div>}
-                                        <div className="p-3 bg-secondary/50">
-                                            <p className="text-xs text-muted-foreground uppercase tracking-wider">{form.getValues("linkMetadata.url") ? new URL(form.getValues("linkMetadata.url")!).hostname.replace('www.','') : ''}</p>
-                                            <p className="font-semibold text-sm truncate mt-0.5">{linkMetadata.title || linkMetadata.url}</p>
-                                        </div>
-                                    </div>
-                                )}
-                                
-                                {isFetchingPreview ? (
-                                    <div className="border rounded-lg p-4 flex items-center justify-center">
-                                        <Loader2 className="h-5 w-5 animate-spin text-muted-foreground" /><span className="ml-2 text-muted-foreground text-sm">Fetching preview...</span>
-                                    </div>
-                                ) : showLinkInput ? (
-                                    <FormField control={form.control} name="linkMetadata.url" render={({ field }) => (
-                                        <FormItem>
-                                            <FormControl>
-                                                 <div className="relative">
-                                                    <LinkIcon className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-                                                    <Input placeholder="https://..." value={field.value || ''} {...field} className="pl-9 bg-secondary" onBlur={(e) => fetchPreview(e.target.value)} />
-                                                 </div>
-                                            </FormControl>
-                                            <FormMessage />
-                                        </FormItem>
-                                    )}/>
-                                ) : null}
+                                  {linkMetadata?.url && (
+                                      <div className="mt-3 border rounded-lg overflow-hidden relative">
+                                          <Button variant="ghost" size="icon" className="absolute top-1 right-1 h-7 w-7 bg-black/50 hover:bg-black/70 text-white hover:text-white rounded-full z-10" onClick={() => form.setValue("linkMetadata", undefined)}>
+                                              <X className="h-4 w-4" />
+                                          </Button>
+                                          {linkMetadata.imageUrl && <div className="relative aspect-video bg-secondary"><Image src={linkMetadata.imageUrl} alt={linkMetadata.title || 'Link preview'} fill className="object-cover"/></div>}
+                                          <div className="p-3 bg-secondary/50">
+                                              <p className="text-xs text-muted-foreground uppercase tracking-wider">{form.getValues("linkMetadata.url") ? new URL(form.getValues("linkMetadata.url")!).hostname.replace('www.','') : ''}</p>
+                                              <p className="font-semibold text-sm truncate mt-0.5">{linkMetadata.title || linkMetadata.url}</p>
+                                          </div>
+                                      </div>
+                                  )}
+                                  
+                                  {isFetchingPreview ? (
+                                      <div className="border rounded-lg p-4 flex items-center justify-center">
+                                          <Loader2 className="h-5 w-5 animate-spin text-muted-foreground" /><span className="ml-2 text-muted-foreground text-sm">Fetching preview...</span>
+                                      </div>
+                                  ) : showLinkInput ? (
+                                      <FormField control={form.control} name="linkMetadata.url" render={({ field }) => (
+                                          <FormItem>
+                                              <FormControl>
+                                                   <div className="relative">
+                                                      <LinkIcon className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                                                      <Input placeholder="https://..." value={field.value || ''} {...field} className="pl-9 bg-secondary" onBlur={(e) => fetchPreview(e.target.value)} />
+                                                   </div>
+                                              </FormControl>
+                                              <FormMessage />
+                                          </FormItem>
+                                      )}/>
+                                  ) : null}
 
-                                 {isPoll && (
-                                    <div className="space-y-2 mt-4">
-                                        {fields.map((field, index) => (
-                                            <FormField key={field.id} control={form.control} name={`pollOptions.${index}.option`} render={({ field }) => (
-                                                <FormItem>
-                                                    <FormControl>
-                                                        <div className="flex items-center gap-2">
-                                                            <Input placeholder={`Option ${index + 1}`} {...field} className="bg-secondary"/>
-                                                            {fields.length > 2 && <Button variant="ghost" size="icon" type="button" onClick={() => remove(index)} className="rounded-full bg-primary hover:bg-primary/80 text-primary-foreground h-6 w-6"><X className="h-4 w-4" /></Button>}
-                                                        </div>
-                                                    </FormControl>
-                                                    <FormMessage />
-                                                </FormItem>
-                                            )}/>
-                                        ))}
-                                        {fields.length < 4 && <Button type="button" variant="outline" size="sm" onClick={() => append({option: ""})} className="w-full"><Plus className="h-4 w-4 mr-2" />Add option</Button>}
-                                        <FormMessage>{form.formState.errors.pollOptions?.root?.message || form.formState.errors.pollOptions?.message}</FormMessage>
-                                    </div>
-                                 )}
-                                 
-                                <div className="p-4 border-t bg-background w-full fixed bottom-0 left-0 right-0">
-                                    <div className="flex items-center space-x-1">
-                                        <Button type="button" variant="ghost" size="icon" onClick={() => setShowLinkInput(!showLinkInput)} disabled={!!linkMetadata || isEditMode || !!audioUrl}>
-                                            <LinkIcon className="h-5 w-5 text-muted-foreground" />
-                                        </Button>
-                                        <Button type="button" variant="ghost" size="icon" onClick={() => { if(!isEditMode && !audioUrl && !isPoll && !linkMetadata){setIsRecorderOpen(true)}}} disabled={isEditMode || !!audioUrl || isPoll || !!linkMetadata}>
-                                            <Mic className="h-5 w-5 text-muted-foreground" />
-                                        </Button>
-                                        <Button type="button" variant="ghost" size="icon" onClick={handlePollToggle} disabled={isEditMode || !!audioUrl}>
-                                            <ListOrdered className={cn("h-5 w-5 text-muted-foreground", isPoll && "text-primary")} />
-                                        </Button>
-                                        <div className="flex items-center gap-1">
-                                            <Button type="button" variant="ghost" size="icon" onClick={() => setIsExpirationSheetOpen(true)}>
-                                                <CalendarClock className="h-5 w-5 text-muted-foreground" />
-                                            </Button>
-                                            <span className="text-xs text-muted-foreground whitespace-nowrap">{expirationLabel}</span>
-                                        </div>
-                                            <FormField control={form.control} name="commentsAllowed" render={({ field }) => (
-                                                <FormItem className="flex items-center space-x-2 space-y-0 pl-2">
-                                                    <Switch id="comments-allowed" checked={field.value} onCheckedChange={field.onChange}/>
-                                                    <FormLabel htmlFor="comments-allowed" className="text-sm">Replies</FormLabel>
-                                                </FormItem>
-                                            )}/>
-                                    </div>
-                                </div>
-                            </form>
-                        </Form>
-                    </div>
-                </div>
-            </div>
-        </div>
-      </SheetContent>
-    </Sheet>
-    <AudioRecorderSheet onAttach={handleAttachAudio} onOpenChange={setIsRecorderOpen} isRecorderOpen={isRecorderOpen} />
-    <Sheet open={isExpirationSheetOpen} onOpenChange={setIsExpirationSheetOpen}>
-        <SheetContent side="bottom" className="rounded-t-2xl">
-            <SheetHeader className="pb-4"><SheetTitle>Post Expiration</SheetTitle><FormDescription>The post will be deleted after this duration.</FormDescription></SheetHeader>
-            <div className="flex flex-col space-y-2">
-                {expirationOptions.map(opt => (<Button key={opt.value} variant="outline" className="justify-start rounded-[5px]" onClick={() => handleSelectExpiration(opt.value, opt.label)}>{opt.label}</Button>))}
-                <Button variant="outline" className="justify-start rounded-[5px]" onClick={handleClearExpiration}>Never Expire</Button>
-            </div>
+                                   {isPoll && (
+                                      <div className="space-y-2 mt-4">
+                                          {fields.map((field, index) => (
+                                              <FormField key={field.id} control={form.control} name={`pollOptions.${index}.option`} render={({ field }) => (
+                                                  <FormItem>
+                                                      <FormControl>
+                                                          <div className="flex items-center gap-2">
+                                                              <Input placeholder={`Option ${index + 1}`} {...field} className="bg-secondary"/>
+                                                              {fields.length > 2 && <Button variant="ghost" size="icon" type="button" onClick={() => remove(index)} className="rounded-full bg-primary hover:bg-primary/80 text-primary-foreground h-6 w-6"><X className="h-4 w-4" /></Button>}
+                                                          </div>
+                                                      </FormControl>
+                                                      <FormMessage />
+                                                  </FormItem>
+                                              )}/>
+                                          ))}
+                                          {fields.length < 4 && <Button type="button" variant="outline" size="sm" onClick={() => append({option: ""})} className="w-full"><Plus className="h-4 w-4 mr-2" />Add option</Button>}
+                                          <FormMessage>{form.formState.errors.pollOptions?.root?.message || form.formState.errors.pollOptions?.message}</FormMessage>
+                                      </div>
+                                   )}
+                                   
+                                  <div className="p-4 border-t bg-background w-full fixed bottom-0 left-0 right-0">
+                                      <div className="flex items-center space-x-1">
+                                          <Button type="button" variant="ghost" size="icon" onClick={() => setShowLinkInput(!showLinkInput)} disabled={!!linkMetadata || isEditMode || !!audioUrl}>
+                                              <LinkIcon className="h-5 w-5 text-muted-foreground" />
+                                          </Button>
+                                          <Button type="button" variant="ghost" size="icon" onClick={() => { if(!isEditMode && !audioUrl && !isPoll && !linkMetadata){setIsRecorderOpen(true)}}} disabled={isEditMode || !!audioUrl || isPoll || !!linkMetadata}>
+                                              <Mic className="h-5 w-5 text-muted-foreground" />
+                                          </Button>
+                                          <Button type="button" variant="ghost" size="icon" onClick={handlePollToggle} disabled={isEditMode || !!audioUrl}>
+                                              <ListOrdered className={cn("h-5 w-5 text-muted-foreground", isPoll && "text-primary")} />
+                                          </Button>
+                                          <div className="flex items-center gap-1">
+                                              <Button type="button" variant="ghost" size="icon" onClick={() => setIsExpirationSheetOpen(true)}>
+                                                  <CalendarClock className="h-5 w-5 text-muted-foreground" />
+                                              </Button>
+                                              <span className="text-xs text-muted-foreground whitespace-nowrap">{expirationLabel}</span>
+                                          </div>
+                                              <FormField control={form.control} name="commentsAllowed" render={({ field }) => (
+                                                  <FormItem className="flex items-center space-x-2 space-y-0 pl-2">
+                                                      <Switch id="comments-allowed" checked={field.value} onCheckedChange={field.onChange}/>
+                                                      <FormLabel htmlFor="comments-allowed" className="text-sm">Replies</FormLabel>
+                                                  </FormItem>
+                                              )}/>
+                                      </div>
+                                  </div>
+                              </form>
+                          </Form>
+                      </div>
+                  </div>
+              </div>
+          </div>
         </SheetContent>
-    </Sheet>
+      </Sheet>
+      <AudioRecorderSheet onAttach={handleAttachAudio} onOpenChange={setIsRecorderOpen} isRecorderOpen={isRecorderOpen} />
+      <Sheet open={isExpirationSheetOpen} onOpenChange={setIsExpirationSheetOpen}>
+          <SheetContent side="bottom" className="rounded-t-2xl">
+              <SheetHeader className="pb-4"><SheetTitle>Post Expiration</SheetTitle><FormDescription>The post will be deleted after this duration.</FormDescription></SheetHeader>
+              <div className="flex flex-col space-y-2">
+                  {expirationOptions.map(opt => (<Button key={opt.value} variant="outline" className="justify-start rounded-[5px]" onClick={() => handleSelectExpiration(opt.value, opt.label)}>{opt.label}</Button>))}
+                  <Button variant="outline" className="justify-start rounded-[5px]" onClick={handleClearExpiration}>Never Expire</Button>
+              </div>
+          </SheetContent>
+      </Sheet>
     </>
   );
 }
@@ -879,5 +879,3 @@ export default function PostPage() {
     </Suspense>
   );
 }
-
-    
