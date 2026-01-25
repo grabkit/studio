@@ -1,7 +1,8 @@
+
 'use client';
 
 import type { EventDetails } from '@/lib/types';
-import { cn, formatEventDate, formatEventDay, formatEventTimeRange, formatEventDuration } from '@/lib/utils';
+import { cn, formatEventDay, formatEventTimeRange, formatEventDuration } from '@/lib/utils';
 import { useMemo, useState } from 'react';
 import { Sheet, SheetTrigger, SheetContent, SheetHeader, SheetTitle } from '@/components/ui/sheet';
 import { MapPin, CalendarDays, AlignLeft } from 'lucide-react';
@@ -74,7 +75,7 @@ export function EventCard({ eventDetails }: { eventDetails: EventDetails }) {
     return (
         <Sheet open={isOpen} onOpenChange={setIsOpen}>
             <SheetTrigger asChild>
-                <div className="mt-2 border rounded-xl bg-background text-card-foreground shadow-sm overflow-hidden cursor-pointer hover:bg-secondary/50 transition-colors">
+                <div className="mt-2 border border-dashed rounded-xl bg-background text-card-foreground shadow-sm overflow-hidden cursor-pointer hover:bg-secondary/50 transition-colors">
                     <div className="px-4 py-2 flex justify-between items-center text-xs font-medium text-muted-foreground uppercase tracking-wide">
                         <span>{formatEventDay(startDate)}</span>
                         {eventDetails.isPaid ? (
