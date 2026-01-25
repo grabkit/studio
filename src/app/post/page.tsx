@@ -1,7 +1,8 @@
+
 "use client";
 
 import * as React from "react";
-import { useState, Suspense, useEffect, useMemo, useRef, useCallback } from "react";
+import { useState, Suspense, useEffect, useRef, useCallback, useMemo } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { useForm, useFieldArray } from "react-hook-form";
 import * as z from "zod";
@@ -19,6 +20,7 @@ import {
   SheetDescription,
   SheetClose,
   SheetHeader,
+  SheetTrigger,
 } from "@/components/ui/sheet";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -36,6 +38,7 @@ import { QuotedPostCard } from "@/components/QuotedPostCard";
 import { useToast } from "@/hooks/use-toast";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Progress } from "@/components/ui/progress";
+import { FormDescription } from "@/components/ui/form";
 
 const pollOptionSchema = z.object({
   option: z.string().min(1, "Option cannot be empty.").max(100, "Option is too long."),
@@ -411,53 +414,55 @@ function AudioRecorderSheet({ onAttach, onOpenChange, isRecorderOpen }: { onAtta
 
 
     return (
-        <SheetContent side="bottom" className="h-auto p-4 rounded-t-2xl">
-            <SheetHeader className="text-center mb-4">
-                <SheetTitle>Voice Post</SheetTitle>
-            </SheetHeader>
-            
-            <div className="flex flex-col items-center gap-4">
-                <p className="text-2xl font-mono tracking-tighter text-center h-8">
-                    {formatTime(duration)} / {formatTime(maxDuration)}
-                </p>
+        <Sheet open={isRecorderOpen} onOpenChange={onOpenChange}>
+            <SheetContent side="bottom" className="h-auto p-4 rounded-t-2xl">
+                <SheetHeader className="text-center mb-4">
+                    <SheetTitle>Voice Post</SheetTitle>
+                </SheetHeader>
+                
+                <div className="flex flex-col items-center gap-4">
+                    <p className="text-2xl font-mono tracking-tighter text-center h-8">
+                        {formatTime(duration)} / {formatTime(maxDuration)}
+                    </p>
 
-                <div className="w-full h-20 bg-secondary rounded-lg">
-                     <canvas ref={canvasRef} className="w-full h-full" />
+                    <div className="w-full h-20 bg-secondary rounded-lg">
+                        <canvas ref={canvasRef} className="w-full h-full" />
+                    </div>
+                    
+                    {recordingStatus === 'idle' && (
+                        <Button size="icon" className="h-16 w-16 rounded-full" onClick={startRecording}>
+                            <Mic className="h-8 w-8" />
+                        </Button>
+                    )}
+
+                    {(recordingStatus === 'recording' || recordingStatus === 'paused') && (
+                        <div className="flex items-center justify-center gap-6">
+                            <Button size="icon" variant="outline" className="h-12 w-12 rounded-full" onClick={recordingStatus === 'recording' ? pauseRecording : startRecording}>
+                                {recordingStatus === 'recording' ? <Pause className="h-6 w-6" fill="currentColor" /> : <Mic className="h-6 w-6" />}
+                            </Button>
+                            <Button size="icon" variant="destructive" className="h-12 w-12 rounded-full" onClick={stopRecording}>
+                                <Check className="h-6 w-6" />
+                            </Button>
+                        </div>
+                    )}
+                    
+                    {recordingStatus === 'recorded' && (
+                        <div className="flex items-center justify-center gap-4">
+                            <Button size="icon" variant="outline" className="h-12 w-12 rounded-full" onClick={handleRetake}>
+                                <Undo2 className="h-6 w-6" />
+                            </Button>
+                            <Button size="icon" variant="default" className="h-16 w-16 rounded-full" onClick={handlePlayPausePreview}>
+                                {isPlayingPreview ? <Pause className="h-7 w-7" fill="currentColor" /> : <Play className="h-7 w-7" fill="currentColor" />}
+                            </Button>
+                            <Button size="icon" variant="destructive" className="h-12 w-12 rounded-full" onClick={handleAttach}>
+                                <Send className="h-6 w-6" />
+                            </Button>
+                        </div>
+                    )}
                 </div>
-                
-                {recordingStatus === 'idle' && (
-                     <Button size="icon" className="h-16 w-16 rounded-full" onClick={startRecording}>
-                        <Mic className="h-8 w-8" />
-                    </Button>
-                )}
-
-                {(recordingStatus === 'recording' || recordingStatus === 'paused') && (
-                    <div className="flex items-center justify-center gap-6">
-                         <Button size="icon" variant="outline" className="h-12 w-12 rounded-full" onClick={recordingStatus === 'recording' ? pauseRecording : startRecording}>
-                            {recordingStatus === 'recording' ? <Pause className="h-6 w-6" fill="currentColor" /> : <Mic className="h-6 w-6" />}
-                        </Button>
-                        <Button size="icon" variant="destructive" className="h-12 w-12 rounded-full" onClick={stopRecording}>
-                            <Check className="h-6 w-6" />
-                        </Button>
-                    </div>
-                )}
-                
-                {recordingStatus === 'recorded' && (
-                     <div className="flex items-center justify-center gap-4">
-                        <Button size="icon" variant="outline" className="h-12 w-12 rounded-full" onClick={handleRetake}>
-                            <Undo2 className="h-6 w-6" />
-                        </Button>
-                        <Button size="icon" variant="default" className="h-16 w-16 rounded-full" onClick={handlePlayPausePreview}>
-                            {isPlayingPreview ? <Pause className="h-7 w-7" fill="currentColor" /> : <Play className="h-7 w-7" fill="currentColor" />}
-                        </Button>
-                        <Button size="icon" variant="destructive" className="h-12 w-12 rounded-full" onClick={handleAttach}>
-                            <Send className="h-6 w-6" />
-                        </Button>
-                    </div>
-                )}
-            </div>
-            <audio ref={audioPlayerRef} className="hidden" />
-        </SheetContent>
+                <audio ref={audioPlayerRef} className="hidden" />
+            </SheetContent>
+        </Sheet>
     );
 }
 
@@ -770,7 +775,7 @@ function PostPageComponent() {
                                         </Button>
                                         {linkMetadata.imageUrl && <div className="relative aspect-video bg-secondary"><Image src={linkMetadata.imageUrl} alt={linkMetadata.title || 'Link preview'} fill className="object-cover"/></div>}
                                         <div className="p-3 bg-secondary/50">
-                                            {linkMetadata.url && <p className="text-xs text-muted-foreground uppercase tracking-wider">{new URL(linkMetadata.url).hostname.replace('www.','')}</p>}
+                                            <p className="text-xs text-muted-foreground uppercase tracking-wider">{new URL(linkMetadata.url).hostname.replace('www.','')}</p>
                                             <p className="font-semibold text-sm truncate mt-0.5">{linkMetadata.title || linkMetadata.url}</p>
                                         </div>
                                     </div>
@@ -786,7 +791,7 @@ function PostPageComponent() {
                                             <FormControl>
                                                  <div className="relative">
                                                     <LinkIcon className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-                                                    <Input placeholder="https://..." {...field} value={field.value || ''} className="pl-9 bg-secondary" onBlur={(e) => fetchPreview(e.target.value)} />
+                                                    <Input placeholder="https://..." value={field.value || ''} {...field} className="pl-9 bg-secondary" onBlur={(e) => fetchPreview(e.target.value)} />
                                                  </div>
                                             </FormControl>
                                             <FormMessage />
