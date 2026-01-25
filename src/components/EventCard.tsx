@@ -11,43 +11,43 @@ import { Badge } from '@/components/ui/badge';
 
 const colorSchemes = [
     {
-        border: 'border-l-red-500',
+        line: 'bg-red-500',
         bg: 'bg-red-500/10',
         text: 'text-red-800 dark:text-red-300',
         durationBg: 'bg-red-100 text-red-800 dark:bg-red-900/50 dark:text-red-300',
     },
     {
-        border: 'border-l-pink-500',
+        line: 'bg-pink-500',
         bg: 'bg-pink-500/10',
         text: 'text-pink-800 dark:text-pink-300',
         durationBg: 'bg-pink-100 text-pink-800 dark:bg-pink-900/50 dark:text-pink-300',
     },
     {
-        border: 'border-l-blue-500',
+        line: 'bg-blue-500',
         bg: 'bg-blue-500/10',
         text: 'text-blue-800 dark:text-blue-300',
         durationBg: 'bg-blue-100 text-blue-800 dark:bg-blue-900/50 dark:text-blue-300',
     },
     {
-        border: 'border-l-green-500',
+        line: 'bg-green-500',
         bg: 'bg-green-500/10',
         text: 'text-green-800 dark:text-green-300',
         durationBg: 'bg-green-100 text-green-800 dark:bg-green-900/50 dark:text-green-300',
     },
     {
-        border: 'border-l-purple-500',
+        line: 'bg-purple-500',
         bg: 'bg-purple-500/10',
         text: 'text-purple-800 dark:text-purple-300',
         durationBg: 'bg-purple-100 text-purple-800 dark:bg-purple-900/50 dark:text-purple-300',
     },
     {
-        border: 'border-l-indigo-500',
+        line: 'bg-indigo-500',
         bg: 'bg-indigo-500/10',
         text: 'text-indigo-800 dark:text-indigo-300',
         durationBg: 'bg-indigo-100 text-indigo-800 dark:bg-indigo-900/50 dark:text-indigo-300',
     },
     {
-        border: 'border-l-yellow-500',
+        line: 'bg-yellow-500',
         bg: 'bg-yellow-500/10',
         text: 'text-yellow-800 dark:text-yellow-300',
         durationBg: 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900/50 dark:text-yellow-300',
@@ -87,16 +87,22 @@ export function EventCard({ eventDetails }: { eventDetails: EventDetails }) {
                     <div className="px-4">
                         <div className="border-b border-dashed border-border"></div>
                     </div>
-                    <div className={cn("p-4 flex items-start gap-3 pl-3", scheme.border, scheme.bg, 'border-l-4')}>
-                        <div className="flex-1 pl-1">
-                            <p className={cn("font-semibold", scheme.text)}>{eventDetails.name}</p>
-                            <p className={cn("text-sm opacity-90", scheme.text)}>{formatEventTimeRange(startDate, endDate, eventDetails.isAllDay)}</p>
-                        </div>
-                        {duration && (
-                            <div className={cn("text-xs font-bold px-2 py-0.5 rounded-md", scheme.durationBg)}>
-                                {duration}
+                    <div className={cn("relative p-4 overflow-hidden", scheme.bg)}>
+                        <div className={cn(
+                            "absolute left-2 top-1/2 -translate-y-1/2 h-3/4 w-1 rounded-full",
+                            scheme.line
+                        )}></div>
+                        <div className="flex items-start gap-3 pl-4">
+                            <div className="flex-1">
+                                <p className={cn("font-semibold", scheme.text)}>{eventDetails.name}</p>
+                                <p className={cn("text-sm opacity-90", scheme.text)}>{formatEventTimeRange(startDate, endDate, eventDetails.isAllDay)}</p>
                             </div>
-                        )}
+                            {duration && (
+                                <div className={cn("text-xs font-bold px-2 py-0.5 rounded-md", scheme.durationBg)}>
+                                    {duration}
+                                </div>
+                            )}
+                        </div>
                     </div>
                 </div>
             </SheetTrigger>
