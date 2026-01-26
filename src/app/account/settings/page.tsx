@@ -1,4 +1,3 @@
-
 "use client";
 
 import React from "react";
@@ -20,12 +19,12 @@ function SettingsItem({ href, label, icon: Icon, value }: { href: string, label:
     return (
         <Link href={href} className="flex items-center justify-between p-4 transition-colors hover:bg-accent/50 cursor-pointer first:rounded-t-xl last:rounded-b-xl">
             <div className="flex items-center space-x-4">
-                <Icon className="h-5 w-5 text-muted-foreground" />
+                <Icon className="h-5 w-5 text-foreground" />
                 <span className="text-base">{label}</span>
             </div>
             <div className="flex items-center space-x-2">
                 {value && <span className="text-muted-foreground">{value}</span>}
-                <ChevronRight className="h-5 w-5 text-muted-foreground" />
+                <ChevronRight className="h-5 w-5 text-foreground" />
             </div>
         </Link>
     )
@@ -83,7 +82,7 @@ export default function SettingsPage() {
             >
                 <div className="p-4 space-y-6 overflow-y-auto h-full">
                     {/* User Info Card */}
-                     <div className="bg-card p-4 rounded-xl flex items-center space-x-4">
+                     <div className="bg-card p-4 rounded-xl flex items-center space-x-4 shadow-none">
                         <Avatar className="h-16 w-16">
                              <AvatarImage src={isAvatarUrl ? avatar : undefined} alt={userProfile?.name} />
                              <AvatarFallback className="text-2xl">{!isAvatarUrl ? avatar : ''}</AvatarFallback>
@@ -97,7 +96,7 @@ export default function SettingsPage() {
                     {/* Account Section */}
                     <div>
                         <h3 className="px-2 mb-1 text-sm font-semibold text-muted-foreground">Account</h3>
-                        <div className="bg-card rounded-xl divide-y">
+                        <div className="bg-card rounded-xl divide-y shadow-none">
                             <SettingsItem icon={User} label="Manage Profile" href="/account/settings/edit-profile" />
                             <SettingsItem icon={Lock} label="Password & Security" href="#" />
                             <SettingsItem icon={Bell} label="Notifications" href="/account/settings/notifications" />
@@ -108,7 +107,7 @@ export default function SettingsPage() {
                     {/* Preferences Section */}
                     <div>
                         <h3 className="px-2 mb-1 text-sm font-semibold text-muted-foreground">Preferences</h3>
-                        <div className="bg-card rounded-xl divide-y">
+                        <div className="bg-card rounded-xl divide-y shadow-none">
                             <SettingsItem icon={Info} label="About Us" href="/account/settings/about" />
                             <SettingsItem icon={Sun} label="Theme" value="Light" href="#" />
                         </div>
@@ -117,7 +116,7 @@ export default function SettingsPage() {
                     {/* Support Section */}
                     <div>
                         <h3 className="px-2 mb-1 text-sm font-semibold text-muted-foreground">Support</h3>
-                        <div className="bg-card rounded-xl">
+                        <div className="bg-card rounded-xl shadow-none">
                             <SettingsItem icon={HelpCircle} label="Help Center" href="/account/settings/help" />
                         </div>
                     </div>
