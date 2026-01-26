@@ -22,6 +22,7 @@ import { cn, getAvatar, formatMessageTimestamp, formatUserId, formatDateSeparato
 import type { Room, RoomMessage, User } from '@/lib/types';
 import { isSameDay } from 'date-fns';
 import { motion } from 'framer-motion';
+import { usePresence } from '@/hooks/usePresence';
 
 const messageFormSchema = z.object({
   text: z.string().min(1, "Message cannot be empty").max(1000),
@@ -60,6 +61,7 @@ function RoomHeader({ room, participantsCount }: { room: WithId<Room> | null, pa
 function RoomMessageBubble({ message, showAvatarAndName }: { message: WithId<RoomMessage>, showAvatarAndName: boolean }) {
     const { firestore, user: currentUser } = useFirebase();
     const isOwnMessage = message.senderId === currentUser?.uid;
+    const { isOnline } = usePresence(message.senderId);
 
     const senderRef = useMemoFirebase(() => doc(firestore, 'users', message.senderId), [firestore, message.senderId]);
     const { data: sender } = useDoc<User>(senderRef);
@@ -93,7 +95,7 @@ function RoomMessageBubble({ message, showAvatarAndName }: { message: WithId<Roo
             className={cn("flex gap-2", !showAvatarAndName && "pl-10")}
         >
             {showAvatarAndName && (
-                <Avatar className="h-8 w-8">
+                <Avatar className="h-8 w-8" showStatus={true} isOnline={isOnline}>
                     <AvatarImage src={isAvatarUrl ? avatar : undefined} />
                     <AvatarFallback>{!isAvatarUrl ? avatar : ''}</AvatarFallback>
                 </Avatar>
