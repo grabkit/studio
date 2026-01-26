@@ -76,7 +76,7 @@ export const notifyForAfterDarkRoom = functions.pubsub
   .onRun(async (context) => {
     await createRoomNotification(
       "after_dark",
-      "After Dark room activate aindhi, vachi chat cheyandi",
+      "The 'After Dark' room is now open. Join the conversation!",
     );
     return null;
   });
@@ -87,7 +87,7 @@ export const notifyForAskSpaceRoom = functions.pubsub
   .onRun(async (context) => {
     await createRoomNotification(
       "ask_space",
-      "Ask Space lo kottha prashnalu vachayi, chusi mee samadhanalu cheppandi.",
+      "New questions are waiting for you in the 'Ask Space'. Join the discussion and share your thoughts.",
     );
     return null;
   });
