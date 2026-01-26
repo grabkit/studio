@@ -102,7 +102,7 @@ function RoomMessageBubble({ message, showAvatarAndName }: { message: WithId<Roo
 
     const bubble = (
         <div className={cn(
-            "flex flex-col rounded-2xl max-w-[80%] inline-block",
+            "flex flex-col rounded-2xl max-w-[80%]",
             isOwnMessage ? "bg-primary text-primary-foreground rounded-br-none" : "bg-secondary text-foreground rounded-bl-none"
         )}>
             <p className="px-3 py-1.5 text-base break-words whitespace-pre-wrap">{message.text}</p>
@@ -126,12 +126,19 @@ function RoomMessageBubble({ message, showAvatarAndName }: { message: WithId<Roo
                         <AvatarFallback>{!isAvatarUrl ? avatar : ''}</AvatarFallback>
                     </Avatar>
                 )}
-                <div className={cn(!isOwnMessage && "flex-1")}>
-                    {!isOwnMessage && showAvatarAndName && <p className="text-xs font-semibold mb-0.5">{sender ? formatUserId(sender.id) : '...'}</p>}
+                
+                {!isOwnMessage ? (
+                    <div className="flex-1">
+                        {showAvatarAndName && <p className="text-xs font-semibold mb-0.5">{sender ? formatUserId(sender.id) : '...'}</p>}
+                        <SheetTrigger asChild>
+                            {bubble}
+                        </SheetTrigger>
+                    </div>
+                ) : (
                     <SheetTrigger asChild>
-                        <div>{bubble}</div>
+                        {bubble}
                     </SheetTrigger>
-                </div>
+                )}
             </motion.div>
             <SheetContent side="bottom" className="rounded-t-2xl">
                 <SheetHeader className="sr-only">
