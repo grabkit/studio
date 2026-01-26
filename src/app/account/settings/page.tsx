@@ -34,7 +34,7 @@ function SettingsItem({ href, label, icon: Icon }: { href: string, label: string
     return (
         <Link href={href} className="flex items-center justify-between p-4 transition-colors hover:bg-accent cursor-pointer">
             <div className="flex items-center space-x-4">
-                <Icon className="h-5 w-5 text-muted-foreground" />
+                <Icon className="h-5 w-5 text-muted-foreground" fill="currentColor" />
                 <span className="text-base">{label}</span>
             </div>
             <ChevronRight className="h-5 w-5 text-muted-foreground" />
