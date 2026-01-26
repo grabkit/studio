@@ -240,18 +240,19 @@ export default function RoomChatPage() {
     useEffect(() => {
         if (!isRoomLoading && !room && firestore && roomId && user) {
             // Room doesn't exist, let's create it.
-            const newRoomData: Omit<Room, 'participantIds'> = {
+            const newRoomData: Room = {
                 id: roomId,
                 name: roomId === 'after_dark' ? 'After Dark' : 'Ask Space',
                 description: roomId === 'after_dark' ? 'Join late-night conversations from 12 AM to 4 AM — meet new people and enjoy real-time chats.' : 'A place for curious minds. Ask questions, get answers, and learn something new.',
                 theme: roomId === 'after_dark' ? 'violet' : 'teal',
+                participantIds: []
             };
             setDoc(doc(firestore, 'rooms', roomId), newRoomData);
         }
     }, [isRoomLoading, room, firestore, roomId, user]);
 
     useEffect(() => {
-        if (room && user && !room.participantIds.includes(user.uid)) {
+        if (room && user && roomRef && !room.participantIds.includes(user.uid)) {
             updateDoc(roomRef, {
                 participantIds: arrayUnion(user.uid)
             });
