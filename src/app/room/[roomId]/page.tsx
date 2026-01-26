@@ -102,11 +102,11 @@ function RoomMessageBubble({ message, showAvatarAndName }: { message: WithId<Roo
 
     const bubble = (
         <div className={cn(
-            "rounded-2xl max-w-[80%]",
-            isOwnMessage ? "bg-primary text-primary-foreground rounded-br-none" : "bg-secondary text-foreground rounded-bl-none inline-block"
+            "flex flex-col rounded-2xl max-w-[80%] inline-block",
+            isOwnMessage ? "bg-primary text-primary-foreground rounded-br-none" : "bg-secondary text-foreground rounded-bl-none"
         )}>
             <p className="px-3 py-1.5 text-base break-words whitespace-pre-wrap">{message.text}</p>
-            <p className={cn("text-[11px] self-end px-3 pb-1.5 text-right", isOwnMessage ? "text-primary-foreground/70" : "text-muted-foreground")}>
+            <p className={cn("text-[11px] self-end px-3 pb-1.5", isOwnMessage ? "text-primary-foreground/70" : "text-muted-foreground")}>
                 {message.timestamp?.toDate ? formatMessageTimestamp(message.timestamp.toDate()) : '...'}
             </p>
         </div>
