@@ -39,7 +39,7 @@ function FollowedUserSkeleton() {
 function FollowedUsers({ users, isLoading, currentUser, showVoiceStatusPlayer }: { users: WithId<User>[], isLoading: boolean, currentUser: User | null, showVoiceStatusPlayer: (user: WithId<User>) => void }) {
     if (isLoading) {
         return (
-            <div className="p-4 border-b">
+            <div className="p-4">
                 <h2 className="text-lg font-semibold font-headline mb-3">Following</h2>
                 <div className="flex space-x-4">
                     <FollowedUserSkeleton />
@@ -56,7 +56,7 @@ function FollowedUsers({ users, isLoading, currentUser, showVoiceStatusPlayer }:
     }
 
     return (
-        <div className="p-4 border-b">
+        <div className="p-4">
             <h2 className="text-lg font-semibold font-headline mb-3">Following</h2>
              <div className="overflow-x-auto pb-2 -mb-2 no-scrollbar">
                 <div className="flex space-x-4">
@@ -254,7 +254,7 @@ function RequestItem({ request, onAccept }: { request: WithId<Conversation>, onA
 
 function ListSkeleton() {
     return (
-        <div>
+        <div className="divide-y">
             {Array.from({ length: 3 }).map((_, i) => (
                 <div key={i} className="p-4 flex items-center space-x-3">
                     <Skeleton className="h-12 w-12 rounded-full" />
@@ -319,7 +319,7 @@ function ConversationsList({
             return b.lastUpdated.toMillis() - a.lastUpdated.toMillis();
         });
         return (
-            <div>
+            <div className="divide-y">
                 {sortedChats.map(convo => <ConversationItem key={convo.id} conversation={convo} currentUser={currentUser} onLongPress={onLongPress} />)}
             </div>
         )
@@ -344,7 +344,7 @@ function ConversationsList({
 
 
     return (
-        <div>
+        <div className="divide-y">
             {filteredRequests.map(request => (
                 <RequestItem key={request.id} request={request} onAccept={onAcceptRequest} />
             ))}
@@ -699,7 +699,7 @@ export default function MessagesPage() {
                     />
                     
                     <Tabs defaultValue="rooms" className="w-full" onValueChange={handleTabChange}>
-                        <div className="border-b bg-background">
+                        <div className="bg-background">
                             <TabsList variant="underline" className="grid w-full grid-cols-3">
                                 <TabsTrigger value="rooms" variant="underline" className="font-semibold">
                                     Rooms
