@@ -1,3 +1,4 @@
+
 'use client';
 
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
@@ -104,17 +105,19 @@ export function RoomCard({ roomId, title, description, attendees, avatars, theme
                 </p>
             </div>
 
-            <div className="flex items-center gap-2">
-                <div className="flex -space-x-2">
-                    {avatars.map((src, i) => (
-                        <Avatar key={i} className="h-5 w-5 border-2 border-white/80">
-                            <AvatarImage src={src} />
-                            <AvatarFallback>{title.charAt(0)}</AvatarFallback>
-                        </Avatar>
-                    ))}
+            {(isAfterDarkActive || roomId !== 'after_dark') && (
+                <div className="flex items-center gap-2">
+                    <div className="flex -space-x-2">
+                        {avatars.map((src, i) => (
+                            <Avatar key={i} className="h-5 w-5 border-2 border-white/80">
+                                <AvatarImage src={src} />
+                                <AvatarFallback>{title.charAt(0)}</AvatarFallback>
+                            </Avatar>
+                        ))}
+                    </div>
+                    <span className="text-xs text-white/80 font-semibold">{attendees} joined in already</span>
                 </div>
-                <span className="text-xs text-white/80 font-semibold">{attendees} joined in already</span>
-            </div>
+            )}
 
             <Button onClick={handleJoinClick} disabled={isJoinDisabled} className={cn("w-full font-bold bg-white hover:bg-white/90 rounded-[25px]", currentTheme.button)}>
                 Join Room
