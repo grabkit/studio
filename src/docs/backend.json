@@ -453,9 +453,13 @@
         "id": { "type": "string" },
         "senderId": { "type": "string" },
         "text": { "type": "string" },
-        "timestamp": { "type": "string", "format": "date-time" }
+        "timestamp": { "type": "string", "format": "date-time" },
+        "imageUrl": { "type": "string", "format": "uri" },
+        "viewType": { "type": "string", "enum": ["once", "expiring"] },
+        "expiresAt": { "type": "string", "format": "date-time" },
+        "viewedBy": { "type": "array", "items": { "type": "string" } }
       },
-      "required": ["id", "senderId", "text", "timestamp"]
+      "required": ["id", "senderId", "timestamp"]
     },
     "Room": {
         "title": "Room",
@@ -478,9 +482,13 @@
             "id": { "type": "string" },
             "senderId": { "type": "string" },
             "text": { "type": "string" },
-            "timestamp": { "type": "string", "format": "date-time" }
+            "timestamp": { "type": "string", "format": "date-time" },
+            "imageUrl": { "type": "string", "format": "uri" },
+            "viewType": { "type": "string", "enum": ["once", "expiring"] },
+            "expiresAt": { "type": "string", "format": "date-time" },
+            "viewedBy": { "type": "array", "items": { "type": "string" } }
         },
-        "required": ["id", "senderId", "text", "timestamp"]
+        "required": ["id", "senderId", "timestamp"]
     },
     "ProblemReport": {
         "$schema": "http://json-schema.org/draft-07/schema#",
