@@ -72,7 +72,7 @@ export default function SettingsPage() {
                  <Button variant="ghost" size="icon" onClick={() => router.back()}>
                     <ArrowLeft />
                 </Button>
-                <h2 className="text-lg font-bold mx-auto -translate-x-5">Profile</h2>
+                <h2 className="text-lg font-bold mx-auto -translate-x-5">Settings</h2>
                 <div className="w-10"></div>
             </div>
             <motion.div 
