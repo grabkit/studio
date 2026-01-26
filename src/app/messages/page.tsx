@@ -701,30 +701,32 @@ export default function MessagesPage() {
                         />
                     </div>
                     
-                    <div className="flex-grow flex flex-col p-2 overflow-hidden">
+                    <div className="flex-grow flex flex-col overflow-hidden">
                         <Tabs defaultValue="rooms" className="w-full flex flex-col flex-grow overflow-hidden" onValueChange={handleTabChange}>
-                            <TabsList className="grid w-full grid-cols-3 rounded-full flex-shrink-0">
-                                <TabsTrigger value="rooms" className="relative flex items-center justify-center gap-2 rounded-full font-bold">
-                                    Rooms
-                                </TabsTrigger>
-                                <TabsTrigger value="chats" className="relative flex items-center justify-center gap-2 rounded-full font-bold">
-                                    {hasUnreadChats && (
-                                        <div className="w-2 h-2 rounded-full bg-destructive"></div>
-                                    )}
-                                    Chats
-                                </TabsTrigger>
-                                <TabsTrigger value="requests" className="relative flex items-center justify-center gap-2 rounded-full font-bold">
-                                    {hasNewRequests && (
-                                        <div className="w-2 h-2 rounded-full bg-destructive"></div>
-                                    )}
-                                    Requests
-                                </TabsTrigger>
-                            </TabsList>
-                            <div className="flex-grow overflow-y-auto mt-2 pb-20">
-                                <TabsContent value="rooms">
+                            <div className="sticky top-0 bg-background/80 backdrop-blur-sm z-10 border-b">
+                                <TabsList variant="underline" className="grid w-full grid-cols-3">
+                                    <TabsTrigger value="rooms" variant="underline" className="font-semibold">
+                                        Rooms
+                                    </TabsTrigger>
+                                    <TabsTrigger value="chats" variant="underline" className="font-semibold gap-2">
+                                        Chats
+                                        {hasUnreadChats && (
+                                            <div className="w-2 h-2 rounded-full bg-destructive"></div>
+                                        )}
+                                    </TabsTrigger>
+                                    <TabsTrigger value="requests" variant="underline" className="font-semibold gap-2">
+                                        Requests
+                                        {hasNewRequests && (
+                                            <div className="w-2 h-2 rounded-full bg-destructive"></div>
+                                        )}
+                                    </TabsTrigger>
+                                </TabsList>
+                            </div>
+                            <div className="flex-grow overflow-y-auto pb-20">
+                                <TabsContent value="rooms" className="mt-0">
                                     <RoomsTabContent />
                                 </TabsContent>
-                                <TabsContent value="chats">
+                                <TabsContent value="chats" className="mt-0">
                                     <ConversationsList 
                                         conversations={chats}
                                         isLoading={conversationsLoading}
@@ -734,7 +736,7 @@ export default function MessagesPage() {
                                         onLongPress={handleLongPress}
                                     />
                                 </TabsContent>
-                                <TabsContent value="requests">
+                                <TabsContent value="requests" className="mt-0">
                                     <ConversationsList
                                         conversations={requests}
                                         isLoading={conversationsLoading}
@@ -776,7 +778,3 @@ export default function MessagesPage() {
         </AppLayout>
     )
 }
-
-    
-
-    
