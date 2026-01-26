@@ -371,7 +371,7 @@ function RoomsTabContent() {
     return (
         <div className="p-4 space-y-6">
             <div>
-                <h2 className="text-lg font-bold font-headline mb-3">Insomnia</h2>
+                <h2 className="text-lg font-bold font-headline mb-3">After Dark</h2>
                 {isAfterDarkLoading ? (
                     <Skeleton className="h-[218px] w-full rounded-2xl" />
                 ) : (
@@ -776,5 +776,7 @@ export default function MessagesPage() {
         </AppLayout>
     )
 }
+
+    
 
     
