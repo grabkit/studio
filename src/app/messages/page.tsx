@@ -641,8 +641,8 @@ export default function MessagesPage() {
                         />
                     </div>
                     
-                    <div className="flex-grow flex flex-col p-2 overflow-hidden">
-                        <Tabs defaultValue="rooms" className="w-full flex flex-col flex-grow" onValueChange={handleTabChange}>
+                    <div className="flex-grow flex flex-col p-2">
+                        <Tabs defaultValue="rooms" className="w-full flex flex-col flex-grow overflow-hidden" onValueChange={handleTabChange}>
                             <TabsList className="grid w-full grid-cols-3 rounded-full flex-shrink-0">
                                 <TabsTrigger value="rooms" className="relative flex items-center justify-center gap-2 rounded-full font-bold">
                                     Rooms
@@ -660,7 +660,7 @@ export default function MessagesPage() {
                                     Requests
                                 </TabsTrigger>
                             </TabsList>
-                            <div className="flex-grow overflow-y-auto">
+                            <div className="flex-grow overflow-y-auto mt-2">
                                 <TabsContent value="rooms" className="p-4 space-y-6">
                                      <div>
                                         <h2 className="text-lg font-bold font-headline mb-3">Insomnia</h2>
