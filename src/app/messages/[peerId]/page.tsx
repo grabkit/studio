@@ -558,10 +558,15 @@ function MessageInput({ conversationId, conversation, replyingTo, onCancelReply 
             id: messageRef.id,
             senderId: user.uid,
             imageUrl: imagePreview,
-            viewType: viewType === 'default' ? undefined : viewType,
-            expiresAt: viewType === 'expiring' ? Timestamp.fromMillis(Date.now() + 24 * 60 * 60 * 1000) : undefined,
             viewedBy: [],
         };
+
+        if (viewType !== 'default') {
+            newMessage.viewType = viewType;
+        }
+        if (viewType === 'expiring') {
+            newMessage.expiresAt = Timestamp.fromMillis(Date.now() + 24 * 60 * 60 * 1000);
+        }
         
         const batch = writeBatch(firestore);
         batch.set(messageRef, { ...newMessage, timestamp: serverTimestamp() });
@@ -984,6 +989,7 @@ export default function ChatPage() {
     
 
     
+
 
 
 

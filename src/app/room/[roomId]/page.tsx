@@ -536,11 +536,16 @@ function MessageInput({ room, replyingTo, onCancelReply }: { room: WithId<Room>,
             roomId: room.id,
             senderId: user.uid,
             imageUrl: imagePreview,
-            viewType: viewType === 'default' ? undefined : viewType,
-            expiresAt: viewType === 'expiring' ? Timestamp.fromMillis(Date.now() + 24 * 60 * 60 * 1000) : undefined,
             viewedBy: [],
         };
         
+        if (viewType !== 'default') {
+            newMessage.viewType = viewType;
+        }
+        if (viewType === 'expiring') {
+            newMessage.expiresAt = Timestamp.fromMillis(Date.now() + 24 * 60 * 60 * 1000);
+        }
+
         setDoc(messageRef, { ...newMessage, timestamp: serverTimestamp() }).catch(error => {
              const permissionError = new FirestorePermissionError({
                 path: messageRef.path,
