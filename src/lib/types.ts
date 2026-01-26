@@ -160,7 +160,7 @@ export interface Conversation {
 export interface Message {
     id: string;
     senderId: string;
-    text: string;
+    text?: string;
     timestamp: any; 
     replyToMessageId?: string;
     replyToMessageText?: string;
@@ -179,9 +179,15 @@ export interface Room {
 
 export interface RoomMessage {
   id: string;
+  roomId: string;
   senderId: string;
-  text: string;
+  text?: string;
   timestamp: Timestamp;
+  replyToMessageId?: string;
+  replyToMessageText?: string;
+  postId?: string;
+  isForwarded?: boolean;
+  linkMetadata?: LinkMetadata;
 }
 
 

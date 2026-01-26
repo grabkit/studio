@@ -10,6 +10,7 @@ import { useForm } from 'react-hook-form';
 import * as z from 'zod';
 import { zodResolver } from '@hookform/resolvers/zod';
 import React, { useEffect, useMemo, useRef, useState } from 'react';
+import Link from 'next/link';
 
 import AppLayout from '@/components/AppLayout';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
@@ -17,22 +18,105 @@ import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
 import { Form, FormControl, FormField, FormItem } from '@/components/ui/form';
 import { Skeleton } from '@/components/ui/skeleton';
-import { ArrowLeft, Send, Copy, Trash2 } from 'lucide-react';
+import { ArrowLeft, Send, Copy, Trash2, Forward, Reply, X, ExternalLink, MessageCircle, Heart, List, Loader2, Users } from 'lucide-react';
 import { cn, getAvatar, formatMessageTimestamp, formatUserId, formatDateSeparator } from '@/lib/utils';
-import type { Room, RoomMessage, User } from '@/lib/types';
+import type { Room, RoomMessage, User, Post, LinkMetadata } from '@/lib/types';
 import { isSameDay } from 'date-fns';
 import { motion } from 'framer-motion';
 import { usePresence } from '@/hooks/usePresence';
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from '@/components/ui/sheet';
 import { useToast } from '@/hooks/use-toast';
 import { FirestorePermissionError, errorEmitter } from '@/firebase';
+import { ForwardSheet } from '@/components/ForwardSheet';
+import { LinkPreviewCard } from '@/components/LinkPreviewCard';
+import UserList from '@/components/UserList';
+import { ScrollArea } from '@/components/ui/scroll-area';
 
 const messageFormSchema = z.object({
-  text: z.string().min(1, "Message cannot be empty").max(1000),
+  text: z.string().max(1000).optional(),
+  linkMetadata: z.custom<LinkMetadata>().optional(),
+}).refine(data => !!data.text || !!data.linkMetadata, {
+    message: "Message cannot be empty",
+    path: ["text"],
 });
 
-function RoomHeader({ room, participantsCount }: { room: WithId<Room> | null, participantsCount: number }) {
+function PostPreviewCard({ postId }: { postId: string }) {
+    const { firestore } = useFirebase();
     const router = useRouter();
+    const postRef = useMemoFirebase(() => doc(firestore, 'posts', postId), [firestore, postId]);
+    const { data: post, isLoading } = useDoc<Post>(postRef);
+
+    if (isLoading) {
+        return <Skeleton className="h-24 w-full rounded-lg bg-secondary" />;
+    }
+
+    if (!post) {
+        return (
+            <div className="p-3 border rounded-lg text-center text-sm text-muted-foreground bg-secondary/50">
+                This post is no longer available.
+            </div>
+        );
+    }
+    
+    const avatar = getAvatar({id: post.authorId});
+    const isAvatarUrl = avatar.startsWith('http');
+
+    return (
+        <div className="block rounded-[10px] overflow-hidden bg-secondary/80 w-full cursor-pointer">
+            <div className="p-3">
+                <div className="flex items-center gap-2 mb-2">
+                    <Avatar className="h-6 w-6">
+                         <AvatarImage src={isAvatarUrl ? avatar : undefined} alt={String(formatUserId(post.authorId))} />
+                        <AvatarFallback className="text-xs">{!isAvatarUrl ? avatar : ''}</AvatarFallback>
+                    </Avatar>
+                    <span className="text-xs font-semibold text-foreground">{formatUserId(post.authorId)}</span>
+                </div>
+                <p className="text-sm line-clamp-3 text-foreground">{post.content}</p>
+
+                {post.type === 'poll' && post.pollOptions && (
+                    <div className="mt-2 space-y-1.5">
+                        {post.pollOptions.map((option, index) => (
+                            <div key={index} className="flex items-center gap-2 text-sm text-muted-foreground bg-background/50 p-1.5 rounded-md">
+                                <List className="h-4 w-4" />
+                                <span>{option.option}</span>
+                            </div>
+                        ))}
+                    </div>
+                )}
+                 
+                 <div className="flex items-center gap-4 text-xs mt-2 text-muted-foreground">
+                    <div className="flex items-center gap-1">
+                        <Heart className="h-3 w-3" />
+                        {post.likeCount}
+                    </div>
+                     <div className="flex items-center gap-1">
+                        <MessageCircle className="h-3 w-3" />
+                        {post.commentCount}
+                    </div>
+                </div>
+            </div>
+        </div>
+    )
+}
+
+function ParticipantsSheet({ room, isOpen, onOpenChange }: { room: WithId<Room>, isOpen: boolean, onOpenChange: (open: boolean) => void}) {
+    return (
+        <Sheet open={isOpen} onOpenChange={onOpenChange}>
+            <SheetContent side="bottom" className="rounded-t-2xl p-0 h-[60dvh] flex flex-col">
+                 <SheetHeader className="p-4 border-b text-center">
+                    <SheetTitle>Participants</SheetTitle>
+                </SheetHeader>
+                <ScrollArea className="flex-grow">
+                    <UserList userIds={room.participantIds} emptyTitle="No one's here" emptyDescription="Be the first to join the conversation." />
+                </ScrollArea>
+            </SheetContent>
+        </Sheet>
+    )
+}
+
+function RoomHeader({ room }: { room: WithId<Room> | null }) {
+    const router = useRouter();
+    const [isParticipantsSheetOpen, setIsParticipantsSheetOpen] = useState(false);
 
     if (!room) {
         return (
@@ -49,20 +133,27 @@ function RoomHeader({ room, participantsCount }: { room: WithId<Room> | null, pa
     }
 
     return (
-        <div className="fixed top-0 left-0 right-0 z-10 flex items-center p-2 bg-background/80 backdrop-blur-sm border-b h-14 max-w-2xl mx-auto sm:px-4">
-            <Button variant="ghost" size="icon" onClick={() => router.back()}>
-                <ArrowLeft />
-            </Button>
-            <div className="ml-2">
-                <h2 className="text-base font-bold leading-tight">{room.name}</h2>
-                <p className="text-xs text-muted-foreground leading-tight">{participantsCount} participants</p>
+        <>
+            <div className="fixed top-0 left-0 right-0 z-10 flex items-center p-2 bg-background/80 backdrop-blur-sm border-b h-14 max-w-2xl mx-auto sm:px-4">
+                <Button variant="ghost" size="icon" onClick={() => router.back()}>
+                    <ArrowLeft />
+                </Button>
+                <div className="ml-2 flex-1">
+                    <h2 className="text-base font-bold leading-tight">{room.name}</h2>
+                    <p className="text-xs text-muted-foreground leading-tight">{room.participantIds.length} participants</p>
+                </div>
+                <Button variant="ghost" size="icon" onClick={() => setIsParticipantsSheetOpen(true)}>
+                    <Users />
+                </Button>
             </div>
-        </div>
+            <ParticipantsSheet room={room} isOpen={isParticipantsSheetOpen} onOpenChange={setIsParticipantsSheetOpen} />
+        </>
     )
 }
 
-function RoomMessageBubble({ message, showAvatarAndName }: { message: WithId<RoomMessage>, showAvatarAndName: boolean }) {
+function RoomMessageBubble({ message, showAvatarAndName, onSetReply, onForward }: { message: WithId<RoomMessage>, showAvatarAndName: boolean, onSetReply: (message: WithId<RoomMessage>) => void, onForward: (message: WithId<RoomMessage>) => void }) {
     const { firestore, user: currentUser } = useFirebase();
+    const router = useRouter();
     const isOwnMessage = message.senderId === currentUser?.uid;
     const { isOnline } = usePresence(message.senderId);
     const { toast } = useToast();
@@ -80,7 +171,7 @@ function RoomMessageBubble({ message, showAvatarAndName }: { message: WithId<Roo
             toast({ title: "Copied to clipboard" });
         }
         setIsSheetOpen(false);
-    };
+    }
 
     const handleUnsend = () => {
         if (!firestore || !isOwnMessage) return;
@@ -98,18 +189,89 @@ function RoomMessageBubble({ message, showAvatarAndName }: { message: WithId<Roo
                 description: "Could not unsend message.",
             });
         });
-    };
+    }
 
-    const bubble = (
-        <div className={cn(
-            "flex flex-col rounded-2xl max-w-[80%]",
-            isOwnMessage ? "bg-primary text-primary-foreground rounded-br-none" : "bg-secondary text-foreground rounded-bl-none"
-        )}>
-            <p className="px-3 py-1.5 text-base break-words whitespace-pre-wrap">{message.text}</p>
-            <p className={cn("text-[11px] self-end px-3 pb-1.5", isOwnMessage ? "text-primary-foreground/70" : "text-muted-foreground")}>
+    const handleOpenPost = () => {
+        if (message.postId) {
+            router.push(`/post/${message.postId}`);
+        }
+        setIsSheetOpen(false);
+    }
+    
+    const handleOpenLink = () => {
+        if (message.linkMetadata?.url) {
+            window.open(message.linkMetadata.url, '_blank', 'noopener,noreferrer');
+        }
+        setIsSheetOpen(false);
+    }
+
+    const handleReply = () => {
+        onSetReply(message);
+        setIsSheetOpen(false);
+    }
+
+    const handleForward = () => {
+        onForward(message as any); // Cast because ForwardSheet expects Message type
+        setIsSheetOpen(false);
+    }
+    
+    const isPostShare = !!message.postId;
+    const isLinkShare = !!message.linkMetadata;
+
+    const bubbleContent = (
+         <>
+            {message.isForwarded && (
+                <div className="flex items-center gap-1.5 text-xs opacity-70 mb-1 px-3 pt-2">
+                    <Forward className="h-3 w-3" />
+                    <span>Forwarded</span>
+                </div>
+            )}
+
+            {message.replyToMessageText && (
+                 <div className={cn(
+                    "relative pl-3 pr-2 py-1.5 rounded-[5px] mb-1 mx-2 mt-1 w-auto border-l-4",
+                    !isOwnMessage 
+                        ? "bg-gray-200 dark:bg-gray-700 border-gray-400 dark:border-gray-500" 
+                        : "bg-white/20 border-white/40"
+                )}>
+                    <p className="text-xs font-semibold truncate">{formatUserId(message.replyToMessageId === message.senderId ? message.senderId : undefined)}</p>
+                    <p className="text-sm opacity-80 line-clamp-2">{message.replyToMessageText}</p>
+                </div>
+            )}
+
+            {isPostShare && message.postId ? (
+                <div className="w-full my-1 px-2">
+                    <SheetTrigger asChild>
+                         <div className="cursor-pointer">
+                            <PostPreviewCard postId={message.postId} />
+                        </div>
+                    </SheetTrigger>
+                </div>
+            ) : isLinkShare && message.linkMetadata ? (
+                <div className="w-full my-1 px-2">
+                    <SheetTrigger asChild>
+                         <div className="cursor-pointer">
+                            <LinkPreviewCard metadata={message.linkMetadata} />
+                        </div>
+                    </SheetTrigger>
+                </div>
+            ) : null}
+
+            {message.text && (
+                 <div className="flex flex-col">
+                    <p className="px-3 py-1.5 text-base break-words whitespace-pre-wrap max-w-full">
+                        {message.text}
+                    </p>
+                </div>
+            )}
+            
+            <p className={cn(
+                "text-[11px] self-end px-3 pb-1.5", 
+                isOwnMessage ? "text-primary-foreground/70" : "text-muted-foreground"
+            )}>
                 {message.timestamp?.toDate ? formatMessageTimestamp(message.timestamp.toDate()) : '...'}
             </p>
-        </div>
+        </>
     );
 
     return (
@@ -127,31 +289,61 @@ function RoomMessageBubble({ message, showAvatarAndName }: { message: WithId<Roo
                     </Avatar>
                 )}
                 
-                {!isOwnMessage ? (
-                    <div className="flex-1">
-                        {showAvatarAndName && <p className="text-xs font-semibold mb-0.5">{sender ? formatUserId(sender.id) : '...'}</p>}
-                        <SheetTrigger asChild>
-                            {bubble}
-                        </SheetTrigger>
-                    </div>
-                ) : (
+                <div className={cn(
+                    "flex flex-col",
+                     (isPostShare || isLinkShare) ? 'w-64' : 'max-w-[80%]',
+                )}>
+                    {!isOwnMessage && showAvatarAndName && (
+                        <p className="text-xs font-semibold mb-0.5 text-muted-foreground">{sender ? formatUserId(sender.id) : '...'}</p>
+                    )}
                     <SheetTrigger asChild>
-                        {bubble}
+                        <div className={cn(
+                            "rounded-2xl",
+                            isOwnMessage ? "bg-primary text-primary-foreground rounded-br-none" : "bg-secondary text-foreground rounded-bl-none",
+                        )}>
+                            {bubbleContent}
+                        </div>
                     </SheetTrigger>
-                )}
+                </div>
             </motion.div>
-            <SheetContent side="bottom" className="rounded-t-2xl">
+             <SheetContent side="bottom" className="rounded-t-2xl">
                 <SheetHeader className="sr-only">
                     <SheetTitle>Message Options</SheetTitle>
                 </SheetHeader>
                 <div className="grid gap-2 py-4">
                     <div className="border rounded-2xl">
-                        <Button variant="ghost" className="justify-start text-base py-6 rounded-2xl w-full gap-3" onClick={handleCopy}>
-                            <Copy />
-                            <span>Copy</span>
+                        {isPostShare && (
+                            <Button variant="ghost" className="justify-start text-base py-6 rounded-2xl w-full gap-3" onClick={handleOpenPost}>
+                                <ExternalLink />
+                                <span>Open Post</span>
+                            </Button>
+                        )}
+                        {isLinkShare && (
+                            <Button variant="ghost" className="justify-start text-base py-6 rounded-2xl w-full gap-3" onClick={handleOpenLink}>
+                                <ExternalLink />
+                                <span>Open Link</span>
+                            </Button>
+                        )}
+                        <Button variant="ghost" className="justify-start text-base py-6 rounded-2xl w-full gap-3" onClick={handleReply}>
+                            <Reply />
+                            <span>Reply</span>
                         </Button>
+                         <div className="border-t"></div>
+                        <Button variant="ghost" className="justify-start text-base py-6 rounded-2xl w-full gap-3" onClick={handleForward}>
+                            <Forward />
+                            <span>Forward</span>
+                        </Button>
+                         {!isPostShare && !isLinkShare && (
+                             <>
+                                <div className="border-t"></div>
+                                <Button variant="ghost" className="justify-start text-base py-6 rounded-2xl w-full gap-3" onClick={handleCopy}>
+                                    <Copy />
+                                    <span>Copy</span>
+                                </Button>
+                             </>
+                        )}
                     </div>
-                    {isOwnMessage && (
+                     {isOwnMessage && (
                         <div className="border rounded-2xl">
                             <Button variant="ghost" className="justify-start text-base py-6 rounded-2xl w-full text-destructive hover:text-destructive gap-3" onClick={handleUnsend}>
                                 <Trash2 />
@@ -165,7 +357,7 @@ function RoomMessageBubble({ message, showAvatarAndName }: { message: WithId<Roo
     );
 }
 
-function RoomMessages({ roomId }: { roomId: string }) {
+function RoomMessages({ roomId, onSetReply, onForward }: { roomId: string, onSetReply: (message: WithId<RoomMessage>) => void, onForward: (message: WithId<RoomMessage>) => void }) {
     const { firestore } = useFirebase();
     const messagesEndRef = useRef<HTMLDivElement | null>(null);
 
@@ -222,37 +414,119 @@ function RoomMessages({ roomId }: { roomId: string }) {
                 const prevMessage = index > 0 ? messagesWithSeparators![index - 1] : null;
                 const showAvatarAndName = !prevMessage || prevMessage.type === 'separator' || (prevMessage as WithId<RoomMessage>).senderId !== message.senderId;
 
-                return <RoomMessageBubble key={message.id} message={message} showAvatarAndName={showAvatarAndName} />
+                return <RoomMessageBubble key={message.id} message={message} showAvatarAndName={showAvatarAndName} onSetReply={onSetReply} onForward={onForward}/>
             })}
              <div ref={messagesEndRef} />
         </div>
     )
 }
 
-function MessageInput({ room }: { room: WithId<Room> }) {
+function MessageInput({ room, replyingTo, onCancelReply }: { room: WithId<Room>, replyingTo: WithId<RoomMessage> | null, onCancelReply: () => void }) {
     const { firestore, user } = useFirebase();
+    const { toast } = useToast();
+    const [isFetchingPreview, setIsFetchingPreview] = useState(false);
+    
     const form = useForm<z.infer<typeof messageFormSchema>>({
         resolver: zodResolver(messageFormSchema),
         defaultValues: { text: "" },
     });
+
+    const linkMetadata = form.watch("linkMetadata");
+    const textValue = form.watch("text");
+
+    const fetchPreview = async (url: string) => {
+        setIsFetchingPreview(true);
+        // In a real app, you would call your AI flow here.
+        // For now, we'll simulate a delay and use mock data.
+        setTimeout(() => {
+            const mockData: LinkMetadata = {
+                url: url,
+                title: "This is a fetched link title for rooms",
+                description: "This is a longer description for the link that has been fetched from the website to show a rich preview.",
+                imageUrl: `https://picsum.photos/seed/${Math.random()}/1200/630`,
+            };
+            form.setValue("linkMetadata", mockData, { shouldValidate: true });
+            setIsFetchingPreview(false);
+        }, 1500);
+    };
+
+    const handlePaste = async (event: React.ClipboardEvent<HTMLTextAreaElement>) => {
+        if (linkMetadata) return;
+
+        const pastedText = event.clipboardData.getData('text');
+        try {
+            const url = new URL(pastedText);
+            form.setValue("text", pastedText); // Also set the text value
+            event.preventDefault();
+            await fetchPreview(url.href);
+        } catch (error) {
+            // Not a valid URL, do nothing
+        }
+    };
+
 
     const onSubmit = (values: z.infer<typeof messageFormSchema>) => {
         if (!firestore || !user || !room) return;
 
         const messageRef = doc(collection(firestore, 'rooms', room.id, 'messages'));
         
-        const newMessage: Omit<RoomMessage, 'id' | 'timestamp'> = {
+        const newMessage: Partial<RoomMessage> = {
+            id: messageRef.id,
             roomId: room.id,
             senderId: user.uid,
-            text: values.text
         };
 
-        setDoc(messageRef, { ...newMessage, timestamp: serverTimestamp() });
+        if (values.text) newMessage.text = values.text;
+        if (values.linkMetadata) newMessage.linkMetadata = values.linkMetadata;
+
+        if (replyingTo) {
+            newMessage.replyToMessageId = replyingTo.id;
+            newMessage.replyToMessageText = replyingTo.text;
+        }
+
+        setDoc(messageRef, { ...newMessage, timestamp: serverTimestamp() }).catch(error => {
+            const permissionError = new FirestorePermissionError({
+                path: messageRef.path,
+                operation: 'create',
+                requestResourceData: newMessage,
+            });
+            errorEmitter.emit('permission-error', permissionError);
+        });
+
         form.reset();
+        onCancelReply();
     };
 
     return (
-        <div className="fixed bottom-0 left-0 right-0 max-w-2xl mx-auto bg-background border-t pb-safe">
+         <div className={cn("fixed bottom-0 left-0 right-0 max-w-2xl mx-auto bg-background border-t", replyingTo ? "pb-0" : "pb-safe")}>
+            {replyingTo && (
+                <div className="p-2 border-b bg-secondary/50 text-sm">
+                    <div className="flex justify-between items-center px-2">
+                        <div className="flex-1 overflow-hidden">
+                            <p className="font-semibold text-primary">Replying to {replyingTo.senderId === user?.uid ? 'yourself' : formatUserId(replyingTo.senderId)}</p>
+                            <p className="text-muted-foreground truncate">{replyingTo.text}</p>
+                        </div>
+                        <Button variant="ghost" size="icon" onClick={onCancelReply}>
+                            <X className="h-4 w-4" />
+                        </Button>
+                    </div>
+                </div>
+            )}
+             {isFetchingPreview && (
+                <div className="p-2 border-b flex items-center justify-center">
+                    <Loader2 className="h-4 w-4 animate-spin text-muted-foreground mr-2" />
+                    <span className="text-sm text-muted-foreground">Fetching link preview...</span>
+                </div>
+            )}
+            {linkMetadata && (
+                <div className="p-2 border-b relative">
+                    <p className="text-xs text-muted-foreground mb-1">Link attached:</p>
+                    <LinkPreviewCard metadata={linkMetadata} />
+                    <Button variant="ghost" size="icon" className="absolute top-1 right-1 h-6 w-6 rounded-full" onClick={() => form.setValue('linkMetadata', undefined)}>
+                        <X className="h-4 w-4" />
+                    </Button>
+                </div>
+            )}
             <div className="p-2 flex items-center gap-2">
                 <Form {...form}>
                     <form onSubmit={form.handleSubmit(onSubmit)} className="flex-1 flex items-center rounded-full bg-secondary px-2">
@@ -261,6 +535,7 @@ function MessageInput({ room }: { room: WithId<Room> }) {
                             className="flex-1 bg-transparent border-none focus-visible:ring-0 focus-visible:ring-offset-0 shadow-none resize-none text-base px-2 py-2.5"
                             rows={1}
                             maxRows={5}
+                            onPaste={handlePaste}
                             onKeyDown={(e) => {
                                 if (e.key === 'Enter' && !e.shiftKey) {
                                     e.preventDefault();
@@ -269,7 +544,12 @@ function MessageInput({ room }: { room: WithId<Room> }) {
                             }}
                             {...form.register("text")}
                         />
-                         <Button type="submit" size="icon" className="rounded-full shrink-0 h-8 w-8 bg-black hover:bg-gray-800">
+                         <Button
+                            type="submit"
+                            size="icon"
+                            disabled={!textValue && !linkMetadata}
+                            className="rounded-full shrink-0 h-8 w-8 bg-black hover:bg-gray-800"
+                        >
                             <Send className="h-4 w-4" fill="currentColor"/>
                         </Button>
                     </form>
@@ -283,6 +563,10 @@ export default function RoomChatPage() {
     const { firestore, user } = useFirebase();
     const params = useParams();
     const roomId = params.roomId as string;
+    
+    const [replyingTo, setReplyingTo] = useState<WithId<RoomMessage> | null>(null);
+    const [forwardingMessage, setForwardingMessage] = useState<WithId<RoomMessage> | null>(null);
+    const [isForwardSheetOpen, setIsForwardSheetOpen] = useState(false);
     
     const roomRef = useMemoFirebase(() => {
         if (!firestore || !roomId) return null;
@@ -313,6 +597,19 @@ export default function RoomChatPage() {
         }
     }, [room, user, roomRef]);
 
+    const handleSetReply = (message: WithId<RoomMessage>) => {
+        setReplyingTo(message);
+    }
+    
+    const handleCancelReply = () => {
+        setReplyingTo(null);
+    }
+
+    const handleForward = (message: WithId<RoomMessage>) => {
+        setForwardingMessage(message);
+        setIsForwardSheetOpen(true);
+    };
+
     return (
         <AppLayout showTopBar={false} showBottomNav={false}>
             <motion.div
@@ -321,11 +618,16 @@ export default function RoomChatPage() {
                 transition={{ duration: 0.3 }}
                 className="flex flex-col h-screen"
             >
-                <RoomHeader room={room} participantsCount={room?.participantIds?.length || 0} />
-                 <div className="flex-1 overflow-y-auto pt-14 pb-14">
-                    <RoomMessages roomId={roomId} />
+                <RoomHeader room={room} />
+                 <div className="flex-1 overflow-y-auto pt-14 pb-20">
+                    <RoomMessages roomId={roomId} onSetReply={handleSetReply} onForward={handleForward} />
                 </div>
-                {room && <MessageInput room={room} />}
+                {room && <MessageInput room={room} replyingTo={replyingTo} onCancelReply={handleCancelReply} />}
+                <ForwardSheet 
+                    isOpen={isForwardSheetOpen}
+                    onOpenChange={setIsForwardSheetOpen}
+                    message={forwardingMessage as any} // Cast because ForwardSheet expects Message type
+                />
             </motion.div>
         </AppLayout>
     )
