@@ -186,7 +186,7 @@ function ConversationItem({ conversation, currentUser, onLongPress }: { conversa
             onPointerDown={handlePointerDown}
             onPointerUp={handlePointerUp}
             onPointerMove={handlePointerMove}
-            className="p-4 border-b flex justify-between items-center hover:bg-accent cursor-pointer"
+            className="p-4 flex justify-between items-center hover:bg-accent cursor-pointer"
         >
             <div className="flex items-center space-x-3">
                 <Avatar className="h-12 w-12" showStatus={true} isOnline={isOnline}>
@@ -236,7 +236,7 @@ function RequestItem({ request, onAccept }: { request: WithId<Conversation>, onA
 
 
     return (
-        <div className="p-4 border-b flex justify-between items-center">
+        <div className="p-4 flex justify-between items-center">
             <div className="flex items-center space-x-3">
                 <Avatar className="h-12 w-12">
                     <AvatarImage src={isAvatarUrl ? avatar : undefined} alt={String(name)} />
@@ -254,7 +254,7 @@ function RequestItem({ request, onAccept }: { request: WithId<Conversation>, onA
 
 function ListSkeleton() {
     return (
-        <div className="divide-y">
+        <div>
             {Array.from({ length: 3 }).map((_, i) => (
                 <div key={i} className="p-4 flex items-center space-x-3">
                     <Skeleton className="h-12 w-12 rounded-full" />
@@ -319,7 +319,7 @@ function ConversationsList({
             return b.lastUpdated.toMillis() - a.lastUpdated.toMillis();
         });
         return (
-            <div className="divide-y">
+            <div>
                 {sortedChats.map(convo => <ConversationItem key={convo.id} conversation={convo} currentUser={currentUser} onLongPress={onLongPress} />)}
             </div>
         )
@@ -344,7 +344,7 @@ function ConversationsList({
 
 
     return (
-        <div className="divide-y">
+        <div>
             {filteredRequests.map(request => (
                 <RequestItem key={request.id} request={request} onAccept={onAcceptRequest} />
             ))}
