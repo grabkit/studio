@@ -1,3 +1,4 @@
+
 "use client"
 
 import * as React from "react"
@@ -22,7 +23,7 @@ const Avatar = React.forwardRef<
       {...props}
     />
      {showStatus && isOnline && (
-      <span className="absolute top-0 right-0 block h-3 w-3 rounded-full bg-[hsl(var(--online-glow-color))] animate-online-indicator-glow border-2 border-background" />
+      <span className="absolute top-0.5 right-0 block h-3 w-3 rounded-full bg-[hsl(var(--online-glow-color))] animate-online-indicator-glow border-2 border-background" />
     )}
   </div>
 ))
