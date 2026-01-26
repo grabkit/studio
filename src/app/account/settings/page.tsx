@@ -1,10 +1,9 @@
-
 "use client";
 
 import React from "react";
 import AppLayout from "@/components/AppLayout";
 import { Button } from "@/components/ui/button";
-import { ArrowLeft, ChevronRight, User, Bell, HelpCircle, Info, Lock, Globe2, Sun, LogOut, UserPlus, ShieldAlert, VolumeX, MinusCircle } from "lucide-react";
+import { ArrowLeft, ChevronRight, User, Bell, HelpCircle, Info, Lock, Globe2, Sun, LogOut, UserPlus, ShieldAlert, VolumeX, MinusCircle, UserX } from "lucide-react";
 import { useRouter } from "next/navigation";
 import Link from 'next/link';
 import { useFirebase } from "@/firebase";
@@ -14,6 +13,7 @@ import { motion } from "framer-motion";
 import { ref, serverTimestamp, set } from "firebase/database";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { getAvatar, formatUserId } from "@/lib/utils";
+import { cn } from "@/lib/utils";
 
 
 function SettingsItem({ href, label, icon: Icon, value }: { href: string, label: string, icon: React.ElementType, value?: string }) {
@@ -30,6 +30,16 @@ function SettingsItem({ href, label, icon: Icon, value }: { href: string, label:
         </Link>
     )
 }
+
+function DestructiveSettingsItem({ label, icon: Icon, onClick }: { label: string, icon: React.ElementType, onClick?: () => void }) {
+    return (
+        <div onClick={onClick} className="flex items-center space-x-4 p-4 transition-colors hover:bg-destructive/10 cursor-pointer text-destructive">
+            <Icon className="h-5 w-5" />
+            <span className="text-base font-medium">{label}</span>
+        </div>
+    )
+}
+
 
 export default function SettingsPage() {
     const router = useRouter();
@@ -85,7 +95,7 @@ export default function SettingsPage() {
             >
                 <div className="p-4 space-y-6 overflow-y-auto h-full">
 
-                    <div className="bg-card rounded-xl p-4 shadow-sm">
+                    <div className="bg-card rounded-xl p-4">
                         <div className="flex items-center space-x-4">
                             <Avatar className="h-14 w-14">
                                 <AvatarImage src={isAvatarUrl ? avatar : undefined} alt={userProfile?.name || ''} />
@@ -101,7 +111,7 @@ export default function SettingsPage() {
                     {/* Account Section */}
                     <div>
                         <h3 className="px-2 mb-1 text-sm font-semibold text-muted-foreground">Account</h3>
-                        <div className="bg-card rounded-xl shadow-sm">
+                        <div className="bg-card rounded-xl">
                             <SettingsItem icon={User} label="Manage Profile" href="/account/settings/edit-profile" />
                             <div className="h-px bg-border/50 mx-4 opacity-50" />
                             <SettingsItem icon={UserPlus} label="Follow and invite friends" href="/account/settings/follow-invite" />
@@ -117,7 +127,7 @@ export default function SettingsPage() {
                     {/* Privacy & Safety Section */}
                     <div>
                         <h3 className="px-2 mb-1 text-sm font-semibold text-muted-foreground">Privacy & Safety</h3>
-                        <div className="bg-card rounded-xl shadow-sm">
+                        <div className="bg-card rounded-xl">
                             <SettingsItem icon={VolumeX} label="Muted Accounts" href="/account/settings/muted-users" />
                             <div className="h-px bg-border/50 mx-4 opacity-50" />
                             <SettingsItem icon={MinusCircle} label="Restricted Accounts" href="/account/settings/restricted-users" />
@@ -129,7 +139,7 @@ export default function SettingsPage() {
                     {/* Preferences Section */}
                     <div>
                         <h3 className="px-2 mb-1 text-sm font-semibold text-muted-foreground">Preferences</h3>
-                        <div className="bg-card rounded-xl shadow-sm">
+                        <div className="bg-card rounded-xl">
                              <SettingsItem icon={Sun} label="Theme" value="Light" href="#" />
                         </div>
                     </div>
@@ -137,19 +147,27 @@ export default function SettingsPage() {
                     {/* Support Section */}
                     <div>
                         <h3 className="px-2 mb-1 text-sm font-semibold text-muted-foreground">Support</h3>
-                        <div className="bg-card rounded-xl shadow-sm">
+                        <div className="bg-card rounded-xl">
                             <SettingsItem icon={Info} label="About Us" href="/account/settings/about" />
                              <div className="h-px bg-border/50 mx-4 opacity-50" />
                             <SettingsItem icon={HelpCircle} label="Help Center" href="/account/settings/help" />
                         </div>
                     </div>
 
-                    {/* Logout Button */}
-                    <div className="text-center pt-4">
-                         <Button variant="ghost" className="text-destructive hover:text-destructive hover:bg-destructive/10 rounded-full" onClick={handleLogout}>
-                            <LogOut className="mr-2 h-4 w-4" />
-                            Log Out
-                        </Button>
+                    {/* Login Section */}
+                    <div className="pb-4">
+                        <h3 className="px-2 mb-1 text-sm font-semibold text-muted-foreground">Login</h3>
+                        <div className="bg-card rounded-xl">
+                            <DestructiveSettingsItem icon={LogOut} label="Log Out" onClick={handleLogout} />
+                            <div className="h-px bg-border/50 mx-4 opacity-50" />
+                            <DestructiveSettingsItem icon={UserX} label="Delete Account" onClick={() => {
+                                toast({
+                                    variant: "destructive",
+                                    title: "This action cannot be undone.",
+                                    description: "The delete account feature is not yet available.",
+                                });
+                            }} />
+                        </div>
                     </div>
                 </div>
             </motion.div>
