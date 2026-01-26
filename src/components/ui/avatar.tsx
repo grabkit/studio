@@ -1,4 +1,3 @@
-
 "use client"
 
 import * as React from "react"
@@ -23,7 +22,7 @@ const Avatar = React.forwardRef<
       {...props}
     />
      {showStatus && isOnline && (
-      <span className="absolute bottom-0 right-0 block h-3 w-3 rounded-full bg-[hsl(var(--online-glow-color))] border-2 border-background animate-online-indicator-glow" />
+      <span className="absolute bottom-0 right-0 block h-3 w-3 rounded-full bg-[hsl(var(--online-glow-color))] animate-online-indicator-glow" />
     )}
   </div>
 ))
@@ -57,5 +56,3 @@ const AvatarFallback = React.forwardRef<
 AvatarFallback.displayName = AvatarPrimitive.Fallback.displayName
 
 export { Avatar, AvatarImage, AvatarFallback }
-
-    
