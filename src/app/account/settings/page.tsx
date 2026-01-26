@@ -71,7 +71,7 @@ export default function SettingsPage() {
                  <Button variant="ghost" size="icon" onClick={() => router.back()}>
                     <ArrowLeft />
                 </Button>
-                <h2 className="text-lg font-bold mx-auto -translate-x-5">Profile</h2>
+                <h2 className="text-lg font-bold mx-auto -translate-x-5">Settings</h2>
                 <div className="w-10"></div>
             </div>
             <motion.div 
@@ -81,18 +81,6 @@ export default function SettingsPage() {
                 transition={{ duration: 0.3 }}
             >
                 <div className="p-4 space-y-6 overflow-y-auto h-full">
-                    {/* User Info Card */}
-                     <div className="bg-card p-4 rounded-xl flex items-center space-x-4 shadow-none">
-                        <Avatar className="h-16 w-16">
-                             <AvatarImage src={isAvatarUrl ? avatar : undefined} alt={userProfile?.name} />
-                             <AvatarFallback className="text-2xl">{!isAvatarUrl ? avatar : ''}</AvatarFallback>
-                        </Avatar>
-                        <div>
-                            <p className="text-lg font-semibold">{userProfile?.name}</p>
-                            <p className="text-sm text-muted-foreground">{userProfile?.email}</p>
-                        </div>
-                    </div>
-
                     {/* Account Section */}
                     <div>
                         <h3 className="px-2 mb-1 text-sm font-semibold text-muted-foreground">Account</h3>
