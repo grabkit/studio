@@ -3,7 +3,7 @@
 
 import { useParams, useRouter } from 'next/navigation';
 import { useFirebase, useMemoFirebase } from '@/firebase';
-import { collection, query, orderBy, doc, setDoc, serverTimestamp, updateDoc, arrayUnion, getDoc } from 'firebase/firestore';
+import { collection, query, orderBy, doc, setDoc, serverTimestamp, updateDoc, arrayUnion, getDoc, deleteDoc } from 'firebase/firestore';
 import { useCollection, WithId } from '@/firebase/firestore/use-collection';
 import { useDoc } from '@/firebase/firestore/use-doc';
 import { useForm } from 'react-hook-form';
@@ -17,12 +17,15 @@ import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
 import { Form, FormControl, FormField, FormItem } from '@/components/ui/form';
 import { Skeleton } from '@/components/ui/skeleton';
-import { ArrowLeft, Send } from 'lucide-react';
+import { ArrowLeft, Send, Copy, Trash2 } from 'lucide-react';
 import { cn, getAvatar, formatMessageTimestamp, formatUserId, formatDateSeparator } from '@/lib/utils';
 import type { Room, RoomMessage, User } from '@/lib/types';
 import { isSameDay } from 'date-fns';
 import { motion } from 'framer-motion';
 import { usePresence } from '@/hooks/usePresence';
+import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from '@/components/ui/sheet';
+import { useToast } from '@/hooks/use-toast';
+import { FirestorePermissionError, errorEmitter } from '@/firebase';
 
 const messageFormSchema = z.object({
   text: z.string().min(1, "Message cannot be empty").max(1000),
@@ -62,6 +65,8 @@ function RoomMessageBubble({ message, showAvatarAndName }: { message: WithId<Roo
     const { firestore, user: currentUser } = useFirebase();
     const isOwnMessage = message.senderId === currentUser?.uid;
     const { isOnline } = usePresence(message.senderId);
+    const { toast } = useToast();
+    const [isSheetOpen, setIsSheetOpen] = useState(false);
 
     const senderRef = useMemoFirebase(() => doc(firestore, 'users', message.senderId), [firestore, message.senderId]);
     const { data: sender } = useDoc<User>(senderRef);
@@ -69,48 +74,88 @@ function RoomMessageBubble({ message, showAvatarAndName }: { message: WithId<Roo
     const avatar = getAvatar(sender);
     const isAvatarUrl = avatar.startsWith('http');
 
-    if (isOwnMessage) {
-        return (
+    const handleCopy = () => {
+        if (message.text) {
+            navigator.clipboard.writeText(message.text);
+            toast({ title: "Copied to clipboard" });
+        }
+        setIsSheetOpen(false);
+    };
+
+    const handleUnsend = () => {
+        if (!firestore || !isOwnMessage) return;
+        setIsSheetOpen(false);
+        const messageRef = doc(firestore, 'rooms', message.roomId, 'messages', message.id);
+        deleteDoc(messageRef).catch(serverError => {
+            const permissionError = new FirestorePermissionError({
+                path: messageRef.path,
+                operation: 'delete',
+            });
+            errorEmitter.emit('permission-error', permissionError);
+             toast({
+                variant: "destructive",
+                title: "Error",
+                description: "Could not unsend message.",
+            });
+        });
+    };
+
+    const bubble = (
+        <div className={cn(
+            "rounded-2xl max-w-[80%]",
+            isOwnMessage ? "bg-primary text-primary-foreground rounded-br-none" : "bg-secondary text-foreground rounded-bl-none inline-block"
+        )}>
+            <p className="px-3 py-1.5 text-base break-words whitespace-pre-wrap">{message.text}</p>
+            <p className={cn("text-[11px] self-end px-3 pb-1.5 text-right", isOwnMessage ? "text-primary-foreground/70" : "text-muted-foreground")}>
+                {message.timestamp?.toDate ? formatMessageTimestamp(message.timestamp.toDate()) : '...'}
+            </p>
+        </div>
+    );
+
+    return (
+        <Sheet open={isSheetOpen} onOpenChange={setIsSheetOpen}>
             <motion.div
                 initial={{ opacity: 0, scale: 0.8, y: 10 }}
                 animate={{ opacity: 1, scale: 1, y: 0 }}
                 transition={{ type: "spring", stiffness: 500, damping: 30 }}
-                className="flex justify-end"
+                className={cn(isOwnMessage ? "flex justify-end" : "flex gap-2", !showAvatarAndName && !isOwnMessage && "pl-10")}
             >
-                <div className="bg-primary text-primary-foreground rounded-2xl rounded-br-none max-w-[80%]">
-                    <p className="px-3 py-1.5 text-base break-words whitespace-pre-wrap">{message.text}</p>
-                    <p className="text-[11px] text-primary-foreground/70 self-end px-3 pb-1.5 text-right">
-                        {message.timestamp?.toDate ? formatMessageTimestamp(message.timestamp.toDate()) : '...'}
-                    </p>
+                {!isOwnMessage && showAvatarAndName && (
+                    <Avatar className="h-8 w-8" showStatus={true} isOnline={isOnline}>
+                        <AvatarImage src={isAvatarUrl ? avatar : undefined} />
+                        <AvatarFallback>{!isAvatarUrl ? avatar : ''}</AvatarFallback>
+                    </Avatar>
+                )}
+                <div className={cn(!isOwnMessage && "flex-1")}>
+                    {!isOwnMessage && showAvatarAndName && <p className="text-xs font-semibold mb-0.5">{sender ? formatUserId(sender.id) : '...'}</p>}
+                    <SheetTrigger asChild>
+                        <div>{bubble}</div>
+                    </SheetTrigger>
                 </div>
             </motion.div>
-        )
-    }
-
-    return (
-        <motion.div
-            initial={{ opacity: 0, scale: 0.8, y: 10 }}
-            animate={{ opacity: 1, scale: 1, y: 0 }}
-            transition={{ type: "spring", stiffness: 500, damping: 30 }}
-            className={cn("flex gap-2", !showAvatarAndName && "pl-10")}
-        >
-            {showAvatarAndName && (
-                <Avatar className="h-8 w-8" showStatus={true} isOnline={isOnline}>
-                    <AvatarImage src={isAvatarUrl ? avatar : undefined} />
-                    <AvatarFallback>{!isAvatarUrl ? avatar : ''}</AvatarFallback>
-                </Avatar>
-            )}
-            <div className="flex-1">
-                {showAvatarAndName && <p className="text-xs font-semibold mb-0.5">{sender ? formatUserId(sender.id) : '...'}</p>}
-                <div className="bg-secondary text-foreground rounded-2xl rounded-bl-none max-w-[80%] inline-block">
-                    <p className="px-3 py-1.5 text-base break-words whitespace-pre-wrap">{message.text}</p>
-                    <p className="text-[11px] text-muted-foreground self-end px-3 pb-1.5 text-right">
-                        {message.timestamp?.toDate ? formatMessageTimestamp(message.timestamp.toDate()) : '...'}
-                    </p>
+            <SheetContent side="bottom" className="rounded-t-2xl">
+                <SheetHeader className="sr-only">
+                    <SheetTitle>Message Options</SheetTitle>
+                </SheetHeader>
+                <div className="grid gap-2 py-4">
+                    <div className="border rounded-2xl">
+                        <Button variant="ghost" className="justify-start text-base py-6 rounded-2xl w-full gap-3" onClick={handleCopy}>
+                            <Copy />
+                            <span>Copy</span>
+                        </Button>
+                    </div>
+                    {isOwnMessage && (
+                        <div className="border rounded-2xl">
+                            <Button variant="ghost" className="justify-start text-base py-6 rounded-2xl w-full text-destructive hover:text-destructive gap-3" onClick={handleUnsend}>
+                                <Trash2 />
+                                <span>Unsend</span>
+                            </Button>
+                        </div>
+                    )}
                 </div>
-            </div>
-        </motion.div>
-    )
+            </SheetContent>
+        </Sheet>
+    );
 }
 
 function RoomMessages({ roomId }: { roomId: string }) {
