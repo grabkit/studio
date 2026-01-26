@@ -254,7 +254,7 @@ function RequestItem({ request, onAccept }: { request: WithId<Conversation>, onA
 
 function ListSkeleton() {
     return (
-        <div className="divide-y">
+        <div>
             {Array.from({ length: 3 }).map((_, i) => (
                 <div key={i} className="p-4 flex items-center space-x-3">
                     <Skeleton className="h-12 w-12 rounded-full" />
@@ -319,7 +319,7 @@ function ConversationsList({
             return b.lastUpdated.toMillis() - a.lastUpdated.toMillis();
         });
         return (
-            <div className="divide-y">
+            <div>
                 {sortedChats.map(convo => <ConversationItem key={convo.id} conversation={convo} currentUser={currentUser} onLongPress={onLongPress} />)}
             </div>
         )
@@ -344,7 +344,7 @@ function ConversationsList({
 
 
     return (
-        <div className="divide-y">
+        <div>
             {filteredRequests.map(request => (
                 <RequestItem key={request.id} request={request} onAccept={onAcceptRequest} />
             ))}
@@ -671,7 +671,7 @@ export default function MessagesPage() {
 
     return (
         <AppLayout showTopBar={false}>
-            <div className="relative">
+            <div className="relative h-full overflow-y-auto">
                 <AnimatePresence>
                     {isRefreshing && (
                         <motion.div
