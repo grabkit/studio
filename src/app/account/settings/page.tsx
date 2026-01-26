@@ -1,3 +1,4 @@
+
 "use client";
 
 import React from "react";
@@ -82,7 +83,7 @@ export default function SettingsPage() {
             >
                 <div className="p-4 space-y-6 overflow-y-auto h-full">
                     {/* User Info Card */}
-                     <div className="bg-card p-4 rounded-xl shadow-sm flex items-center space-x-4">
+                     <div className="bg-card p-4 rounded-xl flex items-center space-x-4">
                         <Avatar className="h-16 w-16">
                              <AvatarImage src={isAvatarUrl ? avatar : undefined} alt={userProfile?.name} />
                              <AvatarFallback className="text-2xl">{!isAvatarUrl ? avatar : ''}</AvatarFallback>
@@ -96,7 +97,7 @@ export default function SettingsPage() {
                     {/* Account Section */}
                     <div>
                         <h3 className="px-2 mb-1 text-sm font-semibold text-muted-foreground">Account</h3>
-                        <div className="bg-card rounded-xl shadow-sm divide-y">
+                        <div className="bg-card rounded-xl divide-y">
                             <SettingsItem icon={User} label="Manage Profile" href="/account/settings/edit-profile" />
                             <SettingsItem icon={Lock} label="Password & Security" href="#" />
                             <SettingsItem icon={Bell} label="Notifications" href="/account/settings/notifications" />
@@ -107,7 +108,7 @@ export default function SettingsPage() {
                     {/* Preferences Section */}
                     <div>
                         <h3 className="px-2 mb-1 text-sm font-semibold text-muted-foreground">Preferences</h3>
-                        <div className="bg-card rounded-xl shadow-sm divide-y">
+                        <div className="bg-card rounded-xl divide-y">
                             <SettingsItem icon={Info} label="About Us" href="/account/settings/about" />
                             <SettingsItem icon={Sun} label="Theme" value="Light" href="#" />
                         </div>
@@ -116,7 +117,7 @@ export default function SettingsPage() {
                     {/* Support Section */}
                     <div>
                         <h3 className="px-2 mb-1 text-sm font-semibold text-muted-foreground">Support</h3>
-                        <div className="bg-card rounded-xl shadow-sm">
+                        <div className="bg-card rounded-xl">
                             <SettingsItem icon={HelpCircle} label="Help Center" href="/account/settings/help" />
                         </div>
                     </div>
