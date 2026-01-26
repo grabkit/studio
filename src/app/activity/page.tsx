@@ -1,4 +1,3 @@
-
 "use client";
 
 import AppLayout from "@/components/AppLayout";
@@ -67,19 +66,25 @@ const notificationInfo = {
     }
 } as const;
 
+const ADMIN_USER_ID = 'e9ZGHMjgnmO3ueSbf1ao3Crvlr02'; // ID for system user 'Blur'
 
 function NotificationItem({ notification }: { notification: WithId<Notification> }) {
     const info = notificationInfo[notification.type as keyof typeof notificationInfo] || notificationInfo.comment;
     const Icon = info.icon;
     
     const isProfileActivity = notification.type === 'follow' || notification.type === 'message_request';
-    const linkHref = isProfileActivity ? `/profile/${notification.fromUserId}` : `/post/${notification.postId}`;
+    const isAdminNotification = notification.fromUserId === ADMIN_USER_ID && notification.type === 'new_post';
+
+    const linkHref = isAdminNotification
+      ? `/room/${notification.postId}`
+      : isProfileActivity
+      ? `/profile/${notification.fromUserId}`
+      : `/post/${notification.postId}`;
 
     const isFilledIcon = ['like', 'comment', 'message_request', 'repost', 'quote', 'follow'].includes(notification.type);
     
     const avatar = getAvatar({id: notification.fromUserId});
     const isAvatarUrl = avatar.startsWith('http');
-
 
     return (
         <Link href={linkHref || '#'} className={cn(
@@ -88,7 +93,7 @@ function NotificationItem({ notification }: { notification: WithId<Notification>
         )}>
              <div className="relative">
                 <Avatar className="h-10 w-10">
-                    <AvatarImage src={isAvatarUrl ? avatar : undefined} alt={formatUserId(notification.fromUserId)} />
+                    <AvatarImage src={isAvatarUrl ? avatar : undefined} alt={String(formatUserId(notification.fromUserId))} />
                     <AvatarFallback>{!isAvatarUrl ? avatar : ''}</AvatarFallback>
                 </Avatar>
                 <div className="absolute -bottom-1 -right-1 bg-background rounded-full p-0.5">
@@ -102,20 +107,15 @@ function NotificationItem({ notification }: { notification: WithId<Notification>
                 <p className="text-sm">
                     <span className="font-bold">{formatUserId(notification.fromUserId)}</span>
                     {' '}
-                     {notification.type === 'comment' ? (
-                        <>
-                        {info.text}
-                        {notification.activityContent && (
-                           <span className="text-muted-foreground italic"> "{notification.activityContent}"</span>
-                        )}
-                       </>
+                    {isAdminNotification ? (
+                        <span>{notification.activityContent}</span>
                     ) : (
-                       <>
-                        {info.text}
-                        {notification.activityContent && (
-                           <span className="text-muted-foreground italic"> "{notification.activityContent}"</span>
-                        )}
-                       </>
+                        <>
+                            {info.text}
+                            {notification.activityContent && (
+                            <span className="text-muted-foreground italic"> "{notification.activityContent}"</span>
+                            )}
+                        </>
                     )}
                 </p>
                 <p className="text-xs text-muted-foreground mt-1">
