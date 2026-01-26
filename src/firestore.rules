@@ -141,6 +141,19 @@ service cloud.firestore {
       }
     }
 
+    match /rooms/{roomId} {
+      allow get, list: if isSignedIn();
+      allow create: if isSignedIn();
+      allow update: if isSignedIn();
+
+      match /messages/{messageId} {
+        allow read, list: if isSignedIn();
+        allow create: if isSignedIn() && request.resource.data.senderId == request.auth.uid;
+        allow update: if false;
+        allow delete: if isOwner(resource.data.senderId);
+      }
+    }
+
     function isNewEventPost() {
         let data = request.resource.data;
         let allowedKeys = ['id', 'authorId', 'type', 'content', 'timestamp', 'likes', 'likeCount', 'commentCount', 'repostCount', 'commentsAllowed', 'eventDetails', 'isPinned', 'expiresAt'];

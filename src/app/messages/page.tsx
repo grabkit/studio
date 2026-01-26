@@ -1,4 +1,5 @@
 
+
 "use client";
 
 import AppLayout from "@/components/AppLayout";
@@ -665,6 +666,7 @@ export default function MessagesPage() {
                                      <div>
                                         <h2 className="text-lg font-bold font-headline mb-3">Insomnia</h2>
                                         <RoomCard 
+                                            roomId="after_dark"
                                             title="After Dark"
                                             description="Join late-night conversations from 12 AM to 4 AM — meet new people and enjoy real-time chats."
                                             attendees={345}
@@ -679,6 +681,7 @@ export default function MessagesPage() {
                                     <div>
                                         <h2 className="text-lg font-bold font-headline mb-3">Ask Space</h2>
                                         <RoomCard 
+                                            roomId="ask_space"
                                             title="Ask Space"
                                             description="A place for curious minds. Ask questions, get answers, and learn something new."
                                             attendees={123}

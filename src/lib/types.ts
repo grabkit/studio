@@ -169,6 +169,21 @@ export interface Message {
     linkMetadata?: LinkMetadata;
 }
 
+export interface Room {
+  id: string;
+  name: string;
+  description: string;
+  theme: 'violet' | 'teal';
+  participantIds: string[];
+}
+
+export interface RoomMessage {
+  id: string;
+  senderId: string;
+  text: string;
+  timestamp: Timestamp;
+}
+
 
 export interface ReplyItem extends Comment {
     postContent: string;

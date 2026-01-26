@@ -457,6 +457,31 @@
       },
       "required": ["id", "senderId", "text", "timestamp"]
     },
+    "Room": {
+        "title": "Room",
+        "type": "object",
+        "description": "Represents a public chat room.",
+        "properties": {
+            "id": { "type": "string" },
+            "name": { "type": "string" },
+            "description": { "type": "string" },
+            "theme": { "type": "string", "enum": ["violet", "teal"] },
+            "participantIds": { "type": "array", "items": { "type": "string" } }
+        },
+        "required": ["id", "name", "theme"]
+    },
+    "RoomMessage": {
+        "title": "Room Message",
+        "type": "object",
+        "description": "Represents a single message in a public chat room.",
+        "properties": {
+            "id": { "type": "string" },
+            "senderId": { "type": "string" },
+            "text": { "type": "string" },
+            "timestamp": { "type": "string", "format": "date-time" }
+        },
+        "required": ["id", "senderId", "text", "timestamp"]
+    },
     "ProblemReport": {
         "$schema": "http://json-schema.org/draft-07/schema#",
         "title": "Problem Report",
@@ -675,6 +700,29 @@
             }
           ]
         }
+      },
+       {
+        "path": "/rooms/{roomId}",
+        "definition": {
+            "entityName": "Room",
+            "schema": { "$ref": "#/backend/entities/Room" },
+            "description": "Stores public chat rooms where users can have group conversations.",
+            "params": [
+                { "name": "roomId", "description": "The unique identifier for the room." }
+            ]
+        }
+      },
+      {
+          "path": "/rooms/{roomId}/messages/{messageId}",
+          "definition": {
+              "entityName": "RoomMessage",
+              "schema": { "$ref": "#/backend/entities/RoomMessage" },
+              "description": "Stores all messages for a given room.",
+              "params": [
+                  { "name": "roomId", "description": "The ID of the parent room." },
+                  { "name": "messageId", "description": "The unique ID for the message." }
+              ]
+          }
       },
       {
         "path": "/conversations/{conversationId}",

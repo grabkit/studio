@@ -5,8 +5,10 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { cn } from "@/lib/utils";
+import Link from 'next/link';
 
 type RoomCardProps = {
+    roomId: string;
     title: string;
     description: string;
     attendees: number;
@@ -25,7 +27,7 @@ const themeClasses = {
     }
 }
 
-export function RoomCard({ title, description, attendees, avatars, theme }: RoomCardProps) {
+export function RoomCard({ roomId, title, description, attendees, avatars, theme }: RoomCardProps) {
     const currentTheme = themeClasses[theme];
 
     return (
@@ -56,8 +58,10 @@ export function RoomCard({ title, description, attendees, avatars, theme }: Room
                 <span className="text-xs text-white/80 font-semibold">{attendees} joined in already</span>
             </div>
 
-            <Button className={cn("w-full font-bold bg-white hover:bg-white/90 rounded-[25px]", currentTheme.button)}>
-                Join Room
+            <Button asChild className={cn("w-full font-bold bg-white hover:bg-white/90 rounded-[25px]", currentTheme.button)}>
+                <Link href={`/room/${roomId}`}>
+                    Join Room
+                </Link>
             </Button>
         </div>
     )
