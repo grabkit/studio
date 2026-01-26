@@ -68,12 +68,14 @@ export default function SettingsPage() {
 
     return (
         <AppLayout showTopBar={false} showBottomNav={true}>
-            <div className="fixed top-0 left-0 right-0 z-10 flex items-center justify-between p-2 bg-background border-b h-14 max-w-2xl mx-auto sm:px-4">
-                 <Button variant="ghost" size="icon" onClick={() => router.back()}>
-                    <ArrowLeft />
-                </Button>
-                <h2 className="text-lg font-bold mx-auto -translate-x-5">Settings</h2>
-                <div className="w-10"></div>
+            <div className="fixed top-0 left-0 right-0 z-10 grid grid-cols-3 items-center p-2 bg-background border-b h-14 max-w-2xl mx-auto sm:px-4">
+                <div className="flex justify-start">
+                    <Button variant="ghost" size="icon" onClick={() => router.back()}>
+                        <ArrowLeft />
+                    </Button>
+                </div>
+                <h2 className="text-lg font-bold text-center">Settings</h2>
+                <div />
             </div>
             <motion.div 
                 className="pt-14 h-full bg-muted/50"
@@ -83,7 +85,7 @@ export default function SettingsPage() {
             >
                 <div className="p-4 space-y-6 overflow-y-auto h-full">
 
-                    <div className="bg-card rounded-xl p-4">
+                    <div className="bg-card rounded-xl p-4 shadow-sm">
                         <div className="flex items-center space-x-4">
                             <Avatar className="h-14 w-14">
                                 <AvatarImage src={isAvatarUrl ? avatar : undefined} alt={userProfile?.name || ''} />
@@ -99,15 +101,15 @@ export default function SettingsPage() {
                     {/* Account Section */}
                     <div>
                         <h3 className="px-2 mb-1 text-sm font-semibold text-muted-foreground">Account</h3>
-                        <div className="bg-card rounded-xl">
+                        <div className="bg-card rounded-xl shadow-sm">
                             <SettingsItem icon={User} label="Manage Profile" href="/account/settings/edit-profile" />
-                            <div className="h-px bg-border/50 mx-4" />
+                            <div className="h-px bg-border/50 mx-4 opacity-50" />
                             <SettingsItem icon={UserPlus} label="Follow and invite friends" href="/account/settings/follow-invite" />
-                             <div className="h-px bg-border/50 mx-4" />
+                             <div className="h-px bg-border/50 mx-4 opacity-50" />
                             <SettingsItem icon={Lock} label="Password & Security" href="/account/settings/account-status" />
-                            <div className="h-px bg-border/50 mx-4" />
+                            <div className="h-px bg-border/50 mx-4 opacity-50" />
                             <SettingsItem icon={Bell} label="Notifications" href="/account/settings/notifications" />
-                            <div className="h-px bg-border/50 mx-4" />
+                            <div className="h-px bg-border/50 mx-4 opacity-50" />
                             <SettingsItem icon={Globe2} label="Language" value="English" href="#" />
                         </div>
                     </div>
@@ -115,11 +117,11 @@ export default function SettingsPage() {
                     {/* Privacy & Safety Section */}
                     <div>
                         <h3 className="px-2 mb-1 text-sm font-semibold text-muted-foreground">Privacy & Safety</h3>
-                        <div className="bg-card rounded-xl">
+                        <div className="bg-card rounded-xl shadow-sm">
                             <SettingsItem icon={VolumeX} label="Muted Accounts" href="/account/settings/muted-users" />
-                            <div className="h-px bg-border/50 mx-4" />
+                            <div className="h-px bg-border/50 mx-4 opacity-50" />
                             <SettingsItem icon={MinusCircle} label="Restricted Accounts" href="/account/settings/restricted-users" />
-                            <div className="h-px bg-border/50 mx-4" />
+                            <div className="h-px bg-border/50 mx-4 opacity-50" />
                             <SettingsItem icon={ShieldAlert} label="Blocked Users" href="/account/settings/blocked-users" />
                         </div>
                     </div>
@@ -127,7 +129,7 @@ export default function SettingsPage() {
                     {/* Preferences Section */}
                     <div>
                         <h3 className="px-2 mb-1 text-sm font-semibold text-muted-foreground">Preferences</h3>
-                        <div className="bg-card rounded-xl">
+                        <div className="bg-card rounded-xl shadow-sm">
                              <SettingsItem icon={Sun} label="Theme" value="Light" href="#" />
                         </div>
                     </div>
@@ -135,9 +137,9 @@ export default function SettingsPage() {
                     {/* Support Section */}
                     <div>
                         <h3 className="px-2 mb-1 text-sm font-semibold text-muted-foreground">Support</h3>
-                        <div className="bg-card rounded-xl">
+                        <div className="bg-card rounded-xl shadow-sm">
                             <SettingsItem icon={Info} label="About Us" href="/account/settings/about" />
-                             <div className="h-px bg-border/50 mx-4" />
+                             <div className="h-px bg-border/50 mx-4 opacity-50" />
                             <SettingsItem icon={HelpCircle} label="Help Center" href="/account/settings/help" />
                         </div>
                     </div>
