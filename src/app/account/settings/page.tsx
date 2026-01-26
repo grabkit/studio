@@ -3,7 +3,7 @@
 import React from "react";
 import AppLayout from "@/components/AppLayout";
 import { Button } from "@/components/ui/button";
-import { ArrowLeft, ChevronRight, User, Bell, HelpCircle, Info, Lock, Sun, LogOut, UserPlus, ShieldAlert, VolumeX, MinusCircle, UserX, Globe2 } from "lucide-react";
+import { ArrowLeft, ChevronRight, User, Bell, HelpCircle, Info, Lock, Sun, LogOut, UserPlus, ShieldAlert, VolumeX, MinusCircle, UserX } from "lucide-react";
 import { useRouter } from "next/navigation";
 import Link from 'next/link';
 import { useFirebase } from "@/firebase";
@@ -14,16 +14,13 @@ import { ref, serverTimestamp, set } from "firebase/database";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { getAvatar, formatUserId } from "@/lib/utils";
 import { cn } from "@/lib/utils";
-import { useTranslation } from "@/hooks/use-translation";
-import { languages } from "@/providers/translation-provider";
 
 function SettingsItem({ href, label, icon: Icon, value }: { href: string, label: string, icon: React.ElementType, value?: string }) {
-    const { translate } = useTranslation();
     return (
         <Link href={href} className="flex items-center justify-between p-4 transition-colors hover:bg-accent/50 cursor-pointer">
             <div className="flex items-center space-x-4">
                 <Icon className="h-5 w-5 text-foreground" />
-                <span className="text-base">{translate(label)}</span>
+                <span className="text-base">{label}</span>
             </div>
             <div className="flex items-center space-x-2">
                 {value && <span className="text-muted-foreground">{value}</span>}
@@ -34,11 +31,10 @@ function SettingsItem({ href, label, icon: Icon, value }: { href: string, label:
 }
 
 function DestructiveSettingsItem({ label, icon: Icon, onClick }: { label: string, icon: React.ElementType, onClick?: () => void }) {
-    const { translate } = useTranslation();
     return (
         <div onClick={onClick} className="flex items-center space-x-4 p-4 transition-colors hover:bg-destructive/10 cursor-pointer text-destructive">
             <Icon className="h-5 w-5" />
-            <span className="text-base font-medium">{translate(label)}</span>
+            <span className="text-base font-medium">{label}</span>
         </div>
     )
 }
@@ -48,7 +44,6 @@ export default function SettingsPage() {
     const router = useRouter();
     const { auth, database, userProfile, user } = useFirebase();
     const { toast } = useToast();
-    const { translate, language } = useTranslation();
     
     const handleLogout = async () => {
         if (!auth || !auth.currentUser || !database) return;
@@ -88,7 +83,7 @@ export default function SettingsPage() {
                         <ArrowLeft />
                     </Button>
                 </div>
-                <h2 className="text-lg font-bold text-center">{translate('Settings')}</h2>
+                <h2 className="text-lg font-bold text-center">Settings</h2>
                 <div />
             </div>
             <motion.div 
@@ -114,7 +109,7 @@ export default function SettingsPage() {
                     
                     {/* Account Section */}
                     <div>
-                        <h3 className="px-2 mb-1 text-sm font-semibold text-muted-foreground">{translate('Account')}</h3>
+                        <h3 className="px-2 mb-1 text-sm font-semibold text-muted-foreground">Account</h3>
                         <div className="bg-card rounded-xl">
                             <SettingsItem icon={User} label="Manage Profile" href="/account/settings/edit-profile" />
                             <div className="h-px bg-border/50 mx-4 opacity-50" />
@@ -123,14 +118,12 @@ export default function SettingsPage() {
                             <SettingsItem icon={Lock} label="Password & Security" href="/account/settings/account-status" />
                             <div className="h-px bg-border/50 mx-4 opacity-50" />
                             <SettingsItem icon={Bell} label="Notifications" href="/account/settings/notifications" />
-                            <div className="h-px bg-border/50 mx-4 opacity-50" />
-                            <SettingsItem icon={Globe2} label="Language" value={languages[language]} href="/account/settings/language" />
                         </div>
                     </div>
                     
                     {/* Privacy & Safety Section */}
                     <div>
-                        <h3 className="px-2 mb-1 text-sm font-semibold text-muted-foreground">{translate('Privacy & Safety')}</h3>
+                        <h3 className="px-2 mb-1 text-sm font-semibold text-muted-foreground">Privacy & Safety</h3>
                         <div className="bg-card rounded-xl">
                             <SettingsItem icon={VolumeX} label="Muted Accounts" href="/account/settings/muted-users" />
                             <div className="h-px bg-border/50 mx-4 opacity-50" />
@@ -142,7 +135,7 @@ export default function SettingsPage() {
 
                     {/* Preferences Section */}
                     <div>
-                        <h3 className="px-2 mb-1 text-sm font-semibold text-muted-foreground">{translate('Preferences')}</h3>
+                        <h3 className="px-2 mb-1 text-sm font-semibold text-muted-foreground">Preferences</h3>
                         <div className="bg-card rounded-xl">
                              <SettingsItem icon={Sun} label="Theme" value="Light" href="#" />
                         </div>
@@ -150,7 +143,7 @@ export default function SettingsPage() {
 
                     {/* Support Section */}
                     <div>
-                        <h3 className="px-2 mb-1 text-sm font-semibold text-muted-foreground">{translate('Support')}</h3>
+                        <h3 className="px-2 mb-1 text-sm font-semibold text-muted-foreground">Support</h3>
                         <div className="bg-card rounded-xl">
                             <SettingsItem icon={Info} label="About Us" href="/account/settings/about" />
                              <div className="h-px bg-border/50 mx-4 opacity-50" />
@@ -160,7 +153,7 @@ export default function SettingsPage() {
 
                     {/* Login Section */}
                     <div className="pb-4">
-                        <h3 className="px-2 mb-1 text-sm font-semibold text-muted-foreground">{translate('Login')}</h3>
+                        <h3 className="px-2 mb-1 text-sm font-semibold text-muted-foreground">Login</h3>
                         <div className="bg-card rounded-xl">
                             <DestructiveSettingsItem icon={LogOut} label="Log Out" onClick={handleLogout} />
                             <div className="h-px bg-border/50 mx-4 opacity-50" />
