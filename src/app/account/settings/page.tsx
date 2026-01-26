@@ -1,51 +1,38 @@
-
 "use client";
 
 import React from "react";
 import AppLayout from "@/components/AppLayout";
 import { Button } from "@/components/ui/button";
-import { ArrowLeft, ChevronRight, User, Bell, UserX, HelpCircle, Info, LogOut, UserPlus, VolumeX, MinusCircle } from "lucide-react";
+import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
+import { ArrowLeft, ChevronRight, User, Bell, HelpCircle, Info, LogOut, Lock, Globe2, Sun } from "lucide-react";
 import { useRouter } from "next/navigation";
 import Link from 'next/link';
 import { useFirebase } from "@/firebase";
 import { signOut } from "firebase/auth";
 import { useToast } from "@/hooks/use-toast";
-import { ref, serverTimestamp, set } from "firebase/database";
+import { getAvatar } from "@/lib/utils";
 import { motion } from "framer-motion";
+import { ref, serverTimestamp, set } from "firebase/database";
 
-const settingsSections = {
-    "Your Account": [
-        { href: "/account/settings/account-status", label: "Account status", icon: User },
-        { href: "/account/settings/follow-invite", label: "Follow and invite friends", icon: UserPlus },
-    ],
-    "How you interact": [
-        { href: "/account/settings/notifications", label: "Notifications", icon: Bell },
-        { href: "/account/settings/restricted-users", label: "Restricted accounts", icon: MinusCircle },
-        { href: "/account/settings/blocked-users", label: "Blocked users", icon: UserX },
-        { href: "/account/settings/muted-users", label: "Muted accounts", icon: VolumeX },
-    ],
-    "Support & About": [
-        { href: "/account/settings/help", label: "Help", icon: HelpCircle },
-        { href: "/account/settings/about", label: "About", icon: Info },
-    ],
-};
 
-function SettingsItem({ href, label, icon: Icon }: { href: string, label: string, icon: React.ElementType }) {
+function SettingsItem({ href, label, icon: Icon, value }: { href: string, label: string, icon: React.ElementType, value?: string }) {
     return (
-        <Link href={href} className="flex items-center justify-between p-4 transition-colors hover:bg-accent cursor-pointer">
+        <Link href={href} className="flex items-center justify-between p-4 transition-colors hover:bg-accent/50 cursor-pointer first:rounded-t-xl last:rounded-b-xl">
             <div className="flex items-center space-x-4">
                 <Icon className="h-5 w-5 text-muted-foreground" />
                 <span className="text-base">{label}</span>
             </div>
-            <ChevronRight className="h-5 w-5 text-muted-foreground" />
+            <div className="flex items-center space-x-2">
+                {value && <span className="text-muted-foreground">{value}</span>}
+                <ChevronRight className="h-5 w-5 text-muted-foreground" />
+            </div>
         </Link>
     )
 }
 
-
 export default function SettingsPage() {
     const router = useRouter();
-    const { auth, database } = useFirebase();
+    const { auth, database, userProfile } = useFirebase();
     const { toast } = useToast();
     
     const handleLogout = async () => {
@@ -73,37 +60,74 @@ export default function SettingsPage() {
                 description: error.message,
             });
         }
-      };
+    };
+    
+    const avatar = getAvatar(userProfile);
+    const isAvatarUrl = avatar.startsWith('http');
 
     return (
-        <AppLayout showTopBar={false} showBottomNav={false}>
-            <div className="fixed top-0 left-0 right-0 z-10 flex items-center p-2 bg-background border-b h-14 max-w-2xl mx-auto sm:px-4">
-                <Button variant="ghost" size="icon" onClick={() => router.back()}>
+        <AppLayout showTopBar={false} showBottomNav={true}>
+            <div className="fixed top-0 left-0 right-0 z-10 flex items-center justify-between p-2 bg-background border-b h-14 max-w-2xl mx-auto sm:px-4">
+                 <Button variant="ghost" size="icon" onClick={() => router.back()}>
                     <ArrowLeft />
                 </Button>
-                <h2 className="text-lg font-bold mx-auto -translate-x-4">Settings</h2>
+                <h2 className="text-lg font-bold mx-auto -translate-x-5">Profile</h2>
+                <div className="w-10"></div>
             </div>
             <motion.div 
-                className="pt-14 h-full overflow-y-auto"
+                className="pt-14 h-full bg-muted/50"
                 initial={{ scale: 0.98, opacity: 0 }}
                 animate={{ scale: 1, opacity: 1 }}
                 transition={{ duration: 0.3 }}
             >
-                {Object.entries(settingsSections).map(([sectionTitle, items]) => (
-                    <div key={sectionTitle} className="my-4">
-                        <h3 className="px-4 py-2 text-sm font-semibold text-muted-foreground">{sectionTitle}</h3>
-                            <div>
-                            {items.map(item => (
-                                <SettingsItem key={item.href} {...item} />
-                            ))}
+                <div className="p-4 space-y-6 overflow-y-auto h-full">
+                    {/* User Info Card */}
+                     <div className="bg-card p-4 rounded-xl shadow-sm flex items-center space-x-4">
+                        <Avatar className="h-16 w-16">
+                             <AvatarImage src={isAvatarUrl ? avatar : undefined} alt={userProfile?.name} />
+                             <AvatarFallback className="text-2xl">{!isAvatarUrl ? avatar : ''}</AvatarFallback>
+                        </Avatar>
+                        <div>
+                            <p className="text-lg font-semibold">{userProfile?.name}</p>
+                            <p className="text-sm text-muted-foreground">{userProfile?.email}</p>
                         </div>
                     </div>
-                ))}
-                <div className="p-4 mt-4">
-                    <Button variant="outline" className="w-full text-destructive hover:text-destructive hover:bg-destructive/10" onClick={handleLogout}>
-                        <LogOut className="mr-2 h-4 w-4" />
-                        Log Out
-                    </Button>
+
+                    {/* Account Section */}
+                    <div>
+                        <h3 className="px-2 mb-1 text-sm font-semibold text-muted-foreground">Account</h3>
+                        <div className="bg-card rounded-xl shadow-sm divide-y">
+                            <SettingsItem icon={User} label="Manage Profile" href="/account/settings/edit-profile" />
+                            <SettingsItem icon={Lock} label="Password & Security" href="#" />
+                            <SettingsItem icon={Bell} label="Notifications" href="/account/settings/notifications" />
+                            <SettingsItem icon={Globe2} label="Language" value="English" href="#" />
+                        </div>
+                    </div>
+                    
+                    {/* Preferences Section */}
+                    <div>
+                        <h3 className="px-2 mb-1 text-sm font-semibold text-muted-foreground">Preferences</h3>
+                        <div className="bg-card rounded-xl shadow-sm divide-y">
+                            <SettingsItem icon={Info} label="About Us" href="/account/settings/about" />
+                            <SettingsItem icon={Sun} label="Theme" value="Light" href="#" />
+                        </div>
+                    </div>
+
+                    {/* Support Section */}
+                    <div>
+                        <h3 className="px-2 mb-1 text-sm font-semibold text-muted-foreground">Support</h3>
+                        <div className="bg-card rounded-xl shadow-sm">
+                            <SettingsItem icon={HelpCircle} label="Help Center" href="/account/settings/help" />
+                        </div>
+                    </div>
+
+                    {/* Logout Button */}
+                    <div className="text-center pt-4">
+                         <Button variant="ghost" className="text-destructive hover:text-destructive hover:bg-destructive/10 rounded-full" onClick={handleLogout}>
+                            <LogOut className="mr-2 h-4 w-4" />
+                            Log Out
+                        </Button>
+                    </div>
                 </div>
             </motion.div>
         </AppLayout>
