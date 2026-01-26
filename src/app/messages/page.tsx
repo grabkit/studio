@@ -671,7 +671,7 @@ export default function MessagesPage() {
 
     return (
         <AppLayout showTopBar={false}>
-            <div className="relative h-full">
+            <div className="relative">
                 <AnimatePresence>
                     {isRefreshing && (
                         <motion.div
@@ -688,7 +688,6 @@ export default function MessagesPage() {
                 </AnimatePresence>
                 
                 <motion.div
-                    className="h-full"
                     animate={{ paddingTop: isRefreshing ? 60 : 0 }}
                     transition={{ duration: 0.4, ease: "easeInOut" }}
                 >
@@ -700,7 +699,7 @@ export default function MessagesPage() {
                     />
                     
                     <Tabs defaultValue="rooms" className="w-full" onValueChange={handleTabChange}>
-                        <div className="sticky top-0 bg-background/80 backdrop-blur-sm z-10 border-b">
+                        <div className="border-b bg-background">
                             <TabsList variant="underline" className="grid w-full grid-cols-3">
                                 <TabsTrigger value="rooms" variant="underline" className="font-semibold">
                                     Rooms
