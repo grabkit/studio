@@ -10,7 +10,7 @@ import { Button } from "@/components/ui/button";
 import { MessageSquare, Mail, Trash2, BellOff, CheckCircle, User as UserIcon, Bell, Mic, Loader2, Radio } from "lucide-react";
 import { useFirebase, useMemoFirebase, useDoc } from "@/firebase";
 import { collection, query, where, doc, updateDoc, deleteDoc, arrayUnion, arrayRemove, getDocs, documentId, getDocsFromCache, orderBy } from "firebase/firestore";
-import type { Conversation, User } from "@/lib/types";
+import type { Conversation, User, Room } from "@/lib/types";
 import React, { useMemo, useState, useEffect, useRef, useCallback, type TouchEvent } from "react";
 import Link from "next/link";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -353,6 +353,66 @@ function ConversationsList({
     )
 }
 
+function RoomsTabContent() {
+    const { firestore } = useFirebase();
+
+    const afterDarkRoomRef = useMemoFirebase(() => {
+        if (!firestore) return null;
+        return doc(firestore, 'rooms', 'after_dark');
+    }, [firestore]);
+
+    const askSpaceRoomRef = useMemoFirebase(() => {
+        if (!firestore) return null;
+        return doc(firestore, 'rooms', 'ask_space');
+    }, [firestore]);
+
+    const { data: afterDarkRoom, isLoading: isAfterDarkLoading } = useDoc<Room>(afterDarkRoomRef);
+    const { data: askSpaceRoom, isLoading: isAskSpaceLoading } = useDoc<Room>(askSpaceRoomRef);
+
+    return (
+        <div className="p-4 space-y-6">
+            <div>
+                <h2 className="text-lg font-bold font-headline mb-3">Insomnia</h2>
+                {isAfterDarkLoading ? (
+                    <Skeleton className="h-[218px] w-full rounded-2xl" />
+                ) : (
+                    <RoomCard
+                        roomId="after_dark"
+                        title="After Dark"
+                        description="Join late-night conversations from 12 AM to 4 AM — meet new people and enjoy real-time chats."
+                        attendees={afterDarkRoom?.participantIds?.length ?? 0}
+                        avatars={[
+                            "https://i.pravatar.cc/150?u=a042581f4e29026704d",
+                            "https://i.pravatar.cc/150?u=a042581f4e29026705d",
+                            "https://i.pravatar.cc/150?u=a042581f4e29026706d"
+                        ]}
+                        theme="violet"
+                    />
+                )}
+            </div>
+            <div>
+                <h2 className="text-lg font-bold font-headline mb-3">Ask Space</h2>
+                {isAskSpaceLoading ? (
+                    <Skeleton className="h-[218px] w-full rounded-2xl" />
+                ) : (
+                    <RoomCard
+                        roomId="ask_space"
+                        title="Ask Space"
+                        description="A place for curious minds. Ask questions, get answers, and learn something new."
+                        attendees={askSpaceRoom?.participantIds?.length ?? 0}
+                        avatars={[
+                            "https://i.pravatar.cc/150?u=a042581f4e29026707d",
+                            "https://i.pravatar.cc/150?u=a042581f4e29026708d",
+                            "https://i.pravatar.cc/150?u=a042581f4e29026709d"
+                        ]}
+                        theme="teal"
+                    />
+                )}
+            </div>
+        </div>
+    )
+}
+
 
 export default function MessagesPage() {
     const { firestore, user, userProfile, showVoiceStatusPlayer } = useFirebase();
@@ -642,7 +702,7 @@ export default function MessagesPage() {
                         />
                     </div>
                     
-                    <div className="flex-grow flex flex-col p-2">
+                    <div className="flex-grow flex flex-col p-2 overflow-hidden">
                         <Tabs defaultValue="rooms" className="w-full flex flex-col flex-grow overflow-hidden" onValueChange={handleTabChange}>
                             <TabsList className="grid w-full grid-cols-3 rounded-full flex-shrink-0">
                                 <TabsTrigger value="rooms" className="relative flex items-center justify-center gap-2 rounded-full font-bold">
@@ -662,37 +722,8 @@ export default function MessagesPage() {
                                 </TabsTrigger>
                             </TabsList>
                             <div className="flex-grow overflow-y-auto mt-2 pb-14">
-                                <TabsContent value="rooms" className="p-4 space-y-6">
-                                     <div>
-                                        <h2 className="text-lg font-bold font-headline mb-3">Insomnia</h2>
-                                        <RoomCard 
-                                            roomId="after_dark"
-                                            title="After Dark"
-                                            description="Join late-night conversations from 12 AM to 4 AM — meet new people and enjoy real-time chats."
-                                            attendees={345}
-                                            avatars={[
-                                                "https://i.pravatar.cc/150?u=a042581f4e29026704d",
-                                                "https://i.pravatar.cc/150?u=a042581f4e29026705d",
-                                                "https://i.pravatar.cc/150?u=a042581f4e29026706d"
-                                            ]}
-                                            theme="violet"
-                                        />
-                                    </div>
-                                    <div>
-                                        <h2 className="text-lg font-bold font-headline mb-3">Ask Space</h2>
-                                        <RoomCard 
-                                            roomId="ask_space"
-                                            title="Ask Space"
-                                            description="A place for curious minds. Ask questions, get answers, and learn something new."
-                                            attendees={123}
-                                            avatars={[
-                                                "https://i.pravatar.cc/150?u=a042581f4e29026707d",
-                                                "https://i.pravatar.cc/150?u=a042581f4e29026708d",
-                                                "https://i.pravatar.cc/150?u=a042581f4e29026709d"
-                                            ]}
-                                            theme="teal"
-                                        />
-                                    </div>
+                                <TabsContent value="rooms">
+                                    <RoomsTabContent />
                                 </TabsContent>
                                 <TabsContent value="chats">
                                     <ConversationsList 
