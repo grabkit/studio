@@ -1,8 +1,8 @@
 
 
-"use client";
+'use client';
 
-import AppLayout from "@/components/AppLayout";
+import AppLayout from '@/components/AppLayout';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { getAvatar, formatMessageTimestamp, formatUserId } from "@/lib/utils";
@@ -661,7 +661,7 @@ export default function MessagesPage() {
                                     Requests
                                 </TabsTrigger>
                             </TabsList>
-                            <div className="flex-grow overflow-y-auto mt-2">
+                            <div className="flex-grow overflow-y-auto mt-2 pb-14">
                                 <TabsContent value="rooms" className="p-4 space-y-6">
                                      <div>
                                         <h2 className="text-lg font-bold font-headline mb-3">Insomnia</h2>
