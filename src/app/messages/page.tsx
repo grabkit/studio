@@ -1,5 +1,4 @@
 
-
 'use client';
 
 import AppLayout from '@/components/AppLayout';
@@ -391,13 +390,13 @@ function RoomsTabContent() {
                 )}
             </div>
             <div>
-                <h2 className="text-lg font-bold font-headline mb-3">Asking Questions</h2>
+                <h2 className="text-lg font-bold font-headline mb-3">Ask Space</h2>
                 {isAskSpaceLoading ? (
                     <Skeleton className="h-[218px] w-full rounded-2xl" />
                 ) : (
                     <RoomCard
                         roomId="ask_space"
-                        title="Asking Questions"
+                        title="Ask Space"
                         description="A place for curious minds. Ask questions, get answers, and learn something new."
                         attendees={askSpaceRoom?.participantIds?.length ?? 0}
                         avatars={[
@@ -721,7 +720,7 @@ export default function MessagesPage() {
                                     Requests
                                 </TabsTrigger>
                             </TabsList>
-                            <div className="flex-grow overflow-y-auto mt-2 pb-14">
+                            <div className="flex-grow overflow-y-auto mt-2 pb-20">
                                 <TabsContent value="rooms">
                                     <RoomsTabContent />
                                 </TabsContent>
@@ -777,3 +776,5 @@ export default function MessagesPage() {
         </AppLayout>
     )
 }
+
+    
