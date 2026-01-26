@@ -3,7 +3,7 @@
 
 import { useParams, useRouter } from 'next/navigation';
 import { useFirebase, useMemoFirebase } from '@/firebase';
-import { collection, query, orderBy, doc, setDoc, serverTimestamp, updateDoc, arrayUnion, getDoc, deleteDoc, Timestamp } from 'firebase/firestore';
+import { collection, query, orderBy, doc, setDoc, serverTimestamp, updateDoc, arrayUnion, getDoc, deleteDoc, Timestamp, arrayRemove } from 'firebase/firestore';
 import { useCollection, WithId } from '@/firebase/firestore/use-collection';
 import { useDoc } from '@/firebase/firestore/use-doc';
 import { useForm } from 'react-hook-form';
@@ -627,6 +627,7 @@ export default function RoomChatPage() {
         }
     }, [isRoomLoading, room, firestore, roomId, user]);
 
+    // Join room on mount
     useEffect(() => {
         if (room && user && roomRef && !room.participantIds.includes(user.uid)) {
             updateDoc(roomRef, {
@@ -634,6 +635,19 @@ export default function RoomChatPage() {
             });
         }
     }, [room, user, roomRef]);
+
+    // Leave room on unmount
+    useEffect(() => {
+        return () => {
+            if (firestore && user && roomRef) {
+                updateDoc(roomRef, {
+                    participantIds: arrayRemove(user.uid)
+                }).catch(err => {
+                    console.error("Error leaving room:", err);
+                });
+            }
+        };
+    }, [firestore, user, roomRef]);
 
     const handleSetReply = (message: WithId<RoomMessage>) => {
         setReplyingTo(message);
