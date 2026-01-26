@@ -3,21 +3,19 @@
 import React from "react";
 import AppLayout from "@/components/AppLayout";
 import { Button } from "@/components/ui/button";
-import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
-import { ArrowLeft, ChevronRight, User, Bell, HelpCircle, Info, LogOut, Lock, Globe2, Sun } from "lucide-react";
+import { ArrowLeft, ChevronRight, User, Bell, HelpCircle, Info, Lock, Globe2, Sun, LogOut } from "lucide-react";
 import { useRouter } from "next/navigation";
 import Link from 'next/link';
 import { useFirebase } from "@/firebase";
 import { signOut } from "firebase/auth";
 import { useToast } from "@/hooks/use-toast";
-import { getAvatar } from "@/lib/utils";
 import { motion } from "framer-motion";
 import { ref, serverTimestamp, set } from "firebase/database";
 
 
 function SettingsItem({ href, label, icon: Icon, value }: { href: string, label: string, icon: React.ElementType, value?: string }) {
     return (
-        <Link href={href} className="flex items-center justify-between p-4 transition-colors hover:bg-accent/50 cursor-pointer first:rounded-t-xl last:rounded-b-xl">
+        <Link href={href} className="flex items-center justify-between p-4 transition-colors hover:bg-accent/50 cursor-pointer">
             <div className="flex items-center space-x-4">
                 <Icon className="h-5 w-5 text-foreground" />
                 <span className="text-base">{label}</span>
@@ -62,9 +60,6 @@ export default function SettingsPage() {
         }
     };
     
-    const avatar = getAvatar(userProfile);
-    const isAvatarUrl = avatar.startsWith('http');
-
     return (
         <AppLayout showTopBar={false} showBottomNav={true}>
             <div className="fixed top-0 left-0 right-0 z-10 flex items-center justify-between p-2 bg-background border-b h-14 max-w-2xl mx-auto sm:px-4">
@@ -84,10 +79,13 @@ export default function SettingsPage() {
                     {/* Account Section */}
                     <div>
                         <h3 className="px-2 mb-1 text-sm font-semibold text-muted-foreground">Account</h3>
-                        <div className="bg-card rounded-xl divide-y shadow-none">
+                        <div className="bg-card rounded-xl shadow-none">
                             <SettingsItem icon={User} label="Manage Profile" href="/account/settings/edit-profile" />
+                            <div className="h-px bg-border/50 mx-4" />
                             <SettingsItem icon={Lock} label="Password & Security" href="#" />
+                            <div className="h-px bg-border/50 mx-4" />
                             <SettingsItem icon={Bell} label="Notifications" href="/account/settings/notifications" />
+                            <div className="h-px bg-border/50 mx-4" />
                             <SettingsItem icon={Globe2} label="Language" value="English" href="#" />
                         </div>
                     </div>
@@ -95,8 +93,9 @@ export default function SettingsPage() {
                     {/* Preferences Section */}
                     <div>
                         <h3 className="px-2 mb-1 text-sm font-semibold text-muted-foreground">Preferences</h3>
-                        <div className="bg-card rounded-xl divide-y shadow-none">
+                        <div className="bg-card rounded-xl shadow-none">
                             <SettingsItem icon={Info} label="About Us" href="/account/settings/about" />
+                            <div className="h-px bg-border/50 mx-4" />
                             <SettingsItem icon={Sun} label="Theme" value="Light" href="#" />
                         </div>
                     </div>
