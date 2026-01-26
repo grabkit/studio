@@ -606,6 +606,11 @@ export default function RoomChatPage() {
     const [forwardingMessage, setForwardingMessage] = useState<WithId<RoomMessage> | null>(null);
     const [isForwardSheetOpen, setIsForwardSheetOpen] = useState(false);
     
+    const cleanupRef = useRef({ firestore, user });
+    useEffect(() => {
+        cleanupRef.current = { firestore, user };
+    }, [firestore, user]);
+
     const roomRef = useMemoFirebase(() => {
         if (!firestore || !roomId) return null;
         return doc(firestore, 'rooms', roomId);
@@ -639,15 +644,17 @@ export default function RoomChatPage() {
     // Leave room on unmount
     useEffect(() => {
         return () => {
-            if (firestore && user && roomRef) {
-                updateDoc(roomRef, {
-                    participantIds: arrayRemove(user.uid)
+            const { firestore: currentFirestore, user: currentUser } = cleanupRef.current;
+            if (currentFirestore && currentUser && roomId) {
+                const roomToLeaveRef = doc(currentFirestore, 'rooms', roomId);
+                updateDoc(roomToLeaveRef, {
+                    participantIds: arrayRemove(currentUser.uid)
                 }).catch(err => {
                     console.error("Error leaving room:", err);
                 });
             }
         };
-    }, [firestore, user, roomRef]);
+    }, [roomId]);
 
     const handleSetReply = (message: WithId<RoomMessage>) => {
         setReplyingTo(message);
