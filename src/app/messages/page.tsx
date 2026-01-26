@@ -391,13 +391,13 @@ function RoomsTabContent() {
                 )}
             </div>
             <div>
-                <h2 className="text-lg font-bold font-headline mb-3">Ask Space</h2>
+                <h2 className="text-lg font-bold font-headline mb-3">Asking Questions</h2>
                 {isAskSpaceLoading ? (
                     <Skeleton className="h-[218px] w-full rounded-2xl" />
                 ) : (
                     <RoomCard
                         roomId="ask_space"
-                        title="Ask Space"
+                        title="Asking Questions"
                         description="A place for curious minds. Ask questions, get answers, and learn something new."
                         attendees={askSpaceRoom?.participantIds?.length ?? 0}
                         avatars={[

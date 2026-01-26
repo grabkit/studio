@@ -1,4 +1,5 @@
 
+
 'use client';
 
 import { useParams, useRouter } from 'next/navigation';
@@ -623,7 +624,7 @@ export default function RoomChatPage() {
             // Room doesn't exist, let's create it.
             const newRoomData: Room = {
                 id: roomId,
-                name: roomId === 'after_dark' ? 'After Dark' : 'Ask Space',
+                name: roomId === 'after_dark' ? 'After Dark' : 'Asking Questions',
                 description: roomId === 'after_dark' ? 'Join late-night conversations from 12 AM to 4 AM — meet new people and enjoy real-time chats.' : 'A place for curious minds. Ask questions, get answers, and learn something new.',
                 theme: roomId === 'after_dark' ? 'violet' : 'teal',
                 participantIds: []
