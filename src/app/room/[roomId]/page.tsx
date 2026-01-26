@@ -267,7 +267,7 @@ export default function RoomChatPage() {
                 transition={{ duration: 0.3 }}
                 className="flex flex-col h-screen"
             >
-                <RoomHeader room={room} participantsCount={room?.participantIds.length || 0} />
+                <RoomHeader room={room} participantsCount={room?.participantIds?.length || 0} />
                  <div className="flex-1 overflow-y-auto pt-14 pb-14">
                     <RoomMessages roomId={roomId} />
                 </div>
