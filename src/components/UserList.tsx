@@ -31,7 +31,7 @@ function UserListSkeleton() {
     )
 }
 
-function UserItem({ user }: { user: WithId<User> }) {
+function UserItem({ user, isCurrentUser }: { user: WithId<User>, isCurrentUser?: boolean }) {
     const avatar = getAvatar(user);
     const isAvatarUrl = avatar.startsWith('http');
 
@@ -43,7 +43,10 @@ function UserItem({ user }: { user: WithId<User> }) {
                     <AvatarFallback>{!isAvatarUrl ? avatar : ''}</AvatarFallback>
                 </Avatar>
                 <div>
-                    <div className="font-semibold">{formatUserId(user.id)}</div>
+                    <div className="font-semibold">
+                        {formatUserId(user.id)}
+                        {isCurrentUser && <span className="text-muted-foreground font-normal"> (You)</span>}
+                    </div>
                 </div>
             </div>
         </Link>
@@ -51,7 +54,7 @@ function UserItem({ user }: { user: WithId<User> }) {
 }
 
 export default function UserList({ userIds, emptyTitle, emptyDescription }: { userIds: string[], emptyTitle: string, emptyDescription: string }) {
-    const { firestore } = useFirebase();
+    const { firestore, user: currentUser } = useFirebase();
     const [users, setUsers] = useState<WithId<User>[]>([]);
     const [isLoading, setIsLoading] = useState(true);
 
@@ -105,7 +108,7 @@ export default function UserList({ userIds, emptyTitle, emptyDescription }: { us
     return (
         <div>
             {users.map(user => (
-                <UserItem key={user.id} user={user} />
+                <UserItem key={user.id} user={user} isCurrentUser={user.id === currentUser?.uid} />
             ))}
         </div>
     );
