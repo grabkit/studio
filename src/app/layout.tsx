@@ -2,6 +2,7 @@ import type { Metadata } from 'next';
 import './globals.css';
 import { Toaster } from '@/components/ui/toaster';
 import { FirebaseClientProvider } from '@/firebase/client-provider';
+import { TranslationProvider } from '@/providers/translation-provider';
 
 const ogImageUrl = "https://blogger.googleusercontent.com/img/b/R29vZ2xl/AVvXsEgSIOQYwoQ_D8LcS9OlsMjXOlBws0OSrPnxh7nqq_wHdmqQ9PlIRvrtOni6EwDf68sAofpaFhvfA4wK58PpYu6HV4JeLsFbj61-ryJZUGPsGed4dswZSblL09Huc3Fd4-nmSln8MybhJVeWIMSoudR_U6Pe0IiCuiJ4ucEqFn6i0zNdTqNwM6goO8pbOaOR/s320/blur%20OG%20logo.png";
 
@@ -46,7 +47,9 @@ export default function RootLayout({
       </head>
       <body className="font-body antialiased">
         <FirebaseClientProvider>
-          {children}
+          <TranslationProvider>
+            {children}
+          </TranslationProvider>
           <Toaster />
         </FirebaseClientProvider>
       </body>
