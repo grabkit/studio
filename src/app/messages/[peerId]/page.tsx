@@ -3,7 +3,7 @@
 
 import { useParams, useRouter } from 'next/navigation';
 import { useFirebase, useMemoFirebase } from '@/firebase';
-import { collection, query, orderBy, doc, setDoc, serverTimestamp, updateDoc, writeBatch, increment, deleteDoc, getDoc, where } from "firebase/firestore";
+import { collection, query, orderBy, doc, setDoc, serverTimestamp, updateDoc, writeBatch, increment, deleteDoc, getDoc, where, arrayUnion } from "firebase/firestore";
 import { useCollection } from '@/firebase/firestore/use-collection';
 import { useDoc } from '@/firebase/firestore/use-doc';
 import { useForm } from 'react-hook-form';
@@ -114,7 +114,7 @@ function PostPreviewCard({ postId }: { postId: string }) {
 
 function MessageBubble({ message, isOwnMessage, conversation, onSetReply, onForward }: { message: WithId<Message>, isOwnMessage: boolean, conversation: WithId<Conversation> | null, onSetReply: (message: WithId<Message>) => void, onForward: (message: WithId<Message>) => void }) {
     const { toast } = useToast();
-    const { firestore } = useFirebase();
+    const { firestore, user } = useFirebase();
     const router = useRouter();
     const [isSheetOpen, setIsSheetOpen] = useState(false);
 
@@ -143,6 +143,27 @@ function MessageBubble({ message, isOwnMessage, conversation, onSetReply, onForw
             });
         });
     }
+
+    const handleDeleteForMe = () => {
+        if (!firestore || !conversation || !user) return;
+        setIsSheetOpen(false);
+        const messageRef = doc(firestore, 'conversations', conversation.id, 'messages', message.id);
+        updateDoc(messageRef, {
+            deletedFor: arrayUnion(user.uid)
+        }).catch(serverError => {
+            const permissionError = new FirestorePermissionError({
+                path: messageRef.path,
+                operation: 'update',
+                requestResourceData: { deletedFor: arrayUnion(user.uid) }
+            });
+            errorEmitter.emit('permission-error', permissionError);
+            toast({
+                variant: "destructive",
+                title: "Error",
+                description: "Could not delete message for you.",
+            });
+        });
+    };
 
     const handleOpenPost = () => {
         if (message.postId) {
@@ -293,14 +314,21 @@ function MessageBubble({ message, isOwnMessage, conversation, onSetReply, onForw
                              </>
                         )}
                     </div>
-                     {isOwnMessage && (
-                        <div className="border rounded-2xl">
-                            <Button variant="ghost" className="justify-start text-base py-6 rounded-2xl w-full text-destructive hover:text-destructive gap-3" onClick={handleUnsend}>
-                                <Trash2 />
-                                <span>Unsend</span>
-                            </Button>
-                        </div>
-                    )}
+                     <div className="border rounded-2xl">
+                        {isOwnMessage && (
+                             <>
+                                <Button variant="ghost" className="justify-start text-base py-6 rounded-2xl w-full text-destructive hover:text-destructive gap-3" onClick={handleUnsend}>
+                                    <Trash2 />
+                                    <span>Unsend</span>
+                                </Button>
+                                <div className="border-t"></div>
+                            </>
+                        )}
+                        <Button variant="ghost" className="justify-start text-base py-6 rounded-2xl w-full text-destructive hover:text-destructive gap-3" onClick={handleDeleteForMe}>
+                            <Trash2 />
+                            <span>Delete for you</span>
+                        </Button>
+                    </div>
                 </div>
             </SheetContent>
         </Sheet>
@@ -372,10 +400,16 @@ function ChatMessages({ conversationId, conversation, onSetReply, onForward }: {
 
     const { data: messages, isLoading } = useCollection<Message>(messagesQuery);
     
-    const seenStatus = useMemo(() => {
-        if (!conversation || !messages || messages.length === 0 || !user) return null;
+    const filteredMessages = useMemo(() => {
+        if (!messages || !user) return [];
+        return messages.filter(msg => !msg.deletedFor?.includes(user.uid));
+    }, [messages, user]);
 
-        const lastMessage = messages[messages.length - 1];
+
+    const seenStatus = useMemo(() => {
+        if (!conversation || !filteredMessages || filteredMessages.length === 0 || !user) return null;
+
+        const lastMessage = filteredMessages[filteredMessages.length - 1];
         if (lastMessage.senderId !== user.uid) return null; 
 
         const peerId = conversation.participantIds.find(id => id !== user.uid);
@@ -390,12 +424,12 @@ function ChatMessages({ conversationId, conversation, onSetReply, onForward }: {
         
         return null;
 
-    }, [messages, conversation, user]);
+    }, [filteredMessages, conversation, user]);
 
 
     React.useEffect(() => {
         setTimeout(() => messagesEndRef.current?.scrollIntoView(), 0);
-    }, [messages]);
+    }, [filteredMessages]);
     
     if (isLoading) {
         return (
@@ -407,9 +441,9 @@ function ChatMessages({ conversationId, conversation, onSetReply, onForward }: {
         )
     }
 
-    const messagesWithSeparators = messages?.reduce((acc: (WithId<Message> | { type: 'separator', date: Date })[], message, index) => {
+    const messagesWithSeparators = filteredMessages?.reduce((acc: (WithId<Message> | { type: 'separator', date: Date })[], message, index) => {
         const currentDate = message.timestamp?.toDate();
-        const prevMessage = messages[index - 1];
+        const prevMessage = filteredMessages[index - 1];
         const prevDate = prevMessage?.timestamp?.toDate();
         
         if (currentDate && (!prevDate || !isSameDay(currentDate, prevDate))) {
@@ -835,4 +869,5 @@ export default function ChatPage() {
     
 
     
+
 

@@ -191,6 +191,27 @@ function RoomMessageBubble({ message, showAvatarAndName, onSetReply, onForward }
         });
     }
 
+    const handleDeleteForMe = () => {
+        if (!firestore || !currentUser) return;
+        setIsSheetOpen(false);
+        const messageRef = doc(firestore, 'rooms', message.roomId, 'messages', message.id);
+        updateDoc(messageRef, {
+            deletedFor: arrayUnion(currentUser.uid)
+        }).catch(serverError => {
+            const permissionError = new FirestorePermissionError({
+                path: messageRef.path,
+                operation: 'update',
+                requestResourceData: { deletedFor: arrayUnion(currentUser.uid) }
+            });
+            errorEmitter.emit('permission-error', permissionError);
+            toast({
+                variant: "destructive",
+                title: "Error",
+                description: "Could not delete message for you.",
+            });
+        });
+    };
+
     const handleOpenPost = () => {
         if (message.postId) {
             router.push(`/post/${message.postId}`);
@@ -343,14 +364,21 @@ function RoomMessageBubble({ message, showAvatarAndName, onSetReply, onForward }
                              </>
                         )}
                     </div>
-                     {isOwnMessage && (
-                        <div className="border rounded-2xl">
-                            <Button variant="ghost" className="justify-start text-base py-6 rounded-2xl w-full text-destructive hover:text-destructive gap-3" onClick={handleUnsend}>
-                                <Trash2 />
-                                <span>Unsend</span>
-                            </Button>
-                        </div>
-                    )}
+                     <div className="border rounded-2xl">
+                        {isOwnMessage && (
+                             <>
+                                <Button variant="ghost" className="justify-start text-base py-6 rounded-2xl w-full text-destructive hover:text-destructive gap-3" onClick={handleUnsend}>
+                                    <Trash2 />
+                                    <span>Unsend</span>
+                                </Button>
+                                <div className="border-t"></div>
+                            </>
+                        )}
+                        <Button variant="ghost" className="justify-start text-base py-6 rounded-2xl w-full text-destructive hover:text-destructive gap-3" onClick={handleDeleteForMe}>
+                            <Trash2 />
+                            <span>Delete for you</span>
+                        </Button>
+                    </div>
                 </div>
             </SheetContent>
         </Sheet>
@@ -358,7 +386,7 @@ function RoomMessageBubble({ message, showAvatarAndName, onSetReply, onForward }
 }
 
 function RoomMessages({ roomId, onSetReply, onForward }: { roomId: string, onSetReply: (message: WithId<RoomMessage>) => void, onForward: (message: WithId<RoomMessage>) => void }) {
-    const { firestore } = useFirebase();
+    const { firestore, user } = useFirebase();
     const messagesEndRef = useRef<HTMLDivElement | null>(null);
 
     const messagesQuery = useMemoFirebase(() => {
@@ -370,10 +398,15 @@ function RoomMessages({ roomId, onSetReply, onForward }: { roomId: string, onSet
     }, [firestore, roomId]);
 
     const { data: messages, isLoading } = useCollection<RoomMessage>(messagesQuery);
+    
+    const filteredMessages = useMemo(() => {
+        if (!messages || !user) return [];
+        return messages.filter(msg => !msg.deletedFor?.includes(user.uid));
+    }, [messages, user]);
 
     useEffect(() => {
         setTimeout(() => messagesEndRef.current?.scrollIntoView(), 0);
-    }, [messages]);
+    }, [filteredMessages]);
 
     if (isLoading) {
         return (
@@ -385,9 +418,9 @@ function RoomMessages({ roomId, onSetReply, onForward }: { roomId: string, onSet
         )
     }
 
-    const messagesWithSeparators = messages?.reduce((acc: (WithId<RoomMessage> | { type: 'separator', date: Date })[], message, index) => {
+    const messagesWithSeparators = filteredMessages?.reduce((acc: (WithId<RoomMessage> | { type: 'separator', date: Date })[], message, index) => {
         const currentDate = message.timestamp?.toDate();
-        const prevMessage = messages[index - 1];
+        const prevMessage = filteredMessages[index - 1];
         const prevDate = prevMessage?.timestamp?.toDate();
         
         if (currentDate && (!prevDate || !isSameDay(currentDate, prevDate))) {

@@ -167,6 +167,7 @@ export interface Message {
     postId?: string;
     isForwarded?: boolean;
     linkMetadata?: LinkMetadata;
+    deletedFor?: string[];
 }
 
 export interface Room {
@@ -188,6 +189,7 @@ export interface RoomMessage {
   postId?: string;
   isForwarded?: boolean;
   linkMetadata?: LinkMetadata;
+  deletedFor?: string[];
 }
 
 
