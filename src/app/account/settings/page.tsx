@@ -3,7 +3,7 @@
 import React from "react";
 import AppLayout from "@/components/AppLayout";
 import { Button } from "@/components/ui/button";
-import { ArrowLeft, ChevronRight, User, Bell, HelpCircle, Info, Lock, Globe2, Sun, LogOut } from "lucide-react";
+import { ArrowLeft, ChevronRight, User, Bell, HelpCircle, Info, Lock, Globe2, Sun, LogOut, UserPlus, ShieldAlert, VolumeX, MinusCircle } from "lucide-react";
 import { useRouter } from "next/navigation";
 import Link from 'next/link';
 import { useFirebase } from "@/firebase";
@@ -82,7 +82,9 @@ export default function SettingsPage() {
                         <div className="bg-card rounded-xl shadow-none">
                             <SettingsItem icon={User} label="Manage Profile" href="/account/settings/edit-profile" />
                             <div className="h-px bg-border/50 mx-4" />
-                            <SettingsItem icon={Lock} label="Password & Security" href="#" />
+                            <SettingsItem icon={UserPlus} label="Follow and invite friends" href="/account/settings/follow-invite" />
+                             <div className="h-px bg-border/50 mx-4" />
+                            <SettingsItem icon={Lock} label="Password & Security" href="/account/settings/account-status" />
                             <div className="h-px bg-border/50 mx-4" />
                             <SettingsItem icon={Bell} label="Notifications" href="/account/settings/notifications" />
                             <div className="h-px bg-border/50 mx-4" />
@@ -90,6 +92,18 @@ export default function SettingsPage() {
                         </div>
                     </div>
                     
+                    {/* Privacy & Safety Section */}
+                    <div>
+                        <h3 className="px-2 mb-1 text-sm font-semibold text-muted-foreground">Privacy & Safety</h3>
+                        <div className="bg-card rounded-xl shadow-none">
+                            <SettingsItem icon={VolumeX} label="Muted Accounts" href="/account/settings/muted-users" />
+                            <div className="h-px bg-border/50 mx-4" />
+                            <SettingsItem icon={MinusCircle} label="Restricted Accounts" href="/account/settings/restricted-users" />
+                            <div className="h-px bg-border/50 mx-4" />
+                            <SettingsItem icon={ShieldAlert} label="Blocked Users" href="/account/settings/blocked-users" />
+                        </div>
+                    </div>
+
                     {/* Preferences Section */}
                     <div>
                         <h3 className="px-2 mb-1 text-sm font-semibold text-muted-foreground">Preferences</h3>
