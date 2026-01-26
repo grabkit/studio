@@ -168,10 +168,6 @@ export interface Message {
     isForwarded?: boolean;
     linkMetadata?: LinkMetadata;
     deletedFor?: string[];
-    imageUrl?: string;
-    viewType?: 'once' | 'expiring';
-    expiresAt?: Timestamp;
-    viewedBy?: string[];
 }
 
 export interface Room {
@@ -194,10 +190,6 @@ export interface RoomMessage {
   isForwarded?: boolean;
   linkMetadata?: LinkMetadata;
   deletedFor?: string[];
-  imageUrl?: string;
-  viewType?: 'once' | 'expiring';
-  expiresAt?: Timestamp;
-  viewedBy?: string[];
 }
 
 

@@ -171,6 +171,41 @@
       },
       "required": ["url"]
     },
+    "Event": {
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "title": "Event",
+      "type": "object",
+      "description": "Represents a user-created event.",
+      "properties": {
+        "id": { "type": "string" },
+        "authorId": { "type": "string" },
+        "name": { "type": "string" },
+        "description": { "type": "string" },
+        "type": { "type": "string", "enum": ["public", "private"] },
+        "isPaid": { "type": "boolean" },
+        "isAllDay": { "type": "boolean" },
+        "eventTimestamp": { "type": "string", "format": "date-time" },
+        "endTimestamp": { "type": "string", "format": "date-time" },
+        "location": { "type": "string" },
+        "reach": { "type": "number" }
+      },
+      "required": ["id", "authorId", "name", "eventTimestamp", "location"]
+    },
+    "EventDetails": {
+        "title": "Event Details",
+        "type": "object",
+        "description": "Denormalized, lightweight snapshot of an event for embedding in a post.",
+        "properties": {
+            "id": { "type": "string" },
+            "name": { "type": "string" },
+            "description": { "type": "string" },
+            "isAllDay": { "type": "boolean" },
+            "eventTimestamp": { "type": "string", "format": "date-time" },
+            "endTimestamp": { "type": "string", "format": "date-time" },
+            "location": { "type": "string" }
+        },
+        "required": ["id", "name", "eventTimestamp", "location"]
+    },
     "Post": {
       "$schema": "http://json-schema.org/draft-07/schema#",
       "title": "Post",
@@ -205,7 +240,7 @@
         "commentsAllowed": { "type": "boolean" },
         "type": {
           "type": "string",
-          "enum": ["text", "poll", "repost", "quote", "audio"],
+          "enum": ["text", "poll", "repost", "quote", "audio", "event"],
           "description": "The type of the post."
         },
         "pollOptions": {
@@ -247,6 +282,10 @@
         "audioDuration": {
             "type": "number",
             "description": "The duration of the audio in seconds."
+        },
+        "eventDetails": {
+            "$ref": "#/backend/entities/EventDetails",
+            "description": "Denormalized data of the event, if this is an event post."
         }
       },
       "required": [
@@ -414,9 +453,36 @@
         "id": { "type": "string" },
         "senderId": { "type": "string" },
         "text": { "type": "string" },
-        "timestamp": { "type": "string", "format": "date-time" }
+        "timestamp": { "type": "string", "format": "date-time" },
+        "deletedFor": { "type": "array", "items": { "type": "string" } }
       },
-      "required": ["id", "senderId", "text", "timestamp"]
+      "required": ["id", "senderId", "timestamp"]
+    },
+    "Room": {
+        "title": "Room",
+        "type": "object",
+        "description": "Represents a public chat room.",
+        "properties": {
+            "id": { "type": "string" },
+            "name": { "type": "string" },
+            "description": { "type": "string" },
+            "theme": { "type": "string", "enum": ["violet", "teal"] },
+            "participantIds": { "type": "array", "items": { "type": "string" } }
+        },
+        "required": ["id", "name", "theme"]
+    },
+    "RoomMessage": {
+        "title": "Room Message",
+        "type": "object",
+        "description": "Represents a single message in a public chat room.",
+        "properties": {
+            "id": { "type": "string" },
+            "senderId": { "type": "string" },
+            "text": { "type": "string" },
+            "timestamp": { "type": "string", "format": "date-time" },
+            "deletedFor": { "type": "array", "items": { "type": "string" } }
+        },
+        "required": ["id", "senderId", "timestamp"]
     },
     "ProblemReport": {
         "$schema": "http://json-schema.org/draft-07/schema#",
@@ -607,6 +673,17 @@
         }
       },
       {
+        "path": "/events/{eventId}",
+        "definition": {
+            "entityName": "Event",
+            "schema": { "$ref": "#/backend/entities/Event" },
+            "description": "Stores all user-created events.",
+            "params": [
+                { "name": "eventId", "description": "The unique identifier for the event." }
+            ]
+        }
+      },
+      {
         "path": "/posts/{postId}/comments/{commentId}",
         "definition": {
           "entityName": "Comment",
@@ -625,6 +702,29 @@
             }
           ]
         }
+      },
+       {
+        "path": "/rooms/{roomId}",
+        "definition": {
+            "entityName": "Room",
+            "schema": { "$ref": "#/backend/entities/Room" },
+            "description": "Stores public chat rooms where users can have group conversations.",
+            "params": [
+                { "name": "roomId", "description": "The unique identifier for the room." }
+            ]
+        }
+      },
+      {
+          "path": "/rooms/{roomId}/messages/{messageId}",
+          "definition": {
+              "entityName": "RoomMessage",
+              "schema": { "$ref": "#/backend/entities/RoomMessage" },
+              "description": "Stores all messages for a given room.",
+              "params": [
+                  { "name": "roomId", "description": "The ID of the parent room." },
+                  { "name": "messageId", "description": "The unique ID for the message." }
+              ]
+          }
       },
       {
         "path": "/conversations/{conversationId}",

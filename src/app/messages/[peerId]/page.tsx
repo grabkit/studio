@@ -20,7 +20,7 @@ import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
 import { Form, FormControl, FormField, FormItem, FormMessage } from '@/components/ui/form';
 import { Skeleton } from '@/components/ui/skeleton';
-import { ArrowLeft, Send, Reply, Forward, Copy, Trash2, X, Heart, MessageCircle, ExternalLink, Phone, Video, Loader2, List, ImagePlus, Eye, Clock } from 'lucide-react';
+import { ArrowLeft, Send, Reply, Forward, Copy, Trash2, X, Heart, MessageCircle, ExternalLink, Phone, Video, Loader2, List } from 'lucide-react';
 import { cn, getAvatar, formatMessageTimestamp, formatLastSeen, formatTimestamp, formatUserId, formatDateSeparator } from '@/lib/utils';
 import type { Conversation, Message, User, Post, LinkMetadata } from '@/lib/types';
 import { WithId } from '@/firebase/firestore/use-collection';
@@ -117,20 +117,7 @@ function MessageBubble({ message, isOwnMessage, conversation, onSetReply, onForw
     const { firestore, user } = useFirebase();
     const router = useRouter();
     const [isSheetOpen, setIsSheetOpen] = useState(false);
-    const [showImageViewer, setShowImageViewer] = useState(false);
     
-    const isImageMsg = !!message.imageUrl;
-    const hasBeenViewed = isImageMsg && message.viewType === 'once' && message.viewedBy?.includes(user?.uid || '');
-
-    const handleViewImage = () => {
-        if (hasBeenViewed || !conversation || !firestore) return;
-        setShowImageViewer(true);
-        if (message.viewType === 'once') {
-            const msgRef = doc(firestore, 'conversations', conversation.id, 'messages', message.id);
-            updateDoc(msgRef, { viewedBy: arrayUnion(user?.uid) });
-        }
-    };
-
     const handleCopy = () => {
         if (message.text) {
             navigator.clipboard.writeText(message.text);
@@ -242,24 +229,6 @@ function MessageBubble({ message, isOwnMessage, conversation, onSetReply, onForw
                         </div>
                     </SheetTrigger>
                 </div>
-            ) : isImageMsg ? (
-                 <div className="w-full my-1 px-2">
-                    <SheetTrigger asChild>
-                        <div className="cursor-pointer flex items-center justify-center gap-2 p-3 text-center">
-                            {hasBeenViewed ? (
-                                <>
-                                    <Eye className="h-4 w-4" />
-                                    <span>Photo opened</span>
-                                </>
-                            ) : (
-                                <>
-                                    <Eye className="h-4 w-4" />
-                                    <span>Tap to view</span>
-                                </>
-                            )}
-                        </div>
-                    </SheetTrigger>
-                </div>
             ) : null}
 
             {message.text && (
@@ -273,7 +242,7 @@ function MessageBubble({ message, isOwnMessage, conversation, onSetReply, onForw
              <p className={cn(
                 "text-[11px] self-end px-3 pb-1.5", 
                 isOwnMessage ? "text-primary-foreground/70" : "text-muted-foreground",
-                (isPostShare || isLinkShare || isImageMsg) && !message.text ? 'pt-1.5' : ''
+                (isPostShare || isLinkShare) && !message.text ? 'pt-1.5' : ''
             )}>
                 {message.timestamp?.toDate ? formatMessageTimestamp(message.timestamp.toDate()) : '...'}
             </p>
@@ -282,7 +251,6 @@ function MessageBubble({ message, isOwnMessage, conversation, onSetReply, onForw
 
 
     return (
-        <>
         <Sheet open={isSheetOpen} onOpenChange={setIsSheetOpen}>
              <motion.div
                 initial={{ opacity: 0, scale: 0.8, y: 10 }}
@@ -293,16 +261,14 @@ function MessageBubble({ message, isOwnMessage, conversation, onSetReply, onForw
                 isOwnMessage ? "justify-end" : "justify-start",
              )}>
                 <div 
-                    onClick={isImageMsg ? handleViewImage : undefined}
                     className={cn(
                         "flex flex-col rounded-2xl",
                         isOwnMessage ? "bg-primary text-primary-foreground" : "bg-secondary text-foreground",
                         isOwnMessage ? "rounded-br-none" : "rounded-bl-none",
-                        (isPostShare || isLinkShare || isImageMsg) ? 'w-64' : 'max-w-[80%]',
-                        isImageMsg && !hasBeenViewed && 'cursor-pointer'
+                        (isPostShare || isLinkShare) ? 'w-64' : 'max-w-[80%]'
                     )}
                 >
-                    <SheetTrigger asChild={!isImageMsg}>
+                    <SheetTrigger asChild>
                          <div>
                            {bubbleContent}
                         </div>
@@ -336,7 +302,7 @@ function MessageBubble({ message, isOwnMessage, conversation, onSetReply, onForw
                             <Forward />
                             <span>Forward</span>
                         </Button>
-                         {!isPostShare && !isLinkShare && !isImageMsg && (
+                         {!isPostShare && !isLinkShare && (
                              <>
                                 <div className="border-t"></div>
                                 <Button variant="ghost" className="justify-start text-base py-6 rounded-2xl w-full gap-3" onClick={handleCopy}>
@@ -364,12 +330,6 @@ function MessageBubble({ message, isOwnMessage, conversation, onSetReply, onForw
                 </div>
             </SheetContent>
         </Sheet>
-        <AlertDialog open={showImageViewer} onOpenChange={setShowImageViewer}>
-            <AlertDialogContent className="p-0 border-0 max-w-lg w-full bg-transparent shadow-none">
-                <img src={message.imageUrl} alt="View Once" className="rounded-lg w-full h-auto object-contain" />
-            </AlertDialogContent>
-        </AlertDialog>
-        </>
     )
 }
 
@@ -522,9 +482,6 @@ function MessageInput({ conversationId, conversation, replyingTo, onCancelReply 
     const { firestore, user } = useFirebase();
     const { toast } = useToast();
     const [isFetchingPreview, setIsFetchingPreview] = useState(false);
-    const fileInputRef = useRef<HTMLInputElement>(null);
-    const [imagePreview, setImagePreview] = useState<string | null>(null);
-    const [viewType, setViewType] = useState<'default' | 'once' | 'expiring'>('default');
 
     const form = useForm<z.infer<typeof messageFormSchema>>({
         resolver: zodResolver(messageFormSchema),
@@ -534,61 +491,6 @@ function MessageInput({ conversationId, conversation, replyingTo, onCancelReply 
     const linkMetadata = form.watch("linkMetadata");
     const textValue = form.watch("text");
 
-    const handleImageSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
-        const file = e.target.files?.[0];
-        if (file) {
-            const reader = new FileReader();
-            reader.onloadend = () => {
-                setImagePreview(reader.result as string);
-            };
-            reader.readAsDataURL(file);
-        }
-    };
-    
-    const handleImageSend = () => {
-        if (!imagePreview || !firestore || !user || !conversationId || !conversation) return;
-        
-        const peerId = conversation.participantIds.find(id => id !== user.uid);
-        if (!peerId) return;
-
-        const messageRef = doc(collection(firestore, 'conversations', conversationId, 'messages'));
-        const conversationRef = doc(firestore, 'conversations', conversationId);
-
-        const newMessage: Partial<Message> = {
-            id: messageRef.id,
-            senderId: user.uid,
-            imageUrl: imagePreview,
-            viewedBy: [],
-        };
-
-        if (viewType !== 'default') {
-            newMessage.viewType = viewType;
-        }
-        if (viewType === 'expiring') {
-            newMessage.expiresAt = Timestamp.fromMillis(Date.now() + 24 * 60 * 60 * 1000);
-        }
-        
-        const batch = writeBatch(firestore);
-        batch.set(messageRef, { ...newMessage, timestamp: serverTimestamp() });
-        batch.update(conversationRef, {
-            lastMessage: '📷 Sent a photo',
-            lastUpdated: serverTimestamp(),
-            [`unreadCounts.${peerId}`]: increment(1)
-        });
-        
-        batch.commit().catch(error => {
-             const permissionError = new FirestorePermissionError({
-                path: messageRef.path,
-                operation: 'create',
-                requestResourceData: newMessage,
-            });
-            errorEmitter.emit('permission-error', permissionError);
-        });
-        
-        setImagePreview(null);
-        setViewType('default');
-    };
-    
     const fetchPreview = async (url: string) => {
         setIsFetchingPreview(true);
         // In a real app, you would call your AI flow here.
@@ -680,26 +582,6 @@ function MessageInput({ conversationId, conversation, replyingTo, onCancelReply 
         onCancelReply();
     }
     
-    if (imagePreview) {
-        return (
-             <div className="fixed bottom-0 left-0 right-0 max-w-2xl mx-auto bg-background border-t p-4 space-y-4">
-                <div className="relative max-h-64 overflow-hidden rounded-lg bg-secondary flex items-center justify-center">
-                    <img src={imagePreview} alt="Preview" className="max-h-64 h-auto w-auto object-contain" />
-                     <Button variant="ghost" size="icon" className="absolute top-2 right-2 h-7 w-7 rounded-full bg-black/50 hover:bg-black/70 text-white hover:text-white" onClick={() => setImagePreview(null)}><X className="h-4 w-4" /></Button>
-                </div>
-                <div className="flex justify-center gap-2 w-full">
-                    <Button onClick={() => setViewType('once')} variant={viewType === 'once' ? 'secondary' : 'outline'} className="flex-1 gap-2">
-                        <Eye /> View Once
-                    </Button>
-                    <Button onClick={() => setViewType('expiring')} variant={viewType === 'expiring' ? 'secondary' : 'outline'} className="flex-1 gap-2">
-                        <Clock /> 24 Hours
-                    </Button>
-                </div>
-                <Button onClick={handleImageSend} className="w-full font-bold">Send Image</Button>
-            </div>
-        )
-    }
-    
     if (conversation && conversation.status !== 'accepted') {
         return (
              <div className="fixed bottom-0 left-0 right-0 max-w-2xl mx-auto bg-background border-t">
@@ -741,10 +623,6 @@ function MessageInput({ conversationId, conversation, replyingTo, onCancelReply 
                 </div>
             )}
             <div className="p-2 flex items-center gap-2">
-                <Button variant="ghost" size="icon" className="rounded-full" onClick={() => fileInputRef.current?.click()}>
-                    <ImagePlus />
-                </Button>
-                 <input type="file" ref={fileInputRef} className="hidden" accept="image/*" onChange={handleImageSelect} />
                 <Form {...form}>
                     <form onSubmit={form.handleSubmit(onSubmit)} className="flex-1 flex items-center rounded-full bg-secondary px-2">
                          <Textarea
@@ -989,7 +867,4 @@ export default function ChatPage() {
     
 
     
-
-
-
 
