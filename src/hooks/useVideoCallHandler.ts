@@ -1,4 +1,5 @@
 
+
 'use client';
 
 import { useState, useEffect, useCallback, useRef } from 'react';
@@ -51,6 +52,8 @@ export function useVideoCallHandler(
   const peerRef = useRef<Peer.Instance | null>(null);
   const timerRef = useRef<NodeJS.Timeout | null>(null);
   const ringTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+  const callerCandidatesUnsubscribeRef = useRef<() => void>(() => {});
+  const answerCandidatesUnsubscribeRef = useRef<() => void>(() => {});
 
 
   const cleanupCall = useCallback(() => {
@@ -70,6 +73,8 @@ export function useVideoCallHandler(
         clearTimeout(ringTimeoutRef.current);
         ringTimeoutRef.current = null;
     }
+    callerCandidatesUnsubscribeRef.current();
+    answerCandidatesUnsubscribeRef.current();
     setLocalStream(null);
     setRemoteStream(null);
     setActiveCall(null);
@@ -119,7 +124,7 @@ export function useVideoCallHandler(
 
     peer.on('signal', async (data) => {
         if (data.type === 'answer') {
-            await updateDoc(callRef, { answer: data });
+            await updateDoc(callRef, { status: 'answered', answer: data });
         } else if (data.candidate) {
              await addDoc(answerCandidatesCol, data);
         }
@@ -133,7 +138,7 @@ export function useVideoCallHandler(
         setRemoteStream(remoteStream);
     });
 
-    onSnapshot(callerCandidatesCol, (snapshot) => {
+    callerCandidatesUnsubscribeRef.current = onSnapshot(callerCandidatesCol, (snapshot) => {
         snapshot.docChanges().forEach((change) => {
             if (change.type === 'added') {
                 if (peerRef.current && !peerRef.current.destroyed) {
@@ -227,7 +232,7 @@ export function useVideoCallHandler(
     });
     
     const answerCandidatesCol = collection(callDocRef, 'answerCandidates');
-    onSnapshot(answerCandidatesCol, (snapshot) => {
+    answerCandidatesUnsubscribeRef.current = onSnapshot(answerCandidatesCol, (snapshot) => {
         snapshot.docChanges().forEach((change) => {
             if (change.type === 'added') {
                 if (peerRef.current && !peerRef.current.destroyed) {
@@ -378,4 +383,3 @@ export function useVideoCallHandler(
     videoCallDuration: callDuration,
   };
 }
-    

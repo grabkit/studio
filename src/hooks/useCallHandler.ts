@@ -51,6 +51,8 @@ export function useCallHandler(
   const peerRef = useRef<Peer.Instance | null>(null);
   const timerRef = useRef<NodeJS.Timeout | null>(null);
   const ringTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+  const callerCandidatesUnsubscribeRef = useRef<() => void>(() => {});
+  const answerCandidatesUnsubscribeRef = useRef<() => void>(() => {});
 
 
   const cleanupCall = useCallback(() => {
@@ -70,6 +72,10 @@ export function useCallHandler(
       clearTimeout(ringTimeoutRef.current);
       ringTimeoutRef.current = null;
     }
+
+    callerCandidatesUnsubscribeRef.current();
+    answerCandidatesUnsubscribeRef.current();
+
     setLocalStream(null);
     setRemoteStream(null);
     setActiveCall(null);
@@ -118,7 +124,7 @@ export function useCallHandler(
 
     peer.on('signal', async (data) => {
         if (data.type === 'answer') {
-            await updateDoc(callRef, { answer: data });
+            await updateDoc(callRef, { status: 'answered', answer: data });
         } else if (data.candidate) {
              await addDoc(answerCandidatesCol, data);
         }
@@ -132,7 +138,7 @@ export function useCallHandler(
         setRemoteStream(remoteStream);
     });
 
-    onSnapshot(callerCandidatesCol, (snapshot) => {
+    callerCandidatesUnsubscribeRef.current = onSnapshot(callerCandidatesCol, (snapshot) => {
         snapshot.docChanges().forEach((change) => {
             if (change.type === 'added') {
                 if (peerRef.current && !peerRef.current.destroyed) {
@@ -205,8 +211,9 @@ export function useCallHandler(
 
     const unsubscribe = onSnapshot(callDocRef, (docSnap) => {
          const updatedCall = docSnap.data() as Call;
-         if (updatedCall?.answer && peerRef.current && !peerRef.current.destroyed) {
-             if(!peerRef.current.destroyed) peerRef.current.signal(updatedCall.answer);
+         const peer = peerRef.current as any;
+         if (updatedCall?.answer && peer && !peer.destroyed && peer._pc.signalingState !== 'stable') {
+             peer.signal(updatedCall.answer);
          }
          if (updatedCall?.status && updatedCall.status !== callStatus) {
             if (ringTimeoutRef.current && (updatedCall.status === 'answered' || updatedCall.status === 'declined' || updatedCall.status === 'ended')) {
@@ -226,7 +233,7 @@ export function useCallHandler(
     });
     
     const answerCandidatesCol = collection(callDocRef, 'answerCandidates');
-    onSnapshot(answerCandidatesCol, (snapshot) => {
+    answerCandidatesUnsubscribeRef.current = onSnapshot(answerCandidatesCol, (snapshot) => {
         snapshot.docChanges().forEach((change) => {
             if (change.type === 'added') {
                 if (peerRef.current && !peerRef.current.destroyed) {
@@ -367,5 +374,3 @@ export function useCallHandler(
     callDuration
   };
 }
-
-    
