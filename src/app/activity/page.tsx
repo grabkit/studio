@@ -10,8 +10,7 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import Link from "next/link";
 import { Heart, MessageCircle, AlertTriangle, UserPlus, Mail, Repeat, MessageSquareQuote, Loader2, Megaphone } from "lucide-react";
 import { cn, formatTimestamp, getAvatar, formatUserId } from "@/lib/utils.tsx";
-import { Button } from "@/components/ui/button";
-import React, { useEffect, useState, useRef, useCallback, type TouchEvent, useMemo } from "react";
+import React, { useEffect, useState, useMemo, useCallback } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { eventBus } from "@/lib/event-bus";
 

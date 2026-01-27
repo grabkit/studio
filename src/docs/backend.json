@@ -379,7 +379,7 @@
             },
             "type": {
                 "type": "string",
-                "enum": ["comment", "comment_approval", "follow", "message_request", "like", "repost", "quote", "new_post"],
+                "enum": ["comment", "comment_approval", "follow", "message_request", "like", "repost", "quote", "announcement"],
                 "description": "The type of activity."
             },
             "postId": {
@@ -454,10 +454,7 @@
         "senderId": { "type": "string" },
         "text": { "type": "string" },
         "timestamp": { "type": "string", "format": "date-time" },
-        "imageUrl": { "type": "string", "format": "uri" },
-        "viewType": { "type": "string", "enum": ["once", "expiring"] },
-        "expiresAt": { "type": "string", "format": "date-time" },
-        "viewedBy": { "type": "array", "items": { "type": "string" } }
+        "deletedFor": { "type": "array", "items": { "type": "string" } }
       },
       "required": ["id", "senderId", "timestamp"]
     },
@@ -483,10 +480,7 @@
             "senderId": { "type": "string" },
             "text": { "type": "string" },
             "timestamp": { "type": "string", "format": "date-time" },
-            "imageUrl": { "type": "string", "format": "uri" },
-            "viewType": { "type": "string", "enum": ["once", "expiring"] },
-            "expiresAt": { "type": "string", "format": "date-time" },
-            "viewedBy": { "type": "array", "items": { "type": "string" } }
+            "deletedFor": { "type": "array", "items": { "type": "string" } }
         },
         "required": ["id", "senderId", "timestamp"]
     },
