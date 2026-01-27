@@ -60,45 +60,65 @@ const notificationInfo = {
     },
     announcement: {
         icon: Megaphone,
-        text: "", // Empty text for announcements to have a custom display
         color: "text-primary",
         settingKey: 'announcements',
     }
 } as const;
 
 function NotificationItem({ notification }: { notification: WithId<Notification> }) {
-    const info = notificationInfo[notification.type as keyof typeof notificationInfo] || notificationInfo.comment;
+    const fromUserAvatar = getAvatar({id: notification.fromUserId});
+    const isAvatarUrl = fromUserAvatar.startsWith('http');
+
+    if (notification.type === 'announcement') {
+        const isGeneralAnnouncement = notification.postId === '_general_announcement';
+        const linkHref = isGeneralAnnouncement ? '#' : `/room/${notification.postId}`;
+        const Wrapper = isGeneralAnnouncement ? 'div' : Link;
+
+        return (
+            <Wrapper href={linkHref} className={cn(
+                "flex items-start space-x-4 p-4 transition-colors",
+                !isGeneralAnnouncement && "hover:bg-accent",
+                !notification.read && "bg-primary/5"
+            )}>
+                <div className="relative">
+                    <Avatar className="h-10 w-10">
+                        <AvatarImage src={isAvatarUrl ? fromUserAvatar : undefined} alt={String(formatUserId(notification.fromUserId))} />
+                        <AvatarFallback>{!isAvatarUrl ? fromUserAvatar : ''}</AvatarFallback>
+                    </Avatar>
+                    <div className="absolute -bottom-1 -right-1 bg-background rounded-full p-0.5">
+                        <Megaphone className="h-4 w-4 text-primary" fill="currentColor" />
+                    </div>
+                </div>
+                <div className="flex-1">
+                    <p className="text-sm">
+                        <span className="font-bold">{formatUserId(notification.fromUserId)}:</span>
+                        <span className="text-muted-foreground pl-1">{notification.activityContent}</span>
+                    </p>
+                    <p className="text-xs text-muted-foreground mt-1">
+                        {notification.timestamp?.toDate ? formatTimestamp(notification.timestamp.toDate()) : '...'}
+                    </p>
+                </div>
+            </Wrapper>
+        );
+    }
+    
+    const info = notificationInfo[notification.type as Exclude<keyof typeof notificationInfo, 'announcement'>] || notificationInfo.comment;
     const Icon = info.icon;
     
     const isProfileActivity = notification.type === 'follow' || notification.type === 'message_request';
-    const isAnnouncement = notification.type === 'announcement';
-    const isGeneralAnnouncement = isAnnouncement && notification.postId === '_general_announcement';
+    const linkHref = isProfileActivity ? `/profile/${notification.fromUserId}` : `/post/${notification.postId}`;
 
-    const linkHref = isGeneralAnnouncement
-      ? '#'
-      : isAnnouncement
-      ? `/room/${notification.postId}`
-      : isProfileActivity
-      ? `/profile/${notification.fromUserId}`
-      : `/post/${notification.postId}`;
-
-    const Wrapper = isGeneralAnnouncement ? 'div' : Link;
-
-    const isFilledIcon = ['like', 'comment', 'message_request', 'repost', 'quote', 'follow', 'announcement'].includes(notification.type);
+    const isFilledIcon = ['like', 'comment', 'message_request', 'repost', 'quote', 'follow'].includes(notification.type);
     
-    const avatar = getAvatar({id: notification.fromUserId});
-    const isAvatarUrl = avatar.startsWith('http');
-
     return (
-        <Wrapper href={linkHref} className={cn(
-            "flex items-start space-x-4 p-4 transition-colors",
-            !isGeneralAnnouncement && "hover:bg-accent",
+        <Link href={linkHref || '#'} className={cn(
+            "flex items-start space-x-4 p-4 transition-colors hover:bg-accent",
             !notification.read && "bg-primary/5"
         )}>
              <div className="relative">
                 <Avatar className="h-10 w-10">
-                    <AvatarImage src={isAvatarUrl ? avatar : undefined} alt={String(formatUserId(notification.fromUserId))} />
-                    <AvatarFallback>{!isAvatarUrl ? avatar : ''}</AvatarFallback>
+                    <AvatarImage src={isAvatarUrl ? fromUserAvatar : undefined} alt={String(formatUserId(notification.fromUserId))} />
+                    <AvatarFallback>{!isAvatarUrl ? fromUserAvatar : ''}</AvatarFallback>
                 </Avatar>
                 <div className="absolute -bottom-1 -right-1 bg-background rounded-full p-0.5">
                      <Icon 
@@ -111,13 +131,10 @@ function NotificationItem({ notification }: { notification: WithId<Notification>
                  <p className="text-sm">
                     <span className="font-bold">{formatUserId(notification.fromUserId)}</span>
                     {' '}
-                    {info.text && <span>{info.text}</span>}
+                    <span>{info.text}</span>
                     {notification.activityContent && (
-                       <span className={cn(
-                           "text-muted-foreground",
-                           info.text ? "italic pl-1" : "pl-1" // if no info.text, don't make it italic
-                       )}>
-                          {info.text ? `"${notification.activityContent}"` : notification.activityContent}
+                       <span className="text-muted-foreground italic pl-1">
+                          "{notification.activityContent}"
                        </span>
                     )}
                 </p>
@@ -125,7 +142,7 @@ function NotificationItem({ notification }: { notification: WithId<Notification>
                     {notification.timestamp?.toDate ? formatTimestamp(notification.timestamp.toDate()) : '...'}
                 </p>
             </div>
-        </Wrapper>
+        </Link>
     )
 }
 
