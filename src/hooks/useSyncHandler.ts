@@ -81,7 +81,6 @@ export function useSyncHandler(firestore: Firestore | null, user: User | null) {
       const stream = await navigator.mediaDevices.getUserMedia({ video: true, audio: true });
       setLocalSyncStream(stream);
 
-      // We need to atomically find-and-claim a user from the queue.
       const queueQuery = query(collection(firestore, 'syncQueue'), limit(2));
       const queueSnapshot = await getDocs(queueQuery);
       
@@ -125,9 +124,8 @@ export function useSyncHandler(firestore: Firestore | null, user: User | null) {
         console.log("Added/updated user in queue.");
       }
     } catch (err) {
-      console.error("Error in sync call transaction:", err);
       if ((err as Error).message === "Peer was already matched") {
-        console.log("Retrying to find another match...");
+        console.log("Peer was already matched. Retrying to find another match...");
         setTimeout(() => findOrStartSyncCall(), 300 + Math.random() * 500);
       } else {
         console.error("Error starting sync call or getting media:", err);
