@@ -1,4 +1,5 @@
 
+
 'use client';
 
 import { useState, useEffect, useCallback, useRef } from 'react';
@@ -79,32 +80,36 @@ export function useSyncHandler(firestore: Firestore | null, user: User | null) {
       const stream = await navigator.mediaDevices.getUserMedia({ video: true, audio: true });
       setLocalSyncStream(stream);
 
-      await runTransaction(firestore, async (transaction) => {
-        const queueQuery = query(collection(firestore, 'syncQueue'), limit(1));
-        const queueSnapshot = await transaction.get(queueQuery);
-        
-        if (queueSnapshot.empty) {
-          // Queue is empty, so add current user
-          const userInQueueRef = doc(firestore, 'syncQueue', user.uid);
-          transaction.set(userInQueueRef, {
-            userId: user.uid,
-            timestamp: serverTimestamp(),
-          });
-          queueRef.current = user.uid; // Store the doc ID for cleanup
-          console.log("Added to queue");
-        } else {
-          // Found a user in the queue, let's match
-          const peerDoc = queueSnapshot.docs[0];
-          const peerId = peerDoc.id;
+      // We need to atomically find-and-claim a user from the queue.
+      // The correct way to do this client-side is to query for a potential peer,
+      // then use a transaction to atomically verify they are still available and claim them.
+      const queueQuery = query(collection(firestore, 'syncQueue'), limit(1));
+      const queueSnapshot = await getDocs(queueQuery);
 
-          // Don't match with self
-          if (peerId === user.uid) {
-            console.log("Found myself in queue, waiting...");
-            return;
+      let peerInQueue = queueSnapshot.docs.length > 0 ? queueSnapshot.docs[0] : null;
+
+      // If the only person in the queue is ourselves, wait.
+      if (peerInQueue && peerInQueue.id === user.uid) {
+        console.log("Found myself in queue, waiting...");
+        queueRef.current = user.uid; // Ensure cleanup works if we navigate away
+        return;
+      }
+      
+      // If we found a peer, try to match with them.
+      if (peerInQueue) {
+        const peerId = peerInQueue.id;
+        const peerInQueueRef = peerInQueue.ref;
+
+        await runTransaction(firestore, async (transaction) => {
+          const peerDoc = await transaction.get(peerInQueueRef);
+          if (!peerDoc.exists()) {
+            // The peer was claimed by someone else. Throw an error to signal a retry.
+            throw new Error("Peer was already matched");
           }
 
-          transaction.delete(peerDoc.ref); // Remove peer from queue
-
+          // Atomically remove the peer from the queue and create the call.
+          transaction.delete(peerInQueueRef);
+          
           const callDocRef = doc(collection(firestore, 'syncCalls'));
           const newCallData = {
             participantIds: [user.uid, peerId],
@@ -112,15 +117,30 @@ export function useSyncHandler(firestore: Firestore | null, user: User | null) {
             createdAt: serverTimestamp(),
           };
           transaction.set(callDocRef, newCallData);
-          
-          setActiveSyncCall({ id: callDocRef.id, ...newCallData } as WithId<SyncCall>);
           console.log(`Matched with ${peerId}, created call ${callDocRef.id}`);
-        }
-      });
+        });
 
+      } else {
+        // Queue is empty, add ourselves.
+        const userInQueueRef = doc(firestore, 'syncQueue', user.uid);
+        await setDoc(userInQueueRef, {
+          userId: user.uid,
+          timestamp: serverTimestamp(),
+        });
+        queueRef.current = user.uid;
+        console.log("Added to queue");
+      }
     } catch (err) {
-      console.error("Error starting sync call or getting media:", err);
-      // Handle permissions error etc.
+      console.error("Error in sync call transaction:", err);
+      // If peer was matched, we can retry the whole process.
+      if ((err as Error).message === "Peer was already matched") {
+        console.log("Retrying to find another match...");
+        // Adding a small delay to prevent rapid-fire retries.
+        setTimeout(() => findOrStartSyncCall(), 300 + Math.random() * 500);
+      } else {
+        // Could be a media permission error or other firestore error.
+        console.error("Error starting sync call or getting media:", err);
+      }
     }
   }, [firestore, user, cleanup]);
 
