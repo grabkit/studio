@@ -78,7 +78,7 @@ function PostPreviewCard({ postId }: { postId: string }) {
             <div className="p-3">
                 <div className="flex items-center gap-2 mb-2">
                     <Avatar className="h-6 w-6">
-                         <AvatarImage src={isAvatarUrl ? avatar : undefined} alt={formatUserId(post.authorId)} />
+                         <AvatarImage src={isAvatarUrl ? avatar : undefined} alt={String(formatUserId(post.authorId))} />
                         <AvatarFallback className="text-xs">{!isAvatarUrl ? avatar : ''}</AvatarFallback>
                     </Avatar>
                     <span className="text-xs font-semibold text-foreground">{formatUserId(post.authorId)}</span>
@@ -361,7 +361,7 @@ function ChatHeader({ peerId, peerUser, onStartCall, onStartVideoCall, conversat
             <div className="flex-1 flex items-center gap-3 ml-2 cursor-pointer" onClick={() => router.push(`/messages/${peerId}/settings`)}>
                 <div onClick={(e) => { e.stopPropagation(); router.push(`/profile/${peerId}`); }}>
                     <Avatar className="h-8 w-8">
-                        <AvatarImage src={isAvatarUrl ? avatar : undefined} alt={formatUserId(peerId)} />
+                        <AvatarImage src={isAvatarUrl ? avatar : undefined} alt={String(formatUserId(peerId))} />
                         <AvatarFallback>{isLoading ? <Skeleton className="h-8 w-8 rounded-full" /> : !isAvatarUrl ? avatar : ''}</AvatarFallback>
                     </Avatar>
                 </div>
@@ -542,8 +542,6 @@ function MessageInput({ conversationId, conversation, replyingTo, onCancelReply 
         }
         if (values.linkMetadata) {
             newMessage.linkMetadata = values.linkMetadata;
-        } else {
-             delete (newMessage as any).linkMetadata;
         }
 
 
@@ -867,4 +865,5 @@ export default function ChatPage() {
     
 
     
+
 
