@@ -10,7 +10,7 @@ import { doc, updateDoc, getDocs, writeBatch, collection, query, where, getDoc, 
 import { useDoc } from '@/firebase/firestore/use-doc';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
-import { ArrowLeft, BellOff, ShieldAlert, MicOff, VideoOff, ChevronRight, PhoneCall, User as UserIcon, Bell, Flag, MessageCircleX, Link as LinkIcon, BarChart3, Palette, Image as ImageIcon } from 'lucide-react';
+import { ArrowLeft, BellOff, ShieldAlert, ChevronRight, User as UserIcon, Bell, Flag, MessageCircleX, Link as LinkIcon, BarChart3, Palette, Image as ImageIcon } from 'lucide-react';
 import { getAvatar, formatUserId } from '@/lib/utils';
 import type { Conversation, User, Message, Post, Bookmark } from '@/lib/types';
 import { useToast } from '@/hooks/use-toast';
@@ -211,7 +211,6 @@ export default function ChatSettingsPage() {
 
     const [isBlockSheetOpen, setIsBlockSheetOpen] = useState(false);
     const [isClearSheetOpen, setIsClearSheetOpen] = useState(false);
-    const [isCallControlsSheetOpen, setIsCallControlsSheetOpen] = useState(false);
     const [isAboutSheetOpen, setIsAboutSheetOpen] = useState(false);
     const [isQrDialogOpen, setIsQrDialogOpen] = useState(false);
     
@@ -236,9 +235,6 @@ export default function ChatSettingsPage() {
     const isMuted = useMemo(() => conversation?.mutedBy?.includes(currentUser?.uid || ''), [conversation, currentUser]);
     const isBlocked = useMemo(() => currentUserProfile?.blockedUsers?.includes(peerId) ?? false, [currentUserProfile, peerId]);
     
-    const isVoiceDisabled = useMemo(() => conversation?.voiceCallsDisabledBy?.includes(currentUser?.uid || ''), [conversation, currentUser]);
-    const isVideoDisabled = useMemo(() => conversation?.videoCallsDisabledBy?.includes(currentUser?.uid || ''), [conversation, currentUser]);
-
     const handleToggleMute = async () => {
         if (!firestore || !currentUser || !conversation) return;
         const convoRef = doc(firestore, 'conversations', conversation.id);
@@ -262,36 +258,6 @@ export default function ChatSettingsPage() {
             setConversation(current => current ? { ...current, mutedBy: conversation.mutedBy } : null);
         }
     };
-    
-    const handleToggleCall = async (type: 'voice' | 'video') => {
-        if (!firestore || !currentUser || !conversation) return;
-        const convoRef = doc(firestore, 'conversations', conversation.id);
-        
-        const field = type === 'voice' ? 'voiceCallsDisabledBy' : 'videoCallsDisabledBy';
-        const currentDisabledList = conversation[field] || [];
-        const isDisabled = currentDisabledList.includes(currentUser.uid);
-        
-        const newDisabledList = isDisabled
-            ? currentDisabledList.filter(id => id !== currentUser.uid)
-            : [...currentDisabledList, currentUser.uid];
-        
-        setConversation(current => current ? { ...current, [field]: newDisabledList } : null);
-
-        try {
-            await updateDoc(convoRef, { [field]: newDisabledList });
-            toast({ title: isDisabled ? `${type.charAt(0).toUpperCase() + type.slice(1)} calls enabled` : `${type.charAt(0).toUpperCase() + type.slice(1)} calls disabled` });
-        } catch(error) {
-             const permissionError = new FirestorePermissionError({
-                path: convoRef.path,
-                operation: 'update',
-                requestResourceData: { [field]: newDisabledList }
-            });
-            errorEmitter.emit('permission-error', permissionError);
-            toast({ variant: 'destructive', title: 'Error', description: `Could not update call settings.`});
-             setConversation(current => current ? { ...current, [field]: currentDisabledList } : null);
-        }
-    };
-
 
     const handleBlock = async () => {
         if (!currentUser || !firestore || !currentUserProfile) return;
@@ -416,37 +382,6 @@ export default function ChatSettingsPage() {
                             </Label>
                             <Switch id="mute-notifications" checked={isMuted} onCheckedChange={handleToggleMute} />
                         </div>
-                    
-                        <Sheet open={isCallControlsSheetOpen} onOpenChange={setIsCallControlsSheetOpen}>
-                            <SheetTrigger asChild>
-                            <Button variant="ghost" className="w-full justify-between text-base h-12 px-4">
-                                    <div className="flex items-center gap-3">
-                                        <PhoneCall className="h-5 w-5" />
-                                        Call Controls
-                                    </div>
-                                    <ChevronRight className="h-5 w-5 text-muted-foreground" />
-                                </Button>
-                            </SheetTrigger>
-                            <SheetContent side="bottom" className="rounded-t-[10px]">
-                                <SheetHeader>
-                                    <SheetTitle>Call Controls</SheetTitle>
-                                </SheetHeader>
-                                <div className="mt-4">
-                                    <div className="flex items-center justify-between p-3">
-                                        <Label htmlFor="disable-voice" className="flex items-center gap-3 text-base font-normal">
-                                            <MicOff /> Disable Voice Calls
-                                        </Label>
-                                        <Switch id="disable-voice" checked={isVoiceDisabled} onCheckedChange={() => handleToggleCall('voice')} />
-                                    </div>
-                                    <div className="flex items-center justify-between p-3">
-                                        <Label htmlFor="disable-video" className="flex items-center gap-3 text-base font-normal">
-                                            <VideoOff /> Disable Video Calls
-                                        </Label>
-                                        <Switch id="disable-video" checked={isVideoDisabled} onCheckedChange={() => handleToggleCall('video')} />
-                                    </div>
-                                </div>
-                            </SheetContent>
-                        </Sheet>
                         
                         <Button variant="ghost" className="w-full justify-start text-base h-12 px-4 gap-3" onClick={() => setIsClearSheetOpen(true)}>
                             <MessageCircleX className="h-5 w-5" />
