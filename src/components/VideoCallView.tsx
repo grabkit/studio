@@ -104,10 +104,10 @@ export function VideoCallView({
         <div className={cn("fixed inset-0 z-50 flex flex-col items-center justify-between p-8", !isAnswered && "bg-background")}>
             
             {/* Remote Video Stream */}
-            <video ref={remoteVideoRef} playsInline className={cn("absolute top-0 left-0 w-full h-full object-cover z-0 bg-secondary", !isAnswered && "hidden")} />
+            <video ref={remoteVideoRef} autoPlay playsInline className={cn("absolute top-0 left-0 w-full h-full object-cover z-0 bg-secondary", !isAnswered && "hidden")} />
             
             {/* Local Video Stream */}
-            <video ref={localVideoRef} playsInline className="absolute top-4 right-4 w-1/4 max-w-[120px] rounded-lg z-20 bg-black" muted />
+            <video ref={localVideoRef} autoPlay playsInline className="absolute top-4 right-4 w-1/4 max-w-[120px] rounded-lg z-20 bg-black" muted />
             
             {isAnswered && (
                 <div className="absolute top-8 left-8 z-20">

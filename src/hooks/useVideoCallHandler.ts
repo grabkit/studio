@@ -135,7 +135,7 @@ export function useVideoCallHandler(
         setCallStatus('answered');
     });
 
-    peer.on('track', (track, stream) => {
+    peer.on('stream', (stream) => {
         setRemoteStream(stream);
     });
 
@@ -207,7 +207,7 @@ export function useVideoCallHandler(
          setCallStatus('answered');
     });
     
-    peer.on('track', (track, stream) => {
+    peer.on('stream', (stream) => {
         setRemoteStream(stream);
     });
 
@@ -280,7 +280,6 @@ export function useVideoCallHandler(
     );
     const unsubscribe = onSnapshot(q, async (snapshot) => {
         if (!snapshot.docs.length) {
-            // This prevents a race condition where a call is cleaned up right after being answered
             if (activeCall && activeCall.callerId !== user.uid && callStatus === 'ringing') {
                 cleanupCall();
             }
