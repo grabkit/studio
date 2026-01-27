@@ -109,7 +109,8 @@
                 "comments": { "type": "boolean" },
                 "reposts": { "type": "boolean" },
                 "followers": { "type": "boolean" },
-                "messageRequests": { "type": "boolean" }
+                "messageRequests": { "type": "boolean" },
+                "announcements": { "type": "boolean" }
             }
         },
         "fcmTokens": {

@@ -97,6 +97,7 @@ export interface NotificationSettings {
     reposts: boolean;
     followers: boolean;
     messageRequests: boolean;
+    announcements?: boolean;
 }
 
 export interface User {

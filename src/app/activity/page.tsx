@@ -62,7 +62,7 @@ const notificationInfo = {
         icon: Newspaper,
         text: "shared a new thought",
         color: "text-gray-500",
-        settingKey: 'reposts', // Assuming this might fall under a general "updates" or similar category. For now, let's tie it to reposts setting.
+        settingKey: 'announcements',
     }
 } as const;
 
@@ -180,6 +180,7 @@ export default function ActivityPage() {
             reposts: true,
             followers: true,
             messageRequests: true,
+            announcements: true,
         };
     }, [userProfile]);
 
