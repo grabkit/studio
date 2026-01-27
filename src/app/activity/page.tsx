@@ -74,12 +74,17 @@ function NotificationItem({ notification }: { notification: WithId<Notification>
     
     const isProfileActivity = notification.type === 'follow' || notification.type === 'message_request';
     const isAnnouncement = notification.type === 'announcement';
+    const isGeneralAnnouncement = isAnnouncement && notification.postId === '_general_announcement';
 
-    const linkHref = isAnnouncement
+    const linkHref = isGeneralAnnouncement
+      ? '#'
+      : isAnnouncement
       ? `/room/${notification.postId}`
       : isProfileActivity
       ? `/profile/${notification.fromUserId}`
       : `/post/${notification.postId}`;
+
+    const Wrapper = isGeneralAnnouncement ? 'div' : Link;
 
     const isFilledIcon = ['like', 'comment', 'message_request', 'repost', 'quote', 'follow', 'announcement'].includes(notification.type);
     
@@ -87,8 +92,9 @@ function NotificationItem({ notification }: { notification: WithId<Notification>
     const isAvatarUrl = avatar.startsWith('http');
 
     return (
-        <Link href={linkHref || '#'} className={cn(
-            "flex items-start space-x-4 p-4 transition-colors hover:bg-accent",
+        <Wrapper href={linkHref} className={cn(
+            "flex items-start space-x-4 p-4 transition-colors",
+            !isGeneralAnnouncement && "hover:bg-accent",
             !notification.read && "bg-primary/5"
         )}>
              <div className="relative">
@@ -122,7 +128,7 @@ function NotificationItem({ notification }: { notification: WithId<Notification>
                     {notification.timestamp?.toDate ? formatTimestamp(notification.timestamp.toDate()) : '...'}
                 </p>
             </div>
-        </Link>
+        </Wrapper>
     )
 }
 
@@ -230,7 +236,7 @@ export default function ActivityPage() {
 
     return (
         <AppLayout showTopBar={false}>
-            <div className="relative h-full">
+            <div className="relative h-full overflow-y-auto">
                 <AnimatePresence>
                     {isRefreshing && (
                         <motion.div

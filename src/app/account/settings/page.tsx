@@ -1,9 +1,9 @@
 "use client";
 
-import React from "react";
+import React, { useState } from "react";
 import AppLayout from "@/components/AppLayout";
 import { Button } from "@/components/ui/button";
-import { ArrowLeft, ChevronRight, User, Bell, HelpCircle, Info, Lock, Sun, LogOut, UserPlus, ShieldAlert, VolumeX, MinusCircle, UserX } from "lucide-react";
+import { ArrowLeft, ChevronRight, User, Bell, HelpCircle, Info, Lock, Sun, LogOut, UserPlus, ShieldAlert, VolumeX, MinusCircle, UserX, Loader2 } from "lucide-react";
 import { useRouter } from "next/navigation";
 import Link from 'next/link';
 import { useFirebase } from "@/firebase";
@@ -14,6 +14,9 @@ import { ref, serverTimestamp, set } from "firebase/database";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { getAvatar, formatUserId } from "@/lib/utils";
 import { cn } from "@/lib/utils";
+import { addDoc, collection } from "firebase/firestore";
+import { Textarea } from "@/components/ui/textarea";
+import { Label } from "@/components/ui/label";
 
 function SettingsItem({ href, label, icon: Icon, value }: { href: string, label: string, icon: React.ElementType, value?: string }) {
     return (
@@ -42,8 +45,40 @@ function DestructiveSettingsItem({ label, icon: Icon, onClick }: { label: string
 
 export default function SettingsPage() {
     const router = useRouter();
-    const { auth, database, userProfile, user } = useFirebase();
+    const { auth, database, userProfile, user, firestore } = useFirebase();
     const { toast } = useToast();
+    
+    const ADMIN_USER_ID = "e9ZGHMjgnmO3ueSbf1ao3Crvlr02";
+    const isOwner = user?.uid === ADMIN_USER_ID;
+
+    const [afterDarkMsg, setAfterDarkMsg] = useState("");
+    const [askSpaceMsg, setAskSpaceMsg] = useState("");
+    const [announcementMsg, setAnnouncementMsg] = useState("");
+    const [isSending, setIsSending] = useState<string | null>(null);
+
+    const handleSendNotification = async (roomId: string, content: string) => {
+        if (!firestore || !content.trim()) {
+            toast({ variant: "destructive", title: "Content is empty!" });
+            return;
+        }
+        setIsSending(roomId);
+        try {
+            await addDoc(collection(firestore, "manualNotifications"), {
+                roomId: roomId,
+                notificationContent: content,
+            });
+            toast({ title: "Notification Sent!", description: `Sent: "${content}"` });
+            
+            if (roomId === 'after_dark') setAfterDarkMsg('');
+            else if (roomId === 'ask_space') setAskSpaceMsg('');
+            else if (roomId === '_general_announcement') setAnnouncementMsg('');
+
+        } catch (e) {
+            toast({ variant: "destructive", title: "Failed to send notification." });
+        } finally {
+            setIsSending(null);
+        }
+    };
     
     const handleLogout = async () => {
         if (!auth || !auth.currentUser || !database) return;
@@ -93,6 +128,35 @@ export default function SettingsPage() {
                 transition={{ duration: 0.3 }}
             >
                 <div className="p-4 space-y-6 overflow-y-auto h-full">
+
+                    {isOwner && (
+                        <div>
+                            <h3 className="px-2 mb-1 text-sm font-semibold text-muted-foreground">Admin Panel</h3>
+                            <div className="bg-card rounded-xl p-4 space-y-4">
+                                <div className="space-y-2">
+                                    <Label>After Dark Notification</Label>
+                                    <Textarea value={afterDarkMsg} onChange={(e) => setAfterDarkMsg(e.target.value)} placeholder="Message for After Dark room..."/>
+                                    <Button onClick={() => handleSendNotification('after_dark', afterDarkMsg)} disabled={!afterDarkMsg || !!isSending} className="w-full">
+                                        {isSending === 'after_dark' ? <Loader2 className="animate-spin" /> : 'Send to After Dark'}
+                                    </Button>
+                                </div>
+                                 <div className="space-y-2">
+                                    <Label>Ask Space Notification</Label>
+                                    <Textarea value={askSpaceMsg} onChange={(e) => setAskSpaceMsg(e.target.value)} placeholder="Message for Ask Space room..." />
+                                    <Button onClick={() => handleSendNotification('ask_space', askSpaceMsg)} disabled={!askSpaceMsg || !!isSending} className="w-full">
+                                        {isSending === 'ask_space' ? <Loader2 className="animate-spin" /> : 'Send to Ask Space'}
+                                    </Button>
+                                </div>
+                                <div className="space-y-2">
+                                    <Label>General Announcement</Label>
+                                    <Textarea value={announcementMsg} onChange={(e) => setAnnouncementMsg(e.target.value)} placeholder="General announcement for all users..." />
+                                    <Button onClick={() => handleSendNotification('_general_announcement', announcementMsg)} disabled={!announcementMsg || !!isSending} className="w-full">
+                                        {isSending === '_general_announcement' ? <Loader2 className="animate-spin" /> : 'Send Announcement'}
+                                    </Button>
+                                </div>
+                            </div>
+                        </div>
+                    )}
 
                     <div className="bg-card rounded-xl p-4">
                         <div className="flex items-center space-x-4">
