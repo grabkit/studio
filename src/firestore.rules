@@ -20,6 +20,10 @@ service cloud.firestore {
       let callDoc = get(/databases/$(database)/documents/videoCalls/$(videoCallId));
       return request.auth.uid == callDoc.data.callerId || request.auth.uid == callDoc.data.calleeId;
     }
+    
+    function isSyncParticipant(callId) {
+      return request.auth.uid in get(/databases/$(database)/documents/syncCalls/$(callId)).data.participantIds;
+    }
 
     match /users/{userId} {
       allow get: if true; 
@@ -179,23 +183,24 @@ service cloud.firestore {
     }
     
     match /syncCalls/{callId} {
-      allow get, update, delete: if request.auth.uid in resource.data.participantIds;
+      allow get, delete: if isSyncParticipant(callId);
       allow list: if isSignedIn();
       allow create: if request.auth.uid in request.resource.data.participantIds;
+      allow update: if isSyncParticipant(callId) && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['offer', 'answer', 'status']);
       
       match /callerCandidates/{candidateId} {
-        allow read, list, create: if request.auth.uid in get(/databases/$(database)/documents/syncCalls/$(callId)).data.participantIds;
+        allow read, list, create: if isSyncParticipant(callId);
         allow update, delete: if false;
       }
 
       match /answerCandidates/{candidateId} {
-        allow read, list, create: if request.auth.uid in get(/databases/$(database)/documents/syncCalls/$(callId)).data.participantIds;
+        allow read, list, create: if isSyncParticipant(callId);
         allow update, delete: if false;
       }
       
       match /messages/{messageId} {
-        allow read, list: if request.auth.uid in get(/databases/$(database)/documents/syncCalls/$(callId)).data.participantIds;
-        allow create: if request.auth.uid in get(/databases/$(database)/documents/syncCalls/$(callId)).data.participantIds 
+        allow read, list: if isSyncParticipant(callId);
+        allow create: if isSyncParticipant(callId) 
                       && request.resource.data.senderId == request.auth.uid;
         allow update, delete: if false;
       }
