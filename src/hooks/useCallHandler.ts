@@ -281,7 +281,8 @@ export function useCallHandler(
     );
     const unsubscribe = onSnapshot(q, async (snapshot) => {
         if (!snapshot.docs.length) {
-            if (activeCall && activeCall.callerId !== user.uid && activeCall.status === 'ringing') {
+            // This prevents a race condition where a call is cleaned up right after being answered
+            if (activeCall && activeCall.callerId !== user.uid && callStatus === 'ringing') {
                 cleanupCall();
             }
             return;
@@ -316,7 +317,7 @@ export function useCallHandler(
     });
 
     return () => unsubscribe();
-  }, [firestore, user, activeCall, cleanupCall]);
+  }, [firestore, user, activeCall, callStatus, cleanupCall]);
 
 
   const toggleMute = () => {
