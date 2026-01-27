@@ -1,5 +1,3 @@
-
-
 'use client';
 
 import { useState, useEffect, useCallback, useRef } from 'react';
@@ -195,8 +193,9 @@ export function useVideoCallHandler(
 
     const unsubscribe = onSnapshot(callDocRef, (docSnap) => {
          const updatedCall = docSnap.data() as VideoCall;
-         if (updatedCall?.answer && peerRef.current && !peerRef.current.destroyed) {
-             if(!peerRef.current.destroyed) peerRef.current.signal(updatedCall.answer);
+         const peer = peerRef.current as any;
+         if (updatedCall?.answer && peer && !peer.destroyed && !peer._pc.remoteDescription) {
+             peer.signal(updatedCall.answer);
          }
          if (updatedCall?.status && updatedCall.status !== callStatus) {
              if (ringTimeoutRef.current && (updatedCall.status === 'answered' || updatedCall.status === 'declined' || updatedCall.status === 'ended')) {
@@ -367,5 +366,4 @@ export function useVideoCallHandler(
     videoCallDuration: callDuration,
   };
 }
-
     
