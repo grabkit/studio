@@ -60,13 +60,11 @@ const notificationInfo = {
     },
     announcement: {
         icon: Megaphone,
-        text: "sent an announcement",
+        text: "", // Empty text for announcements to have a custom display
         color: "text-primary",
         settingKey: 'announcements',
     }
 } as const;
-
-const ADMIN_USER_ID = 'e9ZGHMjgnmO3ueSbf1ao3Crvlr02';
 
 function NotificationItem({ notification }: { notification: WithId<Notification> }) {
     const info = notificationInfo[notification.type as keyof typeof notificationInfo] || notificationInfo.comment;
@@ -110,18 +108,17 @@ function NotificationItem({ notification }: { notification: WithId<Notification>
                 </div>
             </div>
             <div className="flex-1">
-                <p className="text-sm">
+                 <p className="text-sm">
                     <span className="font-bold">{formatUserId(notification.fromUserId)}</span>
                     {' '}
-                    {isAnnouncement ? (
-                        <span>{notification.activityContent}</span>
-                    ) : (
-                        <>
-                            {info.text}
-                            {notification.activityContent && (
-                            <span className="text-muted-foreground italic"> "{notification.activityContent}"</span>
-                            )}
-                        </>
+                    {info.text && <span>{info.text}</span>}
+                    {notification.activityContent && (
+                       <span className={cn(
+                           "text-muted-foreground",
+                           info.text ? "italic pl-1" : "pl-1" // if no info.text, don't make it italic
+                       )}>
+                          {info.text ? `"${notification.activityContent}"` : notification.activityContent}
+                       </span>
                     )}
                 </p>
                 <p className="text-xs text-muted-foreground mt-1">
@@ -197,9 +194,10 @@ export default function ActivityPage() {
              const type = notification.type as keyof typeof notificationInfo;
              const info = notificationInfo[type];
              if (info && info.settingKey) {
-                 return settings[info.settingKey as keyof NotificationSettings] !== false; // Show if setting is true or undefined
+                 const isEnabled = settings[info.settingKey as keyof NotificationSettings];
+                 return isEnabled === true || isEnabled === undefined;
              }
-             return true; // Show notifications that don't have a specific setting (e.g. comment_approval)
+             return true; 
         });
 
     }, [notifications, settings]);
