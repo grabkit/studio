@@ -125,6 +125,7 @@ export function useVideoCallHandler(
     peer.on('signal', async (data) => {
         if (data.type === 'answer') {
             await updateDoc(callRef, { status: 'answered', answer: data });
+            setCallStatus('answered');
         } else if (data.candidate) {
              await addDoc(answerCandidatesCol, data);
         }
@@ -152,7 +153,9 @@ export function useVideoCallHandler(
 
     peer.on('close', cleanupCall);
     peer.on('error', (err) => {
-        if (err.message.includes('reason=Close called')) {
+        if ((err as any).code === 'ERR_CONNECTION_FAILURE' || err.message.includes('reason=Close called')) {
+            console.log("Peer connection gracefully closed or failed, cleaning up.");
+            cleanupCall();
             return;
         }
         console.error("Peer error:", err);
@@ -244,7 +247,9 @@ export function useVideoCallHandler(
 
      peer.on('close', cleanupCall);
      peer.on('error', (err) => {
-        if (err.message.includes('reason=Close called')) {
+        if ((err as any).code === 'ERR_CONNECTION_FAILURE' || err.message.includes('reason=Close called')) {
+            console.log("Peer connection gracefully closed or failed, cleaning up.");
+            cleanupCall();
             return;
         }
         console.error("Peer error:", err);
