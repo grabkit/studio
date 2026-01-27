@@ -1,4 +1,3 @@
-
 'use client';
 
 import { useFirebase } from "@/firebase";
@@ -36,10 +35,9 @@ function ChatBubble({ message, isOwn }: { message: SyncMessage, isOwn: boolean }
 export default function SyncCallPage() {
     const { 
         user,
-        firestore,
         activeSyncCall, 
-        localStream, 
-        remoteStream, 
+        localSyncStream,
+        remoteSyncStream,
         hangUpSyncCall,
         findOrStartSyncCall,
         syncCallMessages,
@@ -56,16 +54,16 @@ export default function SyncCallPage() {
     const [chatMessage, setChatMessage] = useState("");
 
     useEffect(() => {
-        if (localVideoRef.current && localStream) {
-            localVideoRef.current.srcObject = localStream;
+        if (localVideoRef.current && localSyncStream) {
+            localVideoRef.current.srcObject = localSyncStream;
         }
-    }, [localStream]);
+    }, [localSyncStream]);
 
     useEffect(() => {
-        if (remoteVideoRef.current && remoteStream) {
-            remoteVideoRef.current.srcObject = remoteStream;
+        if (remoteVideoRef.current && remoteSyncStream) {
+            remoteVideoRef.current.srcObject = remoteSyncStream;
         }
-    }, [remoteStream]);
+    }, [remoteSyncStream]);
     
     useEffect(() => {
         if (chatContainerRef.current) {

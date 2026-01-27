@@ -26,8 +26,8 @@ import { WithId } from '@/firebase';
 export function useSyncHandler(firestore: Firestore | null, user: User | null) {
   const [activeSyncCall, setActiveSyncCall] = useState<WithId<SyncCall> | null>(null);
   const [syncCallStatus, setSyncCallStatus] = useState<SyncCallStatus | null>(null);
-  const [localStream, setLocalStream] = useState<MediaStream | null>(null);
-  const [remoteStream, setRemoteStream] = useState<MediaStream | null>(null);
+  const [localSyncStream, setLocalSyncStream] = useState<MediaStream | null>(null);
+  const [remoteSyncStream, setRemoteSyncStream] = useState<MediaStream | null>(null);
   const [syncCallMessages, setSyncCallMessages] = useState<WithId<SyncMessage>[]>([]);
 
   const peerRef = useRef<Peer.Instance | null>(null);
@@ -47,16 +47,16 @@ export function useSyncHandler(firestore: Firestore | null, user: User | null) {
       peerRef.current.destroy();
       peerRef.current = null;
     }
-    if (localStream) {
-      localStream.getTracks().forEach(track => track.stop());
+    if (localSyncStream) {
+      localSyncStream.getTracks().forEach(track => track.stop());
     }
 
     setActiveSyncCall(null);
     setSyncCallStatus(null);
-    setLocalStream(null);
-    setRemoteStream(null);
+    setLocalSyncStream(null);
+    setRemoteSyncStream(null);
     setSyncCallMessages([]);
-  }, [localStream]);
+  }, [localSyncStream]);
   
   const leaveSyncQueue = useCallback(async () => {
     if (!firestore || !queueRef.current) return;
@@ -77,7 +77,7 @@ export function useSyncHandler(firestore: Firestore | null, user: User | null) {
 
     try {
       const stream = await navigator.mediaDevices.getUserMedia({ video: true, audio: true });
-      setLocalStream(stream);
+      setLocalSyncStream(stream);
 
       await runTransaction(firestore, async (transaction) => {
         const queueQuery = query(collection(firestore, 'syncQueue'), limit(1));
@@ -159,7 +159,7 @@ export function useSyncHandler(firestore: Firestore | null, user: User | null) {
     });
 
     peer.on('stream', (remoteMediaStream) => {
-      setRemoteStream(remoteMediaStream);
+      setRemoteSyncStream(remoteMediaStream);
     });
 
     peer.on('close', cleanup);
@@ -202,10 +202,10 @@ export function useSyncHandler(firestore: Firestore | null, user: User | null) {
   }, [firestore, user, cleanup, syncCallStatus]);
 
   useEffect(() => {
-    if (activeSyncCall && localStream && !peerRef.current) {
-        setupPeerConnection(activeSyncCall, localStream);
+    if (activeSyncCall && localSyncStream && !peerRef.current) {
+        setupPeerConnection(activeSyncCall, localSyncStream);
     }
-  }, [activeSyncCall, localStream, setupPeerConnection]);
+  }, [activeSyncCall, localSyncStream, setupPeerConnection]);
   
   // Listen for newly created calls where this user is a participant
   useEffect(() => {
@@ -271,8 +271,8 @@ export function useSyncHandler(firestore: Firestore | null, user: User | null) {
     sendSyncChatMessage,
     activeSyncCall,
     syncCallStatus,
-    localStream,
-    remoteStream,
+    localSyncStream,
+    remoteSyncStream,
     syncCallMessages,
   };
 }
