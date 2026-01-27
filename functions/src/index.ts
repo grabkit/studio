@@ -32,8 +32,8 @@ export const deleteExpiredPosts = functions.pubsub
     return null;
   });
 
-const createRoomNotification = async (
-  roomId: string,
+const createAnnouncementNotification = async (
+  targetId: string, // This will be the roomId
   notificationContent: string,
 ) => {
   const usersSnapshot = await db.collection("users").get();
@@ -47,16 +47,19 @@ const createRoomNotification = async (
 
   usersSnapshot.forEach((userDoc) => {
     const userId = userDoc.id;
+    // Don't send announcements to the admin user
+    if (userId === ADMIN_USER_ID) return;
+    
     const notificationRef = db
       .collection("users")
       .doc(userId)
       .collection("notifications")
-      .doc(); // Auto-generate ID
+      .doc();
 
     const notificationData = {
       id: notificationRef.id,
-      type: "new_post",
-      postId: roomId,
+      type: "announcement", // New, clearer type
+      postId: targetId, // Use postId to store the target room ID
       fromUserId: ADMIN_USER_ID,
       activityContent: notificationContent,
       timestamp: admin.firestore.FieldValue.serverTimestamp(),
@@ -67,7 +70,7 @@ const createRoomNotification = async (
   });
 
   await batch.commit();
-  console.log(`Sent ${notificationCount} notifications for room ${roomId}.`);
+  console.log(`Sent ${notificationCount} announcement notifications for ${targetId}.`);
 };
 
 export const sendManualNotification = functions.firestore
@@ -80,8 +83,8 @@ export const sendManualNotification = functions.firestore
             return null;
         }
 
-        console.log(`Manually triggered notification for room: ${roomId}`);
-        await createRoomNotification(roomId, notificationContent);
+        console.log(`Manually triggered announcement for room: ${roomId}`);
+        await createAnnouncementNotification(roomId, notificationContent);
 
         // Optional: Delete the trigger document after processing
         return snap.ref.delete();

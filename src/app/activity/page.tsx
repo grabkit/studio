@@ -8,7 +8,7 @@ import type { Notification, NotificationSettings } from "@/lib/types";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import Link from "next/link";
-import { Heart, MessageCircle, AlertTriangle, UserPlus, Mail, Repeat, MessageSquareQuote, Newspaper, Loader2 } from "lucide-react";
+import { Heart, MessageCircle, AlertTriangle, UserPlus, Mail, Repeat, MessageSquareQuote, Loader2, Megaphone } from "lucide-react";
 import { cn, formatTimestamp, getAvatar, formatUserId } from "@/lib/utils.tsx";
 import { Button } from "@/components/ui/button";
 import React, { useEffect, useState, useRef, useCallback, type TouchEvent, useMemo } from "react";
@@ -32,7 +32,7 @@ const notificationInfo = {
         icon: AlertTriangle,
         text: "reply needs your approval",
         color: "text-amber-500",
-        settingKey: 'comments', // assuming this falls under comments
+        settingKey: 'comments',
     },
     follow: {
         icon: UserPlus,
@@ -56,32 +56,32 @@ const notificationInfo = {
         icon: MessageSquareQuote,
         text: "quoted your post",
         color: "text-blue-500",
-        settingKey: 'reposts', // assuming this falls under reposts
+        settingKey: 'reposts',
     },
-    new_post: {
-        icon: Newspaper,
-        text: "shared a new thought",
-        color: "text-gray-500",
+    announcement: {
+        icon: Megaphone,
+        text: "sent an announcement",
+        color: "text-primary",
         settingKey: 'announcements',
     }
 } as const;
 
-const ADMIN_USER_ID = 'e9ZGHMjgnmO3ueSbf1ao3Crvlr02'; // ID for system user 'Blur'
+const ADMIN_USER_ID = 'e9ZGHMjgnmO3ueSbf1ao3Crvlr02';
 
 function NotificationItem({ notification }: { notification: WithId<Notification> }) {
     const info = notificationInfo[notification.type as keyof typeof notificationInfo] || notificationInfo.comment;
     const Icon = info.icon;
     
     const isProfileActivity = notification.type === 'follow' || notification.type === 'message_request';
-    const isAdminNotification = notification.fromUserId === ADMIN_USER_ID && notification.type === 'new_post';
+    const isAnnouncement = notification.type === 'announcement';
 
-    const linkHref = isAdminNotification
+    const linkHref = isAnnouncement
       ? `/room/${notification.postId}`
       : isProfileActivity
       ? `/profile/${notification.fromUserId}`
       : `/post/${notification.postId}`;
 
-    const isFilledIcon = ['like', 'comment', 'message_request', 'repost', 'quote', 'follow'].includes(notification.type);
+    const isFilledIcon = ['like', 'comment', 'message_request', 'repost', 'quote', 'follow', 'announcement'].includes(notification.type);
     
     const avatar = getAvatar({id: notification.fromUserId});
     const isAvatarUrl = avatar.startsWith('http');
@@ -107,7 +107,7 @@ function NotificationItem({ notification }: { notification: WithId<Notification>
                 <p className="text-sm">
                     <span className="font-bold">{formatUserId(notification.fromUserId)}</span>
                     {' '}
-                    {isAdminNotification ? (
+                    {isAnnouncement ? (
                         <span>{notification.activityContent}</span>
                     ) : (
                         <>
