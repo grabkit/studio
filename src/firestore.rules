@@ -1,4 +1,3 @@
-
 rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
@@ -82,12 +81,10 @@ service cloud.firestore {
     }
     
     match /conversations/{conversationId} {
-      allow get: if isSignedIn();
-      allow list: if isSignedIn() && request.auth.uid in resource.data.participantIds;
+      allow read, delete: if isSignedIn() && request.auth.uid in resource.data.participantIds;
       allow create: if isSignedIn() && request.auth.uid in request.resource.data.participantIds;
-      allow update: if isSignedIn() && request.auth.uid in get(/databases/$(database)/documents/conversations/$(conversationId)).data.participantIds &&
+      allow update: if isSignedIn() && request.auth.uid in resource.data.participantIds &&
         request.resource.data.diff(resource.data).affectedKeys().hasOnly(['lastMessage', 'lastUpdated', 'status', 'mutedBy', 'unreadCounts', 'lastReadTimestamps', 'voiceCallsDisabledBy', 'videoCallsDisabledBy']);
-      allow delete: if isSignedIn() && request.auth.uid in resource.data.participantIds;
     }
 
     match /conversations/{conversationId}/messages/{messageId} {
@@ -173,44 +170,29 @@ service cloud.firestore {
     }
     
     match /syncQueue/{queueId} {
-      allow read, list: if isSignedIn();
-      allow create: if isOwner(queueId);
+      allow read, list, create: if isOwner(queueId);
       allow delete: if isSignedIn();
     }
     
     match /syncCalls/{callId} {
-      // A user can create a call document if they are listed as a participant.
-      allow create: if request.auth.uid in request.resource.data.participantIds;
-      // A user can read or delete a call document if they are a participant.
-      // The `read` rule covers `get` and `list` (queries).
-      // Firestore security rules will ensure that any query on this collection
-      // includes a `where('participantIds', 'array-contains', request.auth.uid)` clause.
-      allow read, delete: if request.auth.uid in resource.data.participantIds;
-      // A user can update the call document if they are a participant and
-      // only the allowed signaling fields are being changed.
-      allow update: if request.auth.uid in resource.data.participantIds
+      allow read, delete: if isSignedIn() && request.auth.uid in resource.data.participantIds;
+      allow create: if isSignedIn() && request.auth.uid in request.resource.data.participantIds;
+      allow update: if isSignedIn() && request.auth.uid in resource.data.participantIds
                     && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['offer', 'answer', 'status']);
       
-      // This function is for use in SUBCOLLECTIONS of a syncCall ONLY.
-      // It checks if the requesting user is a participant in the parent call document.
-      function isParentCallParticipant() {
-        return request.auth.uid in get(/databases/$(database)/documents/syncCalls/$(callId)).data.participantIds;
-      }
-      
       match /callerCandidates/{candidateId} {
-        allow read, create, list: if isParentCallParticipant();
+        allow read, create, list: if isSignedIn() && request.auth.uid in get(/databases/$(database)/documents/syncCalls/$(callId)).data.participantIds;
         allow update, delete: if false;
       }
 
       match /answerCandidates/{candidateId} {
-        allow read, create, list: if isParentCallParticipant();
+        allow read, create, list: if isSignedIn() && request.auth.uid in get(/databases/$(database)/documents/syncCalls/$(callId)).data.participantIds;
         allow update, delete: if false;
       }
       
       match /messages/{messageId} {
-        allow read, list: if isParentCallParticipant();
-        // A user must be a participant and the sender of the message to create it.
-        allow create: if isParentCallParticipant() && request.resource.data.senderId == request.auth.uid;
+        allow read, list: if isSignedIn() && request.auth.uid in get(/databases/$(database)/documents/syncCalls/$(callId)).data.participantIds;
+        allow create: if isSignedIn() && request.auth.uid in get(/databases/$(database)/documents/syncCalls/$(callId)).data.participantIds && request.resource.data.senderId == request.auth.uid;
         allow update, delete: if false;
       }
     }
