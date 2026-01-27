@@ -14,7 +14,6 @@ import { useCallHandler } from '@/hooks/useCallHandler';
 import { CallView } from '@/components/CallView';
 import { useVideoCallHandler } from '@/hooks/useVideoCallHandler';
 import { VideoCallView } from '@/components/VideoCallView';
-import { useSyncHandler } from '@/hooks/useSyncHandler';
 import { VoiceStatusPlayer } from '@/components/VoiceStatusPlayer';
 import { useToast } from '@/hooks/use-toast';
 import { FirestorePermissionError } from './errors';
@@ -38,7 +37,6 @@ import {
 
 interface CallHandlerResult extends ReturnType<typeof useCallHandler> {}
 interface VideoCallHandlerResult extends ReturnType<typeof useVideoCallHandler> {}
-interface SyncCallHandlerResult extends ReturnType<typeof useSyncHandler> {}
 
 type MissedCallInfo = {
   calleeId: string;
@@ -61,7 +59,7 @@ interface UserAuthState {
 }
 
 // Combined state for the Firebase context
-export interface FirebaseContextState extends CallHandlerResult, VideoCallHandlerResult, SyncCallHandlerResult {
+export interface FirebaseContextState extends CallHandlerResult, VideoCallHandlerResult {
   areServicesAvailable: boolean; // True if core services (app, firestore, auth instance) are provided
   firebaseApp: FirebaseApp | null;
   firestore: Firestore | null;
@@ -84,7 +82,7 @@ export interface FirebaseContextState extends CallHandlerResult, VideoCallHandle
 }
 
 // Return type for useFirebase()
-export interface FirebaseServicesAndUser extends CallHandlerResult, VideoCallHandlerResult, SyncCallHandlerResult {
+export interface FirebaseServicesAndUser extends CallHandlerResult, VideoCallHandlerResult {
   firebaseApp: FirebaseApp;
   firestore: Firestore;
   database: Database;
@@ -134,7 +132,6 @@ export const FirebaseProvider: React.FC<FirebaseProviderProps> = ({
 
   const callHandler = useCallHandler(firestore, userAuthState.user, setMissedCallInfo);
   const videoCallHandler = useVideoCallHandler(firestore, userAuthState.user, setMissedCallInfo);
-  const syncHandler = useSyncHandler(firestore, userAuthState.user);
   
   const [activeUserProfile, setActiveUserProfile] = useState<WithId<UserProfile> | null>(null);
   const [voiceStatusUser, setVoiceStatusUser] = useState<WithId<UserProfile> | null>(null);
@@ -330,12 +327,11 @@ export const FirebaseProvider: React.FC<FirebaseProviderProps> = ({
       handleDeleteVoiceStatus,
       ...callHandler,
       ...videoCallHandler,
-      ...syncHandler,
       missedCallInfo,
       setMissedCallInfo,
     };
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [firebaseApp, firestore, auth, database, userAuthState, userProfile, isUserProfileLoading, callHandler, videoCallHandler, syncHandler, isVoicePlayerPlaying, setLoggedInUserProfile, missedCallInfo]);
+  }, [firebaseApp, firestore, auth, database, userAuthState, userProfile, isUserProfileLoading, callHandler, videoCallHandler, isVoicePlayerPlaying, setLoggedInUserProfile, missedCallInfo]);
 
   // Determine if the call UI should be shown
   const showCallUI = !!callHandler.callStatus && callHandler.callStatus !== 'ended' && callHandler.callStatus !== 'declined' && callHandler.callStatus !== 'missed';
@@ -499,15 +495,6 @@ export const useFirebase = (): FirebaseServicesAndUser => {
     videoCallDuration: context.videoCallDuration,
     missedCallInfo: context.missedCallInfo,
     setMissedCallInfo: context.setMissedCallInfo,
-    findOrStartSyncCall: context.findOrStartSyncCall,
-    leaveSyncQueue: context.leaveSyncQueue,
-    hangUpSyncCall: context.hangUpSyncCall,
-    sendSyncChatMessage: context.sendSyncChatMessage,
-    activeSyncCall: context.activeSyncCall,
-    syncCallStatus: context.syncCallStatus,
-    localSyncStream: context.localSyncStream,
-    remoteSyncStream: context.remoteSyncStream,
-    syncCallMessages: context.syncCallMessages,
   };
 };
 

@@ -1,3 +1,4 @@
+
 rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
@@ -166,34 +167,6 @@ service cloud.firestore {
           )
         );
         allow delete: if isOwner(resource.data.senderId);
-      }
-    }
-    
-    match /syncQueue/{queueId} {
-      allow read, list, create: if isOwner(queueId);
-      allow delete: if isSignedIn();
-    }
-    
-    match /syncCalls/{callId} {
-      allow read, delete: if isSignedIn() && request.auth.uid in resource.data.participantIds;
-      allow create: if isSignedIn() && request.auth.uid in request.resource.data.participantIds;
-      allow update: if isSignedIn() && request.auth.uid in resource.data.participantIds
-                    && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['offer', 'answer', 'status']);
-      
-      match /callerCandidates/{candidateId} {
-        allow read, create, list: if isSignedIn() && request.auth.uid in get(/databases/$(database)/documents/syncCalls/$(callId)).data.participantIds;
-        allow update, delete: if false;
-      }
-
-      match /answerCandidates/{candidateId} {
-        allow read, create, list: if isSignedIn() && request.auth.uid in get(/databases/$(database)/documents/syncCalls/$(callId)).data.participantIds;
-        allow update, delete: if false;
-      }
-      
-      match /messages/{messageId} {
-        allow read, list: if isSignedIn() && request.auth.uid in get(/databases/$(database)/documents/syncCalls/$(callId)).data.participantIds;
-        allow create: if isSignedIn() && request.auth.uid in get(/databases/$(database)/documents/syncCalls/$(callId)).data.participantIds && request.resource.data.senderId == request.auth.uid;
-        allow update, delete: if false;
       }
     }
 
