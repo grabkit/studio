@@ -25,6 +25,15 @@ type MissedCallInfo = {
   type: 'voice' | 'video';
 };
 
+const peerConfig = {
+    config: {
+        iceServers: [
+            { urls: 'stun:stun.l.google.com:19302' },
+            { urls: 'stun:stun1.l.google.com:19302' },
+        ],
+    },
+};
+
 export function useCallHandler(
     firestore: Firestore | null, 
     user: User | null,
@@ -96,6 +105,7 @@ export function useCallHandler(
     setLocalStream(stream);
 
     const peer = new Peer({
+        ...peerConfig,
         initiator: false,
         trickle: true,
         stream: stream,
@@ -153,6 +163,7 @@ export function useCallHandler(
     const callDocRef = doc(collection(firestore, 'calls'));
 
     const peer = new Peer({
+        ...peerConfig,
         initiator: true,
         trickle: true,
         stream: stream

@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useState, useEffect, useCallback, useRef } from 'react';
@@ -21,6 +22,15 @@ import { useToast } from './use-toast';
 type MissedCallInfo = {
   calleeId: string;
   type: 'voice' | 'video';
+};
+
+const peerConfig = {
+    config: {
+        iceServers: [
+            { urls: 'stun:stun.l.google.com:19302' },
+            { urls: 'stun:stun1.l.google.com:19302' },
+        ],
+    },
 };
 
 export function useVideoCallHandler(
@@ -96,6 +106,7 @@ export function useVideoCallHandler(
     setLocalStream(stream);
 
     const peer = new Peer({
+        ...peerConfig,
         initiator: false,
         trickle: true,
         stream: stream,
@@ -152,6 +163,7 @@ export function useVideoCallHandler(
     const callDocRef = doc(collection(firestore, 'videoCalls'));
 
     const peer = new Peer({
+        ...peerConfig,
         initiator: true,
         trickle: true,
         stream: stream
@@ -194,7 +206,7 @@ export function useVideoCallHandler(
     const unsubscribe = onSnapshot(callDocRef, (docSnap) => {
          const updatedCall = docSnap.data() as VideoCall;
          const peer = peerRef.current as any;
-         if (updatedCall?.answer && peer && !peer.destroyed && !peer._pc.remoteDescription) {
+         if (updatedCall?.answer && peer && !peer.destroyed && peer._pc.signalingState !== 'stable') {
              peer.signal(updatedCall.answer);
          }
          if (updatedCall?.status && updatedCall.status !== callStatus) {
