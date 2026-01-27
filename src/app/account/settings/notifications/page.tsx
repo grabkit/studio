@@ -3,7 +3,7 @@
 
 import AppLayout from "@/components/AppLayout";
 import { Button } from "@/components/ui/button";
-import { ArrowLeft, Bell, BellOff, ChevronRight, Heart, MessageCircle, Repeat, UserPlus, Megaphone } from "lucide-react";
+import { ArrowLeft, Bell, BellOff, ChevronRight, Heart, MessageCircle, Repeat, UserPlus } from "lucide-react";
 import { useRouter } from "next/navigation";
 import React, { useMemo } from "react";
 import { motion } from "framer-motion";
@@ -56,7 +56,6 @@ export default function NotificationsSettingsPage() {
             reposts: true,
             followers: true,
             messageRequests: true,
-            announcements: true,
         };
     }, [userProfile]);
 
@@ -113,14 +112,6 @@ export default function NotificationsSettingsPage() {
             >
                 <div className="h-full overflow-y-auto">
                     <div className="mt-4">
-                         <h3 className="px-4 py-2 text-sm font-semibold text-muted-foreground">From Blur</h3>
-                         <NotificationToggle
-                            id="announcements"
-                            label="Announcements"
-                            icon={Megaphone}
-                            checked={settings.announcements}
-                            onCheckedChange={handleSettingChange}
-                        />
                          <h3 className="px-4 pt-4 pb-2 text-sm font-semibold text-muted-foreground">From people you follow</h3>
                          <NotificationToggle
                             id="likes"

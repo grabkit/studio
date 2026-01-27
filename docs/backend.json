@@ -1,5 +1,4 @@
 
-
 {
   "entities": {
     "User": {
@@ -109,8 +108,7 @@
                 "comments": { "type": "boolean" },
                 "reposts": { "type": "boolean" },
                 "followers": { "type": "boolean" },
-                "messageRequests": { "type": "boolean" },
-                "announcements": { "type": "boolean" }
+                "messageRequests": { "type": "boolean" }
             }
         },
         "fcmTokens": {
@@ -380,7 +378,7 @@
             },
             "type": {
                 "type": "string",
-                "enum": ["comment", "comment_approval", "follow", "message_request", "like", "repost", "quote", "announcement"],
+                "enum": ["comment", "comment_approval", "follow", "message_request", "like", "repost", "quote"],
                 "description": "The type of activity."
             },
             "postId": {

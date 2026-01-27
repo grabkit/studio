@@ -97,7 +97,6 @@ export interface NotificationSettings {
     reposts: boolean;
     followers: boolean;
     messageRequests: boolean;
-    announcements?: boolean;
 }
 
 export interface User {
@@ -135,7 +134,7 @@ export interface UserPost extends Post {
 
 export interface Notification {
     id: string;
-    type: 'comment' | 'comment_approval' | 'follow' | 'message_request' | 'like' | 'repost' | 'quote' | 'announcement';
+    type: 'comment' | 'comment_approval' | 'follow' | 'message_request' | 'like' | 'repost' | 'quote';
     postId?: string;
     activityContent?: string;
     fromUserId: string;

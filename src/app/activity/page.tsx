@@ -1,3 +1,4 @@
+
 "use client";
 
 import AppLayout from "@/components/AppLayout";
@@ -8,7 +9,7 @@ import type { Notification, NotificationSettings } from "@/lib/types";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import Link from "next/link";
-import { Heart, MessageCircle, AlertTriangle, UserPlus, Mail, Repeat, MessageSquareQuote, Loader2, Megaphone } from "lucide-react";
+import { Heart, MessageCircle, AlertTriangle, UserPlus, Mail, Repeat, MessageSquareQuote, Loader2 } from "lucide-react";
 import { cn, formatTimestamp, getAvatar, formatUserId } from "@/lib/utils.tsx";
 import React, { useEffect, useState, useMemo, useCallback } from "react";
 import { motion, AnimatePresence } from "framer-motion";
@@ -57,51 +58,10 @@ const notificationInfo = {
         color: "text-blue-500",
         settingKey: 'reposts',
     },
-    announcement: {
-        icon: Megaphone,
-        color: "text-primary",
-        settingKey: 'announcements',
-    }
 } as const;
 
 function NotificationItem({ notification }: { notification: WithId<Notification> }) {
-    const fromUserAvatar = getAvatar({id: notification.fromUserId});
-    const isAvatarUrl = fromUserAvatar.startsWith('http');
-
-    if (notification.type === 'announcement') {
-        const isGeneralAnnouncement = notification.postId === '_general_announcement';
-        const linkHref = isGeneralAnnouncement ? '#' : `/room/${notification.postId}`;
-        const Wrapper = isGeneralAnnouncement ? 'div' : Link;
-
-        return (
-            <Wrapper href={linkHref} className={cn(
-                "flex items-start space-x-4 p-4 transition-colors",
-                !isGeneralAnnouncement && "hover:bg-accent",
-                !notification.read && "bg-primary/5"
-            )}>
-                <div className="relative">
-                    <Avatar className="h-10 w-10">
-                        <AvatarImage src={isAvatarUrl ? fromUserAvatar : undefined} alt={String(formatUserId(notification.fromUserId))} />
-                        <AvatarFallback>{!isAvatarUrl ? fromUserAvatar : ''}</AvatarFallback>
-                    </Avatar>
-                    <div className="absolute -bottom-1 -right-1 bg-background rounded-full p-0.5">
-                        <Megaphone className="h-4 w-4 text-primary" fill="currentColor" />
-                    </div>
-                </div>
-                <div className="flex-1">
-                    <p className="text-sm">
-                        <span className="font-bold">{formatUserId(notification.fromUserId)}:</span>
-                        <span className="text-muted-foreground pl-1">{notification.activityContent}</span>
-                    </p>
-                    <p className="text-xs text-muted-foreground mt-1">
-                        {notification.timestamp?.toDate ? formatTimestamp(notification.timestamp.toDate()) : '...'}
-                    </p>
-                </div>
-            </Wrapper>
-        );
-    }
-    
-    const info = notificationInfo[notification.type as Exclude<keyof typeof notificationInfo, 'announcement'>] || notificationInfo.comment;
+    const info = notificationInfo[notification.type as keyof typeof notificationInfo] || notificationInfo.comment;
     const Icon = info.icon;
     
     const isProfileActivity = notification.type === 'follow' || notification.type === 'message_request';
@@ -109,6 +69,9 @@ function NotificationItem({ notification }: { notification: WithId<Notification>
 
     const isFilledIcon = ['like', 'comment', 'message_request', 'repost', 'quote', 'follow'].includes(notification.type);
     
+    const avatar = getAvatar({id: notification.fromUserId});
+    const isAvatarUrl = avatar.startsWith('http');
+
     return (
         <Link href={linkHref || '#'} className={cn(
             "flex items-start space-x-4 p-4 transition-colors hover:bg-accent",
@@ -116,8 +79,8 @@ function NotificationItem({ notification }: { notification: WithId<Notification>
         )}>
              <div className="relative">
                 <Avatar className="h-10 w-10">
-                    <AvatarImage src={isAvatarUrl ? fromUserAvatar : undefined} alt={String(formatUserId(notification.fromUserId))} />
-                    <AvatarFallback>{!isAvatarUrl ? fromUserAvatar : ''}</AvatarFallback>
+                    <AvatarImage src={isAvatarUrl ? avatar : undefined} alt={String(formatUserId(notification.fromUserId))} />
+                    <AvatarFallback>{!isAvatarUrl ? avatar : ''}</AvatarFallback>
                 </Avatar>
                 <div className="absolute -bottom-1 -right-1 bg-background rounded-full p-0.5">
                      <Icon 
@@ -199,7 +162,6 @@ export default function ActivityPage() {
             reposts: true,
             followers: true,
             messageRequests: true,
-            announcements: true,
         };
     }, [userProfile]);
 
