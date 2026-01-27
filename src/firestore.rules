@@ -205,14 +205,13 @@ service cloud.firestore {
     
     function isValidNewRoomMessage(roomId) {
       let data = request.resource.data;
-      let allowedKeys = ['id', 'senderId', 'roomId', 'text', 'timestamp', 'replyToMessageId', 'replyToMessageText', 'postId', 'isForwarded', 'linkMetadata', 'imageUrl', 'viewType', 'expiresAt', 'viewedBy'];
+      let allowedKeys = ['id', 'senderId', 'roomId', 'text', 'timestamp', 'replyToMessageId', 'replyToMessageText', 'postId', 'isForwarded', 'linkMetadata', 'deletedFor'];
       return data.senderId == request.auth.uid
         && data.roomId == roomId
         && (
             (data.keys().has('text') && data.text is string && data.text.size() > 0 && data.text.size() <= 1000) ||
             (data.keys().has('postId') && data.postId is string) ||
-            (data.keys().has('linkMetadata') && data.linkMetadata is map) ||
-            (data.keys().has('imageUrl') && data.imageUrl is string)
+            (data.keys().has('linkMetadata') && data.linkMetadata is map)
            )
         && (
              (!data.keys().hasAny(['replyToMessageId', 'replyToMessageText'])) ||
