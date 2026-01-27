@@ -6,7 +6,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { getAvatar, formatMessageTimestamp, formatUserId } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
-import { MessageSquare, Mail, Trash2, BellOff, CheckCircle, User as UserIcon, Bell, Mic, Loader2, Radio } from "lucide-react";
+import { MessageSquare, Mail, Trash2, BellOff, CheckCircle, User as UserIcon, Bell, Mic, Loader2, Radio, Zap } from "lucide-react";
 import { useFirebase, useMemoFirebase, useDoc } from "@/firebase";
 import { collection, query, where, doc, updateDoc, deleteDoc, arrayUnion, arrayRemove, getDocs, documentId, getDocsFromCache, orderBy } from "firebase/firestore";
 import type { Conversation, User, Room } from "@/lib/types";
@@ -671,7 +671,15 @@ export default function MessagesPage() {
 
     return (
         <AppLayout showTopBar={false}>
-            <div className="relative h-full overflow-y-auto">
+             <div className="fixed top-0 left-0 right-0 z-10 flex items-center justify-between p-2 bg-background/80 backdrop-blur-sm border-b h-14 max-w-2xl mx-auto sm:px-4">
+                <h1 className="text-2xl font-bold font-headline">Messages</h1>
+                <Button variant="ghost" size="icon" asChild>
+                    <Link href="/sync">
+                        <Zap className="h-6 w-6" />
+                    </Link>
+                </Button>
+            </div>
+            <div className="relative h-full overflow-y-auto pt-14">
                 <AnimatePresence>
                     {isRefreshing && (
                         <motion.div
