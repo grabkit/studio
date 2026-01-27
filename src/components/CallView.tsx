@@ -100,8 +100,8 @@ export function CallView({
     
     return (
         <div className="fixed inset-0 z-50 bg-background flex flex-col items-center justify-between p-8">
-            <audio ref={remoteAudioRef} autoPlay />
-            <audio ref={localAudioRef} autoPlay muted />
+            <audio ref={remoteAudioRef} autoPlay playsInline />
+            <audio ref={localAudioRef} autoPlay muted playsInline />
 
             <div className="text-center pt-20">
                 <Avatar className="h-32 w-32 mx-auto mb-6">

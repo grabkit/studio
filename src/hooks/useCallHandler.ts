@@ -101,6 +101,7 @@ export function useCallHandler(
 
   const answerCall = useCallback(async () => {
     if (!firestore || !user || !activeCall || activeCall.status !== 'ringing' || !activeCall.offer) return;
+     setCallStatus('answered');
 
      if (ringTimeoutRef.current) {
       clearTimeout(ringTimeoutRef.current);
@@ -125,7 +126,6 @@ export function useCallHandler(
     peer.on('signal', async (data) => {
         if (data.type === 'answer') {
             await updateDoc(callRef, { status: 'answered', answer: data });
-            setCallStatus('answered');
         } else if (data.candidate) {
              await addDoc(answerCandidatesCol, data);
         }
@@ -135,8 +135,8 @@ export function useCallHandler(
         setCallStatus('answered');
     });
 
-    peer.on('stream', (remoteStream) => {
-        setRemoteStream(remoteStream);
+    peer.on('track', (track, stream) => {
+        setRemoteStream(stream);
     });
 
     callerCandidatesUnsubscribeRef.current = onSnapshot(callerCandidatesCol, (snapshot) => {
@@ -208,8 +208,8 @@ export function useCallHandler(
          setCallStatus('answered');
     });
     
-    peer.on('stream', (remoteStream) => {
-        setRemoteStream(remoteStream);
+    peer.on('track', (track, stream) => {
+        setRemoteStream(stream);
     });
 
     const unsubscribe = onSnapshot(callDocRef, (docSnap) => {
