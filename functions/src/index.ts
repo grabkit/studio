@@ -70,24 +70,19 @@ const createRoomNotification = async (
   console.log(`Sent ${notificationCount} notifications for room ${roomId}.`);
 };
 
-export const notifyForAfterDarkRoom = functions.pubsub
-  .schedule("0 0 * * *")
-  .timeZone("Asia/Kolkata")
-  .onRun(async (context) => {
-    await createRoomNotification(
-      "after_dark",
-      "The 'After Dark' room is now open. Join the conversation!",
-    );
-    return null;
-  });
+export const sendManualNotification = functions.firestore
+    .document('manualNotifications/{notificationId}')
+    .onCreate(async (snap, context) => {
+        const { roomId, notificationContent } = snap.data();
 
-export const notifyForAskSpaceRoom = functions.pubsub
-  .schedule("0 9,12,18 * * *")
-  .timeZone("Asia/Kolkata")
-  .onRun(async (context) => {
-    await createRoomNotification(
-      "ask_space",
-      "New questions are waiting for you in the 'Ask Space'. Join the discussion and share your thoughts.",
-    );
-    return null;
-  });
+        if (!roomId || !notificationContent) {
+            console.error("Missing roomId or notificationContent in the trigger document.");
+            return null;
+        }
+
+        console.log(`Manually triggered notification for room: ${roomId}`);
+        await createRoomNotification(roomId, notificationContent);
+
+        // Optional: Delete the trigger document after processing
+        return snap.ref.delete();
+    });
