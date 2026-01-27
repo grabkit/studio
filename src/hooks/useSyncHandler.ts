@@ -18,7 +18,8 @@ import {
   addDoc,
   runTransaction,
   getDocs,
-  where
+  where,
+  orderBy
 } from 'firebase/firestore';
 import type { SyncCall, SyncCallStatus, SyncMessage } from '@/lib/types';
 import Peer from 'simple-peer';
@@ -81,64 +82,54 @@ export function useSyncHandler(firestore: Firestore | null, user: User | null) {
       setLocalSyncStream(stream);
 
       // We need to atomically find-and-claim a user from the queue.
-      // The correct way to do this client-side is to query for a potential peer,
-      // then use a transaction to atomically verify they are still available and claim them.
-      const queueQuery = query(collection(firestore, 'syncQueue'), limit(1));
+      const queueQuery = query(collection(firestore, 'syncQueue'), limit(2));
       const queueSnapshot = await getDocs(queueQuery);
-
-      let peerInQueue = queueSnapshot.docs.length > 0 ? queueSnapshot.docs[0] : null;
-
-      // If the only person in the queue is ourselves, wait.
-      if (peerInQueue && peerInQueue.id === user.uid) {
-        console.log("Found myself in queue, waiting...");
-        queueRef.current = user.uid; // Ensure cleanup works if we navigate away
-        return;
+      
+      let peerInQueueDoc = null;
+      for (const doc of queueSnapshot.docs) {
+          if (doc.id !== user.uid) {
+              peerInQueueDoc = doc;
+              break;
+          }
       }
       
-      // If we found a peer, try to match with them.
-      if (peerInQueue) {
-        const peerId = peerInQueue.id;
-        const peerInQueueRef = peerInQueue.ref;
+      if (peerInQueueDoc) {
+        const peerId = peerInQueueDoc.id;
+        const peerInQueueRef = peerInQueueDoc.ref;
 
         await runTransaction(firestore, async (transaction) => {
           const peerDoc = await transaction.get(peerInQueueRef);
           if (!peerDoc.exists()) {
-            // The peer was claimed by someone else. Throw an error to signal a retry.
             throw new Error("Peer was already matched");
           }
 
-          // Atomically remove the peer from the queue and create the call.
           transaction.delete(peerInQueueRef);
           
           const callDocRef = doc(collection(firestore, 'syncCalls'));
           const newCallData = {
-            participantIds: [user.uid, peerId],
+            participantIds: [user.uid, peerId].sort(),
             status: 'searching',
             createdAt: serverTimestamp(),
           };
           transaction.set(callDocRef, newCallData);
           console.log(`Matched with ${peerId}, created call ${callDocRef.id}`);
         });
-
       } else {
-        // Queue is empty, add ourselves.
+        // Queue is empty or only contains self, add/update our entry.
         const userInQueueRef = doc(firestore, 'syncQueue', user.uid);
         await setDoc(userInQueueRef, {
           userId: user.uid,
           timestamp: serverTimestamp(),
         });
         queueRef.current = user.uid;
-        console.log("Added to queue");
+        console.log("Added/updated user in queue.");
       }
     } catch (err) {
       console.error("Error in sync call transaction:", err);
-      // If peer was matched, we can retry the whole process.
       if ((err as Error).message === "Peer was already matched") {
         console.log("Retrying to find another match...");
-        // Adding a small delay to prevent rapid-fire retries.
         setTimeout(() => findOrStartSyncCall(), 300 + Math.random() * 500);
       } else {
-        // Could be a media permission error or other firestore error.
         console.error("Error starting sync call or getting media:", err);
       }
     }
