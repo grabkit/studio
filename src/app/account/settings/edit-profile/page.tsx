@@ -167,17 +167,17 @@ export default function EditProfilePage() {
                             
                             <FormItem>
                                 <FormLabel>Name</FormLabel>
-                                <Input value={userProfile?.name || ''} disabled className="rounded-[10px] bg-secondary" />
+                                <Input value={userProfile?.name || ''} disabled className="rounded-[10px] bg-card" />
                             </FormItem>
 
                             <FormItem>
                                 <FormLabel>Email</FormLabel>
-                                <Input value={authUser?.email || ''} disabled className="rounded-[10px] bg-secondary" />
+                                <Input value={authUser?.email || ''} disabled className="rounded-[10px] bg-card" />
                             </FormItem>
 
                             <FormItem>
                                 <FormLabel>Username</FormLabel>
-                                <Input value={getFormattedUserIdString(authUser?.uid)} disabled className="rounded-[10px] bg-secondary" />
+                                <Input value={getFormattedUserIdString(authUser?.uid)} disabled className="rounded-[10px] bg-card" />
                             </FormItem>
 
                              <FormField
@@ -187,7 +187,7 @@ export default function EditProfilePage() {
                                     <FormItem>
                                     <FormLabel>Bio</FormLabel>
                                     <FormControl>
-                                        <Textarea rows={3} {...field} className="rounded-[10px] bg-secondary" />
+                                        <Textarea rows={3} {...field} className="rounded-[10px] bg-card" />
                                     </FormControl>
                                     <FormMessage />
                                     </FormItem>
@@ -201,7 +201,7 @@ export default function EditProfilePage() {
                                     <FormItem>
                                     <FormLabel>Website</FormLabel>
                                     <FormControl>
-                                        <Input placeholder="https://your-website.com" {...field} className="rounded-[10px] bg-secondary" />
+                                        <Input placeholder="https://your-website.com" {...field} className="rounded-[10px] bg-card" />
                                     </FormControl>
                                     <FormMessage />
                                     </FormItem>
@@ -216,7 +216,7 @@ export default function EditProfilePage() {
                                         <FormLabel>Gender</FormLabel>
                                         <Select onValueChange={field.onChange} defaultValue={field.value}>
                                             <FormControl>
-                                            <SelectTrigger className="rounded-[10px] bg-secondary">
+                                            <SelectTrigger className="rounded-[10px] bg-card">
                                                 <SelectValue placeholder="Select your gender" />
                                             </SelectTrigger>
                                             </FormControl>
