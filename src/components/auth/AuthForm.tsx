@@ -1,3 +1,4 @@
+
 "use client";
 
 import { useState } from "react";
@@ -177,8 +178,8 @@ export default function AuthForm() {
 
   return (
     <div className="w-full space-y-6">
-        <div className="text-center">
-            <h1 className="text-2xl font-headline mt-4">
+        <div className="text-center -mt-16">
+            <h1 className="text-2xl font-headline">
               {authMode === "login" ? "Login" : "Sign Up"}
             </h1>
              <p className="text-sm text-muted-foreground">
