@@ -638,7 +638,7 @@ export function PostItem({ post, ...props }: { post: WithId<Post>, bookmarks: Wi
                     </div>
                     <InnerPostItem post={originalPost} {...props} isRepost={true} />
                 </div>
-                <div className="h-px mx-4 bg-border" />
+                <div className="h-px mx-8 bg-border" />
             </div>
         );
     }
@@ -654,15 +654,15 @@ export function PostItem({ post, ...props }: { post: WithId<Post>, bookmarks: Wi
                 )}
                 <InnerPostItem post={post} {...props} />
             </div>
-            <div className="h-px mx-4 bg-border" />
+            <div className="h-px mx-8 bg-border" />
         </div>
     );
 }
 
 export function PostSkeleton() {
   return (
-    <Card className="w-full shadow-none border-0 rounded-none">
-      <CardContent className="p-4">
+    <div className="w-full bg-background">
+      <div className="p-4">
         <div className="flex space-x-3">
           <Skeleton className="h-10 w-10 rounded-full" />
           <div className="flex-1 space-y-2">
@@ -681,8 +681,8 @@ export function PostSkeleton() {
             </div>
           </div>
         </div>
-      </CardContent>
-    </Card>
+      </div>
+    </div>
   );
 }
 
