@@ -1,12 +1,9 @@
-
-
-"use client";
+'use client';
 
 import React, { useState, useEffect } from 'react';
 import { useFirebase, useMemoFirebase } from '@/firebase';
-import { collection, query, getDocs, orderBy, limit, doc, getDoc, collectionGroup } from 'firebase/firestore';
+import { collection, query, getDocs, orderBy, limit, doc, where, documentId } from 'firebase/firestore';
 import type { WithId } from '@/firebase/firestore/use-collection';
-import { useCollection } from '@/firebase/firestore/use-collection';
 import type { Comment, Post } from '@/lib/types';
 import { Skeleton } from './ui/skeleton';
 import { Avatar, AvatarFallback, AvatarImage } from './ui/avatar';
@@ -16,7 +13,7 @@ import Link from 'next/link';
 
 function ReplySkeleton() {
     return (
-        <div className="flex space-x-3 p-4 border-b">
+        <div className="flex space-x-3 p-4">
             <Avatar className="h-8 w-8">
                 <Skeleton className="h-8 w-8 rounded-full" />
             </Avatar>
@@ -35,7 +32,7 @@ function Reply({ comment, post }: { comment: WithId<Comment>, post: WithId<Post>
     const isAvatarUrl = avatar.startsWith('http');
 
     return (
-         <div className="p-4 space-y-3 border-b">
+         <div className="p-4 space-y-3">
              {post && (
                 <div className="text-sm text-muted-foreground pl-10">
                    Replied to <Link href={`/profile/${post.authorId}`} className="text-primary hover:underline">{formatUserId(post.authorId)}</Link>
@@ -70,50 +67,67 @@ function Reply({ comment, post }: { comment: WithId<Comment>, post: WithId<Post>
     )
 }
 
-function ReplyItemWrapper({ comment }: { comment: WithId<Comment> }) {
-    const { firestore } = useFirebase();
-    const [post, setPost] = useState<WithId<Post> | null>(null);
-    const [isLoading, setIsLoading] = useState(true);
-    
-    useEffect(() => {
-        if (!firestore) return;
-        setIsLoading(true);
-        const postRef = doc(firestore, 'posts', comment.postId);
-        getDoc(postRef).then(docSnap => {
-            if (docSnap.exists()) {
-                setPost({ id: docSnap.id, ...docSnap.data() } as WithId<Post>);
-            }
-            setIsLoading(false);
-        });
-    }, [firestore, comment.postId]);
-    
-    if (isLoading) {
-        return <ReplySkeleton />;
-    }
-
-    // Don't render if the original post was deleted
-    if (!post) {
-        return null;
-    }
-
-    return <Reply comment={comment} post={post} />;
-}
-
 
 export function RepliesList({ userId }: { userId: string }) {
     const { firestore } = useFirebase();
+    const [hydratedReplies, setHydratedReplies] = useState<{ comment: WithId<Comment>, post: WithId<Post> }[]>([]);
+    const [isLoading, setIsLoading] = useState(true);
     
-    const repliesQuery = useMemoFirebase(() => {
-        if (!firestore || !userId) return null;
-        // Fetch replies directly from the user's 'replies' subcollection
-        return query(
-            collection(firestore, 'users', userId, 'replies'),
-            orderBy('timestamp', 'desc'),
-            limit(50)
-        );
+    useEffect(() => {
+        if (!firestore || !userId) {
+            setIsLoading(false);
+            return;
+        }
+
+        const fetchRepliesAndPosts = async () => {
+            setIsLoading(true);
+            
+            const repliesQuery = query(
+                collection(firestore, 'users', userId, 'replies'),
+                orderBy('timestamp', 'desc'),
+                limit(50)
+            );
+            const repliesSnapshot = await getDocs(repliesQuery);
+            const replies = repliesSnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as WithId<Comment>));
+
+            if (replies.length === 0) {
+                setHydratedReplies([]);
+                setIsLoading(false);
+                return;
+            }
+
+            const postIds = [...new Set(replies.map(r => r.postId))];
+            
+            const postPromises = [];
+            for (let i = 0; i < postIds.length; i += 30) {
+                const chunk = postIds.slice(i, i + 30);
+                const postsQuery = query(collection(firestore, 'posts'), where(documentId(), 'in', chunk));
+                postPromises.push(getDocs(postsQuery));
+            }
+
+            const postSnapshots = await Promise.all(postPromises);
+            const postsMap = new Map<string, WithId<Post>>();
+            postSnapshots.forEach(snapshot => {
+                snapshot.docs.forEach(doc => {
+                    postsMap.set(doc.id, { id: doc.id, ...doc.data() } as WithId<Post>);
+                });
+            });
+
+            const finalHydratedReplies = replies
+                .map(comment => ({
+                    comment,
+                    post: postsMap.get(comment.postId)
+                }))
+                .filter((item): item is { comment: WithId<Comment>; post: WithId<Post>; } => !!item.post);
+
+            setHydratedReplies(finalHydratedReplies);
+            setIsLoading(false);
+        };
+
+        fetchRepliesAndPosts();
+
     }, [firestore, userId]);
-    
-    const { data: replies, isLoading } = useCollection<Comment>(repliesQuery);
+
 
     if (isLoading) {
         return (
@@ -125,7 +139,7 @@ export function RepliesList({ userId }: { userId: string }) {
         )
     }
 
-    if (!replies || replies.length === 0) {
+    if (hydratedReplies.length === 0) {
         return (
             <div className="text-center py-16">
                 <h3 className="text-xl font-headline text-foreground">No Replies Yet</h3>
@@ -135,9 +149,9 @@ export function RepliesList({ userId }: { userId: string }) {
     }
 
     return (
-        <div>
-            {replies.map(reply => (
-                <ReplyItemWrapper key={reply.id} comment={reply} />
+        <div className="divide-y">
+            {hydratedReplies.map(({ comment, post }) => (
+                <Reply key={comment.id} comment={comment} post={post} />
             ))}
         </div>
     );
