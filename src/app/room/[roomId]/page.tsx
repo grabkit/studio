@@ -308,17 +308,12 @@ function RoomMessageBubble({ message, showAvatarAndName, onSetReply, onForward }
                 className={cn(isOwnMessage ? "flex justify-end" : "flex gap-2", !showAvatarAndName && !isOwnMessage && "pl-10")}
             >
                 {!isOwnMessage && showAvatarAndName && (
-                    <div className="relative">
-                        <Link href={`/profile/${message.senderId}`}>
-                            <Avatar className="h-8 w-8">
-                                <AvatarImage src={isAvatarUrl ? avatar : undefined} />
-                                <AvatarFallback>{!isAvatarUrl ? avatar : ''}</AvatarFallback>
-                            </Avatar>
-                        </Link>
-                        {isOnline && (
-                            <span className="absolute bottom-[5.5px] right-0 block h-2.5 w-2.5 rounded-full bg-[hsl(var(--online-glow-color))] animate-online-indicator-glow border-2 border-background" />
-                        )}
-                    </div>
+                    <Link href={`/profile/${message.senderId}`}>
+                        <Avatar className="h-8 w-8" showStatus={true} isOnline={isOnline}>
+                            <AvatarImage src={isAvatarUrl ? avatar : undefined} />
+                            <AvatarFallback>{!isAvatarUrl ? avatar : ''}</AvatarFallback>
+                        </Avatar>
+                    </Link>
                 )}
                 
                 <div
