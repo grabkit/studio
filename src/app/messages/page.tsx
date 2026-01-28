@@ -252,7 +252,7 @@ function RequestItem({ request, onAccept }: { request: WithId<Conversation>, onA
                     <p className="text-sm text-muted-foreground">Wants to message you</p>
                 </div>
             </div>
-            <Button size="sm" onClick={(e) => { e.stopPropagation(); onAccept(request.id); }} className="rounded-[20px]">Accept</Button>
+            <Button size="sm" onClick={(e) => { e.stopPropagation(); onAccept(request.id); }} className="rounded-[10px]">Accept</Button>
         </div>
     );
 }
