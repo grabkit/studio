@@ -308,10 +308,17 @@ function RoomMessageBubble({ message, showAvatarAndName, onSetReply, onForward }
                 className={cn(isOwnMessage ? "flex justify-end" : "flex gap-2", !showAvatarAndName && !isOwnMessage && "pl-10")}
             >
                 {!isOwnMessage && showAvatarAndName && (
-                    <Avatar className="h-8 w-8" showStatus={true} isOnline={isOnline}>
-                        <AvatarImage src={isAvatarUrl ? avatar : undefined} />
-                        <AvatarFallback>{!isAvatarUrl ? avatar : ''}</AvatarFallback>
-                    </Avatar>
+                    <div className="relative">
+                        <Link href={`/profile/${message.senderId}`}>
+                            <Avatar className="h-8 w-8">
+                                <AvatarImage src={isAvatarUrl ? avatar : undefined} />
+                                <AvatarFallback>{!isAvatarUrl ? avatar : ''}</AvatarFallback>
+                            </Avatar>
+                        </Link>
+                        {isOnline && (
+                            <span className="absolute bottom-0 right-0 block h-2.5 w-2.5 rounded-full bg-[hsl(var(--online-glow-color))] animate-online-indicator-glow border border-background" />
+                        )}
+                    </div>
                 )}
                 
                 <div
@@ -321,7 +328,9 @@ function RoomMessageBubble({ message, showAvatarAndName, onSetReply, onForward }
                     )}
                 >
                     {!isOwnMessage && showAvatarAndName && (
-                        <p className="text-xs font-semibold mb-0.5 text-muted-foreground">{sender ? formatUserId(sender.id) : '...'}</p>
+                        <Link href={`/profile/${message.senderId}`}>
+                            <p className="text-xs font-semibold mb-0.5 text-muted-foreground hover:underline">{sender ? formatUserId(sender.id) : '...'}</p>
+                        </Link>
                     )}
                     <SheetTrigger asChild>
                         <div className={cn(
