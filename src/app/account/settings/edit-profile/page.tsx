@@ -145,44 +145,30 @@ export default function EditProfilePage() {
                         animate={{ scale: 1, opacity: 1 }}
                         transition={{ duration: 0.3 }}
                     >
-                        <div className="h-full overflow-y-auto">
-                            <div className="px-4 pt-6 space-y-6">
-                                <div className="flex justify-center">
-                                    <div className="relative">
-                                        <Avatar className="h-24 w-24">
-                                            <AvatarImage src={authUser?.photoURL || undefined} alt={userProfile?.name} />
-                                            <AvatarFallback className="text-4xl">
-                                                {getAvatar(userProfile)}
-                                            </AvatarFallback>
-                                        </Avatar>
-                                        <Button
-                                            type="button"
-                                            variant="secondary"
-                                            className="absolute -bottom-1 -right-1 rounded-full border-2 border-background h-8 w-8 p-0"
-                                            onClick={() => setIsEmojiSheetOpen(true)}
-                                        >
-                                            <Pencil className="h-4 w-4" />
-                                        </Button>
-                                    </div>
+                        <div className="h-full overflow-y-auto p-4 space-y-6">
+                            <div className="flex justify-center">
+                                <div className="relative">
+                                    <Avatar className="h-24 w-24">
+                                        <AvatarImage src={authUser?.photoURL || undefined} alt={userProfile?.name} />
+                                        <AvatarFallback className="text-4xl">
+                                            {getAvatar(userProfile)}
+                                        </AvatarFallback>
+                                    </Avatar>
+                                    <Button
+                                        type="button"
+                                        variant="secondary"
+                                        className="absolute -bottom-1 -right-1 rounded-full border-2 border-background h-8 w-8 p-0"
+                                        onClick={() => setIsEmojiSheetOpen(true)}
+                                    >
+                                        <Pencil className="h-4 w-4" />
+                                    </Button>
                                 </div>
-                                
-                                <div className="space-y-4">
-                                    <FormItem>
-                                    <FormLabel>Name</FormLabel>
-                                    <Input value={userProfile?.name || ''} disabled className="rounded-[10px] bg-secondary" />
-                                </FormItem>
-
-                                    <FormItem>
-                                        <FormLabel>Email</FormLabel>
-                                        <Input value={authUser?.email || ''} disabled className="rounded-[10px] bg-secondary" />
-                                    </FormItem>
-
-                                    <FormItem>
-                                        <FormLabel>Username</FormLabel>
-                                        <Input value={getFormattedUserIdString(authUser?.uid)} disabled className="rounded-[10px] bg-secondary" />
-                                    </FormItem>
-                                    
-                                    <FormField
+                            </div>
+                            
+                            <div>
+                                <h3 className="px-2 mb-1 text-sm font-semibold text-muted-foreground">Public Profile</h3>
+                                <div className="bg-card rounded-xl p-4 space-y-4">
+                                     <FormField
                                         control={form.control}
                                         name="bio"
                                         render={({ field }) => (
@@ -233,6 +219,26 @@ export default function EditProfilePage() {
                                             </FormItem>
                                         )}
                                     />
+                                </div>
+                            </div>
+
+                             <div>
+                                <h3 className="px-2 mb-1 text-sm font-semibold text-muted-foreground">Account Information</h3>
+                                <div className="bg-card rounded-xl p-4 space-y-4">
+                                     <FormItem>
+                                        <FormLabel>Name</FormLabel>
+                                        <Input value={userProfile?.name || ''} disabled className="rounded-[10px] bg-secondary" />
+                                    </FormItem>
+
+                                    <FormItem>
+                                        <FormLabel>Email</FormLabel>
+                                        <Input value={authUser?.email || ''} disabled className="rounded-[10px] bg-secondary" />
+                                    </FormItem>
+
+                                    <FormItem>
+                                        <FormLabel>Username</FormLabel>
+                                        <Input value={getFormattedUserIdString(authUser?.uid)} disabled className="rounded-[10px] bg-secondary" />
+                                    </FormItem>
                                 </div>
                             </div>
                         </div>
