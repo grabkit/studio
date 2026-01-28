@@ -4,7 +4,7 @@
 import React, { useState } from "react";
 import AppLayout from "@/components/AppLayout";
 import { Button } from "@/components/ui/button";
-import { ArrowLeft, ChevronRight, User, Bell, HelpCircle, Info, Lock, Sun, LogOut, UserPlus, ShieldAlert, VolumeX, MinusCircle, UserX, Loader2 } from "lucide-react";
+import { ArrowLeft, ChevronRight, User, Bell, HelpCircle, Info, Lock, Sun, LogOut, UserPlus, ShieldAlert, VolumeX, MinusCircle, UserX, Loader2, Moon, Laptop, Check } from "lucide-react";
 import { useRouter } from "next/navigation";
 import Link from 'next/link';
 import { useFirebase } from "@/firebase";
@@ -18,6 +18,8 @@ import { cn } from "@/lib/utils";
 import { addDoc, collection } from "firebase/firestore";
 import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
+import { useTheme } from "@/components/ThemeProvider";
+import { Sheet, SheetContent, SheetHeader, SheetTitle } from "@/components/ui/sheet";
 
 function SettingsItem({ href, label, icon: Icon, value }: { href: string, label: string, icon: React.ElementType, value?: string }) {
     return (
@@ -48,6 +50,8 @@ export default function SettingsPage() {
     const router = useRouter();
     const { auth, database, userProfile, user, firestore } = useFirebase();
     const { toast } = useToast();
+    const { theme, setTheme } = useTheme();
+    const [isThemeSheetOpen, setIsThemeSheetOpen] = useState(false);
     
     const handleLogout = async () => {
         if (!auth || !auth.currentUser || !database) return;
@@ -140,7 +144,19 @@ export default function SettingsPage() {
                     <div>
                         <h3 className="px-2 mb-1 text-sm font-semibold text-muted-foreground">Preferences</h3>
                         <div className="bg-card rounded-xl">
-                             <SettingsItem icon={Sun} label="Theme" value="Light" href="#" />
+                             <div
+                                className="flex items-center justify-between p-4 transition-colors hover:bg-accent/50 cursor-pointer"
+                                onClick={() => setIsThemeSheetOpen(true)}
+                            >
+                                <div className="flex items-center space-x-4">
+                                    <Sun className="h-5 w-5 text-foreground" />
+                                    <span className="text-base">Theme</span>
+                                </div>
+                                <div className="flex items-center space-x-2">
+                                    <span className="text-muted-foreground capitalize">{theme}</span>
+                                    <ChevronRight className="h-5 w-5 text-foreground" />
+                                </div>
+                            </div>
                         </div>
                     </div>
 
@@ -171,6 +187,34 @@ export default function SettingsPage() {
                     </div>
                 </div>
             </motion.div>
+             <Sheet open={isThemeSheetOpen} onOpenChange={setIsThemeSheetOpen}>
+                <SheetContent side="bottom" className="rounded-t-2xl">
+                    <SheetHeader className="text-center pb-4">
+                        <SheetTitle>Choose Theme</SheetTitle>
+                    </SheetHeader>
+                    <div className="flex flex-col space-y-2">
+                        {['light', 'dark', 'system'].map((t) => (
+                            <Button
+                                key={t}
+                                variant="outline"
+                                className="justify-between rounded-md h-12"
+                                onClick={() => {
+                                    setTheme(t as "light" | "dark" | "system");
+                                    setIsThemeSheetOpen(false);
+                                }}
+                            >
+                                <div className="flex items-center gap-2">
+                                    {t === 'light' && <Sun className="h-4 w-4" />}
+                                    {t === 'dark' && <Moon className="h-4 w-4" />}
+                                    {t === 'system' && <Laptop className="h-4 w-4" />}
+                                    <span className="capitalize">{t}</span>
+                                </div>
+                                {theme === t && <Check className="h-5 w-5" />}
+                            </Button>
+                        ))}
+                    </div>
+                </SheetContent>
+            </Sheet>
         </AppLayout>
     );
 }
