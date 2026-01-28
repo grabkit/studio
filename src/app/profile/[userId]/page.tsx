@@ -1,5 +1,4 @@
 
-
 "use client";
 
 import { useParams, useRouter } from "next/navigation";
@@ -670,7 +669,7 @@ export default function UserProfilePage() {
                                 </div>
                                 <div className="mb-4 space-y-1">
                                     <p className="font-semibold font-headline">{formatUserId(user?.id)}</p>
-                                    {user?.bio && <p className="text-sm">{user.bio}</p>}
+                                    <p className="text-sm">{user?.bio || "Hey there! I’m using Blur."}</p>
                                     {user?.website && (
                                         <a href={user.website} target="_blank" rel="noopener noreferrer" className="flex items-center gap-2 text-sm text-blue-500 hover:underline">
                                             <LinkIcon className="h-4 w-4" />

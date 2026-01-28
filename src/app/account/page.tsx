@@ -412,7 +412,7 @@ export default function AccountPage() {
                     
                     <div className="mb-4 space-y-1">
                         <p className="font-semibold font-headline">{formatUserId(authUser?.uid)}</p>
-                        {userProfile?.bio && <p className="text-sm">{userProfile.bio}</p>}
+                        <p className="text-sm">{userProfile?.bio || "Hey there! I’m using Blur."}</p>
                         {userProfile?.website && (
                             <a href={userProfile.website} target="_blank" rel="noopener noreferrer" className="flex items-center gap-2 text-sm text-blue-500 hover:underline">
                                 <LinkIcon className="h-4 w-4" />
@@ -483,3 +483,5 @@ export default function AccountPage() {
     </AppLayout>
   )
 }
+
+    
