@@ -533,7 +533,7 @@ export default function UserProfilePage() {
                             <Skeleton className="h-4 w-2/3" />
                         </div>
                     </div>
-                    <div className="divide-y border-b">
+                    <div className="">
                         <PostSkeleton />
                     </div>
                 </div>
@@ -551,7 +551,7 @@ export default function UserProfilePage() {
                      <div className="w-10"></div>
                 </div>
                 <div className="text-center py-20 pt-32">
-                    <h2 className="text-2xl font-headline text-primary">User not found</h2>
+                    <h2 className="text-2xl font-headline text-foreground">User not found</h2>
                     <p className="text-muted-foreground mt-2">
                         This user may have been deleted.
                     </p>
@@ -716,7 +716,7 @@ export default function UserProfilePage() {
                                     </TabsList>
                                 </div>
                                 <TabsContent value="posts" className="mt-0">
-                                    <div className="divide-y border-b">
+                                    <div className="">
                                         {(postsLoading || bookmarksLoading) && (
                                             <>
                                                 <PostSkeleton />
@@ -725,7 +725,7 @@ export default function UserProfilePage() {
                                         )}
                                         {!(postsLoading || bookmarksLoading) && filteredPosts?.length === 0 && (
                                             <div className="text-center py-16">
-                                                <h3 className="text-xl font-headline text-primary">No Posts Yet</h3>
+                                                <h3 className="text-xl font-headline text-foreground">No Posts Yet</h3>
                                                 <p className="text-muted-foreground">This user hasn't posted anything.</p>
                                             </div>
                                         )}

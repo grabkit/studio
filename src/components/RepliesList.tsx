@@ -16,7 +16,7 @@ import Link from 'next/link';
 
 function ReplySkeleton() {
     return (
-        <div className="flex space-x-3 p-4 border-b">
+        <div className="flex space-x-3 p-4">
             <Avatar className="h-8 w-8">
                 <Skeleton className="h-8 w-8 rounded-full" />
             </Avatar>
@@ -35,7 +35,7 @@ function Reply({ comment, post }: { comment: WithId<Comment>, post: WithId<Post>
     const isAvatarUrl = avatar.startsWith('http');
 
     return (
-         <div className="p-4 space-y-3 border-b">
+         <div className="p-4 space-y-3">
              {post && (
                 <div className="text-sm text-muted-foreground pl-10">
                    Replied to <Link href={`/profile/${post.authorId}`} className="text-primary hover:underline">{formatUserId(post.authorId)}</Link>
@@ -117,7 +117,7 @@ export function RepliesList({ userId }: { userId: string }) {
 
     if (isLoading) {
         return (
-            <div className="divide-y">
+            <div className="">
                 <ReplySkeleton />
                 <ReplySkeleton />
                 <ReplySkeleton />
@@ -128,20 +128,17 @@ export function RepliesList({ userId }: { userId: string }) {
     if (replies === null || replies.length === 0) {
         return (
             <div className="text-center py-16">
-                <h3 className="text-xl font-headline text-primary">No Replies Yet</h3>
+                <h3 className="text-xl font-headline text-foreground">No Replies Yet</h3>
                 <p className="text-muted-foreground">Replies to this user's posts will appear here.</p>
             </div>
         );
     }
 
     return (
-        <div className="divide-y">
+        <div className="">
             {replies.map(reply => (
                 <ReplyItemWrapper key={reply.id} comment={reply} />
             ))}
         </div>
     );
 }
-
-    
-    

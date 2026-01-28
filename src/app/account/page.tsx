@@ -1,5 +1,4 @@
 
-
 "use client";
 
 import AppLayout from "@/components/AppLayout";
@@ -100,7 +99,7 @@ function BookmarksList({ bookmarks, bookmarksLoading }: { bookmarks: WithId<Book
     if (bookmarkedPosts.length === 0) {
         return (
             <div className="text-center py-16">
-                <h3 className="text-xl font-headline text-primary">No Bookmarks Yet</h3>
+                <h3 className="text-xl font-headline text-foreground">No Bookmarks Yet</h3>
                 <p className="text-muted-foreground">You haven't bookmarked any posts.</p>
             </div>
         )
@@ -452,7 +451,7 @@ export default function AccountPage() {
                                 )}
                                 {!(postsLoading || bookmarksLoading) && filteredPosts?.length === 0 && (
                                     <div className="col-span-3 text-center py-16">
-                                        <h3 className="text-xl font-headline text-primary">No Posts Yet</h3>
+                                        <h3 className="text-xl font-headline text-foreground">No Posts Yet</h3>
                                         <p className="text-muted-foreground">Start sharing your thoughts!</p>
                                     </div>
                                 )}
