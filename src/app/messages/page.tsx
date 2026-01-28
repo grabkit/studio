@@ -40,7 +40,6 @@ function FollowedUsers({ users, isLoading, currentUser, showVoiceStatusPlayer }:
     if (isLoading) {
         return (
             <div className="p-4">
-                <h2 className="text-lg font-semibold font-headline mb-3">Following</h2>
                 <div className="flex space-x-4">
                     <FollowedUserSkeleton />
                     <FollowedUserSkeleton />
@@ -57,7 +56,6 @@ function FollowedUsers({ users, isLoading, currentUser, showVoiceStatusPlayer }:
 
     return (
         <div className="p-4">
-            <h2 className="text-lg font-semibold font-headline mb-3">Following</h2>
              <div className="overflow-x-auto pb-2 -mb-2 no-scrollbar">
                 <div className="flex space-x-4">
                     {users.map(user => {
