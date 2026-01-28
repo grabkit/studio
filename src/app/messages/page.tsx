@@ -295,9 +295,9 @@ function ConversationsList({
         return (
              <div className="text-center py-20 px-4">
                 <div className="inline-block p-4 bg-secondary rounded-full">
-                    <EmptyIcon className="h-10 w-10 text-primary" />
+                    <EmptyIcon className="h-10 w-10 text-foreground" />
                 </div>
-                <h2 className="mt-6 text-xl font-headline text-primary">{emptyStateTitle}</h2>
+                <h2 className="mt-6 text-xl font-headline text-foreground">{emptyStateTitle}</h2>
                 <p className="text-muted-foreground mt-2 max-w-sm mx-auto">
                    {emptyStateDescription}
                 </p>
@@ -330,9 +330,9 @@ function ConversationsList({
         return (
             <div className="text-center py-20 px-4">
                <div className="inline-block p-4 bg-secondary rounded-full">
-                   <EmptyIcon className="h-10 w-10 text-primary" />
+                   <EmptyIcon className="h-10 w-10 text-foreground" />
                </div>
-               <h2 className="mt-6 text-xl font-headline text-primary">{emptyStateTitle}</h2>
+               <h2 className="mt-6 text-xl font-headline text-foreground">{emptyStateTitle}</h2>
                <p className="text-muted-foreground mt-2 max-w-sm mx-auto">
                   {emptyStateDescription}
                </p>
