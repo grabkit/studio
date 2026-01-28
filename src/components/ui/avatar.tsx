@@ -10,19 +10,28 @@ const Avatar = React.forwardRef<
   React.ComponentPropsWithoutRef<typeof AvatarPrimitive.Root> & {
     isOnline?: boolean
     showStatus?: boolean
+    size?: "sm" | "default" | "lg"
   }
->(({ className, isOnline = false, showStatus = false, ...props }, ref) => (
+>(({ className, isOnline = false, showStatus = false, size = "default", ...props }, ref) => (
   <div className="relative inline-block">
     <AvatarPrimitive.Root
       ref={ref}
       className={cn(
-        "relative flex h-10 w-10 shrink-0 overflow-hidden rounded-full",
+        "relative flex shrink-0 overflow-hidden rounded-full",
+        size === "sm" && "h-8 w-8",
+        size === "default" && "h-10 w-10",
+        size === "lg" && "h-12 w-12",
         className
       )}
       {...props}
     />
      {showStatus && isOnline && (
-      <span className="absolute bottom-0 right-0.5 block h-2.5 w-2.5 rounded-full bg-[hsl(var(--online-glow-color))] animate-online-indicator-glow border-2 border-background" />
+      <span className={cn(
+        "absolute block rounded-full bg-[hsl(var(--online-glow-color))] animate-online-indicator-glow border-2 border-background",
+        size === "sm" && "h-2 w-2 bottom-0 right-0",
+        size === "default" && "h-2.5 w-2.5 bottom-0 right-0",
+        size === "lg" && "h-3 w-3 bottom-0.5 right-0.5"
+      )} />
     )}
   </div>
 ))

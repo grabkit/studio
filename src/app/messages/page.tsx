@@ -187,7 +187,7 @@ function ConversationItem({ conversation, currentUser, onLongPress }: { conversa
             className="p-4 flex justify-between items-center hover:bg-accent cursor-pointer"
         >
             <div className="flex items-center space-x-3">
-                <Avatar className="h-12 w-12" showStatus={true} isOnline={isOnline}>
+                <Avatar size="lg" showStatus={true} isOnline={isOnline}>
                     <AvatarImage src={isAvatarUrl ? avatar : undefined} alt={String(name)} />
                     <AvatarFallback>{!isAvatarUrl ? avatar : '?'}</AvatarFallback>
                 </Avatar>

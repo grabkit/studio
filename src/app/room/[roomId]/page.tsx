@@ -309,7 +309,7 @@ function RoomMessageBubble({ message, showAvatarAndName, onSetReply, onForward }
             >
                 {!isOwnMessage && showAvatarAndName && (
                     <Link href={`/profile/${message.senderId}`}>
-                        <Avatar className="h-8 w-8" showStatus={true} isOnline={isOnline}>
+                        <Avatar size="sm" showStatus={true} isOnline={isOnline}>
                             <AvatarImage src={isAvatarUrl ? avatar : undefined} />
                             <AvatarFallback>{!isAvatarUrl ? avatar : ''}</AvatarFallback>
                         </Avatar>
