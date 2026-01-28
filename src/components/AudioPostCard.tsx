@@ -349,12 +349,14 @@ export function AudioPostCard({ post, bookmarks, updatePost, onDelete, onPin }: 
                         </div>
                     </div>
                 </div>
-                 <div className="h-px mx-4 bg-border opacity-10" />
+                 <div className="h-px mx-4 bg-border" />
             </div>
             <RepostSheet post={post} isOpen={isRepostSheetOpen} onOpenChange={setIsRepostSheetOpen} />
             <ShareSheet post={post} isOpen={isShareSheetOpen} onOpenChange={setIsShareSheetOpen} />
         </>
     );
 }
+
+    
 
     

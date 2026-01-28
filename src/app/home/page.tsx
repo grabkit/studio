@@ -638,7 +638,7 @@ export function PostItem({ post, ...props }: { post: WithId<Post>, bookmarks: Wi
                     </div>
                     <InnerPostItem post={originalPost} {...props} isRepost={true} />
                 </div>
-                <div className="h-px mx-4 bg-border opacity-10" />
+                <div className="h-px mx-4 bg-border" />
             </div>
         );
     }
@@ -654,7 +654,7 @@ export function PostItem({ post, ...props }: { post: WithId<Post>, bookmarks: Wi
                 )}
                 <InnerPostItem post={post} {...props} />
             </div>
-            <div className="h-px mx-4 bg-border opacity-10" />
+            <div className="h-px mx-4 bg-border" />
         </div>
     );
 }
@@ -899,5 +899,7 @@ export default function HomePage() {
     </AppLayout>
   );
 }
+
+    
 
     
