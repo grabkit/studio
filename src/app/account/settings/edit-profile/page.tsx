@@ -126,7 +126,7 @@ export default function EditProfilePage() {
         <AppLayout showTopBar={false} showBottomNav={false}>
             <Form {...form}>
                 <form onSubmit={form.handleSubmit(onSubmit)}>
-                    <div className="fixed top-0 left-0 right-0 z-10 flex items-center justify-between p-2 bg-background border-b h-14 max-w-2xl mx-auto sm:px-4">
+                    <div className="fixed top-0 left-0 right-0 z-10 flex items-center justify-between p-2 bg-background h-14 max-w-2xl mx-auto sm:px-4">
                         <div className="flex items-center">
                             <Button variant="ghost" size="icon" type="button" onClick={() => router.back()}>
                                 <ArrowLeft />
@@ -169,17 +169,17 @@ export default function EditProfilePage() {
                                 <div className="space-y-4">
                                     <FormItem>
                                     <FormLabel>Name</FormLabel>
-                                    <Input value={userProfile?.name || ''} disabled />
+                                    <Input value={userProfile?.name || ''} disabled className="rounded-[10px]" />
                                 </FormItem>
 
                                     <FormItem>
                                         <FormLabel>Email</FormLabel>
-                                        <Input value={authUser?.email || ''} disabled />
+                                        <Input value={authUser?.email || ''} disabled className="rounded-[10px]" />
                                     </FormItem>
 
                                     <FormItem>
                                         <FormLabel>Username</FormLabel>
-                                        <Input value={getFormattedUserIdString(authUser?.uid)} disabled />
+                                        <Input value={getFormattedUserIdString(authUser?.uid)} disabled className="rounded-[10px]" />
                                     </FormItem>
                                     
                                     <FormField
@@ -189,7 +189,7 @@ export default function EditProfilePage() {
                                             <FormItem>
                                             <FormLabel>Bio</FormLabel>
                                             <FormControl>
-                                                <Textarea rows={3} {...field} />
+                                                <Textarea rows={3} {...field} className="rounded-[10px]" />
                                             </FormControl>
                                             <FormMessage />
                                             </FormItem>
@@ -203,7 +203,7 @@ export default function EditProfilePage() {
                                             <FormItem>
                                             <FormLabel>Links</FormLabel>
                                             <FormControl>
-                                                <Input placeholder="https://your-website.com" {...field} />
+                                                <Input placeholder="https://your-website.com" {...field} className="rounded-[10px]" />
                                             </FormControl>
                                             <FormMessage />
                                             </FormItem>
@@ -218,7 +218,7 @@ export default function EditProfilePage() {
                                                 <FormLabel>Gender</FormLabel>
                                                 <Select onValueChange={field.onChange} defaultValue={field.value}>
                                                     <FormControl>
-                                                    <SelectTrigger>
+                                                    <SelectTrigger className="rounded-[10px]">
                                                         <SelectValue placeholder="Select your gender" />
                                                     </SelectTrigger>
                                                     </FormControl>
