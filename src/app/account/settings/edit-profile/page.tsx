@@ -145,7 +145,7 @@ export default function EditProfilePage() {
                         animate={{ scale: 1, opacity: 1 }}
                         transition={{ duration: 0.3 }}
                     >
-                        <div className="h-full overflow-y-auto p-4 space-y-6">
+                        <div className="h-full overflow-y-auto p-4 space-y-4">
                             <div className="flex justify-center">
                                 <div className="relative">
                                     <Avatar className="h-24 w-24">
@@ -165,82 +165,72 @@ export default function EditProfilePage() {
                                 </div>
                             </div>
                             
-                            <div>
-                                <h3 className="px-2 mb-1 text-sm font-semibold text-muted-foreground">Public Profile</h3>
-                                <div className="bg-card rounded-xl p-4 space-y-4">
-                                     <FormField
-                                        control={form.control}
-                                        name="bio"
-                                        render={({ field }) => (
-                                            <FormItem>
-                                            <FormLabel>Bio</FormLabel>
-                                            <FormControl>
-                                                <Textarea rows={3} {...field} className="rounded-[10px] bg-secondary" />
-                                            </FormControl>
-                                            <FormMessage />
-                                            </FormItem>
-                                        )}
-                                    />
-                                    
-                                    <FormField
-                                        control={form.control}
-                                        name="website"
-                                        render={({ field }) => (
-                                            <FormItem>
-                                            <FormLabel>Links</FormLabel>
-                                            <FormControl>
-                                                <Input placeholder="https://your-website.com" {...field} className="rounded-[10px] bg-secondary" />
-                                            </FormControl>
-                                            <FormMessage />
-                                            </FormItem>
-                                        )}
-                                    />
-                                    
-                                    <FormField
-                                        control={form.control}
-                                        name="gender"
-                                        render={({ field }) => (
-                                            <FormItem>
-                                                <FormLabel>Gender</FormLabel>
-                                                <Select onValueChange={field.onChange} defaultValue={field.value}>
-                                                    <FormControl>
-                                                    <SelectTrigger className="rounded-[10px] bg-secondary">
-                                                        <SelectValue placeholder="Select your gender" />
-                                                    </SelectTrigger>
-                                                    </FormControl>
-                                                    <SelectContent>
-                                                        <SelectItem value="prefer_not_to_say">Prefer not to say</SelectItem>
-                                                        <SelectItem value="male">Male</SelectItem>
-                                                        <SelectItem value="female">Female</SelectItem>
-                                                        <SelectItem value="other">Other</SelectItem>
-                                                    </SelectContent>
-                                                </Select>
-                                                <FormMessage />
-                                            </FormItem>
-                                        )}
-                                    />
-                                </div>
-                            </div>
+                            <FormItem>
+                                <FormLabel>Name</FormLabel>
+                                <Input value={userProfile?.name || ''} disabled className="rounded-[10px] bg-secondary" />
+                            </FormItem>
 
-                             <div>
-                                <h3 className="px-2 mb-1 text-sm font-semibold text-muted-foreground">Account Information</h3>
-                                <div className="bg-card rounded-xl p-4 space-y-4">
-                                     <FormItem>
-                                        <FormLabel>Name</FormLabel>
-                                        <Input value={userProfile?.name || ''} disabled className="rounded-[10px] bg-secondary" />
-                                    </FormItem>
+                            <FormItem>
+                                <FormLabel>Email</FormLabel>
+                                <Input value={authUser?.email || ''} disabled className="rounded-[10px] bg-secondary" />
+                            </FormItem>
 
+                            <FormItem>
+                                <FormLabel>Username</FormLabel>
+                                <Input value={getFormattedUserIdString(authUser?.uid)} disabled className="rounded-[10px] bg-secondary" />
+                            </FormItem>
+
+                             <FormField
+                                control={form.control}
+                                name="bio"
+                                render={({ field }) => (
                                     <FormItem>
-                                        <FormLabel>Email</FormLabel>
-                                        <Input value={authUser?.email || ''} disabled className="rounded-[10px] bg-secondary" />
+                                    <FormLabel>Bio</FormLabel>
+                                    <FormControl>
+                                        <Textarea rows={3} {...field} className="rounded-[10px] bg-secondary" />
+                                    </FormControl>
+                                    <FormMessage />
                                     </FormItem>
-
+                                )}
+                            />
+                            
+                            <FormField
+                                control={form.control}
+                                name="website"
+                                render={({ field }) => (
                                     <FormItem>
-                                        <FormLabel>Username</FormLabel>
-                                        <Input value={getFormattedUserIdString(authUser?.uid)} disabled className="rounded-[10px] bg-secondary" />
+                                    <FormLabel>Website</FormLabel>
+                                    <FormControl>
+                                        <Input placeholder="https://your-website.com" {...field} className="rounded-[10px] bg-secondary" />
+                                    </FormControl>
+                                    <FormMessage />
                                     </FormItem>
-                                </div>
-                            </div>
+                                )}
+                            />
+                            
+                            <FormField
+                                control={form.control}
+                                name="gender"
+                                render={({ field }) => (
+                                    <FormItem>
+                                        <FormLabel>Gender</FormLabel>
+                                        <Select onValueChange={field.onChange} defaultValue={field.value}>
+                                            <FormControl>
+                                            <SelectTrigger className="rounded-[10px] bg-secondary">
+                                                <SelectValue placeholder="Select your gender" />
+                                            </SelectTrigger>
+                                            </FormControl>
+                                            <SelectContent>
+                                                <SelectItem value="prefer_not_to_say">Prefer not to say</SelectItem>
+                                                <SelectItem value="male">Male</SelectItem>
+                                                <SelectItem value="female">Female</SelectItem>
+                                                <SelectItem value="other">Other</SelectItem>
+                                            </SelectContent>
+                                        </Select>
+                                        <FormMessage />
+                                    </FormItem>
+                                )}
+                            />
                         </div>
                     </motion.div>
                 </form>
