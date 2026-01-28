@@ -169,17 +169,17 @@ export default function EditProfilePage() {
                                 <div className="space-y-4">
                                     <FormItem>
                                     <FormLabel>Name</FormLabel>
-                                    <Input value={userProfile?.name || ''} disabled className="rounded-[10px]" />
+                                    <Input value={userProfile?.name || ''} disabled className="rounded-[10px] bg-secondary" />
                                 </FormItem>
 
                                     <FormItem>
                                         <FormLabel>Email</FormLabel>
-                                        <Input value={authUser?.email || ''} disabled className="rounded-[10px]" />
+                                        <Input value={authUser?.email || ''} disabled className="rounded-[10px] bg-secondary" />
                                     </FormItem>
 
                                     <FormItem>
                                         <FormLabel>Username</FormLabel>
-                                        <Input value={getFormattedUserIdString(authUser?.uid)} disabled className="rounded-[10px]" />
+                                        <Input value={getFormattedUserIdString(authUser?.uid)} disabled className="rounded-[10px] bg-secondary" />
                                     </FormItem>
                                     
                                     <FormField
@@ -189,7 +189,7 @@ export default function EditProfilePage() {
                                             <FormItem>
                                             <FormLabel>Bio</FormLabel>
                                             <FormControl>
-                                                <Textarea rows={3} {...field} className="rounded-[10px]" />
+                                                <Textarea rows={3} {...field} className="rounded-[10px] bg-secondary" />
                                             </FormControl>
                                             <FormMessage />
                                             </FormItem>
@@ -203,7 +203,7 @@ export default function EditProfilePage() {
                                             <FormItem>
                                             <FormLabel>Links</FormLabel>
                                             <FormControl>
-                                                <Input placeholder="https://your-website.com" {...field} className="rounded-[10px]" />
+                                                <Input placeholder="https://your-website.com" {...field} className="rounded-[10px] bg-secondary" />
                                             </FormControl>
                                             <FormMessage />
                                             </FormItem>
@@ -218,7 +218,7 @@ export default function EditProfilePage() {
                                                 <FormLabel>Gender</FormLabel>
                                                 <Select onValueChange={field.onChange} defaultValue={field.value}>
                                                     <FormControl>
-                                                    <SelectTrigger className="rounded-[10px]">
+                                                    <SelectTrigger className="rounded-[10px] bg-secondary">
                                                         <SelectValue placeholder="Select your gender" />
                                                     </SelectTrigger>
                                                     </FormControl>
