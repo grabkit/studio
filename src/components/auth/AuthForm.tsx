@@ -59,7 +59,7 @@ const authSchema = z.object({
 
 
 export default function AuthForm() {
-  const [authMode, setAuthMode] = useState<"login" | "signup">("login");
+  const [authMode, setAuthMode] = useState<"login" | "signup">("signup");
   const [loading, setLoading] = useState(false);
   const { auth, firestore } = useFirebase();
   const router = useRouter();
@@ -388,5 +388,3 @@ function ForgotPasswordSheet({form, handlePasswordReset}: {form: UseFormReturn<a
     </Sheet>
   );
 }
-
-    
