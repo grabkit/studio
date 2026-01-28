@@ -46,6 +46,15 @@ export default function SplashScreen() {
           width={120}
           height={40}
           priority
+          className="dark:hidden"
+        />
+        <Image
+          src="https://blogger.googleusercontent.com/img/b/R29vZ2xl/AVvXsEi6D6Qy-Z4uf0bgTdhcmekuXrwq7YSU5g8a9bmMVwbjotQ6VNa8NHuFnKjytbRlJb5_g_mqhMrrFmXPd_6W9aeFlItcwiIYjYhzorTAMCPvEBiipvksoQmvxEMmc4-CkvHEQxiO-DGiK4uGIS9nxKTFeu29sutuw3TD-T81opk0NRfGqIkdnrxd1nsU1Nbd/s0/blur%20text%20logo%20darktheme.png"
+          alt="Blur Logo"
+          width={120}
+          height={40}
+          priority
+          className="hidden dark:block"
         />
         {isUserLoading && (
             <div className="absolute bottom-20 flex items-center space-x-2">
