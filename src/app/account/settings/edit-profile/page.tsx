@@ -17,7 +17,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
 import { ArrowLeft, Loader2, Pencil } from "lucide-react";
-import { getAvatar, formatUserId } from "@/lib/utils";
+import { getAvatar, getFormattedUserIdString } from "@/lib/utils";
 import { useToast } from "@/hooks/use-toast";
 import { errorEmitter } from "@/firebase/error-emitter";
 import { FirestorePermissionError } from "@/firebase/errors";
@@ -179,7 +179,7 @@ export default function EditProfilePage() {
 
                                     <FormItem>
                                         <FormLabel>Username</FormLabel>
-                                        <Input value={formatUserId(authUser?.uid)} disabled />
+                                        <Input value={getFormattedUserIdString(authUser?.uid)} disabled />
                                     </FormItem>
                                     
                                     <FormField
