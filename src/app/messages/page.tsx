@@ -671,7 +671,7 @@ export default function MessagesPage() {
 
     return (
         <AppLayout showTopBar={false}>
-             <div className="fixed top-0 left-0 right-0 z-10 flex items-center justify-between p-2 bg-background/80 backdrop-blur-sm border-b h-14 max-w-2xl mx-auto sm:px-4">
+             <div className="fixed top-0 left-0 right-0 z-10 flex items-center justify-between p-2 bg-background h-14 max-w-2xl mx-auto sm:px-4">
                 <h1 className="text-2xl font-bold font-headline">Messages</h1>
             </div>
             <div className="relative h-full overflow-y-auto pt-14">
