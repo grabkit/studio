@@ -283,8 +283,8 @@ function ConversationsList({
 }) {
     const emptyStateTitle = type === 'chats' ? "No Chats Yet" : "No New Requests";
     const emptyStateDescription = type === 'chats' 
-        ? "Start a chat by sending a request to others. Your first anonymous chat is one tap away." 
-        : "When a user wants to chat, you'll see their request here.";
+        ? "Your first anonymous chat is one tap away" 
+        : "When users want to chat, their requests will appear here.";
     const EmptyIcon = type === 'chats' ? MessageSquare : Mail;
 
     if (isLoading) {
