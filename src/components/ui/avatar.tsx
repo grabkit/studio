@@ -23,7 +23,7 @@ const Avatar = React.forwardRef<
       {...props}
     />
      {showStatus && isOnline && (
-      <span className="absolute top-[26px] right-[3px] block h-2 w-2 rounded-full bg-[hsl(var(--online-glow-color))] animate-online-indicator-glow border border-background" />
+      <span className="absolute bottom-0 right-0 block h-2.5 w-2.5 rounded-full bg-[hsl(var(--online-glow-color))] animate-online-indicator-glow border-2 border-background" />
     )}
   </div>
 ))
