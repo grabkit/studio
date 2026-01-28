@@ -133,6 +133,7 @@ export default function AuthForm() {
                 createdAt: serverTimestamp(),
                 status: 'active',
                 lastReadTimestamps: {},
+                bio: "Hey there! I’m using Blur.",
             };
             await setDoc(userDocRef, newUser, { merge: true });
         } catch (firestoreError: any) {
