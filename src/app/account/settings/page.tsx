@@ -95,7 +95,7 @@ export default function SettingsPage() {
                 <div />
             </div>
             <motion.div 
-                className="pt-14 h-full bg-muted/50"
+                className="pt-14 h-full"
                 initial={{ scale: 0.98, opacity: 0 }}
                 animate={{ scale: 1, opacity: 1 }}
                 transition={{ duration: 0.3 }}
