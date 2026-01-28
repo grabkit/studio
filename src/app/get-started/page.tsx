@@ -122,14 +122,22 @@ export default function GetStartedPage() {
                 </div>
             </div>
 
-
-             <Image
-                src="https://blogger.googleusercontent.com/img/b/R29vZ2xl/AVvXsEh5r85BhL7rCkS72xpX_5xkFZ9y_fVMFXYp_zLN9eEAnEA_C61c1jCJFaG86d1W6_mtsla64B191MOWYEFhJAa-lyMikD80WyfBVKiQxyc71spJx3Oy2FgvfotsVVnNIXGRXunpHYYvGFoQ7V-URilBXwJzIV9zQLSO_PN9raerNaTAb0VuCYo9EBqiyVts/s320/New%20Project%2020%20%5BEFC25EE%5D.png"
-                alt="Blur Logo"
-                width={120}
-                height={40}
-                className="z-10 animate-blur-unblur-slow"
-              />
+            <div className="z-10 animate-blur-unblur-slow">
+                <Image
+                    src="https://blogger.googleusercontent.com/img/b/R29vZ2xl/AVvXsEh5r85BhL7rCkS72xpX_5xkFZ9y_fVMFXYp_zLN9eEAnEA_C61c1jCJFaG86d1W6_mtsla64B191MOWYEFhJAa-lyMikD80WyfBVKiQxyc71spJx3Oy2FgvfotsVVnNIXGRXunpHYYvGFoQ7V-URilBXwJzIV9zQLSO_PN9raerNaTAb0VuCYo9EBqiyVts/s320/New%20Project%2020%20%5BEFC25EE%5D.png"
+                    alt="Blur Logo"
+                    width={120}
+                    height={40}
+                    className="dark:hidden"
+                />
+                <Image
+                    src="https://blogger.googleusercontent.com/img/b/R29vZ2xl/AVvXsEi6D6Qy-Z4uf0bgTdhcmekuXrwq7YSU5g8a9bmMVwbjotQ6VNa8NHuFnKjytbRlJb5_g_mqhMrrFmXPd_6W9aeFlItcwiIYjYhzorTAMCPvEBiipvksoQmvxEMmc4-CkvHEQxiO-DGiK4uGIS9nxKTFeu29sutuw3TD-T81opk0NRfGqIkdnrxd1nsU1Nbd/s0/blur%20text%20logo%20darktheme.png"
+                    alt="Blur Logo"
+                    width={120}
+                    height={40}
+                    className="hidden dark:block"
+                />
+            </div>
       </div>
       <div className="w-full max-w-sm z-10">
         <div className="h-28">
