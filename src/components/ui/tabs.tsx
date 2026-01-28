@@ -1,3 +1,4 @@
+
 "use client"
 
 import * as React from "react"
@@ -15,7 +16,7 @@ const tabsListVariants = cva(
     variants: {
       variant: {
         default: "h-10",
-        underline: "h-auto rounded-none bg-transparent border-b p-0",
+        underline: "h-auto rounded-none bg-transparent p-0",
       },
     },
     defaultVariants: {

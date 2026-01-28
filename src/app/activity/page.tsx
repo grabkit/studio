@@ -1,4 +1,5 @@
 
+
 "use client";
 
 import AppLayout from "@/components/AppLayout";
@@ -239,7 +240,7 @@ export default function ActivityPage() {
                         animate={{ opacity: 1, scale: 1 }}
                         transition={{ duration: 0.3 }}
                     >
-                        <div className="sticky top-0 p-4 border-b bg-background/80 backdrop-blur-sm z-10">
+                        <div className="sticky top-0 p-4 bg-background/80 backdrop-blur-sm z-10">
                             <h1 className="text-2xl font-bold font-headline">Activity</h1>
                         </div>
                         <div>

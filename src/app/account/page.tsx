@@ -107,7 +107,7 @@ function BookmarksList({ bookmarks, bookmarksLoading }: { bookmarks: WithId<Book
     }
 
     return (
-        <div className="divide-y border-b">
+        <div className="">
             {bookmarkedPosts.map(post => (
                 <HomePostItem 
                     key={post.id} 
@@ -443,7 +443,7 @@ export default function AccountPage() {
                         </TabsList>
                         </div>
                         <TabsContent value="posts" className="mt-0">
-                            <div className="divide-y border-b">
+                            <div className="">
                                 {(postsLoading || bookmarksLoading) && (
                                     <>
                                         <PostSkeleton />

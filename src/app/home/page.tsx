@@ -52,7 +52,7 @@ function LinkPreview({ metadata }: { metadata: LinkMetadata }) {
     };
 
     return (
-        <a href={metadata.url} target="_blank" rel="noopener noreferrer" className="block mt-3 border rounded-lg overflow-hidden hover:bg-secondary/50 transition-colors">
+        <a href={metadata.url} target="_blank" rel="noopener noreferrer" className="block mt-3 rounded-lg overflow-hidden hover:bg-secondary/50 transition-colors">
             {metadata.imageUrl && (
                 <div className="relative aspect-video">
                     <Image
@@ -630,7 +630,7 @@ export function PostItem({ post, ...props }: { post: WithId<Post>, bookmarks: Wi
             return null;
         }
         return (
-            <Card className="w-full shadow-none border-x-0 border-t-0 rounded-none">
+            <Card className="w-full shadow-none border-0 rounded-none">
                 <CardContent className="px-4 pt-4 pb-2">
                     <div className="flex items-center gap-2 text-xs text-muted-foreground mb-2 pl-12">
                         <Repeat className="h-3 w-3" />
@@ -643,7 +643,7 @@ export function PostItem({ post, ...props }: { post: WithId<Post>, bookmarks: Wi
     }
 
     return (
-        <Card className="w-full shadow-none border-x-0 border-t-0 rounded-none">
+        <Card className="w-full shadow-none border-0 rounded-none">
             <CardContent className="px-4 pt-4 pb-2">
                 {props.showPinStatus && post.isPinned && (
                     <div className="flex items-center gap-2 text-xs text-muted-foreground mb-2 pl-12">
@@ -659,7 +659,7 @@ export function PostItem({ post, ...props }: { post: WithId<Post>, bookmarks: Wi
 
 export function PostSkeleton() {
   return (
-    <Card className="w-full shadow-none border-x-0 border-t-0 rounded-none">
+    <Card className="w-full shadow-none border-0 rounded-none">
       <CardContent className="p-4">
         <div className="flex space-x-3">
           <Skeleton className="h-10 w-10 rounded-full" />
@@ -851,7 +851,7 @@ export default function HomePage() {
             transition={{ duration: 0.3 }}
           >
             
-              <div className="p-4 border-b">
+              <div className="p-4">
                 <div 
                   className="flex items-center space-x-3 cursor-pointer"
                   onClick={handleCreatePostClick}
@@ -867,7 +867,7 @@ export default function HomePage() {
                   </div>
                 </div>
               </div>
-              <div className="divide-y border-b">
+              <div className="">
                 {isLoading && (
                   <>
                     <PostSkeleton />
