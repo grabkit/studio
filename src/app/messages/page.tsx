@@ -221,6 +221,7 @@ function ConversationItem({ conversation, currentUser, onLongPress }: { conversa
 function RequestItem({ request, onAccept }: { request: WithId<Conversation>, onAccept: (id: string) => void }) {
      const requesterId = request.requesterId;
      const { firestore } = useFirebase();
+     const router = useRouter();
 
     const requesterUserRef = useMemoFirebase(() => {
         if (!firestore || !requesterId) return null;
@@ -231,10 +232,16 @@ function RequestItem({ request, onAccept }: { request: WithId<Conversation>, onA
     const name = requesterUser ? formatUserId(requesterUser.id) : 'User';
     const avatar = getAvatar(requesterUser);
     const isAvatarUrl = avatar.startsWith('http');
+    
+    const handleItemClick = () => {
+        if (requesterId) {
+            router.push(`/profile/${requesterId}`);
+        }
+    };
 
 
     return (
-        <div className="p-4 flex justify-between items-center">
+        <div onClick={handleItemClick} className="p-4 flex justify-between items-center hover:bg-accent cursor-pointer">
             <div className="flex items-center space-x-3">
                 <Avatar className="h-12 w-12">
                     <AvatarImage src={isAvatarUrl ? avatar : undefined} alt={String(name)} />
@@ -245,7 +252,7 @@ function RequestItem({ request, onAccept }: { request: WithId<Conversation>, onA
                     <p className="text-sm text-muted-foreground">Wants to message you</p>
                 </div>
             </div>
-            <Button size="sm" onClick={() => onAccept(request.id)} className="rounded-[20px]">Accept</Button>
+            <Button size="sm" onClick={(e) => { e.stopPropagation(); onAccept(request.id); }} className="rounded-[20px]">Accept</Button>
         </div>
     );
 }
