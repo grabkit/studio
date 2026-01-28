@@ -630,21 +630,22 @@ export function PostItem({ post, ...props }: { post: WithId<Post>, bookmarks: Wi
             return null;
         }
         return (
-            <Card className="w-full shadow-none border-0 rounded-none">
-                <CardContent className="px-4 pt-4 pb-2">
+            <div className="w-full bg-background">
+                <div className="px-4 pt-4 pb-2">
                     <div className="flex items-center gap-2 text-xs text-muted-foreground mb-2 pl-12">
                         <Repeat className="h-3 w-3" />
                         <span>Reposted by {formatUserId(post.authorId)}</span>
                     </div>
                     <InnerPostItem post={originalPost} {...props} isRepost={true} />
-                </CardContent>
-            </Card>
+                </div>
+                <div className="h-px mx-4 bg-border opacity-10" />
+            </div>
         );
     }
 
     return (
-        <Card className="w-full shadow-none border-0 rounded-none">
-            <CardContent className="px-4 pt-4 pb-2">
+        <div className="w-full bg-background">
+            <div className="px-4 pt-4 pb-2">
                 {props.showPinStatus && post.isPinned && (
                     <div className="flex items-center gap-2 text-xs text-muted-foreground mb-2 pl-12">
                         <Pin className="h-3 w-3" />
@@ -652,8 +653,9 @@ export function PostItem({ post, ...props }: { post: WithId<Post>, bookmarks: Wi
                     </div>
                 )}
                 <InnerPostItem post={post} {...props} />
-            </CardContent>
-        </Card>
+            </div>
+            <div className="h-px mx-4 bg-border opacity-10" />
+        </div>
     );
 }
 

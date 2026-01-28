@@ -266,8 +266,8 @@ export function AudioPostCard({ post, bookmarks, updatePost, onDelete, onPin }: 
 
     return (
         <>
-            <Card className="w-full shadow-none border-x-0 border-t-0 rounded-none">
-                <CardContent className="px-4 pt-4 pb-2">
+            <div className="w-full bg-background">
+                <div className="px-4 pt-4 pb-2">
                     <div className="flex space-x-3">
                         <Link href={`/profile/${post.authorId}`}>
                             <Avatar className="h-10 w-10">
@@ -348,8 +348,9 @@ export function AudioPostCard({ post, bookmarks, updatePost, onDelete, onPin }: 
                             </div>
                         </div>
                     </div>
-                </CardContent>
-            </Card>
+                </div>
+                 <div className="h-px mx-4 bg-border opacity-10" />
+            </div>
             <RepostSheet post={post} isOpen={isRepostSheetOpen} onOpenChange={setIsRepostSheetOpen} />
             <ShareSheet post={post} isOpen={isShareSheetOpen} onOpenChange={setIsShareSheetOpen} />
         </>
