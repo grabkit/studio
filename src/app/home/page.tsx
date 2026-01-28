@@ -213,7 +213,7 @@ export function PollComponent({ post, user, onVote }: { post: WithId<Post>, user
                      const bgClass = isUserChoice ? colorSet.light : 'bg-secondary';
                      const borderClass = isUserChoice ? colorSet.dark : 'border-border';
                      const fontWeight = isUserChoice ? 'font-bold' : 'font-medium';
-                     const textColorClass = isUserChoice ? colorSet.text : 'text-primary';
+                     const textColorClass = isUserChoice ? colorSet.text : 'text-foreground';
 
 
                      return (
@@ -904,3 +904,6 @@ export default function HomePage() {
 
     
 
+
+
+    
