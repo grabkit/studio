@@ -1,4 +1,3 @@
-
 rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
@@ -9,6 +8,16 @@ service cloud.firestore {
 
     function isOwner(userId) {
       return request.auth.uid == userId;
+    }
+    
+    function isCallParticipant(callId) {
+      let callDoc = get(/databases/$(database)/documents/calls/$(callId));
+      return request.auth.uid == callDoc.data.callerId || request.auth.uid == callDoc.data.calleeId;
+    }
+
+    function isVideoCallParticipant(videoCallId) {
+      let callDoc = get(/databases/$(database)/documents/videoCalls/$(videoCallId));
+      return request.auth.uid == callDoc.data.callerId || request.auth.uid == callDoc.data.calleeId;
     }
 
     match /users/{userId} {
@@ -72,22 +81,17 @@ service cloud.firestore {
     }
     
     match /conversations/{conversationId} {
-      allow read, list, delete: if isSignedIn() && request.auth.uid in resource.data.participantIds;
+      allow get: if isSignedIn();
+      allow list: if isSignedIn() && request.auth.uid in resource.data.participantIds;
       allow create: if isSignedIn() && request.auth.uid in request.resource.data.participantIds;
-      allow update: if isSignedIn() && request.auth.uid in resource.data.participantIds && !request.resource.data.diff(resource.data).affectedKeys().hasAny(['participantIds', 'requesterId', 'id', 'createdAt']);
+      allow update: if isSignedIn() && request.auth.uid in get(/databases/$(database)/documents/conversations/$(conversationId)).data.participantIds &&
+        request.resource.data.diff(resource.data).affectedKeys().hasOnly(['lastMessage', 'lastUpdated', 'status', 'mutedBy', 'unreadCounts', 'lastReadTimestamps', 'voiceCallsDisabledBy', 'videoCallsDisabledBy']);
+      allow delete: if isSignedIn() && request.auth.uid in resource.data.participantIds;
     }
 
     match /conversations/{conversationId}/messages/{messageId} {
       allow read, list: if isSignedIn() && request.auth.uid in get(/databases/$(database)/documents/conversations/$(conversationId)).data.participantIds;
       allow create: if isSignedIn() && request.auth.uid in get(/databases/$(database)/documents/conversations/$(conversationId)).data.participantIds && isValidNewMessage();
-      allow update: if isSignedIn() && request.auth.uid in get(/databases/$(database)/documents/conversations/$(conversationId)).data.participantIds && (
-        (request.resource.data.diff(resource.data).affectedKeys().hasOnly(['deletedFor'])
-          && request.resource.data.deletedFor.size() == resource.data.get('deletedFor', []).size() + 1
-          && request.auth.uid in request.resource.data.deletedFor)
-        || (request.resource.data.diff(resource.data).affectedKeys().hasOnly(['viewedBy'])
-          && request.resource.data.viewedBy.size() >= resource.data.get('viewedBy', []).size()
-          && request.auth.uid in request.resource.data.viewedBy)
-      );
       allow delete: if isSignedIn() && isOwner(resource.data.senderId);
     }
     
@@ -100,6 +104,42 @@ service cloud.firestore {
       allow create: if isSignedIn() && isValidNewReport(reportId);
     }
 
+    match /calls/{callId} {
+      allow get: if isSignedIn();
+      allow list: if isSignedIn();
+      allow create: if isSignedIn() && request.resource.data.callerId == request.auth.uid;
+      allow update: if isCallParticipant(callId) && (request.resource.data.diff(resource.data).affectedKeys().hasOnly(['status', 'answer']));
+      allow delete: if isCallParticipant(callId);
+      
+      match /callerCandidates/{candidateId} {
+        allow read, list, create: if isSignedIn();
+        allow update, delete: if false;
+      }
+
+      match /answerCandidates/{candidateId} {
+          allow read, list, create: if isSignedIn();
+          allow update, delete: if false;
+      }
+    }
+
+    match /videoCalls/{videoCallId} {
+      allow get: if isSignedIn();
+      allow list: if isSignedIn();
+      allow create: if isSignedIn() && request.resource.data.callerId == request.auth.uid;
+      allow update: if isVideoCallParticipant(videoCallId) && (request.resource.data.diff(resource.data).affectedKeys().hasOnly(['status', 'answer']));
+      allow delete: if isVideoCallParticipant(videoCallId);
+      
+      match /callerCandidates/{candidateId} {
+        allow read, list, create: if isSignedIn();
+        allow update, delete: if false;
+      }
+
+      match /answerCandidates/{candidateId} {
+          allow read, list, create: if isSignedIn();
+          allow update, delete: if false;
+      }
+    }
+
     match /rooms/{roomId} {
       allow get, list: if isSignedIn();
       allow create: if isSignedIn();
@@ -107,18 +147,8 @@ service cloud.firestore {
 
       match /messages/{messageId} {
         allow read, list: if isSignedIn();
-        allow create: if isSignedIn() && get(/databases/$(database)/documents/rooms/$(roomId)).data.participantIds.hasAny([request.auth.uid]) && isValidNewRoomMessage(roomId);
-        allow update: if isSignedIn() && (
-          (
-            request.resource.data.diff(resource.data).affectedKeys().hasOnly(['deletedFor'])
-            && request.resource.data.deletedFor.size() == resource.data.get('deletedFor', []).size() + 1
-            && request.auth.uid in request.resource.data.deletedFor
-          ) || (
-            request.resource.data.diff(resource.data).affectedKeys().hasOnly(['viewedBy'])
-            && request.resource.data.viewedBy.size() >= resource.data.get('viewedBy', []).size()
-            && request.auth.uid in request.resource.data.viewedBy
-          )
-        );
+        allow create: if isSignedIn() && request.resource.data.senderId == request.auth.uid;
+        allow update: if false;
         allow delete: if isOwner(resource.data.senderId);
       }
     }
@@ -156,34 +186,21 @@ service cloud.firestore {
         && data.status == 'pending'
         && data.keys().hasOnly(['id', 'reporterUserId', 'reportedUserId', 'reason', 'timestamp', 'status']);
     }
-    
-    function isValidNewRoomMessage(roomId) {
-      let data = request.resource.data;
-      return data.senderId == request.auth.uid
-        && data.roomId == roomId
-        && (
-            (data.keys().has('text') && data.text is string && data.text.size() > 0 && data.text.size() <= 1000) ||
-            (data.keys().has('postId') && data.postId is string) ||
-            (data.keys().has('linkMetadata') && data.linkMetadata is map)
-           )
-        && (
-             (!data.keys().hasAny(['replyToMessageId', 'replyToMessageText'])) ||
-             (data.replyToMessageId is string && data.replyToMessageText is string)
-           );
-    }
 
     function isValidNewMessage() {
       let data = request.resource.data;
+      let allowedKeys = ['id', 'senderId', 'text', 'timestamp', 'replyToMessageId', 'replyToMessageText', 'postId', 'isForwarded', 'linkMetadata'];
       return data.senderId == request.auth.uid
         && (
-            (data.keys().has('text') && data.text is string && data.text.size() > 0 && data.text.size() <= 1000) || 
+            (data.text is string && data.text.size() > 0 && data.text.size() <= 1000) || 
             (data.keys().has('postId') && data.postId is string) ||
             (data.keys().has('linkMetadata') && data.linkMetadata is map)
            )
         && (
              (!data.keys().hasAny(['replyToMessageId', 'replyToMessageText'])) ||
              (data.replyToMessageId is string && data.replyToMessageText is string)
-           );
+           )
+        && data.keys().hasOnly(allowedKeys);
     }
     
     function isNewRepost() {

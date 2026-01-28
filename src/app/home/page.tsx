@@ -33,12 +33,13 @@ import { usePresence } from "@/hooks/usePresence";
 import { ShareSheet } from "@/components/ShareSheet";
 import { RepostSheet } from "@/components/RepostSheet";
 import { QuotedPostCard } from "@/components/QuotedPostCard";
-import { motion } from "framer-motion";
+import { motion, AnimatePresence } from "framer-motion";
 import { eventBus } from "@/lib/event-bus";
 import { useCollection } from "@/firebase/firestore/use-collection";
 import { Progress } from "@/components/ui/progress";
 import { AudioPostCard } from "@/components/AudioPostCard";
 import { EventCard } from "@/components/EventCard";
+import { Loader2 } from "lucide-react";
 
 
 function LinkPreview({ metadata }: { metadata: LinkMetadata }) {
@@ -692,6 +693,7 @@ export default function HomePage() {
   const [posts, setPosts] = useState<WithId<Post>[] | null>(null);
   const [postsLoading, setPostsLoading] = useState(true);
   const [currentTime, setCurrentTime] = useState(new Date());
+  const [isRefreshing, setIsRefreshing] = useState(false);
   
   const postsQuery = useMemoFirebase(() => {
     if (!firestore) return null;
@@ -745,7 +747,7 @@ export default function HomePage() {
   const handleRefresh = useCallback(async () => {
     if (!postsQuery) return;
 
-    eventBus.emit('refresh-start');
+    setIsRefreshing(true);
     eventBus.emit('scroll-main-to-top');
 
     try {
@@ -779,7 +781,7 @@ export default function HomePage() {
             description: "Could not fetch the latest posts.",
         });
     } finally {
-        eventBus.emit('refresh-end');
+        setIsRefreshing(false);
     }
   }, [postsQuery, posts, toast]);
 
@@ -822,54 +824,76 @@ export default function HomePage() {
 
   return (
     <AppLayout>
-      <motion.div
-        className="h-full relative"
-        initial={{ scale: 0.98, opacity: 0 }}
-        animate={{ scale: 1, opacity: 1 }}
-        transition={{ duration: 0.3 }}
-      >
-        
-          <div className="p-4 border-b">
-            <div 
-              className="flex items-center space-x-3 cursor-pointer"
-              onClick={handleCreatePostClick}
-            >
-              <Avatar>
-                <AvatarImage src={isAvatarUrl ? avatar : undefined} alt={String(formatUserId(user?.uid))} />
-                <AvatarFallback>{!isAvatarUrl ? avatar : ''}</AvatarFallback>
-              </Avatar>
-              <div className="flex-1">
-                <div className="border rounded-full px-4 py-2 text-muted-foreground hover:bg-secondary transition-colors">
-                  What's on your mind?
+      <div className="relative h-full">
+        <AnimatePresence>
+            {isRefreshing && (
+                <motion.div
+                    key="home-refresh-indicator"
+                    initial={{ height: 0 }}
+                    animate={{ height: 60 }}
+                    exit={{ height: 0, transition: { duration: 0.2 } }}
+                    transition={{ duration: 0.4, ease: "easeInOut" }}
+                    className="bg-blue-500 flex items-center justify-center overflow-hidden absolute top-0 left-0 right-0 z-20"
+                >
+                    <Loader2 className="h-6 w-6 animate-spin text-white" />
+                </motion.div>
+            )}
+        </AnimatePresence>
+        <motion.div
+            className="h-full"
+            animate={{ paddingTop: isRefreshing ? 60 : 0 }}
+            transition={{ duration: 0.4, ease: "easeInOut" }}
+        >
+          <motion.div
+            className="h-full relative"
+            initial={{ scale: 0.98, opacity: 0 }}
+            animate={{ scale: 1, opacity: 1 }}
+            transition={{ duration: 0.3 }}
+          >
+            
+              <div className="p-4 border-b">
+                <div 
+                  className="flex items-center space-x-3 cursor-pointer"
+                  onClick={handleCreatePostClick}
+                >
+                  <Avatar>
+                    <AvatarImage src={isAvatarUrl ? avatar : undefined} alt={String(formatUserId(user?.uid))} />
+                    <AvatarFallback>{!isAvatarUrl ? avatar : ''}</AvatarFallback>
+                  </Avatar>
+                  <div className="flex-1">
+                    <div className="border rounded-full px-4 py-2 text-muted-foreground hover:bg-secondary transition-colors">
+                      What's on your mind?
+                    </div>
+                  </div>
                 </div>
               </div>
-            </div>
-          </div>
-          <div className="divide-y border-b">
-            {isLoading && (
-              <>
-                <PostSkeleton />
-                <PostSkeleton />
-                <PostSkeleton />
-                <PostSkeleton />
-                <PostSkeleton />
-              </>
-            )}
+              <div className="divide-y border-b">
+                {isLoading && (
+                  <>
+                    <PostSkeleton />
+                    <PostSkeleton />
+                    <PostSkeleton />
+                    <PostSkeleton />
+                    <PostSkeleton />
+                  </>
+                )}
 
-            {!isLoading && posts && filteredPosts.length === 0 && (
-              <div className="text-center py-10 h-screen">
-                <h2 className="text-2xl font-headline text-primary">No posts yet!</h2>
-                <p className="text-muted-foreground mt-2">Start following people to see their posts here.</p>
+                {!isLoading && posts && filteredPosts.length === 0 && (
+                  <div className="text-center py-10 h-screen">
+                    <h2 className="text-2xl font-headline text-primary">No posts yet!</h2>
+                    <p className="text-muted-foreground mt-2">Start following people to see their posts here.</p>
+                  </div>
+                )}
+                
+                {filteredPosts.map((post) => (
+                    <PostItem key={post.id} post={post} bookmarks={bookmarks} updatePost={updatePost} onDelete={handleDeletePostOptimistic} />
+                  ))
+                }
               </div>
-            )}
             
-            {filteredPosts.map((post) => (
-                <PostItem key={post.id} post={post} bookmarks={bookmarks} updatePost={updatePost} onDelete={handleDeletePostOptimistic} />
-              ))
-            }
-          </div>
-        
-      </motion.div>
+          </motion.div>
+        </motion.div>
+      </div>
     </AppLayout>
   );
 }
