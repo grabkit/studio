@@ -1,7 +1,6 @@
-
 'use client';
 
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect, useRef, useCallback } from "react";
 import { Avatar, AvatarFallback, AvatarImage } from "./ui/avatar";
 import { Button } from "./ui/button";
 import { Mic, MicOff, PhoneOff, Video, VideoOff } from "lucide-react";
@@ -41,8 +40,20 @@ export function VideoCallView({
     remoteStream 
 }: VideoCallViewProps) {
   const [duration, setDuration] = useState(0);
-  const localVideoRef = useRef<HTMLVideoElement>(null);
-  const remoteVideoRef = useRef<HTMLVideoElement>(null);
+  
+  // Use callback refs for more robust stream attachment
+  const localVideoRef = useCallback((node: HTMLVideoElement | null) => {
+    if (node && localStream) {
+      node.srcObject = localStream;
+    }
+  }, [localStream]);
+
+  const remoteVideoRef = useCallback((node: HTMLVideoElement | null) => {
+    if (node && remoteStream) {
+      node.srcObject = remoteStream;
+    }
+  }, [remoteStream]);
+
 
   useEffect(() => {
     let timer: NodeJS.Timeout;
@@ -55,18 +66,6 @@ export function VideoCallView({
     }
     return () => clearInterval(timer);
   }, [status]);
-
-  useEffect(() => {
-      if (localVideoRef.current && localStream) {
-          localVideoRef.current.srcObject = localStream;
-      }
-  }, [localStream]);
-
-  useEffect(() => {
-      if (remoteVideoRef.current && remoteStream) {
-          remoteVideoRef.current.srcObject = remoteStream;
-      }
-  }, [remoteStream]);
   
   if (!remoteUser) return null;
 
