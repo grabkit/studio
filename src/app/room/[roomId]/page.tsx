@@ -449,11 +449,12 @@ function RoomMessageBubble({ message, showAvatarAndName, onSetReply, onForward, 
     );
 
     const bubbleAndButtonContainer = (
-        <div className="inline-flex flex-col items-start max-w-[80%]">
+        <div className="inline-flex flex-col items-start">
              <SheetTrigger asChild>
                 <div className={cn(
                     "rounded-2xl",
                     isOwnMessage ? "bg-primary text-primary-foreground rounded-br-none" : "bg-secondary text-foreground rounded-bl-none",
+                    (isPostShare || isLinkShare) ? 'w-64' : 'max-w-[80%]'
                 )}>
                     {bubbleContent}
                 </div>
@@ -861,7 +862,9 @@ export default function RoomChatPage() {
                 className="flex flex-col h-screen"
             >
                 <div className="flex-1 overflow-y-auto pb-20">
-                    <RoomHeader room={room} />
+                    <div className="sticky top-0 z-20">
+                      <RoomHeader room={room} />
+                    </div>
                     {isAskSpace ? (
                         <Tabs defaultValue="all" className="w-full">
                             <div className="sticky top-14 bg-background z-10 border-b">
