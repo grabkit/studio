@@ -1,5 +1,3 @@
-
-
 'use client';
 
 import React, { DependencyList, createContext, useContext, ReactNode, useMemo, useState, useEffect, useRef } from 'react';
@@ -112,6 +110,7 @@ export const FirebaseProvider: React.FC<FirebaseProviderProps> = ({
   const [voiceStatusUser, setVoiceStatusUser] = useState<WithId<UserProfile> | null>(null);
   const [isVoicePlayerPlaying, setIsVoicePlayerPlaying] = useState(false);
   const voiceAudioRef = useRef<HTMLAudioElement | null>(null);
+  const remoteAudioRef = useRef<HTMLAudioElement>(null);
   
   const {
       startCall,
@@ -147,6 +146,13 @@ export const FirebaseProvider: React.FC<FirebaseProviderProps> = ({
       });
     }
   };
+  
+  useEffect(() => {
+    if (remoteStream && remoteAudioRef.current) {
+        remoteAudioRef.current.srcObject = remoteStream;
+        remoteAudioRef.current.play().catch(e => console.error("Error playing remote audio:", e));
+    }
+  }, [remoteStream]);
   
   const loggedInUserProfileRef = useMemoFirebase(() => {
     if (!firestore || !userAuthState.user) return null;
@@ -366,6 +372,7 @@ export const FirebaseProvider: React.FC<FirebaseProviderProps> = ({
       {activeCall && callStatus !== 'ended' && callStatus !== 'declined' && callStatus !== 'missed' && (
         <OnCallView remoteUser={remoteUserProfile} status={callStatus} onHangUp={hangUp} isMuted={isMuted} toggleMute={toggleMute} />
       )}
+      <audio ref={remoteAudioRef} autoPlay playsInline className="hidden" />
       {children}
     </FirebaseContext.Provider>
   );
@@ -440,23 +447,3 @@ export function useMemoFirebase<T>(factory: () => T, deps: DependencyList): T | 
   
   return memoized;
 }
-    
-
-
-
-
-    
-
-    
-
-    
-
-
-
-
-    
-
-    
-
-
-
