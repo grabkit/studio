@@ -85,6 +85,14 @@ export interface UserHookResult {
 // React Context
 export const FirebaseContext = createContext<FirebaseContextState | undefined>(undefined);
 
+interface FirebaseProviderProps {
+    children: ReactNode;
+    firebaseApp: FirebaseApp;
+    auth: Auth;
+    firestore: Firestore;
+    database: Database;
+}
+
 /**
  * FirebaseProvider manages and provides Firebase services and user authentication state.
  */
@@ -152,13 +160,14 @@ export const FirebaseProvider: React.FC<FirebaseProviderProps> = ({
   }, []);
   
   useEffect(() => {
-    if (remoteAudioRef.current) {
-      if (isMounted && remoteStream) {
+    if (remoteAudioRef.current && isMounted) {
+      if (remoteStream) {
         if (remoteAudioRef.current.srcObject !== remoteStream) {
             remoteAudioRef.current.srcObject = remoteStream;
             remoteAudioRef.current.play().catch(e => console.error("Error playing remote audio:", e));
         }
       } else {
+        // This is crucial: clean up the srcObject when the stream is null (call ends)
         remoteAudioRef.current.srcObject = null;
       }
     }
@@ -395,7 +404,7 @@ export const FirebaseProvider: React.FC<FirebaseProviderProps> = ({
         />
       )}
       {incomingCall && <IncomingCallView caller={callerProfile} onAccept={acceptCall} onDecline={declineCall} />}
-      {activeCall && callStatus !== 'ended' && callStatus !== 'declined' && callStatus !== 'missed' && (
+      {activeCall && callStatus && !['ended', 'declined', 'missed'].includes(callStatus) && (
         <OnCallView remoteUser={remoteUserProfile} status={callStatus} onHangUp={hangUp} isMuted={isMuted} toggleMute={toggleMute} />
       )}
       
