@@ -39,6 +39,7 @@ export function useCallHandler(
     const callUnsubscribeRef = useRef<() => void>(() => {});
     const candidatesUnsubscribeRef = useRef<() => void>(() => {});
     const incomingCallToastId = useRef<string | null>(null);
+    const signaledRef = useRef(false); // To prevent duplicate signaling
 
     // General cleanup function
     const cleanup = useCallback(() => {
@@ -61,6 +62,7 @@ export function useCallHandler(
             toast.dismiss(incomingCallToastId.current);
             incomingCallToastId.current = null;
         }
+        signaledRef.current = false; // Reset signaled flag
     }, [localStream, toast]);
 
     const startCall = async (calleeId: string) => {
@@ -72,15 +74,14 @@ export function useCallHandler(
             setLocalStream(stream);
 
             const callDocRef = doc(collection(firestore, 'calls'));
-            const callData: Omit<Call, 'id' | 'createdAt'> = {
+            const callData: Omit<Call, 'id' | 'createdAt' | 'participantIds'> = {
                 callerId: user.uid,
                 calleeId: calleeId,
-                participantIds: [user.uid, calleeId].sort(),
                 status: 'offering',
             };
-            await setDoc(callDocRef, { ...callData, createdAt: serverTimestamp() });
+            await setDoc(callDocRef, { ...callData, createdAt: serverTimestamp(), participantIds: [user.uid, calleeId].sort() });
             
-            const callWithId = { id: callDocRef.id, ...callData, createdAt: new Date() } as WithId<Call>;
+            const callWithId = { id: callDocRef.id, ...callData, createdAt: new Date(), participantIds: [user.uid, calleeId].sort() } as WithId<Call>;
             setActiveCall(callWithId);
             setCallStatus('offering');
         } catch (err) {
@@ -91,6 +92,8 @@ export function useCallHandler(
 
     const setupPeerConnection = useCallback((call: WithId<Call>, stream: MediaStream) => {
         if (!firestore || !user) return;
+        
+        signaledRef.current = false;
 
         const isInitiator = call.callerId === user.uid;
         const peer = new Peer({
@@ -137,12 +140,16 @@ export function useCallHandler(
         callUnsubscribeRef.current = onSnapshot(callRef, (docSnap) => {
             const updatedCall = docSnap.data() as Call;
             if (updatedCall) {
-                if (!isInitiator && updatedCall.offer && !peerRef.current?.destroyed) {
+                // Ensure we only signal the offer/answer once
+                if (!isInitiator && updatedCall.offer && !peerRef.current?.destroyed && !signaledRef.current) {
                     peerRef.current?.signal(updatedCall.offer);
+                    signaledRef.current = true;
                 }
-                if (isInitiator && updatedCall.answer && !peerRef.current?.destroyed) {
+                if (isInitiator && updatedCall.answer && !peerRef.current?.destroyed && !signaledRef.current) {
                     peerRef.current?.signal(updatedCall.answer);
+                    signaledRef.current = true;
                 }
+
                  if(updatedCall.status !== callStatus) {
                     setCallStatus(updatedCall.status);
                      if (updatedCall.status === 'ended' || updatedCall.status === 'declined' || updatedCall.status === 'missed') {
@@ -195,6 +202,14 @@ export function useCallHandler(
         return () => unsubscribe();
     }, [firestore, user, activeCall, incomingCall]);
     
+    const declineCall = useCallback(async () => {
+        if (incomingCall && firestore) {
+            const callRef = doc(firestore, 'calls', incomingCall.id);
+            await updateDoc(callRef, { status: 'declined' });
+        }
+        cleanup();
+    }, [incomingCall, firestore, cleanup]);
+
     const acceptCall = useCallback(async () => {
         if (!firestore || !incomingCall) return;
 
@@ -216,16 +231,8 @@ export function useCallHandler(
             toast({ variant: 'destructive', title: 'Accept Failed', description: 'Could not access your microphone.'});
             declineCall();
         }
-    }, [firestore, incomingCall, toast]);
+    }, [firestore, incomingCall, toast, declineCall]);
     
-    const declineCall = useCallback(async () => {
-        if (incomingCall && firestore) {
-            const callRef = doc(firestore, 'calls', incomingCall.id);
-            await updateDoc(callRef, { status: 'declined' });
-        }
-        cleanup();
-    }, [incomingCall, firestore, cleanup]);
-
     const hangUp = useCallback(async () => {
         if (activeCall && firestore) {
             const callRef = doc(firestore, 'calls', activeCall.id);
