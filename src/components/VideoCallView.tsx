@@ -3,7 +3,7 @@
 import { useState, useEffect, useRef, useCallback } from "react";
 import { Avatar, AvatarFallback, AvatarImage } from "./ui/avatar";
 import { Button } from "./ui/button";
-import { Mic, MicOff, PhoneOff, Video, VideoOff } from "lucide-react";
+import { Mic, MicOff, PhoneOff, Video, VideoOff, Loader2 } from "lucide-react";
 import { getAvatar, formatUserId } from "@/lib/utils";
 import type { User } from "@/lib/types";
 import type { WithId } from "@/firebase";
@@ -72,6 +72,9 @@ export function VideoCallView({
   const isAvatarUrl = avatar.startsWith('http');
   
   const getStatusText = () => {
+    if (status === 'answered' && !remoteStream) {
+        return 'Connecting...';
+    }
     switch(status) {
         case 'offering': return 'Calling...';
         case 'ringing': return 'Ringing...';
@@ -84,7 +87,7 @@ export function VideoCallView({
     }
   }
   
-  const showActiveCallControls = status === 'answered' || !!remoteStream;
+  const showActiveCallControls = status === 'answered' && !!remoteStream;
 
   return (
     <div className="fixed inset-0 bg-background/90 backdrop-blur-sm z-50 flex flex-col items-center justify-center">
@@ -106,7 +109,10 @@ export function VideoCallView({
                     </Avatar>
                      <div className="mt-4 text-center">
                         <h1 className="text-3xl font-bold font-headline text-white drop-shadow-md">{formatUserId(remoteUser.id)}</h1>
-                        <p className="text-lg text-white/80 drop-shadow-md">{getStatusText()}</p>
+                        <p className="text-lg text-white/80 drop-shadow-md flex items-center justify-center gap-2">
+                           {status === 'answered' && !remoteStream && <Loader2 className="h-5 w-5 animate-spin" />}
+                           <span>{getStatusText()}</span>
+                        </p>
                     </div>
                 </motion.div>
             )}
