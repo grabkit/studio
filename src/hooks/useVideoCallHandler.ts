@@ -1,4 +1,3 @@
-
 'use client';
 
 import { useState, useEffect, useCallback, useRef } from 'react';
@@ -73,15 +72,17 @@ export function useVideoCallHandler(
     const acceptCall = useCallback(async () => {
         if (!firestore || !incomingCall) return;
 
-        // Optimistically update status to give caller instant feedback
+        // Immediately set the active call to transition the UI from incoming to active
+        setActiveCall(incomingCall);
+        setCallStatus('answered');
+
+        // Optimistically update status in Firestore for the other user
         const callRef = doc(firestore, 'videoCalls', incomingCall.id);
         await updateDoc(callRef, { status: 'answered' });
 
         try {
             const stream = await navigator.mediaDevices.getUserMedia({ video: true, audio: true });
             setLocalStream(stream);
-            setActiveCall(incomingCall);
-            setCallStatus('answered'); // Local state update
 
             const answerCandidatesCol = collection(callRef, 'answerCandidates');
             
