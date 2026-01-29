@@ -1,4 +1,3 @@
-
 'use client';
 
 import AppLayout from '@/components/AppLayout';
@@ -676,82 +675,89 @@ export default function MessagesPage() {
 
     return (
         <AppLayout showTopBar={false}>
-             <div className="fixed top-0 left-0 right-0 z-10 flex items-center justify-between p-2 bg-background h-14 max-w-2xl mx-auto sm:px-4">
-                <h1 className="text-2xl font-bold font-headline">Messages</h1>
-            </div>
-            <div className="relative h-full overflow-y-auto pt-14">
-                <AnimatePresence>
-                    {isRefreshing && (
-                        <motion.div
-                            key="messages-refresh-indicator"
-                            initial={{ height: 0 }}
-                            animate={{ height: 60 }}
-                            exit={{ height: 0, transition: { duration: 0.2 } }}
-                            transition={{ duration: 0.4, ease: "easeInOut" }}
-                            className="bg-blue-500 flex items-center justify-center overflow-hidden absolute top-0 left-0 right-0 z-20"
-                        >
-                            <Loader2 className="h-6 w-6 animate-spin text-white" />
-                        </motion.div>
-                    )}
-                </AnimatePresence>
-                
-                <motion.div
-                    animate={{ paddingTop: isRefreshing ? 60 : 0 }}
-                    transition={{ duration: 0.4, ease: "easeInOut" }}
-                >
-                    <FollowedUsers 
-                        users={followedUsers}
-                        isLoading={followedUsersLoading}
-                        currentUser={user}
-                        showVoiceStatusPlayer={showVoiceStatusPlayer}
-                    />
+             <motion.div
+                className="h-full"
+                initial={{ scale: 0.98, opacity: 0 }}
+                animate={{ scale: 1, opacity: 1 }}
+                transition={{ duration: 0.3 }}
+            >
+                <div className="fixed top-0 left-0 right-0 z-10 flex items-center justify-between p-2 bg-background h-14 max-w-2xl mx-auto sm:px-4">
+                    <h1 className="text-2xl font-bold font-headline">Messages</h1>
+                </div>
+                <div className="relative h-full overflow-y-auto pt-14">
+                    <AnimatePresence>
+                        {isRefreshing && (
+                            <motion.div
+                                key="messages-refresh-indicator"
+                                initial={{ height: 0 }}
+                                animate={{ height: 60 }}
+                                exit={{ height: 0, transition: { duration: 0.2 } }}
+                                transition={{ duration: 0.4, ease: "easeInOut" }}
+                                className="bg-blue-500 flex items-center justify-center overflow-hidden absolute top-0 left-0 right-0 z-20"
+                            >
+                                <Loader2 className="h-6 w-6 animate-spin text-white" />
+                            </motion.div>
+                        )}
+                    </AnimatePresence>
                     
-                    <Tabs defaultValue="rooms" className="w-full" onValueChange={handleTabChange}>
-                        <div className="bg-background">
-                            <TabsList variant="underline" className="grid w-full grid-cols-3">
-                                <TabsTrigger value="rooms" variant="underline" className="font-semibold">
-                                    Rooms
-                                </TabsTrigger>
-                                <TabsTrigger value="chats" variant="underline" className="font-semibold gap-2">
-                                    Chats
-                                    {hasUnreadChats && (
-                                        <div className="w-2 h-2 rounded-full bg-destructive"></div>
-                                    )}
-                                </TabsTrigger>
-                                <TabsTrigger value="requests" variant="underline" className="font-semibold gap-2">
-                                    Requests
-                                    {hasNewRequests && (
-                                        <div className="w-2 h-2 rounded-full bg-destructive"></div>
-                                    )}
-                                </TabsTrigger>
-                            </TabsList>
-                        </div>
-                        <TabsContent value="rooms" className="mt-0">
-                            <RoomsTabContent />
-                        </TabsContent>
-                        <TabsContent value="chats" className="mt-0">
-                            <ConversationsList 
-                                conversations={chats}
-                                isLoading={conversationsLoading}
-                                type="chats"
-                                currentUser={user}
-                                onAcceptRequest={handleAcceptRequest}
-                                onLongPress={handleLongPress}
-                            />
-                        </TabsContent>
-                        <TabsContent value="requests" className="mt-0">
-                            <ConversationsList
-                                conversations={requests}
-                                isLoading={conversationsLoading}
-                                type="requests"
-                                currentUser={user}
-                                onAcceptRequest={handleAcceptRequest}
-                                onLongPress={handleLongPress}
-                            />
-                        </TabsContent>
-                    </Tabs>
-                </motion.div>
-            </div>
+                    <motion.div
+                        animate={{ paddingTop: isRefreshing ? 60 : 0 }}
+                        transition={{ duration: 0.4, ease: "easeInOut" }}
+                    >
+                        <FollowedUsers 
+                            users={followedUsers}
+                            isLoading={followedUsersLoading}
+                            currentUser={user}
+                            showVoiceStatusPlayer={showVoiceStatusPlayer}
+                        />
+                        
+                        <Tabs defaultValue="rooms" className="w-full" onValueChange={handleTabChange}>
+                            <div className="bg-background">
+                                <TabsList variant="underline" className="grid w-full grid-cols-3">
+                                    <TabsTrigger value="rooms" variant="underline" className="font-semibold">
+                                        Rooms
+                                    </TabsTrigger>
+                                    <TabsTrigger value="chats" variant="underline" className="font-semibold gap-2">
+                                        Chats
+                                        {hasUnreadChats && (
+                                            <div className="w-2 h-2 rounded-full bg-destructive"></div>
+                                        )}
+                                    </TabsTrigger>
+                                    <TabsTrigger value="requests" variant="underline" className="font-semibold gap-2">
+                                        Requests
+                                        {hasNewRequests && (
+                                            <div className="w-2 h-2 rounded-full bg-destructive"></div>
+                                        )}
+                                    </TabsTrigger>
+                                </TabsList>
+                            </div>
+                            <TabsContent value="rooms" className="mt-0">
+                                <RoomsTabContent />
+                            </TabsContent>
+                            <TabsContent value="chats" className="mt-0">
+                                <ConversationsList 
+                                    conversations={chats}
+                                    isLoading={conversationsLoading}
+                                    type="chats"
+                                    currentUser={user}
+                                    onAcceptRequest={handleAcceptRequest}
+                                    onLongPress={handleLongPress}
+                                />
+                            </TabsContent>
+                            <TabsContent value="requests" className="mt-0">
+                                <ConversationsList
+                                    conversations={requests}
+                                    isLoading={conversationsLoading}
+                                    type="requests"
+                                    currentUser={user}
+                                    onAcceptRequest={handleAcceptRequest}
+                                    onLongPress={handleLongPress}
+                                />
+                            </TabsContent>
+                        </Tabs>
+                    </motion.div>
+                </div>
+            </motion.div>
             
             <Sheet open={isSheetOpen} onOpenChange={setIsSheetOpen}>
                 <SheetContent side="bottom" className="rounded-t-2xl">
