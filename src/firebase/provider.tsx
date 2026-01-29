@@ -164,7 +164,7 @@ export const FirebaseProvider: React.FC<FirebaseProviderProps> = ({
   }, [firestore, callerId]);
   const { data: callerProfile } = useDoc<UserProfile>(callerRef);
 
-  const remoteUserId = activeCall?.participantIds.find(id => id !== userAuthState.user?.uid);
+  const remoteUserId = activeCall?.participantIds?.find(id => id !== userAuthState.user?.uid);
   const remoteUserRef = useMemoFirebase(() => {
       if (!firestore || !remoteUserId) return null;
       return doc(firestore, 'users', remoteUserId);
@@ -184,7 +184,7 @@ export const FirebaseProvider: React.FC<FirebaseProviderProps> = ({
             if (!currentProfile) return null;
             return { ...currentProfile, username: username };
           });
-          console.log(`Successfully backfilled username for user ${userAuthState.user.uid}`);
+          console.log(`Successfully backfilled username for user ${'${userAuthState.user.uid}'}`);
         })
         .catch(error => {
           console.error("Error backfilling username:", error);
@@ -440,7 +440,6 @@ export function useMemoFirebase<T>(factory: () => T, deps: DependencyList): T | 
   
   return memoized;
 }
-
     
 
 
