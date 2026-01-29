@@ -351,8 +351,15 @@ function ChatHeader({ peerId, peerUser, onStartCall, onStartVideoCall, conversat
                     <h2 className="text-base font-bold leading-tight">
                         {isLoading ? <Skeleton className="h-5 w-24" /> : formatUserId(peerId)}
                     </h2>
-                    <p className="text-xs text-muted-foreground leading-tight">
-                        {isOnline ? "Online" : formatLastSeen(lastSeen)}
+                    <p className="text-xs text-muted-foreground leading-tight flex items-center gap-1.5">
+                        {isOnline ? (
+                            <>
+                                <span className="h-2 w-2 rounded-full bg-green-500 animate-pulse"></span>
+                                <span>Active now</span>
+                            </>
+                        ) : (
+                            <span>{formatLastSeen(lastSeen)}</span>
+                        )}
                     </p>
                 </div>
             </div>
@@ -800,6 +807,7 @@ export default function ChatPage() {
     
 
     
+
 
 
 
