@@ -447,7 +447,7 @@ function RoomMessageBubble({ message, showAvatarAndName, onSetReply, onForward, 
     );
 
     const bubbleAndButtonContainer = (
-         <div className="inline-flex flex-col items-start">
+        <div className="inline-flex flex-col items-start">
              <SheetTrigger asChild>
                 <div className={cn(
                     "rounded-2xl",
@@ -476,7 +476,6 @@ function RoomMessageBubble({ message, showAvatarAndName, onSetReply, onForward, 
                 <div className={cn(
                     "flex items-start gap-2",
                     isOwnMessage ? "flex-row-reverse" : "flex-row",
-                    !isOwnMessage && !showAvatarAndName && "pl-10"
                 )}>
                     {!isOwnMessage && showAvatarAndName && (
                         <Link href={`/profile/${message.senderId}`}>
@@ -488,7 +487,8 @@ function RoomMessageBubble({ message, showAvatarAndName, onSetReply, onForward, 
                     )}
                     <div className={cn(
                         "flex flex-col max-w-[85%]",
-                        isOwnMessage ? 'items-end' : 'items-start'
+                        isOwnMessage ? 'items-end' : 'items-start',
+                        !isOwnMessage && !showAvatarAndName && "ml-10",
                     )}>
                          {!isOwnMessage && showAvatarAndName && (
                             <Link href={`/profile/${message.senderId}`}>
@@ -640,6 +640,7 @@ function MessageInput({ room, replyingTo, onCancelReply }: { room: WithId<Room>,
 
     const linkMetadata = form.watch("linkMetadata");
     const textValue = form.watch("text");
+    const placeholder = room.id === 'ask_space' ? "Ask any questions" : "Message...";
 
     const fetchPreview = async (url: string) => {
         setIsFetchingPreview(true);
@@ -738,7 +739,7 @@ function MessageInput({ room, replyingTo, onCancelReply }: { room: WithId<Room>,
                 <Form {...form}>
                     <form onSubmit={form.handleSubmit(onSubmit)} className="flex-1 flex items-center rounded-full bg-secondary px-2">
                          <Textarea
-                            placeholder="Message..."
+                            placeholder={placeholder}
                             className="flex-1 bg-transparent border-none focus-visible:ring-0 focus-visible:ring-offset-0 shadow-none resize-none text-base px-2 py-2.5"
                             rows={1}
                             maxRows={5}
