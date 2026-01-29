@@ -270,7 +270,7 @@ function RoomHeader({ room }: { room: WithId<Room> | null }) {
 
     if (!room) {
         return (
-            <div className="flex items-center p-2 bg-background/80 backdrop-blur-sm h-14 max-w-2xl mx-auto sm:px-4">
+            <div className="flex items-center p-2 bg-background/80 backdrop-blur-sm h-14">
                 <Button variant="ghost" size="icon" onClick={() => router.back()}>
                     <ArrowLeft />
                 </Button>
@@ -284,7 +284,7 @@ function RoomHeader({ room }: { room: WithId<Room> | null }) {
 
     return (
         <>
-            <div className="flex items-center p-2 bg-background/80 backdrop-blur-sm h-14 max-w-2xl mx-auto sm:px-4">
+            <div className="flex items-center p-2 bg-background/80 backdrop-blur-sm h-14">
                 <Button variant="ghost" size="icon" onClick={() => router.back()}>
                     <ArrowLeft />
                 </Button>
@@ -459,7 +459,7 @@ function RoomMessageBubble({ message, showAvatarAndName, onSetReply, onForward, 
                 </div>
             </SheetTrigger>
             {room?.id === 'ask_space' && (
-                <Button className="mt-1 justify-center items-center rounded-[10px] border bg-green-100 border-green-600 text-green-800 hover:bg-green-200 dark:bg-green-900/30 dark:border-green-700 dark:text-green-300 dark:hover:bg-green-900/50 px-3 gap-1 h-auto py-1 self-start" onClick={() => setIsAnswersSheetOpen(true)}>
+                <Button className="mt-1 justify-center items-center rounded-[10px] border bg-green-500/50 border-green-700 text-green-800 hover:bg-green-500/60 dark:bg-green-900/30 dark:border-green-700 dark:text-green-300 dark:hover:bg-green-900/50 px-3 gap-1 h-auto py-1 self-start" onClick={() => setIsAnswersSheetOpen(true)}>
                     {message.answerCount > 0 && <span className="text-xs font-bold">{message.answerCount}</span>}
                     <span className="text-sm">Answers</span>
                     <ChevronDown className="h-4 w-4" />
@@ -861,11 +861,10 @@ export default function RoomChatPage() {
                 transition={{ duration: 0.3 }}
                 className="flex flex-col h-screen"
             >
+                 <div className="sticky top-0 z-20">
+                    <RoomHeader room={room} />
+                </div>
                 <div className="flex-1 overflow-y-auto pb-20">
-                     <div className="sticky top-0 z-20">
-                      <RoomHeader room={room} />
-                    </div>
-                    
                     <div>
                         {isAskSpace ? (
                             <Tabs defaultValue="all" className="w-full">
