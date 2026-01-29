@@ -1,5 +1,3 @@
-
-
 'use client';
 
 import { useParams, useRouter } from 'next/navigation';
@@ -315,7 +313,7 @@ function RoomMessageBubble({ message, showAvatarAndName, onSetReply, onForward, 
                 
                 <div
                     className={cn(
-                        "flex flex-col",
+                        "inline-flex flex-col",
                         (isPostShare || isLinkShare) ? 'w-64' : 'max-w-[80%]',
                     )}
                 >
@@ -333,11 +331,9 @@ function RoomMessageBubble({ message, showAvatarAndName, onSetReply, onForward, 
                         </div>
                     </SheetTrigger>
                      {roomId === 'ask_space' && !isOwnMessage && message.text && (
-                        <div className="mt-1 flex justify-start">
-                             <Button variant="ghost" size="sm" className="rounded-[10px] border border-secondary bg-secondary/10 text-muted-foreground hover:bg-secondary/20 hover:text-primary px-3">
-                                Answers
-                            </Button>
-                        </div>
+                        <Button variant="ghost" size="sm" className="mt-1 w-full justify-start rounded-[10px] border border-secondary bg-secondary/10 text-muted-foreground hover:bg-secondary/20 hover:text-primary px-3">
+                            Answers
+                        </Button>
                     )}
                 </div>
             </div>
