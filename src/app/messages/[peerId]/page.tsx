@@ -243,10 +243,7 @@ function MessageBubble({ message, isOwnMessage, conversation, onSetReply, onForw
 
     return (
         <Sheet open={isSheetOpen} onOpenChange={setIsSheetOpen}>
-             <motion.div
-                initial={{ opacity: 0, scale: 0.8, y: 10 }}
-                animate={{ opacity: 1, scale: 1, y: 0 }}
-                transition={{ type: "spring", stiffness: 500, damping: 30 }}
+             <div
                 className={cn(
                 "group flex",
                 isOwnMessage ? "justify-end" : "justify-start",
@@ -265,7 +262,7 @@ function MessageBubble({ message, isOwnMessage, conversation, onSetReply, onForw
                         </div>
                     </SheetTrigger>
                 </div>
-            </motion.div>
+            </div>
              <SheetContent side="bottom" className="rounded-t-2xl">
                 <SheetHeader className="sr-only">
                     <SheetTitle>Message Options</SheetTitle>
