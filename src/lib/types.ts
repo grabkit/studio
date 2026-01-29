@@ -211,3 +211,41 @@ export interface Report {
     timestamp: any; 
     status: 'pending' | 'reviewed' | 'action-taken';
 }
+
+export type CallStatus = 'offering' | 'ringing' | 'answered' | 'ended' | 'declined' | 'missed';
+
+export interface Call {
+  id: string;
+  callerId: string;
+  calleeId: string;
+  status: CallStatus;
+  offer?: any;
+  answer?: any;
+  createdAt: Timestamp;
+  endedAt?: Timestamp;
+}
+
+export interface IceCandidate {
+  candidate: string;
+  sdpMid: string;
+  sdpMLineIndex: number;
+  usernameFragment?: string;
+}
+
+export interface VideoCall {
+    id: string;
+    callerId: string;
+    calleeId: string;
+    status: 'offering' | 'ringing' | 'answered' | 'ended' | 'declined' | 'missed';
+    offer?: any;
+    answer?: any;
+    createdAt: Timestamp;
+    endedAt?: Timestamp;
+}
+
+export interface VideoIceCandidate {
+    candidate: string;
+    sdpMid: string;
+    sdpMLineIndex: number;
+    usernameFragment?: string;
+}

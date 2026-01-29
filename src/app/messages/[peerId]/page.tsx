@@ -1,4 +1,5 @@
 
+
 "use client";
 
 import { useParams, useRouter } from 'next/navigation';
@@ -642,7 +643,7 @@ function MessageInput({ conversationId, conversation, replyingTo, onCancelReply 
 }
 
 export default function ChatPage() {
-    const { firestore, user } = useFirebase();
+    const { firestore, user, startCall } = useFirebase();
     const params = useParams();
     const router = useRouter();
     const { toast } = useToast();
@@ -673,10 +674,9 @@ export default function ChatPage() {
     };
 
     const handleStartCall = () => {
-        toast({
-            title: "Coming Soon!",
-            description: "Voice call feature is under development.",
-        });
+        if (peerId) {
+            startCall(peerId);
+        }
     };
     
     const handleStartVideoCall = () => {
@@ -807,8 +807,5 @@ export default function ChatPage() {
     
 
     
-
-
-
 
 

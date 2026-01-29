@@ -9,12 +9,15 @@ import { Auth, User, onAuthStateChanged } from 'firebase/auth';
 import { Database, ref, onValue, onDisconnect, set, serverTimestamp as dbServerTimestamp } from 'firebase/database';
 import { FirebaseErrorListener } from '@/components/FirebaseErrorListener';
 import { useDoc, type WithId } from './firestore/use-doc';
-import type { User as UserProfile } from '@/lib/types';
+import type { User as UserProfile, Call, CallStatus } from '@/lib/types';
 import { VoiceStatusPlayer } from '@/components/VoiceStatusPlayer';
 import { useToast } from '@/hooks/use-toast';
 import { FirestorePermissionError } from './errors';
 import { errorEmitter } from './error-emitter';
 import { getFormattedUserIdString } from '@/lib/utils.tsx';
+import { useCallHandler } from '@/hooks/useCallHandler';
+import { IncomingCallView } from '@/components/IncomingCallView';
+import { OnCallView } from '@/components/OnCallView';
 
 // Internal state for user authentication
 interface UserAuthState {
@@ -42,6 +45,14 @@ export interface FirebaseContextState {
   showVoiceStatusPlayer: (user: WithId<UserProfile>) => void;
   isVoicePlayerPlaying: boolean;
   handleDeleteVoiceStatus: () => Promise<void>;
+  // Voice Call State
+  startCall: (calleeId: string) => void;
+  activeCall: WithId<Call> | null;
+  incomingCall: WithId<Call> | null;
+  callStatus: CallStatus | null;
+  acceptCall: () => void;
+  declineCall: () => void;
+  hangUp: () => void;
 }
 
 // Return type for useFirebase()
@@ -60,6 +71,14 @@ export interface FirebaseServicesAndUser {
   showVoiceStatusPlayer: (user: WithId<UserProfile>) => void;
   isVoicePlayerPlaying: boolean;
   handleDeleteVoiceStatus: () => Promise<void>;
+   // Voice Call State
+  startCall: (calleeId: string) => void;
+  activeCall: WithId<Call> | null;
+  incomingCall: WithId<Call> | null;
+  callStatus: CallStatus | null;
+  acceptCall: () => void;
+  declineCall: () => void;
+  hangUp: () => void;
 }
 
 // Return type for useUser() - specific to user auth state
@@ -94,6 +113,20 @@ export const FirebaseProvider: React.FC<FirebaseProviderProps> = ({
   const [isVoicePlayerPlaying, setIsVoicePlayerPlaying] = useState(false);
   const voiceAudioRef = useRef<HTMLAudioElement | null>(null);
   
+  const {
+      startCall,
+      acceptCall,
+      declineCall,
+      hangUp,
+      toggleMute,
+      isMuted,
+      activeCall,
+      incomingCall,
+      callStatus,
+      localStream,
+      remoteStream,
+  } = useCallHandler(firestore, userAuthState.user);
+  
   const onVoicePlayerClose = () => {
     if (voiceAudioRef.current) {
         voiceAudioRef.current.pause();
@@ -123,6 +156,20 @@ export const FirebaseProvider: React.FC<FirebaseProviderProps> = ({
   const { data: loggedInUserProfile, isLoading: isUserProfileLoading, setData: setLoggedInUserProfile } = useDoc<UserProfile>(loggedInUserProfileRef);
 
   const userProfile = activeUserProfile || loggedInUserProfile;
+  
+  const callerId = incomingCall?.callerId;
+  const callerRef = useMemoFirebase(() => {
+    if (!firestore || !callerId) return null;
+    return doc(firestore, 'users', callerId);
+  }, [firestore, callerId]);
+  const { data: callerProfile } = useDoc<UserProfile>(callerRef);
+
+  const remoteUserId = activeCall?.participantIds.find(id => id !== userAuthState.user?.uid);
+  const remoteUserRef = useMemoFirebase(() => {
+      if (!firestore || !remoteUserId) return null;
+      return doc(firestore, 'users', remoteUserId);
+  }, [firestore, remoteUserId]);
+  const { data: remoteUserProfile } = useDoc<UserProfile>(remoteUserRef);
 
   // Backfill username for existing users
   useEffect(() => {
@@ -281,9 +328,20 @@ export const FirebaseProvider: React.FC<FirebaseProviderProps> = ({
       showVoiceStatusPlayer,
       isVoicePlayerPlaying,
       handleDeleteVoiceStatus,
+      // Call state
+      startCall,
+      activeCall,
+      incomingCall,
+      callStatus,
+      acceptCall,
+      declineCall,
+      hangUp,
     };
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [firebaseApp, firestore, auth, database, userAuthState, userProfile, isUserProfileLoading, isVoicePlayerPlaying, setLoggedInUserProfile]);
+  }, [
+      firebaseApp, firestore, auth, database, userAuthState, userProfile, isUserProfileLoading, isVoicePlayerPlaying, 
+      setLoggedInUserProfile, startCall, activeCall, incomingCall, callStatus, acceptCall, declineCall, hangUp
+  ]);
 
   return (
     <FirebaseContext.Provider value={contextValue}>
@@ -303,6 +361,10 @@ export const FirebaseProvider: React.FC<FirebaseProviderProps> = ({
           }}
           isVoicePlayerPlaying={isVoicePlayerPlaying}
         />
+      )}
+      {incomingCall && <IncomingCallView caller={callerProfile} onAccept={acceptCall} onDecline={declineCall} />}
+      {activeCall && callStatus !== 'ended' && callStatus !== 'declined' && callStatus !== 'missed' && (
+        <OnCallView remoteUser={remoteUserProfile} status={callStatus} onHangUp={hangUp} isMuted={isMuted} toggleMute={toggleMute} />
       )}
       {children}
     </FirebaseContext.Provider>
@@ -339,6 +401,14 @@ export const useFirebase = (): FirebaseServicesAndUser => {
     showVoiceStatusPlayer: context.showVoiceStatusPlayer,
     isVoicePlayerPlaying: context.isVoicePlayerPlaying,
     handleDeleteVoiceStatus: context.handleDeleteVoiceStatus,
+    // Call state
+    startCall: context.startCall,
+    activeCall: context.activeCall,
+    incomingCall: context.incomingCall,
+    callStatus: context.callStatus,
+    acceptCall: context.acceptCall,
+    declineCall: context.declineCall,
+    hangUp: context.hangUp,
   };
 };
 
@@ -388,5 +458,6 @@ export function useMemoFirebase<T>(factory: () => T, deps: DependencyList): T | 
     
 
     
+
 
 
