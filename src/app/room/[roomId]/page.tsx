@@ -271,7 +271,7 @@ function RoomHeader({ room }: { room: WithId<Room> | null }) {
 
     if (!room) {
         return (
-            <div className="sticky top-0 left-0 right-0 z-10 flex items-center p-2 bg-background/80 backdrop-blur-sm border-b h-14 max-w-2xl mx-auto sm:px-4">
+            <div className="sticky top-0 left-0 right-0 z-20 flex items-center p-2 bg-background/80 backdrop-blur-sm border-b h-14 max-w-2xl mx-auto sm:px-4">
                 <Button variant="ghost" size="icon" onClick={() => router.back()}>
                     <ArrowLeft />
                 </Button>
@@ -285,7 +285,7 @@ function RoomHeader({ room }: { room: WithId<Room> | null }) {
 
     return (
         <>
-            <div className="sticky top-0 left-0 right-0 z-10 flex items-center p-2 bg-background/80 backdrop-blur-sm border-b h-14 max-w-2xl mx-auto sm:px-4">
+            <div className="sticky top-0 left-0 right-0 z-20 flex items-center p-2 bg-background/80 backdrop-blur-sm border-b h-14 max-w-2xl mx-auto sm:px-4">
                 <Button variant="ghost" size="icon" onClick={() => router.back()}>
                     <ArrowLeft />
                 </Button>
@@ -449,7 +449,7 @@ function RoomMessageBubble({ message, showAvatarAndName, onSetReply, onForward, 
     );
 
     const bubbleAndButtonContainer = (
-        <div className="inline-flex flex-col items-start">
+        <div className="inline-flex flex-col items-start max-w-[80%]">
              <SheetTrigger asChild>
                 <div className={cn(
                     "rounded-2xl",
