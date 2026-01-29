@@ -449,7 +449,9 @@ function RoomMessageBubble({ message, showAvatarAndName, onSetReply, onForward, 
     );
 
     const bubbleAndButtonContainer = (
-        <div className={cn("flex flex-col max-w-[80%]", isOwnMessage ? 'items-end' : 'items-start' )}>
+        <div className={cn(
+            "inline-flex flex-col max-w-[80%]",
+        )}>
              <SheetTrigger asChild>
                 <div className={cn(
                     "rounded-2xl",
@@ -460,7 +462,7 @@ function RoomMessageBubble({ message, showAvatarAndName, onSetReply, onForward, 
                 </div>
             </SheetTrigger>
             {room?.id === 'ask_space' && (
-                <Button className="mt-1 justify-center items-center rounded-[10px] border bg-emerald-500/20 hover:bg-emerald-500/30 border-emerald-600 text-emerald-600 dark:bg-emerald-900/50 dark:border-emerald-700 dark:text-emerald-400 dark:hover:bg-emerald-900/60 px-3 gap-1 h-auto py-1" onClick={() => setIsAnswersSheetOpen(true)}>
+                <Button className="mt-1 justify-center items-center rounded-[10px] border bg-emerald-500/20 hover:bg-emerald-500/30 border-emerald-600 text-emerald-600 dark:bg-emerald-900/50 dark:text-emerald-700 dark:text-emerald-400 dark:hover:bg-emerald-900/60 px-3 gap-1 h-auto py-1" onClick={() => setIsAnswersSheetOpen(true)}>
                     {message.answerCount > 0 && <span className="text-xs font-bold">{message.answerCount}</span>}
                     <span className="text-sm">Answers</span>
                     <ChevronDown className="h-4 w-4" />
@@ -490,8 +492,8 @@ function RoomMessageBubble({ message, showAvatarAndName, onSetReply, onForward, 
                     )}
                     <div className={cn(
                         "flex flex-col",
-                        isOwnMessage ? 'items-end' : 'items-start',
                         !isOwnMessage && !showAvatarAndName && "ml-10",
+                        isOwnMessage ? 'items-end' : 'items-start'
                     )}>
                          {!isOwnMessage && showAvatarAndName && (
                             <Link href={`/profile/${message.senderId}`}>
