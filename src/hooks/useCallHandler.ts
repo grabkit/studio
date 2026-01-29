@@ -40,7 +40,8 @@ export function useCallHandler(
     const callUnsubscribeRef = useRef<() => void>(() => {});
     const candidatesUnsubscribeRef = useRef<() => void>(() => {});
     const incomingCallToastId = useRef<string | null>(null);
-    const signaledRef = useRef(false); // To prevent duplicate signaling
+    const offerSignaledRef = useRef(false);
+    const answerSignaledRef = useRef(false);
 
     // General cleanup function
     const cleanup = useCallback(() => {
@@ -63,7 +64,8 @@ export function useCallHandler(
             toast.dismiss(incomingCallToastId.current);
             incomingCallToastId.current = null;
         }
-        signaledRef.current = false; // Reset signaled flag
+        offerSignaledRef.current = false;
+        answerSignaledRef.current = false;
     }, [localStream, toast]);
 
     const startCall = async (calleeId: string) => {
@@ -125,8 +127,6 @@ export function useCallHandler(
 
     const setupPeerConnection = useCallback((call: WithId<Call>, stream: MediaStream) => {
         if (!firestore || !user) return;
-        
-        signaledRef.current = false;
 
         const isInitiator = call.callerId === user.uid;
         const peer = new Peer({
@@ -178,16 +178,18 @@ export function useCallHandler(
         // Listen for answer/offer
         callUnsubscribeRef.current = onSnapshot(callRef, (docSnap) => {
             const updatedCall = docSnap.data() as Call;
-            if (!updatedCall) return;
+            if (!updatedCall || peerRef.current?.destroyed) return;
 
-            // Signal handling
-            if (!isInitiator && updatedCall.offer && !peerRef.current?.destroyed && !signaledRef.current) {
-                peerRef.current?.signal(updatedCall.offer);
-                signaledRef.current = true;
+            // Callee receives offer
+            if (!isInitiator && updatedCall.offer && !offerSignaledRef.current) {
+                offerSignaledRef.current = true;
+                peerRef.current.signal(updatedCall.offer);
             }
-            if (isInitiator && updatedCall.answer && !peerRef.current?.destroyed && !signaledRef.current) {
-                peerRef.current?.signal(updatedCall.answer);
-                signaledRef.current = true;
+            
+            // Caller receives answer
+            if (isInitiator && updatedCall.answer && !answerSignaledRef.current) {
+                answerSignaledRef.current = true;
+                peerRef.current.signal(updatedCall.answer);
             }
 
             // Status handling
@@ -199,7 +201,7 @@ export function useCallHandler(
             });
 
             if (updatedCall.status === 'ended' || updatedCall.status === 'declined' || updatedCall.status === 'missed') {
-                setTimeout(cleanup, 500); // Give UI a moment to show "Call ended"
+                setTimeout(cleanup, 500); 
             }
         });
         
