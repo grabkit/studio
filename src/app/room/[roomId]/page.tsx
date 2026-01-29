@@ -270,7 +270,7 @@ function RoomHeader({ room }: { room: WithId<Room> | null }) {
 
     if (!room) {
         return (
-            <div className="flex items-center p-2 bg-background h-14">
+            <div className="flex items-center p-2 h-14">
                 <Button variant="ghost" size="icon" onClick={() => router.back()}>
                     <ArrowLeft />
                 </Button>
@@ -284,7 +284,7 @@ function RoomHeader({ room }: { room: WithId<Room> | null }) {
 
     return (
         <>
-            <div className="flex items-center p-2 bg-background h-14">
+            <div className="flex items-center p-2 h-14">
                 <Button variant="ghost" size="icon" onClick={() => router.back()}>
                     <ArrowLeft />
                 </Button>
@@ -448,7 +448,7 @@ function RoomMessageBubble({ message, showAvatarAndName, onSetReply, onForward, 
     );
 
     const bubbleAndButtonContainer = (
-        <div className="flex flex-col max-w-[80%]">
+        <div className={cn("flex flex-col max-w-[80%]", isOwnMessage && "items-end")}>
              <SheetTrigger asChild>
                 <div className={cn(
                     "rounded-2xl",
@@ -459,7 +459,7 @@ function RoomMessageBubble({ message, showAvatarAndName, onSetReply, onForward, 
                 </div>
             </SheetTrigger>
             {room?.id === 'ask_space' && (
-                <Button className="mt-1 justify-center items-center rounded-[10px] border bg-emerald-500/20 hover:bg-emerald-500/30 border-emerald-600 text-emerald-600 dark:bg-emerald-900/50 dark:border-emerald-700 dark:text-emerald-400 dark:hover:bg-emerald-900/60 px-3 gap-1 h-auto py-1 self-start" onClick={() => setIsAnswersSheetOpen(true)}>
+                <Button className="mt-1 justify-center items-center rounded-[10px] border bg-emerald-500/20 hover:bg-emerald-500/30 border-emerald-600 text-emerald-600 dark:bg-emerald-900/50 dark:border-emerald-700 dark:text-emerald-400 dark:hover:bg-emerald-900/60 px-3 gap-1 h-auto py-1" onClick={() => setIsAnswersSheetOpen(true)}>
                     {message.answerCount > 0 && <span className="text-xs font-bold">{message.answerCount}</span>}
                     <span className="text-sm">Answers</span>
                     <ChevronDown className="h-4 w-4" />
@@ -863,14 +863,14 @@ export default function RoomChatPage() {
             >
                 {isAskSpace ? (
                     <Tabs defaultValue="all" className="w-full flex flex-col flex-1">
-                        <div className="sticky top-0 z-20 bg-background">
+                         <div className="sticky top-0 z-20 bg-background">
                             <RoomHeader room={room} />
                             <TabsList variant="underline" className="grid w-full grid-cols-2">
                                 <TabsTrigger value="all" variant="underline">All Questions</TabsTrigger>
                                 <TabsTrigger value="mine" variant="underline">My Questions</TabsTrigger>
                             </TabsList>
                         </div>
-                        <ScrollArea className="flex-1">
+                        <ScrollArea className="flex-1 pb-20">
                             <TabsContent value="all" className="mt-0">
                                 <RoomMessages 
                                     messages={messages} 
@@ -898,7 +898,7 @@ export default function RoomChatPage() {
                         <div className="sticky top-0 z-20 bg-background">
                             <RoomHeader room={room} />
                         </div>
-                        <ScrollArea className="flex-1">
+                        <ScrollArea className="flex-1 pb-20">
                              <RoomMessages 
                                 messages={messages} 
                                 isLoading={areMessagesLoading} 
