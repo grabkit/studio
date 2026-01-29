@@ -19,7 +19,7 @@ import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
 import { Form, FormControl, FormField, FormItem } from '@/components/ui/form';
 import { Skeleton } from '@/components/ui/skeleton';
-import { ArrowLeft, Send, Copy, Trash2, Forward, Reply, X, ExternalLink, MessageCircle, Heart, List, Loader2, Users } from 'lucide-react';
+import { ArrowLeft, Send, Copy, Trash2, Forward, Reply, X, ExternalLink, MessageCircle, Heart, List, Loader2, Users, Tag } from 'lucide-react';
 import { cn, getAvatar, formatMessageTimestamp, formatUserId, formatDateSeparator } from '@/lib/utils';
 import type { Room, RoomMessage, User, Post, LinkMetadata } from '@/lib/types';
 import { isSameDay } from 'date-fns';
@@ -154,7 +154,7 @@ function RoomHeader({ room }: { room: WithId<Room> | null }) {
     )
 }
 
-function RoomMessageBubble({ message, showAvatarAndName, onSetReply, onForward }: { message: WithId<RoomMessage>, showAvatarAndName: boolean, onSetReply: (message: WithId<RoomMessage>) => void, onForward: (message: WithId<RoomMessage>) => void }) {
+function RoomMessageBubble({ message, showAvatarAndName, onSetReply, onForward, roomId }: { message: WithId<RoomMessage>, showAvatarAndName: boolean, onSetReply: (message: WithId<RoomMessage>) => void, onForward: (message: WithId<RoomMessage>) => void, roomId: string }) {
     const { firestore, user: currentUser } = useFirebase();
     const router = useRouter();
     const isOwnMessage = message.senderId === currentUser?.uid;
@@ -332,6 +332,14 @@ function RoomMessageBubble({ message, showAvatarAndName, onSetReply, onForward }
                             {bubbleContent}
                         </div>
                     </SheetTrigger>
+                     {roomId === 'ask_space' && !isOwnMessage && message.text && (
+                        <div className="mt-1 flex justify-start">
+                            <Button variant="ghost" size="sm" className="rounded-full text-muted-foreground hover:bg-secondary hover:text-primary">
+                                <Tag className="h-4 w-4 mr-1" />
+                                Tag
+                            </Button>
+                        </div>
+                    )}
                 </div>
             </div>
              <SheetContent side="bottom" className="rounded-t-2xl">
@@ -454,7 +462,7 @@ function RoomMessages({ roomId, onSetReply, onForward }: { roomId: string, onSet
                 const prevMessage = index > 0 ? messagesWithSeparators![index - 1] : null;
                 const showAvatarAndName = !prevMessage || prevMessage.type === 'separator' || (prevMessage as WithId<RoomMessage>).senderId !== message.senderId;
 
-                return <RoomMessageBubble key={message.id} message={message} showAvatarAndName={showAvatarAndName} onSetReply={onSetReply} onForward={onForward}/>
+                return <RoomMessageBubble key={message.id} message={message} showAvatarAndName={showAvatarAndName} onSetReply={onSetReply} onForward={onForward} roomId={roomId}/>
             })}
              <div ref={messagesEndRef} />
         </div>
