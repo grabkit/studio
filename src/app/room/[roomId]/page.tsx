@@ -271,7 +271,7 @@ function RoomHeader({ room }: { room: WithId<Room> | null }) {
 
     if (!room) {
         return (
-            <div className="fixed top-0 left-0 right-0 z-10 flex items-center p-2 bg-background/80 backdrop-blur-sm border-b h-14 max-w-2xl mx-auto sm:px-4">
+            <div className="sticky top-0 left-0 right-0 z-10 flex items-center p-2 bg-background/80 backdrop-blur-sm border-b h-14 max-w-2xl mx-auto sm:px-4">
                 <Button variant="ghost" size="icon" onClick={() => router.back()}>
                     <ArrowLeft />
                 </Button>
@@ -285,7 +285,7 @@ function RoomHeader({ room }: { room: WithId<Room> | null }) {
 
     return (
         <>
-            <div className="fixed top-0 left-0 right-0 z-10 flex items-center p-2 bg-background/80 backdrop-blur-sm border-b h-14 max-w-2xl mx-auto sm:px-4">
+            <div className="sticky top-0 left-0 right-0 z-10 flex items-center p-2 bg-background/80 backdrop-blur-sm border-b h-14 max-w-2xl mx-auto sm:px-4">
                 <Button variant="ghost" size="icon" onClick={() => router.back()}>
                     <ArrowLeft />
                 </Button>
@@ -860,8 +860,8 @@ export default function RoomChatPage() {
                 transition={{ duration: 0.3 }}
                 className="flex flex-col h-screen"
             >
-                <RoomHeader room={room} />
-                 <div className="flex-1 overflow-y-auto pt-14 pb-20">
+                <div className="flex-1 overflow-y-auto pb-20">
+                    <RoomHeader room={room} />
                     {isAskSpace ? (
                         <Tabs defaultValue="all" className="w-full">
                             <div className="sticky top-14 bg-background z-10 border-b">
@@ -892,16 +892,14 @@ export default function RoomChatPage() {
                             </TabsContent>
                         </Tabs>
                     ) : (
-                        <div className="pt-14">
-                            <RoomMessages 
-                                messages={messages} 
-                                isLoading={areMessagesLoading} 
-                                room={room} 
-                                onSetReply={handleSetReply} 
-                                onForward={handleForward} 
-                                emptyMessage={<p className="text-center text-muted-foreground py-10">No messages yet.</p>}
-                            />
-                        </div>
+                        <RoomMessages 
+                            messages={messages} 
+                            isLoading={areMessagesLoading} 
+                            room={room} 
+                            onSetReply={handleSetReply} 
+                            onForward={handleForward} 
+                            emptyMessage={<p className="text-center text-muted-foreground py-10">No messages yet.</p>}
+                        />
                     )}
                 </div>
                 {room && <MessageInput room={room} replyingTo={replyingTo} onCancelReply={handleCancelReply} />}
