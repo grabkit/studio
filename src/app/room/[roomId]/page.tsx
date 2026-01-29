@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useParams, useRouter } from 'next/navigation';
@@ -17,7 +18,7 @@ import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
 import { Form, FormControl, FormField, FormItem } from '@/components/ui/form';
 import { Skeleton } from '@/components/ui/skeleton';
-import { ArrowLeft, Send, Copy, Trash2, Forward, Reply, X, ExternalLink, MessageCircle, Heart, List, Loader2, Users, Tag } from 'lucide-react';
+import { ArrowLeft, Send, Copy, Trash2, Forward, Reply, X, ExternalLink, MessageCircle, Heart, List, Loader2, Users, Tag, ChevronDown } from 'lucide-react';
 import { cn, getAvatar, formatMessageTimestamp, formatUserId, formatDateSeparator } from '@/lib/utils';
 import type { Room, RoomMessage, User, Post, LinkMetadata } from '@/lib/types';
 import { isSameDay } from 'date-fns';
@@ -300,42 +301,50 @@ function RoomMessageBubble({ message, showAvatarAndName, onSetReply, onForward, 
     return (
         <Sheet open={isSheetOpen} onOpenChange={setIsSheetOpen}>
             <div
-                className={cn(isOwnMessage ? "flex justify-end" : "flex gap-2", !showAvatarAndName && !isOwnMessage && "pl-10")}
+                className={cn("inline-flex flex-col", isOwnMessage ? "items-end" : "items-start")}
             >
-                {!isOwnMessage && showAvatarAndName && (
-                    <Link href={`/profile/${message.senderId}`}>
-                        <Avatar size="sm" showStatus={true} isOnline={isOnline}>
-                            <AvatarImage src={isAvatarUrl ? avatar : undefined} />
-                            <AvatarFallback>{!isAvatarUrl ? avatar : ''}</AvatarFallback>
-                        </Avatar>
-                    </Link>
-                )}
-                
-                <div
-                    className={cn(
-                        "inline-flex flex-col",
-                        (isPostShare || isLinkShare) ? 'w-64' : 'max-w-[80%]',
-                    )}
-                >
+                <div className={cn(
+                    "flex gap-2 w-full",
+                    isOwnMessage ? "justify-end" : "justify-start",
+                    !showAvatarAndName && !isOwnMessage && "pl-10"
+                )}>
                     {!isOwnMessage && showAvatarAndName && (
                         <Link href={`/profile/${message.senderId}`}>
-                            <p className="text-xs font-semibold mb-0.5 text-muted-foreground hover:underline">{sender ? formatUserId(sender.id) : '...'}</p>
+                            <Avatar size="sm" showStatus={true} isOnline={isOnline}>
+                                <AvatarImage src={isAvatarUrl ? avatar : undefined} />
+                                <AvatarFallback>{!isAvatarUrl ? avatar : ''}</AvatarFallback>
+                            </Avatar>
                         </Link>
                     )}
-                    <SheetTrigger asChild>
-                        <div className={cn(
-                            "rounded-2xl",
-                            isOwnMessage ? "bg-primary text-primary-foreground rounded-br-none" : "bg-secondary text-foreground rounded-bl-none"
-                        )}>
-                            {bubbleContent}
-                        </div>
-                    </SheetTrigger>
-                     {roomId === 'ask_space' && !isOwnMessage && message.text && (
-                        <Button variant="ghost" size="sm" className="mt-1 w-full justify-start rounded-[10px] border border-secondary bg-secondary/10 text-muted-foreground hover:bg-secondary/20 hover:text-primary px-3">
-                            Answers
-                        </Button>
-                    )}
+                    
+                    <div
+                        className={cn(
+                            "inline-flex flex-col",
+                            (isPostShare || isLinkShare) ? 'w-64' : 'max-w-[80%]',
+                        )}
+                    >
+                        {!isOwnMessage && showAvatarAndName && (
+                            <Link href={`/profile/${message.senderId}`}>
+                                <p className="text-xs font-semibold mb-0.5 text-muted-foreground hover:underline">{sender ? formatUserId(sender.id) : '...'}</p>
+                            </Link>
+                        )}
+                        <SheetTrigger asChild>
+                            <div className={cn(
+                                "rounded-2xl",
+                                isOwnMessage ? "bg-primary text-primary-foreground rounded-br-none" : "bg-secondary text-foreground rounded-bl-none"
+                            )}>
+                                {bubbleContent}
+                            </div>
+                        </SheetTrigger>
+                    </div>
                 </div>
+
+                {roomId === 'ask_space' && !isOwnMessage && message.text && (
+                    <Button variant="ghost" size="sm" className="mt-1 w-full justify-center items-center rounded-[10px] border border-secondary bg-secondary/10 text-muted-foreground hover:bg-secondary/20 hover:text-primary px-3 gap-1">
+                        <span>Answers</span>
+                        <ChevronDown className="h-4 w-4" />
+                    </Button>
+                )}
             </div>
              <SheetContent side="bottom" className="rounded-t-2xl">
                 <SheetHeader className="sr-only">
