@@ -448,17 +448,20 @@ function RoomMessageBubble({ message, showAvatarAndName, onSetReply, onForward, 
     );
 
     const bubbleAndButtonContainer = (
-        <div className="inline-flex flex-col items-start">
+         <div className={cn(
+            "inline-flex flex-col",
+            isOwnMessage ? "items-end" : "items-start"
+         )}>
              <SheetTrigger asChild>
                 <div className={cn(
                     "rounded-2xl",
                     isOwnMessage ? "bg-primary text-primary-foreground rounded-br-none" : "bg-secondary text-foreground rounded-bl-none",
-                    (isPostShare || isLinkShare) ? 'w-64' : 'max-w-full'
+                    (isPostShare || isLinkShare) ? 'w-64' : 'max-w-[80%]'
                 )}>
                     {bubbleContent}
                 </div>
             </SheetTrigger>
-            {room?.id === 'ask_space' && message.text && (
+            {room?.id === 'ask_space' && (
                 <Button variant="ghost" size="sm" className="mt-1 justify-center items-center rounded-[10px] border border-secondary bg-secondary/10 text-muted-foreground hover:bg-secondary/20 hover:text-primary px-3 gap-1 h-auto py-1" onClick={() => setIsAnswersSheetOpen(true)}>
                     {message.answerCount > 0 && <span className="text-xs font-bold">{message.answerCount}</span>}
                     <span className="text-sm">Answers</span>
@@ -862,9 +865,10 @@ export default function RoomChatPage() {
                 className="flex flex-col h-screen"
             >
                 <div className="flex-1 overflow-y-auto pb-20">
-                    <div className="sticky top-0 z-20">
+                     <div className="sticky top-0 z-20">
                       <RoomHeader room={room} />
                     </div>
+                    
                     <div>
                         {isAskSpace ? (
                             <Tabs defaultValue="all" className="w-full">
