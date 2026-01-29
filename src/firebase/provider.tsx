@@ -119,6 +119,8 @@ export const FirebaseProvider: React.FC<FirebaseProviderProps> = ({
       incomingCall,
       callStatus,
       remoteStream,
+      isMuted,
+      toggleMute,
   } = useCallHandler(firestore, userAuthState.user);
   
   // Video Call Hook
@@ -388,7 +390,7 @@ export const FirebaseProvider: React.FC<FirebaseProviderProps> = ({
       )}
       {incomingCall && <IncomingCallView caller={callerProfile} onAccept={acceptCall} onDecline={declineCall} />}
       {activeCall && callStatus !== 'ended' && callStatus !== 'declined' && callStatus !== 'missed' && (
-        <OnCallView remoteUser={remoteUserProfile} status={callStatus} onHangUp={hangUp} isMuted={false} toggleMute={() => {}} />
+        <OnCallView remoteUser={remoteUserProfile} status={callStatus} onHangUp={hangUp} isMuted={isMuted} toggleMute={toggleMute} />
       )}
       
       {videoCallHandler.incomingCall && <IncomingVideoCallView caller={videoCallerProfile} onAccept={videoCallHandler.acceptCall} onDecline={videoCallHandler.declineCall} />}
