@@ -38,12 +38,37 @@ const answerFormSchema = z.object({
   content: z.string().min(1, "Answer cannot be empty.").max(1000),
 });
 
-function AnswerItem({ answer }: { answer: WithId<Answer> }) {
-    const { firestore } = useFirebase();
+function AnswerItem({ answer, roomId, messageId }: { answer: WithId<Answer>, roomId: string, messageId: string }) {
+    const { firestore, user } = useFirebase();
+    const { toast } = useToast();
     const senderRef = useMemoFirebase(() => doc(firestore, 'users', answer.authorId), [firestore, answer.authorId]);
     const { data: sender } = useDoc<User>(senderRef);
     const avatar = getAvatar(sender);
     const isAvatarUrl = avatar.startsWith('http');
+    const isOwner = user?.uid === answer.authorId;
+
+    const handleDelete = async () => {
+        if (!firestore || !user || !isOwner) return;
+
+        const answerRef = doc(firestore, 'rooms', roomId, 'messages', messageId, 'answers', answer.id);
+        const messageRef = doc(firestore, 'rooms', roomId, 'messages', messageId);
+
+        try {
+            await runTransaction(firestore, async (transaction) => {
+                transaction.delete(answerRef);
+                transaction.update(messageRef, { answerCount: increment(-1) });
+            });
+            toast({ title: 'Answer deleted' });
+        } catch (error) {
+            console.error("Error deleting answer:", error);
+            const permissionError = new FirestorePermissionError({
+                path: answerRef.path,
+                operation: 'delete',
+            });
+            errorEmitter.emit('permission-error', permissionError);
+            toast({ variant: 'destructive', title: 'Error', description: 'Could not delete the answer.' });
+        }
+    };
 
     return (
         <div className="flex items-start gap-3 py-3">
@@ -58,6 +83,11 @@ function AnswerItem({ answer }: { answer: WithId<Answer> }) {
                 </div>
                 <p className="text-sm text-foreground">{answer.content}</p>
             </div>
+             {isOwner && (
+                <Button variant="ghost" size="icon" className="h-7 w-7 text-muted-foreground hover:text-destructive" onClick={handleDelete}>
+                    <Trash2 className="h-4 w-4" />
+                </Button>
+            )}
         </div>
     );
 }
@@ -118,7 +148,7 @@ function AnswersSheet({ isOpen, onOpenChange, room, message }: { isOpen: boolean
                     {isLoading && <div className="text-center py-10"><Loader2 className="h-6 w-6 animate-spin mx-auto" /></div>}
                     {!isLoading && answers?.length === 0 && <p className="text-center text-muted-foreground py-10">No answers yet. Be the first!</p>}
                     <div className="divide-y">
-                        {answers?.map(answer => <AnswerItem key={answer.id} answer={answer} />)}
+                        {answers?.map(answer => <AnswerItem key={answer.id} answer={answer} roomId={room.id} messageId={message.id} />)}
                     </div>
                 </ScrollArea>
                 <div className="p-2 border-t bg-background">
@@ -421,7 +451,6 @@ function RoomMessageBubble({ message, showAvatarAndName, onSetReply, onForward, 
              <SheetTrigger asChild>
                 <div className={cn(
                     "rounded-2xl",
-                    (isPostShare || isLinkShare) ? 'w-64' : 'max-w-full',
                     isOwnMessage ? "bg-primary text-primary-foreground rounded-br-none" : "bg-secondary text-foreground rounded-bl-none",
                 )}>
                     {bubbleContent}
@@ -441,30 +470,34 @@ function RoomMessageBubble({ message, showAvatarAndName, onSetReply, onForward, 
         <>
         <Sheet open={isSheetOpen} onOpenChange={setIsSheetOpen}>
             <div className={cn(
-                "flex items-start gap-2 w-full",
+                "flex w-full",
                 isOwnMessage ? "justify-end" : "justify-start",
-                !isOwnMessage && !showAvatarAndName && "pl-10"
             )}>
-                {!isOwnMessage && showAvatarAndName && (
-                    <Link href={`/profile/${message.senderId}`}>
-                        <Avatar size="sm" showStatus={isOnline}>
-                            <AvatarImage src={isAvatarUrl ? avatar : undefined} />
-                            <AvatarFallback>{!isAvatarUrl ? avatar : ''}</AvatarFallback>
-                        </Avatar>
-                    </Link>
-                )}
                 <div className={cn(
-                    "flex flex-col max-w-[85%]",
-                    isOwnMessage ? 'items-end' : 'items-start'
+                    "flex items-start gap-2",
+                    isOwnMessage ? "flex-row-reverse" : "flex-row",
+                    !isOwnMessage && !showAvatarAndName && "pl-10"
                 )}>
-                     {!isOwnMessage && showAvatarAndName && (
+                    {!isOwnMessage && showAvatarAndName && (
                         <Link href={`/profile/${message.senderId}`}>
-                            <p className="text-xs font-semibold mb-0.5 text-muted-foreground hover:underline">{sender ? formatUserId(sender.id) : '...'}</p>
+                            <Avatar size="sm" showStatus={isOnline}>
+                                <AvatarImage src={isAvatarUrl ? avatar : undefined} />
+                                <AvatarFallback>{!isAvatarUrl ? avatar : ''}</AvatarFallback>
+                            </Avatar>
                         </Link>
                     )}
-                    {bubbleAndButtonContainer}
+                    <div className={cn(
+                        "flex flex-col max-w-[85%]",
+                        isOwnMessage ? 'items-end' : 'items-start'
+                    )}>
+                         {!isOwnMessage && showAvatarAndName && (
+                            <Link href={`/profile/${message.senderId}`}>
+                                <p className="text-xs font-semibold mb-0.5 text-muted-foreground hover:underline">{sender ? formatUserId(sender.id) : '...'}</p>
+                            </Link>
+                        )}
+                        {bubbleAndButtonContainer}
+                    </div>
                 </div>
-
             </div>
              <SheetContent side="bottom" className="rounded-t-2xl">
                 <SheetHeader className="sr-only">
@@ -827,5 +860,3 @@ export default function RoomChatPage() {
         </AppLayout>
     )
 }
-
-    
