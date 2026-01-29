@@ -16,7 +16,7 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button, buttonVariants } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { ArrowLeft, MessageSquare, ArrowUpRight, MoreHorizontal, ShieldAlert, Flag, VolumeX, Info, MinusCircle, Link as LinkIcon, QrCode, Calendar, Badge, User as UserIcon, Volume2, BarChart3, ChevronDown, Loader2 } from "lucide-react";
+import { ArrowLeft, MessageSquare, ArrowUpRight, MoreHorizontal, ShieldAlert, Flag, VolumeX, Info, MinusCircle, Link as LinkIcon, QrCode, Calendar, Badge, User as UserIcon, Volume2, BarChart3, ChevronDown, Loader2, ChevronRight } from "lucide-react";
 import { getAvatar, cn, formatLastSeen, formatUserId, getFormattedUserIdString } from "@/lib/utils.tsx";
 import { FirestorePermissionError } from "@/firebase/errors";
 import { errorEmitter } from "@/firebase/error-emitter";
@@ -63,6 +63,27 @@ function AboutProfileSheet({ user, isOpen, onOpenChange }: { user: WithId<User>,
                 </div>
             </SheetContent>
         </Sheet>
+    )
+}
+
+function ProfileOptionsItem({ label, icon: Icon, onClick }: { label: string, icon: React.ElementType, onClick?: () => void }) {
+    return (
+        <div onClick={onClick} className="flex items-center justify-between p-4 transition-colors hover:bg-accent/50 cursor-pointer">
+            <div className="flex items-center space-x-4">
+                <Icon className="h-5 w-5 text-foreground" />
+                <span className="text-base">{label}</span>
+            </div>
+            <ChevronRight className="h-5 w-5 text-muted-foreground" />
+        </div>
+    )
+}
+
+function DestructiveProfileOptionsItem({ label, icon: Icon, onClick }: { label: string, icon: React.ElementType, onClick?: () => void }) {
+    return (
+        <div onClick={onClick} className="flex items-center space-x-4 p-4 transition-colors hover:bg-destructive/10 cursor-pointer text-destructive">
+            <Icon className="h-5 w-5" />
+            <span className="text-base font-medium">{label}</span>
+        </div>
     )
 }
 
@@ -746,57 +767,71 @@ export default function UserProfilePage() {
                         </div>
                     </div>
 
-                    <SheetContent side="bottom" className="rounded-t-2xl">
-                        <SheetHeader className="text-left sr-only">
-                        <SheetTitle>Options for {formatUserId(user.id)}</SheetTitle>
-                        <SheetDescription>Manage your interaction with this user.</SheetDescription>
+                    <SheetContent side="bottom" className="rounded-t-2xl p-0">
+                        <SheetHeader className="text-center p-4 border-b">
+                            <SheetTitle>Options</SheetTitle>
                         </SheetHeader>
-                        <div className="grid gap-2 py-4">
-                            <div className="border rounded-2xl">
-                                <Button variant="ghost" className="justify-between text-base py-6 rounded-2xl w-full" onClick={handleMuteUser}>
-                                    <span>{isMuted ? "Unmute" : "Mute"}</span>
-                                    {isMuted ? <Volume2 className="h-5 w-5" /> : <VolumeX className="h-5 w-5" />}
-                                </Button>
-                                <div className="border-t"></div>
-                                <Button variant="ghost" className="justify-between text-base py-6 rounded-2xl w-full" onClick={handleRestrictUser}>
-                                    <span>{isRestricted ? "Unrestrict" : "Restrict"}</span>
-                                    <MinusCircle className="h-5 w-5" />
-                                </Button>
+                        <div className="p-4 space-y-6 overflow-y-auto">
+                            <div>
+                                <h3 className="px-2 mb-1 text-sm font-semibold text-muted-foreground">Interaction</h3>
+                                <div className="bg-card rounded-xl">
+                                    <ProfileOptionsItem
+                                        icon={isMuted ? Volume2 : VolumeX}
+                                        label={isMuted ? "Unmute" : "Mute"}
+                                        onClick={handleMuteUser}
+                                    />
+                                    <div className="h-px bg-border/50 mx-4 opacity-50" />
+                                    <ProfileOptionsItem
+                                        icon={MinusCircle}
+                                        label={isRestricted ? "Unrestrict" : "Restrict"}
+                                        onClick={handleRestrictUser}
+                                    />
+                                </div>
                             </div>
-                            <div className="border rounded-2xl">
-                                <Button variant="ghost" className="justify-between text-base py-6 rounded-2xl w-full" onClick={handleOpenAbout}>
-                                    <span>About this profile</span>
-                                    <Info className="h-5 w-5" />
-                                </Button>
+                            <div>
+                                <h3 className="px-2 mb-1 text-sm font-semibold text-muted-foreground">Share & Info</h3>
+                                <div className="bg-card rounded-xl">
+                                    <ProfileOptionsItem
+                                        icon={Info}
+                                        label="About this profile"
+                                        onClick={handleOpenAbout}
+                                    />
+                                    <div className="h-px bg-border/50 mx-4 opacity-50" />
+                                    <ProfileOptionsItem
+                                        icon={ArrowUpRight}
+                                        label="Share via..."
+                                        onClick={handleShare}
+                                    />
+                                    <div className="h-px bg-border/50 mx-4 opacity-50" />
+                                    <ProfileOptionsItem
+                                        icon={LinkIcon}
+                                        label="Copy Link"
+                                        onClick={handleCopyLink}
+                                    />
+                                    <div className="h-px bg-border/50 mx-4 opacity-50" />
+                                    <ProfileOptionsItem
+                                        icon={QrCode}
+                                        label="QR Code"
+                                        onClick={handleOpenQrCode}
+                                    />
+                                </div>
                             </div>
-                            <div className="border rounded-2xl">
-                                <Button variant="ghost" className="justify-between text-base py-6 rounded-2xl w-full" onClick={handleShare}>
-                                    <span>Share via...</span>
-                                    <ArrowUpRight className="h-5 w-5" />
-                                </Button>
-                                <div className="border-t"></div>
-                                <Button variant="ghost" className="justify-between text-base py-6 rounded-2xl w-full" onClick={handleCopyLink}>
-                                    <span>Copy Link</span>
-                                    <LinkIcon className="h-5 w-5" />
-                                </Button>
-                                <div className="border-t"></div>
-                                <Button variant="ghost" className="justify-between text-base py-6 rounded-2xl w-full" onClick={handleOpenQrCode}>
-                                    <span>QR Code</span>
-                                    <QrCode className="h-5 w-5" />
-                                </Button>
-                            </div>
-                            <div className="border rounded-2xl">
-                                <ReportDialog reportedUserId={user.id} reportedUserName={getFormattedUserIdString(user.id).toString()}>
-                                    <Button variant="ghost" className="justify-between text-base py-6 rounded-2xl w-full text-destructive hover:text-destructive">
-                                        <span>Report</span>
-                                        <Flag className="h-5 w-5" />
-                                    </Button>
-                                </ReportDialog>
-                                <div className="border-t"></div>
-                                <Button variant="ghost" className="justify-between text-base py-6 rounded-2xl w-full text-destructive hover:text-destructive" onClick={handleBlockUser}>
-                                    <span>{isBlocked ? "Unblock" : "Block"}</span>
-                                    <ShieldAlert className="h-5 w-5" />
-                                </Button>
+                            <div>
+                                <h3 className="px-2 mb-1 text-sm font-semibold text-muted-foreground">Danger Zone</h3>
+                                <div className="bg-card rounded-xl">
+                                    <ReportDialog reportedUserId={user.id} reportedUserName={getFormattedUserIdString(user.id).toString()}>
+                                        <DestructiveProfileOptionsItem
+                                            icon={Flag}
+                                            label="Report"
+                                        />
+                                    </ReportDialog>
+                                    <div className="h-px bg-border/50 mx-4 opacity-50" />
+                                    <DestructiveProfileOptionsItem
+                                        icon={ShieldAlert}
+                                        label={isBlocked ? "Unblock" : "Block"}
+                                        onClick={handleBlockUser}
+                                    />
+                                </div>
                             </div>
                         </div>
                     </SheetContent>
@@ -811,5 +846,3 @@ export default function UserProfilePage() {
         </AppLayout>
     );
 }
-
-    
