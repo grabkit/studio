@@ -74,14 +74,15 @@ export function useCallHandler(
             setLocalStream(stream);
 
             const callDocRef = doc(collection(firestore, 'calls'));
-            const callData: Omit<Call, 'id' | 'createdAt' | 'participantIds'> = {
+            const callData: Omit<Call, 'id' | 'createdAt'> = {
                 callerId: user.uid,
                 calleeId: calleeId,
+                participantIds: [user.uid, calleeId].sort(),
                 status: 'offering',
             };
-            await setDoc(callDocRef, { ...callData, createdAt: serverTimestamp(), participantIds: [user.uid, calleeId].sort() });
+            await setDoc(callDocRef, { ...callData, createdAt: serverTimestamp() });
             
-            const callWithId = { id: callDocRef.id, ...callData, createdAt: new Date(), participantIds: [user.uid, calleeId].sort() } as WithId<Call>;
+            const callWithId = { id: callDocRef.id, ...callData, createdAt: new Date() } as WithId<Call>;
             setActiveCall(callWithId);
             setCallStatus('offering');
         } catch (err) {
@@ -89,6 +90,37 @@ export function useCallHandler(
             toast({ variant: 'destructive', title: 'Call Failed', description: 'Could not access your microphone.'});
         }
     };
+    
+    const declineCall = useCallback(async () => {
+        if (incomingCall && firestore) {
+            const callRef = doc(firestore, 'calls', incomingCall.id);
+            await updateDoc(callRef, { status: 'declined' });
+        }
+        cleanup();
+    }, [incomingCall, firestore, cleanup]);
+
+    const acceptCall = useCallback(async () => {
+        if (!firestore || !incomingCall) return;
+
+        try {
+            const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+            setLocalStream(stream);
+            setActiveCall(incomingCall);
+            setCallStatus('answered');
+
+            const callRef = doc(firestore, 'calls', incomingCall.id);
+            const answerCandidatesCol = collection(callRef, 'answerCandidates');
+            
+            // Clean up old candidates before answering
+            const oldCandidatesSnap = await getDocs(answerCandidatesCol);
+            oldCandidatesSnap.forEach(doc => deleteDoc(doc.ref));
+
+        } catch (err) {
+            console.error("Could not get user media to accept call", err);
+            toast({ variant: 'destructive', title: 'Accept Failed', description: 'Could not access your microphone.'});
+            declineCall();
+        }
+    }, [firestore, incomingCall, toast, declineCall]);
 
     const setupPeerConnection = useCallback((call: WithId<Call>, stream: MediaStream) => {
         if (!firestore || !user) return;
@@ -139,23 +171,28 @@ export function useCallHandler(
         // Listen for answer/offer
         callUnsubscribeRef.current = onSnapshot(callRef, (docSnap) => {
             const updatedCall = docSnap.data() as Call;
-            if (updatedCall) {
-                // Ensure we only signal the offer/answer once
-                if (!isInitiator && updatedCall.offer && !peerRef.current?.destroyed && !signaledRef.current) {
-                    peerRef.current?.signal(updatedCall.offer);
-                    signaledRef.current = true;
-                }
-                if (isInitiator && updatedCall.answer && !peerRef.current?.destroyed && !signaledRef.current) {
-                    peerRef.current?.signal(updatedCall.answer);
-                    signaledRef.current = true;
-                }
+            if (!updatedCall) return;
 
-                 if(updatedCall.status !== callStatus) {
-                    setCallStatus(updatedCall.status);
-                     if (updatedCall.status === 'ended' || updatedCall.status === 'declined' || updatedCall.status === 'missed') {
-                        cleanup();
-                    }
+            // Signal handling
+            if (!isInitiator && updatedCall.offer && !peerRef.current?.destroyed && !signaledRef.current) {
+                peerRef.current?.signal(updatedCall.offer);
+                signaledRef.current = true;
+            }
+            if (isInitiator && updatedCall.answer && !peerRef.current?.destroyed && !signaledRef.current) {
+                peerRef.current?.signal(updatedCall.answer);
+                signaledRef.current = true;
+            }
+
+            // Status handling
+            setCallStatus(prevStatus => {
+                if (!isInitiator && prevStatus === 'answered' && updatedCall.status === 'ringing') {
+                    return 'answered';
                 }
+                return updatedCall.status;
+            });
+
+            if (updatedCall.status === 'ended' || updatedCall.status === 'declined' || updatedCall.status === 'missed') {
+                setTimeout(cleanup, 500); // Give UI a moment to show "Call ended"
             }
         });
         
@@ -170,7 +207,7 @@ export function useCallHandler(
                 }
             });
         });
-    }, [firestore, user, cleanup, callStatus]);
+    }, [firestore, user, cleanup]);
 
     useEffect(() => {
         if (activeCall && localStream && !peerRef.current) {
@@ -201,37 +238,6 @@ export function useCallHandler(
         });
         return () => unsubscribe();
     }, [firestore, user, activeCall, incomingCall]);
-    
-    const declineCall = useCallback(async () => {
-        if (incomingCall && firestore) {
-            const callRef = doc(firestore, 'calls', incomingCall.id);
-            await updateDoc(callRef, { status: 'declined' });
-        }
-        cleanup();
-    }, [incomingCall, firestore, cleanup]);
-
-    const acceptCall = useCallback(async () => {
-        if (!firestore || !incomingCall) return;
-
-        try {
-            const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
-            setLocalStream(stream);
-            setActiveCall(incomingCall);
-            setCallStatus('answered');
-
-            const callRef = doc(firestore, 'calls', incomingCall.id);
-            const answerCandidatesCol = collection(callRef, 'answerCandidates');
-            
-            // Clean up old candidates before answering
-            const oldCandidatesSnap = await getDocs(answerCandidatesCol);
-            oldCandidatesSnap.forEach(doc => deleteDoc(doc.ref));
-
-        } catch (err) {
-            console.error("Could not get user media to accept call", err);
-            toast({ variant: 'destructive', title: 'Accept Failed', description: 'Could not access your microphone.'});
-            declineCall();
-        }
-    }, [firestore, incomingCall, toast, declineCall]);
     
     const hangUp = useCallback(async () => {
         if (activeCall && firestore) {
