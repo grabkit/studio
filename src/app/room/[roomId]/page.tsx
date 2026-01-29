@@ -32,6 +32,7 @@ import { LinkPreviewCard } from '@/components/LinkPreviewCard';
 import UserList from '@/components/UserList';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { AlertDialog, AlertDialogContent } from '@/components/ui/alert-dialog';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 
 
 const answerFormSchema = z.object({
@@ -486,7 +487,7 @@ function RoomMessageBubble({ message, showAvatarAndName, onSetReply, onForward, 
                         </Link>
                     )}
                     <div className={cn(
-                        "flex flex-col max-w-[85%]",
+                        "flex flex-col",
                         isOwnMessage ? 'items-end' : 'items-start',
                         !isOwnMessage && !showAvatarAndName && "ml-10",
                     )}>
@@ -559,20 +560,10 @@ function RoomMessageBubble({ message, showAvatarAndName, onSetReply, onForward, 
     );
 }
 
-function RoomMessages({ roomId, room, onSetReply, onForward }: { roomId: string, room: WithId<Room> | null, onSetReply: (message: WithId<RoomMessage>) => void, onForward: (message: WithId<RoomMessage>) => void }) {
-    const { firestore, user } = useFirebase();
+function RoomMessages({ messages, isLoading, emptyMessage, room, onSetReply, onForward }: { messages: WithId<RoomMessage>[] | null, isLoading: boolean, emptyMessage: React.ReactNode, room: WithId<Room> | null, onSetReply: (message: WithId<RoomMessage>) => void, onForward: (message: WithId<RoomMessage>) => void }) {
+    const { user } = useFirebase();
     const messagesEndRef = useRef<HTMLDivElement | null>(null);
 
-    const messagesQuery = useMemoFirebase(() => {
-        if (!firestore || !roomId) return null;
-        return query(
-            collection(firestore, 'rooms', roomId, 'messages'),
-            orderBy('timestamp', 'asc')
-        );
-    }, [firestore, roomId]);
-
-    const { data: messages, isLoading } = useCollection<RoomMessage>(messagesQuery);
-    
     const filteredMessages = useMemo(() => {
         if (!messages || !user) return [];
         return messages.filter(msg => !msg.deletedFor?.includes(user.uid));
@@ -591,6 +582,11 @@ function RoomMessages({ roomId, room, onSetReply, onForward }: { roomId: string,
             </div>
         )
     }
+    
+    if (filteredMessages.length === 0) {
+        return <>{emptyMessage}</>;
+    }
+
 
     const messagesWithSeparators = filteredMessages?.reduce((acc: (WithId<RoomMessage> | { type: 'separator', date: Date })[], message, index) => {
         const currentDate = message.timestamp?.toDate();
@@ -787,6 +783,22 @@ export default function RoomChatPage() {
     }, [firestore, roomId]);
 
     const { data: room, isLoading: isRoomLoading } = useDoc<Room>(roomRef);
+
+    const messagesQuery = useMemoFirebase(() => {
+        if (!firestore || !roomId) return null;
+        return query(
+            collection(firestore, 'rooms', roomId, 'messages'),
+            orderBy('timestamp', 'asc')
+        );
+    }, [firestore, roomId]);
+    const { data: messages, isLoading: areMessagesLoading } = useCollection<RoomMessage>(messagesQuery);
+
+    const myMessages = useMemo(() => {
+        if (!messages || !user) return [];
+        return messages.filter(msg => msg.senderId === user.uid);
+    }, [messages, user]);
+
+    const isAskSpace = roomId === 'ask_space';
     
     useEffect(() => {
         if (!isRoomLoading && !room && firestore && roomId && user) {
@@ -849,7 +861,45 @@ export default function RoomChatPage() {
             >
                 <RoomHeader room={room} />
                  <div className="flex-1 overflow-y-auto pt-14 pb-20">
-                    <RoomMessages roomId={roomId} room={room} onSetReply={handleSetReply} onForward={handleForward} />
+                    {isAskSpace ? (
+                        <Tabs defaultValue="all" className="w-full">
+                            <div className="sticky top-14 bg-background z-10 border-b">
+                                <TabsList variant="underline" className="grid w-full grid-cols-2">
+                                    <TabsTrigger value="all" variant="underline">All Questions</TabsTrigger>
+                                    <TabsTrigger value="mine" variant="underline">My Questions</TabsTrigger>
+                                </TabsList>
+                            </div>
+                            <TabsContent value="all" className="mt-0">
+                                <RoomMessages 
+                                    messages={messages} 
+                                    isLoading={areMessagesLoading} 
+                                    room={room} 
+                                    onSetReply={handleSetReply} 
+                                    onForward={handleForward}
+                                    emptyMessage={<p className="text-center text-muted-foreground py-10">No questions yet. Be the first!</p>}
+                                />
+                            </TabsContent>
+                            <TabsContent value="mine" className="mt-0">
+                                <RoomMessages 
+                                    messages={myMessages} 
+                                    isLoading={areMessagesLoading} 
+                                    room={room} 
+                                    onSetReply={handleSetReply} 
+                                    onForward={handleForward}
+                                    emptyMessage={<p className="text-center text-muted-foreground py-10">You haven't asked any questions yet.</p>}
+                                />
+                            </TabsContent>
+                        </Tabs>
+                    ) : (
+                        <RoomMessages 
+                            messages={messages} 
+                            isLoading={areMessagesLoading} 
+                            room={room} 
+                            onSetReply={handleSetReply} 
+                            onForward={handleForward} 
+                            emptyMessage={<p className="text-center text-muted-foreground py-10">No messages yet.</p>}
+                        />
+                    )}
                 </div>
                 {room && <MessageInput room={room} replyingTo={replyingTo} onCancelReply={handleCancelReply} />}
                 <ForwardSheet 
