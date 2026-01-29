@@ -73,13 +73,16 @@ export function useVideoCallHandler(
     const acceptCall = useCallback(async () => {
         if (!firestore || !incomingCall) return;
 
+        // Optimistically update status to give caller instant feedback
+        const callRef = doc(firestore, 'videoCalls', incomingCall.id);
+        await updateDoc(callRef, { status: 'answered' });
+
         try {
             const stream = await navigator.mediaDevices.getUserMedia({ video: true, audio: true });
             setLocalStream(stream);
             setActiveCall(incomingCall);
-            setCallStatus('answered');
+            setCallStatus('answered'); // Local state update
 
-            const callRef = doc(firestore, 'videoCalls', incomingCall.id);
             const answerCandidatesCol = collection(callRef, 'answerCandidates');
             
             const oldCandidatesSnap = await getDocs(answerCandidatesCol);
@@ -88,6 +91,7 @@ export function useVideoCallHandler(
         } catch (err) {
             console.error("Could not get user media to accept call", err);
             toast({ variant: 'destructive', title: 'Accept Failed', description: 'Could not access your camera or microphone.'});
+            // declineCall will set status to 'declined' and clean up.
             declineCall();
         }
     }, [firestore, incomingCall, toast, declineCall]);
@@ -143,7 +147,8 @@ export function useVideoCallHandler(
             if (data.type === 'offer') {
                 await updateDoc(callRef, { offer: data, status: 'ringing' });
             } else if (data.type === 'answer') {
-                await updateDoc(callRef, { answer: data, status: 'answered' });
+                // The status is already set to 'answered', just update the answer payload
+                await updateDoc(callRef, { answer: data });
             } else if (data.candidate) {
                 if (isInitiator) {
                     await addDoc(callerCandidatesCol, data);
