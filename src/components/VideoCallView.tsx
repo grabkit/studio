@@ -117,15 +117,19 @@ export function VideoCallView({
 
         {/* Controls */}
        <div className="absolute bottom-8 flex items-center justify-center gap-6 w-full">
-         <Button onClick={toggleMute} variant="secondary" size="icon" className="h-14 w-14 rounded-full bg-white/20 text-white backdrop-blur-md">
-            {isMuted ? <MicOff className="h-6 w-6" /> : <Mic className="h-6 w-6" />}
-         </Button>
-         <Button onClick={toggleVideo} variant="secondary" size="icon" className="h-14 w-14 rounded-full bg-white/20 text-white backdrop-blur-md">
-            {isVideoEnabled ? <Video className="h-6 w-6" /> : <VideoOff className="h-6 w-6" />}
-         </Button>
-        <Button onClick={onHangUp} variant="destructive" size="icon" className="h-16 w-16 rounded-full">
-            <PhoneOff className="h-7 w-7" />
-        </Button>
+            {status === 'answered' && (
+                <>
+                    <Button onClick={toggleMute} variant="secondary" size="icon" className="h-14 w-14 rounded-full bg-white/20 text-white backdrop-blur-md">
+                        {isMuted ? <MicOff className="h-6 w-6" /> : <Mic className="h-6 w-6" />}
+                    </Button>
+                    <Button onClick={toggleVideo} variant="secondary" size="icon" className="h-14 w-14 rounded-full bg-white/20 text-white backdrop-blur-md">
+                        {isVideoEnabled ? <Video className="h-6 w-6" /> : <VideoOff className="h-6 w-6" />}
+                    </Button>
+                </>
+            )}
+            <Button onClick={onHangUp} variant="destructive" size="icon" className="h-16 w-16 rounded-full">
+                <PhoneOff className="h-7 w-7" />
+            </Button>
       </div>
     </div>
   );
