@@ -111,7 +111,7 @@ function AnswersSheet({ isOpen, onOpenChange, room, message }: { isOpen: boolean
         defaultValues: { content: "" },
     });
 
-    const onSubmit = async (values: z.infer<typeof answerFormSchema>) => {
+    const onSubmit = async (values: z.infer<typeof answerFormSchema>>) => {
         if (!firestore || !user) return;
 
         const messageRef = doc(firestore, 'rooms', room.id, 'messages', message.id);
@@ -448,7 +448,7 @@ function RoomMessageBubble({ message, showAvatarAndName, onSetReply, onForward, 
     );
 
     const bubbleAndButtonContainer = (
-        <div className={cn("flex flex-col max-w-[80%]", isOwnMessage && "items-end")}>
+        <div className={cn("flex flex-col max-w-[80%]")}>
              <SheetTrigger asChild>
                 <div className={cn(
                     "rounded-2xl",
@@ -670,7 +670,7 @@ function MessageInput({ room, replyingTo, onCancelReply }: { room: WithId<Room>,
     };
 
 
-    const onSubmit = (values: z.infer<typeof messageFormSchema>) => {
+    const onSubmit = (values: z.infer<typeof messageFormSchema>>) => {
         if (!firestore || !user || !room) return;
 
         const messageRef = doc(collection(firestore, 'rooms', room.id, 'messages'));
@@ -861,54 +861,52 @@ export default function RoomChatPage() {
                 transition={{ duration: 0.3 }}
                 className="flex flex-col h-screen"
             >
-                {isAskSpace ? (
-                    <Tabs defaultValue="all" className="w-full flex flex-col flex-1">
-                         <div className="sticky top-0 z-20 bg-background">
-                            <RoomHeader room={room} />
-                            <TabsList variant="underline" className="grid w-full grid-cols-2">
+                <div className="sticky top-0 z-20 bg-background">
+                    <RoomHeader room={room} />
+                    {isAskSpace && (
+                        <Tabs defaultValue="all" className="w-full">
+                             <TabsList variant="underline" className="grid w-full grid-cols-2">
                                 <TabsTrigger value="all" variant="underline">All Questions</TabsTrigger>
                                 <TabsTrigger value="mine" variant="underline">My Questions</TabsTrigger>
                             </TabsList>
-                        </div>
-                        <ScrollArea className="flex-1 pb-20">
-                            <TabsContent value="all" className="mt-0">
-                                <RoomMessages 
-                                    messages={messages} 
-                                    isLoading={areMessagesLoading} 
-                                    room={room} 
-                                    onSetReply={handleSetReply} 
-                                    onForward={handleForward}
-                                    emptyMessage={<p className="text-center text-muted-foreground py-10">No questions yet. Be the first!</p>}
-                                />
-                            </TabsContent>
-                            <TabsContent value="mine" className="mt-0">
-                                <RoomMessages 
-                                    messages={myMessages} 
-                                    isLoading={areMessagesLoading} 
-                                    room={room} 
-                                    onSetReply={handleSetReply} 
-                                    onForward={handleForward}
-                                    emptyMessage={<p className="text-center text-muted-foreground py-10">You haven't asked any questions yet.</p>}
-                                />
-                            </TabsContent>
-                        </ScrollArea>
-                    </Tabs>
-                ) : (
-                    <>
-                        <div className="sticky top-0 z-20 bg-background">
-                            <RoomHeader room={room} />
-                        </div>
-                        <ScrollArea className="flex-1 pb-20">
-                             <RoomMessages 
+                        </Tabs>
+                    )}
+                </div>
+                 
+                {isAskSpace ? (
+                    <Tabs defaultValue="all" className="w-full flex flex-col flex-1 overflow-y-auto pb-20">
+                        <TabsContent value="all" className="mt-0 flex-1">
+                            <RoomMessages 
                                 messages={messages} 
                                 isLoading={areMessagesLoading} 
                                 room={room} 
                                 onSetReply={handleSetReply} 
-                                onForward={handleForward} 
-                                emptyMessage={<p className="text-center text-muted-foreground py-10">No messages yet.</p>}
+                                onForward={handleForward}
+                                emptyMessage={<p className="text-center text-muted-foreground py-10">No questions yet. Be the first!</p>}
                             />
-                        </ScrollArea>
-                    </>
+                        </TabsContent>
+                        <TabsContent value="mine" className="mt-0 flex-1">
+                            <RoomMessages 
+                                messages={myMessages} 
+                                isLoading={areMessagesLoading} 
+                                room={room} 
+                                onSetReply={handleSetReply} 
+                                onForward={handleForward}
+                                emptyMessage={<p className="text-center text-muted-foreground py-10">You haven't asked any questions yet.</p>}
+                            />
+                        </TabsContent>
+                    </Tabs>
+                ) : (
+                     <ScrollArea className="flex-1 pb-20">
+                         <RoomMessages 
+                            messages={messages} 
+                            isLoading={areMessagesLoading} 
+                            room={room} 
+                            onSetReply={handleSetReply} 
+                            onForward={handleForward} 
+                            emptyMessage={<p className="text-center text-muted-foreground py-10">No messages yet.</p>}
+                        />
+                    </ScrollArea>
                 )}
                 
                 {room && <MessageInput room={room} replyingTo={replyingTo} onCancelReply={handleCancelReply} />}
