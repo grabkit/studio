@@ -1,4 +1,5 @@
 
+
 'use client';
 
 import { useState, useEffect, useCallback, useRef } from 'react';
@@ -132,6 +133,12 @@ export function useCallHandler(
             initiator: isInitiator,
             trickle: true,
             stream: stream,
+            config: {
+                iceServers: [
+                    { urls: 'stun:stun.l.google.com:19302' },
+                    { urls: 'stun:stun1.l.google.com:19302' },
+                ]
+            }
         });
         peerRef.current = peer;
 
