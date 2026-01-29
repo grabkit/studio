@@ -1,3 +1,4 @@
+
 rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
@@ -8,16 +9,6 @@ service cloud.firestore {
 
     function isOwner(userId) {
       return request.auth.uid == userId;
-    }
-    
-    function isCallParticipant(callId) {
-      let callDoc = get(/databases/$(database)/documents/calls/$(callId));
-      return request.auth.uid == callDoc.data.callerId || request.auth.uid == callDoc.data.calleeId;
-    }
-
-    function isVideoCallParticipant(videoCallId) {
-      let callDoc = get(/databases/$(database)/documents/videoCalls/$(videoCallId));
-      return request.auth.uid == callDoc.data.callerId || request.auth.uid == callDoc.data.calleeId;
     }
 
     match /users/{userId} {
@@ -105,38 +96,38 @@ service cloud.firestore {
     }
 
     match /calls/{callId} {
-      allow get: if isSignedIn() && (request.auth.uid == resource.data.callerId || request.auth.uid == resource.data.calleeId);
+      allow get: if isSignedIn() && request.auth.uid in resource.data.participantIds;
       allow list: if isSignedIn();
-      allow create: if isSignedIn() && request.resource.data.callerId == request.auth.uid;
-      allow update: if isSignedIn() && (request.auth.uid == resource.data.callerId || request.auth.uid == resource.data.calleeId) && (request.resource.data.diff(resource.data).hasOnly(['status', 'answer', 'offer']));
-      allow delete: if isSignedIn() && (request.auth.uid == resource.data.callerId || request.auth.uid == resource.data.calleeId);
+      allow create: if isSignedIn() && request.auth.uid in request.resource.data.participantIds && request.resource.data.callerId == request.auth.uid;
+      allow update: if isSignedIn() && request.auth.uid in resource.data.participantIds && request.resource.data.diff(resource.data).hasOnly(['status', 'answer', 'offer']);
+      allow delete: if isSignedIn() && request.auth.uid in resource.data.participantIds;
       
       match /callerCandidates/{candidateId} {
-        allow read, list, create: if isCallParticipant(callId);
+        allow read, list, create: if isSignedIn() && request.auth.uid in get(/databases/$(database)/documents/calls/$(callId)).data.participantIds;
         allow update, delete: if false;
       }
 
       match /answerCandidates/{candidateId} {
-          allow read, list, create: if isCallParticipant(callId);
-          allow update, delete: if false;
+        allow read, list, create: if isSignedIn() && request.auth.uid in get(/databases/$(database)/documents/calls/$(callId)).data.participantIds;
+        allow update, delete: if false;
       }
     }
 
     match /videoCalls/{videoCallId} {
-      allow get: if isSignedIn() && (request.auth.uid == resource.data.callerId || request.auth.uid == resource.data.calleeId);
+      allow get: if isSignedIn() && request.auth.uid in resource.data.participantIds;
       allow list: if isSignedIn();
-      allow create: if isSignedIn() && request.resource.data.callerId == request.auth.uid;
-      allow update: if isSignedIn() && (request.auth.uid == resource.data.callerId || request.auth.uid == resource.data.calleeId) && (request.resource.data.diff(resource.data).hasOnly(['status', 'answer', 'offer']));
-      allow delete: if isSignedIn() && (request.auth.uid == resource.data.callerId || request.auth.uid == resource.data.calleeId);
+      allow create: if isSignedIn() && request.auth.uid in request.resource.data.participantIds && request.resource.data.callerId == request.auth.uid;
+      allow update: if isSignedIn() && request.auth.uid in resource.data.participantIds && request.resource.data.diff(resource.data).hasOnly(['status', 'answer', 'offer']);
+      allow delete: if isSignedIn() && request.auth.uid in resource.data.participantIds;
       
       match /callerCandidates/{candidateId} {
-        allow read, list, create: if isVideoCallParticipant(videoCallId);
+        allow read, list, create: if isSignedIn() && request.auth.uid in get(/databases/$(database)/documents/videoCalls/$(videoCallId)).data.participantIds;
         allow update, delete: if false;
       }
 
       match /answerCandidates/{candidateId} {
-          allow read, list, create: if isVideoCallParticipant(videoCallId);
-          allow update, delete: if false;
+        allow read, list, create: if isSignedIn() && request.auth.uid in get(/databases/$(database)/documents/videoCalls/$(videoCallId)).data.participantIds;
+        allow update, delete: if false;
       }
     }
 

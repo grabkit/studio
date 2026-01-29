@@ -75,6 +75,7 @@ export function useCallHandler(
             const callData: Omit<Call, 'id' | 'createdAt'> = {
                 callerId: user.uid,
                 calleeId: calleeId,
+                participantIds: [user.uid, calleeId].sort(),
                 status: 'offering',
             };
             await setDoc(callDocRef, { ...callData, createdAt: serverTimestamp() });

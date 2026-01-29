@@ -218,6 +218,7 @@ export interface Call {
   id: string;
   callerId: string;
   calleeId: string;
+  participantIds: string[];
   status: CallStatus;
   offer?: any;
   answer?: any;
@@ -236,6 +237,7 @@ export interface VideoCall {
     id: string;
     callerId: string;
     calleeId: string;
+    participantIds: string[];
     status: 'offering' | 'ringing' | 'answered' | 'ended' | 'declined' | 'missed';
     offer?: any;
     answer?: any;
