@@ -41,7 +41,6 @@ export function VideoCallView({
 }: VideoCallViewProps) {
   const [duration, setDuration] = useState(0);
   
-  // Use callback refs for more robust stream attachment
   const localVideoRef = useCallback((node: HTMLVideoElement | null) => {
     if (node && localStream) {
       node.srcObject = localStream;
@@ -84,6 +83,8 @@ export function VideoCallView({
         default: return 'Connecting...';
     }
   }
+  
+  const showActiveCallControls = status === 'answered' || !!remoteStream;
 
   return (
     <div className="fixed inset-0 bg-background/90 backdrop-blur-sm z-50 flex flex-col items-center justify-center">
@@ -116,19 +117,23 @@ export function VideoCallView({
 
         {/* Controls */}
        <div className="absolute bottom-8 flex items-center justify-center gap-6 w-full">
-            {status === 'answered' && (
+            {!showActiveCallControls ? (
+                <Button onClick={onHangUp} variant="destructive" size="icon" className="h-16 w-16 rounded-full">
+                    <PhoneOff className="h-7 w-7" />
+                </Button>
+            ) : (
                 <>
                     <Button onClick={toggleMute} variant="secondary" size="icon" className="h-14 w-14 rounded-full bg-white/20 text-white backdrop-blur-md">
                         {isMuted ? <MicOff className="h-6 w-6" /> : <Mic className="h-6 w-6" />}
+                    </Button>
+                    <Button onClick={onHangUp} variant="destructive" size="icon" className="h-16 w-16 rounded-full">
+                        <PhoneOff className="h-7 w-7" />
                     </Button>
                     <Button onClick={toggleVideo} variant="secondary" size="icon" className="h-14 w-14 rounded-full bg-white/20 text-white backdrop-blur-md">
                         {isVideoEnabled ? <Video className="h-6 w-6" /> : <VideoOff className="h-6 w-6" />}
                     </Button>
                 </>
             )}
-            <Button onClick={onHangUp} variant="destructive" size="icon" className="h-16 w-16 rounded-full">
-                <PhoneOff className="h-7 w-7" />
-            </Button>
       </div>
     </div>
   );
