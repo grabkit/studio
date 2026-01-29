@@ -454,15 +454,15 @@ function RoomMessageBubble({ message, showAvatarAndName, onSetReply, onForward, 
          )}>
              <SheetTrigger asChild>
                 <div className={cn(
-                    "rounded-2xl",
+                    "rounded-2xl max-w-[80%]",
                     isOwnMessage ? "bg-primary text-primary-foreground rounded-br-none" : "bg-secondary text-foreground rounded-bl-none",
-                    (isPostShare || isLinkShare) ? 'w-64' : 'max-w-[80%]'
+                    (isPostShare || isLinkShare) && 'w-64'
                 )}>
                     {bubbleContent}
                 </div>
             </SheetTrigger>
             {room?.id === 'ask_space' && (
-                <Button variant="ghost" size="sm" className="mt-1 justify-center items-center rounded-[10px] border border-secondary bg-secondary/10 text-muted-foreground hover:bg-secondary/20 hover:text-primary px-3 gap-1 h-auto py-1" onClick={() => setIsAnswersSheetOpen(true)}>
+                <Button className="mt-1 justify-center items-center rounded-[10px] border bg-green-100 border-green-600 text-green-800 hover:bg-green-200 dark:bg-green-900/30 dark:border-green-700 dark:text-green-300 dark:hover:bg-green-900/50 px-3 gap-1 h-auto py-1 max-w-[80%]" onClick={() => setIsAnswersSheetOpen(true)}>
                     {message.answerCount > 0 && <span className="text-xs font-bold">{message.answerCount}</span>}
                     <span className="text-sm">Answers</span>
                     <ChevronDown className="h-4 w-4" />
