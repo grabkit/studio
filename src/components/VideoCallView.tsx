@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useState, useEffect, useRef, useCallback } from "react";
@@ -92,7 +93,7 @@ export function VideoCallView({
   return (
     <div className="fixed inset-0 bg-background/90 backdrop-blur-sm z-50 flex flex-col items-center justify-center">
         {/* Remote Video */}
-        <video ref={remoteVideoRef} autoPlay playsInline className="h-full w-full object-cover absolute top-0 left-0" />
+        <video ref={remoteVideoRef} autoPlay playsInline className="h-full w-full object-cover absolute top-0 left-0" style={{ display: remoteStream ? 'block' : 'none' }} />
         
         {/* Remote user info overlay when their video is off */}
         <AnimatePresence>
@@ -122,13 +123,13 @@ export function VideoCallView({
         <video ref={localVideoRef} autoPlay playsInline muted className="absolute top-6 right-6 h-48 w-36 rounded-lg object-cover border-2 border-white shadow-2xl transition-opacity duration-300" style={{ opacity: isVideoEnabled ? 1 : 0 }} />
 
         {/* Controls */}
-       <div className="absolute bottom-8 flex items-center justify-center gap-6 w-full">
+       <div className="absolute bottom-20 flex items-center justify-center gap-8 w-full">
             {!showActiveCallControls ? (
                 <Button onClick={onHangUp} variant="destructive" size="icon" className="h-16 w-16 rounded-full">
                     <PhoneOff className="h-7 w-7" />
                 </Button>
             ) : (
-                <>
+                <div className="flex items-center gap-6">
                     <Button onClick={toggleMute} variant="secondary" size="icon" className="h-14 w-14 rounded-full bg-white/20 text-white backdrop-blur-md">
                         {isMuted ? <MicOff className="h-6 w-6" /> : <Mic className="h-6 w-6" />}
                     </Button>
@@ -138,7 +139,7 @@ export function VideoCallView({
                     <Button onClick={toggleVideo} variant="secondary" size="icon" className="h-14 w-14 rounded-full bg-white/20 text-white backdrop-blur-md">
                         {isVideoEnabled ? <Video className="h-6 w-6" /> : <VideoOff className="h-6 w-6" />}
                     </Button>
-                </>
+                </div>
             )}
       </div>
     </div>
