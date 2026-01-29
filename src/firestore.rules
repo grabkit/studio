@@ -137,8 +137,15 @@ service cloud.firestore {
       match /messages/{messageId} {
         allow read, list: if isSignedIn();
         allow create: if isSignedIn() && request.resource.data.senderId == request.auth.uid;
-        allow update: if false;
+        allow update: if isSignedIn() && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['answerCount']);
         allow delete: if isOwner(resource.data.senderId);
+
+        match /answers/{answerId} {
+          allow read, list: if isSignedIn();
+          allow create: if isSignedIn() && request.resource.data.authorId == request.auth.uid;
+          allow delete: if isOwner(resource.data.authorId);
+          allow update: if false;
+        }
       }
     }
 
@@ -261,5 +268,3 @@ service cloud.firestore {
     }
   }
 }
-
-    

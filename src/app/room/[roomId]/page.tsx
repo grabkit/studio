@@ -3,7 +3,7 @@
 
 import { useParams, useRouter } from 'next/navigation';
 import { useFirebase, useMemoFirebase } from '@/firebase';
-import { collection, query, orderBy, doc, setDoc, serverTimestamp, updateDoc, arrayUnion, getDoc, deleteDoc, Timestamp, arrayRemove } from 'firebase/firestore';
+import { collection, query, orderBy, doc, setDoc, serverTimestamp, updateDoc, arrayUnion, getDoc, deleteDoc, Timestamp, arrayRemove, increment, runTransaction } from 'firebase/firestore';
 import { useCollection, WithId } from '@/firebase/firestore/use-collection';
 import { useDoc } from '@/firebase/firestore/use-doc';
 import { useForm } from 'react-hook-form';
@@ -19,12 +19,12 @@ import { Textarea } from '@/components/ui/textarea';
 import { Form, FormControl, FormField, FormItem } from '@/components/ui/form';
 import { Skeleton } from '@/components/ui/skeleton';
 import { ArrowLeft, Send, Copy, Trash2, Forward, Reply, X, ExternalLink, MessageCircle, Heart, List, Loader2, Users, Tag, ChevronDown } from 'lucide-react';
-import { cn, getAvatar, formatMessageTimestamp, formatUserId, formatDateSeparator } from '@/lib/utils';
-import type { Room, RoomMessage, User, Post, LinkMetadata } from '@/lib/types';
+import { cn, getAvatar, formatMessageTimestamp, formatUserId, formatDateSeparator, formatTimestamp } from '@/lib/utils';
+import type { Room, RoomMessage, User, Post, LinkMetadata, Answer } from '@/lib/types';
 import { isSameDay } from 'date-fns';
 import { motion } from 'framer-motion';
 import { usePresence } from '@/hooks/usePresence';
-import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from '@/components/ui/sheet';
+import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger, SheetDescription } from '@/components/ui/sheet';
 import { useToast } from '@/hooks/use-toast';
 import { FirestorePermissionError, errorEmitter } from '@/firebase';
 import { ForwardSheet } from '@/components/ForwardSheet';
@@ -33,6 +33,123 @@ import UserList from '@/components/UserList';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { AlertDialog, AlertDialogContent } from '@/components/ui/alert-dialog';
 
+
+const answerFormSchema = z.object({
+  content: z.string().min(1, "Answer cannot be empty.").max(1000),
+});
+
+function AnswerItem({ answer }: { answer: WithId<Answer> }) {
+    const { firestore } = useFirebase();
+    const senderRef = useMemoFirebase(() => doc(firestore, 'users', answer.authorId), [firestore, answer.authorId]);
+    const { data: sender } = useDoc<User>(senderRef);
+    const avatar = getAvatar(sender);
+    const isAvatarUrl = avatar.startsWith('http');
+
+    return (
+        <div className="flex items-start gap-3 py-3">
+            <Avatar size="sm">
+                <AvatarImage src={isAvatarUrl ? avatar : undefined} />
+                <AvatarFallback>{!isAvatarUrl ? avatar : ''}</AvatarFallback>
+            </Avatar>
+            <div className="flex-1">
+                <div className="flex items-center gap-2">
+                    <p className="text-sm font-semibold">{sender ? formatUserId(sender.id) : '...'}</p>
+                    <p className="text-xs text-muted-foreground">{answer.timestamp ? formatTimestamp(answer.timestamp.toDate()) : ''}</p>
+                </div>
+                <p className="text-sm text-foreground">{answer.content}</p>
+            </div>
+        </div>
+    );
+}
+
+function AnswersSheet({ isOpen, onOpenChange, room, message }: { isOpen: boolean, onOpenChange: (open: boolean) => void, room: WithId<Room>, message: WithId<RoomMessage> }) {
+    const { firestore, user } = useFirebase();
+    const { toast } = useToast();
+
+    const answersQuery = useMemoFirebase(() => {
+        if (!firestore) return null;
+        return query(
+            collection(firestore, 'rooms', room.id, 'messages', message.id, 'answers'),
+            orderBy('timestamp', 'desc')
+        );
+    }, [firestore, room.id, message.id]);
+    const { data: answers, isLoading } = useCollection<Answer>(answersQuery);
+
+    const form = useForm<z.infer<typeof answerFormSchema>>({
+        resolver: zodResolver(answerFormSchema),
+        defaultValues: { content: "" },
+    });
+
+    const onSubmit = async (values: z.infer<typeof answerFormSchema>) => {
+        if (!firestore || !user) return;
+
+        const messageRef = doc(firestore, 'rooms', room.id, 'messages', message.id);
+        const answerColRef = collection(messageRef, 'answers');
+
+        const newAnswerData = {
+            authorId: user.uid,
+            content: values.content,
+            timestamp: serverTimestamp(),
+        };
+
+        try {
+            await runTransaction(firestore, async (transaction) => {
+                const newAnswerRef = doc(answerColRef);
+                transaction.set(newAnswerRef, { ...newAnswerData, id: newAnswerRef.id });
+                transaction.update(messageRef, { answerCount: increment(1) });
+            });
+            form.reset();
+        } catch (error) {
+            console.error("Error submitting answer:", error);
+            toast({ variant: 'destructive', title: 'Error', description: 'Could not submit your answer.' });
+        }
+    };
+    
+    return (
+        <Sheet open={isOpen} onOpenChange={onOpenChange}>
+            <SheetContent side="bottom" className="h-[90dvh] flex flex-col p-0">
+                <SheetHeader className="p-4 border-b">
+                    <SheetTitle>Answers</SheetTitle>
+                    <SheetDescription>
+                        <p className="text-sm text-muted-foreground line-clamp-2">{message.text}</p>
+                    </SheetDescription>
+                </SheetHeader>
+                <ScrollArea className="flex-grow px-4">
+                    {isLoading && <div className="text-center py-10"><Loader2 className="h-6 w-6 animate-spin mx-auto" /></div>}
+                    {!isLoading && answers?.length === 0 && <p className="text-center text-muted-foreground py-10">No answers yet. Be the first!</p>}
+                    <div className="divide-y">
+                        {answers?.map(answer => <AnswerItem key={answer.id} answer={answer} />)}
+                    </div>
+                </ScrollArea>
+                <div className="p-2 border-t bg-background">
+                     <Form {...form}>
+                        <form onSubmit={form.handleSubmit(onSubmit)} className="flex items-center gap-2">
+                             <FormField
+                                control={form.control}
+                                name="content"
+                                render={({ field }) => (
+                                    <FormItem className="flex-1">
+                                        <FormControl>
+                                            <Textarea
+                                                placeholder="Write your answer..."
+                                                className="bg-secondary rounded-full"
+                                                rows={1}
+                                                {...field}
+                                            />
+                                        </FormControl>
+                                    </FormItem>
+                                )}
+                            />
+                            <Button type="submit" size="icon" className="rounded-full" disabled={form.formState.isSubmitting}>
+                                {form.formState.isSubmitting ? <Loader2 className="h-4 w-4 animate-spin" /> : <Send className="h-4 w-4" />}
+                            </Button>
+                        </form>
+                    </Form>
+                </div>
+            </SheetContent>
+        </Sheet>
+    );
+}
 
 const messageFormSchema = z.object({
   text: z.string().max(1000).optional(),
@@ -153,13 +270,14 @@ function RoomHeader({ room }: { room: WithId<Room> | null }) {
     )
 }
 
-function RoomMessageBubble({ message, showAvatarAndName, onSetReply, onForward, roomId }: { message: WithId<RoomMessage>, showAvatarAndName: boolean, onSetReply: (message: WithId<RoomMessage>) => void, onForward: (message: WithId<RoomMessage>) => void, roomId: string }) {
+function RoomMessageBubble({ message, showAvatarAndName, onSetReply, onForward, room }: { message: WithId<RoomMessage>, showAvatarAndName: boolean, onSetReply: (message: WithId<RoomMessage>) => void, onForward: (message: WithId<RoomMessage>) => void, room: WithId<Room> | null }) {
     const { firestore, user: currentUser } = useFirebase();
     const router = useRouter();
     const isOwnMessage = message.senderId === currentUser?.uid;
     const { isOnline } = usePresence(message.senderId);
     const { toast } = useToast();
     const [isSheetOpen, setIsSheetOpen] = useState(false);
+    const [isAnswersSheetOpen, setIsAnswersSheetOpen] = useState(false);
 
     const senderRef = useMemoFirebase(() => doc(firestore, 'users', message.senderId), [firestore, message.senderId]);
     const { data: sender } = useDoc<User>(senderRef);
@@ -299,7 +417,7 @@ function RoomMessageBubble({ message, showAvatarAndName, onSetReply, onForward, 
     );
 
     const bubbleAndButtonContainer = (
-         <div className={cn("flex flex-col", isOwnMessage ? 'items-end' : 'items-start')}>
+         <div className="inline-flex flex-col items-start">
              <SheetTrigger asChild>
                 <div className={cn(
                     "rounded-2xl w-fit",
@@ -309,9 +427,10 @@ function RoomMessageBubble({ message, showAvatarAndName, onSetReply, onForward, 
                     {bubbleContent}
                 </div>
             </SheetTrigger>
-            {roomId === 'ask_space' && !isOwnMessage && message.text && (
-                <Button variant="ghost" size="sm" className="mt-1 justify-center items-center rounded-[10px] border border-secondary bg-secondary/10 text-muted-foreground hover:bg-secondary/20 hover:text-primary px-3 gap-1">
-                    <span>Answers</span>
+            {room?.id === 'ask_space' && !isOwnMessage && message.text && (
+                <Button variant="ghost" size="sm" className="mt-1 justify-center items-center rounded-[10px] border border-secondary bg-secondary/10 text-muted-foreground hover:bg-secondary/20 hover:text-primary px-3 gap-1 h-auto py-1" onClick={() => setIsAnswersSheetOpen(true)}>
+                    {message.answerCount > 0 && <span className="text-xs font-bold">{message.answerCount}</span>}
+                    <span className="text-sm">Answers</span>
                     <ChevronDown className="h-4 w-4" />
                 </Button>
             )}
@@ -319,6 +438,7 @@ function RoomMessageBubble({ message, showAvatarAndName, onSetReply, onForward, 
     );
 
     return (
+        <>
         <Sheet open={isSheetOpen} onOpenChange={setIsSheetOpen}>
             <div className={cn(
                 "flex items-start gap-2 w-full",
@@ -401,10 +521,12 @@ function RoomMessageBubble({ message, showAvatarAndName, onSetReply, onForward, 
                 </div>
             </SheetContent>
         </Sheet>
+        {room && <AnswersSheet isOpen={isAnswersSheetOpen} onOpenChange={setIsAnswersSheetOpen} room={room} message={message} />}
+        </>
     );
 }
 
-function RoomMessages({ roomId, onSetReply, onForward }: { roomId: string, onSetReply: (message: WithId<RoomMessage>) => void, onForward: (message: WithId<RoomMessage>) => void }) {
+function RoomMessages({ roomId, room, onSetReply, onForward }: { roomId: string, room: WithId<Room> | null, onSetReply: (message: WithId<RoomMessage>) => void, onForward: (message: WithId<RoomMessage>) => void }) {
     const { firestore, user } = useFirebase();
     const messagesEndRef = useRef<HTMLDivElement | null>(null);
 
@@ -466,7 +588,7 @@ function RoomMessages({ roomId, onSetReply, onForward }: { roomId: string, onSet
                 const prevMessage = index > 0 ? messagesWithSeparators![index - 1] : null;
                 const showAvatarAndName = !prevMessage || prevMessage.type === 'separator' || (prevMessage as WithId<RoomMessage>).senderId !== message.senderId;
 
-                return <RoomMessageBubble key={message.id} message={message} showAvatarAndName={showAvatarAndName} onSetReply={onSetReply} onForward={onForward} roomId={roomId}/>
+                return <RoomMessageBubble key={message.id} message={message} showAvatarAndName={showAvatarAndName} onSetReply={onSetReply} onForward={onForward} room={room}/>
             })}
              <div ref={messagesEndRef} />
         </div>
@@ -693,7 +815,7 @@ export default function RoomChatPage() {
             >
                 <RoomHeader room={room} />
                  <div className="flex-1 overflow-y-auto pt-14 pb-20">
-                    <RoomMessages roomId={roomId} onSetReply={handleSetReply} onForward={handleForward} />
+                    <RoomMessages roomId={roomId} room={room} onSetReply={handleSetReply} onForward={handleForward} />
                 </div>
                 {room && <MessageInput room={room} replyingTo={replyingTo} onCancelReply={handleCancelReply} />}
                 <ForwardSheet 

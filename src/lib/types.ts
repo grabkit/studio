@@ -188,8 +188,15 @@ export interface RoomMessage {
   isForwarded?: boolean;
   linkMetadata?: LinkMetadata;
   deletedFor?: string[];
+  answerCount?: number;
 }
 
+export interface Answer {
+  id: string;
+  authorId: string;
+  content: string;
+  timestamp: Timestamp;
+}
 
 export interface ReplyItem extends Comment {
     postContent: string;
