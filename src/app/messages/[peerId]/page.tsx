@@ -355,7 +355,7 @@ function ChatHeader({ peerId, peerUser, onStartCall, onStartVideoCall, conversat
                         {isOnline ? (
                             <>
                                 <span className="h-2 w-2 rounded-full bg-green-500 animate-pulse"></span>
-                                <span>Active now</span>
+                                <span className="text-green-500 font-medium">Active now</span>
                             </>
                         ) : (
                             <span>{formatLastSeen(lastSeen)}</span>
@@ -807,6 +807,7 @@ export default function ChatPage() {
     
 
     
+
 
 
 
