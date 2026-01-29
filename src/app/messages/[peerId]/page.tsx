@@ -643,10 +643,9 @@ function MessageInput({ conversationId, conversation, replyingTo, onCancelReply 
 }
 
 export default function ChatPage() {
-    const { firestore, user, startCall } = useFirebase();
+    const { firestore, user, startCall, startVideoCall } = useFirebase();
     const params = useParams();
     const router = useRouter();
-    const { toast } = useToast();
 
     const [replyingTo, setReplyingTo] = useState<WithId<Message> | null>(null);
     const [forwardingMessage, setForwardingMessage] = useState<WithId<Message> | null>(null);
@@ -680,10 +679,9 @@ export default function ChatPage() {
     };
     
     const handleStartVideoCall = () => {
-        toast({
-            title: "Coming Soon!",
-            description: "Video call feature is under development.",
-        });
+        if (peerId) {
+            startVideoCall(peerId);
+        }
     };
 
     const conversationRef = useMemoFirebase(() => {
@@ -807,5 +805,3 @@ export default function ChatPage() {
     
 
     
-
-

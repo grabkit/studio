@@ -8,7 +8,7 @@ import { Auth, User, onAuthStateChanged } from 'firebase/auth';
 import { Database, ref, onValue, onDisconnect, set, serverTimestamp as dbServerTimestamp } from 'firebase/database';
 import { FirebaseErrorListener } from '@/components/FirebaseErrorListener';
 import { useDoc, type WithId } from './firestore/use-doc';
-import type { User as UserProfile, Call, CallStatus } from '@/lib/types';
+import type { User as UserProfile, Call, CallStatus, VideoCall, VideoCallStatus } from '@/lib/types';
 import { VoiceStatusPlayer } from '@/components/VoiceStatusPlayer';
 import { useToast } from '@/hooks/use-toast';
 import { FirestorePermissionError } from './errors';
@@ -17,6 +17,10 @@ import { getFormattedUserIdString } from '@/lib/utils.tsx';
 import { useCallHandler } from '@/hooks/useCallHandler';
 import { IncomingCallView } from '@/components/IncomingCallView';
 import { OnCallView } from '@/components/OnCallView';
+import { useVideoCallHandler } from '@/hooks/useVideoCallHandler';
+import { IncomingVideoCallView } from '@/components/IncomingVideoCallView';
+import { VideoCallView } from '@/components/VideoCallView';
+
 
 // Internal state for user authentication
 interface UserAuthState {
@@ -52,33 +56,24 @@ export interface FirebaseContextState {
   acceptCall: () => void;
   declineCall: () => void;
   hangUp: () => void;
+  // Video Call State
+  startVideoCall: (calleeId: string) => void;
+  activeVideoCall: WithId<VideoCall> | null;
+  incomingVideoCall: WithId<VideoCall> | null;
+  videoCallStatus: VideoCallStatus | null;
+  acceptVideoCall: () => void;
+  declineVideoCall: () => void;
+  hangUpVideoCall: () => void;
 }
 
 // Return type for useFirebase()
-export interface FirebaseServicesAndUser {
+export interface FirebaseServicesAndUser extends Omit<FirebaseContextState, 'areServicesAvailable'> {
   firebaseApp: FirebaseApp;
   firestore: Firestore;
   database: Database;
   auth: Auth;
-  user: User | null;
-  isUserLoading: boolean;
-  userError: Error | null;
-  userProfile: WithId<UserProfile> | null;
-  isUserProfileLoading: boolean;
-  setUserProfile: React.Dispatch<React.SetStateAction<WithId<UserProfile> | null>>;
-  setActiveUserProfile: (user: WithId<UserProfile> | null) => void;
-  showVoiceStatusPlayer: (user: WithId<UserProfile>) => void;
-  isVoicePlayerPlaying: boolean;
-  handleDeleteVoiceStatus: () => Promise<void>;
-   // Voice Call State
-  startCall: (calleeId: string) => void;
-  activeCall: WithId<Call> | null;
-  incomingCall: WithId<Call> | null;
-  callStatus: CallStatus | null;
-  acceptCall: () => void;
-  declineCall: () => void;
-  hangUp: () => void;
 }
+
 
 // Return type for useUser() - specific to user auth state
 export interface UserHookResult { 
@@ -111,22 +106,24 @@ export const FirebaseProvider: React.FC<FirebaseProviderProps> = ({
   const [voiceStatusUser, setVoiceStatusUser] = useState<WithId<UserProfile> | null>(null);
   const [isVoicePlayerPlaying, setIsVoicePlayerPlaying] = useState(false);
   const voiceAudioRef = useRef<HTMLAudioElement | null>(null);
-  const remoteAudioRef = useRef<HTMLAudioElement>(null);
+  const remoteAudioRef = useRef<HTMLAudioElement | null>(null);
   const [isMounted, setIsMounted] = useState(false);
   
+  // Voice Call Hook
   const {
       startCall,
       acceptCall,
       declineCall,
       hangUp,
-      toggleMute,
-      isMuted,
       activeCall,
       incomingCall,
       callStatus,
-      localStream,
       remoteStream,
   } = useCallHandler(firestore, userAuthState.user);
+  
+  // Video Call Hook
+  const videoCallHandler = useVideoCallHandler(firestore, userAuthState.user);
+
   
   const onVoicePlayerClose = () => {
     if (voiceAudioRef.current) {
@@ -143,7 +140,6 @@ export const FirebaseProvider: React.FC<FirebaseProviderProps> = ({
       voiceAudioRef.current.src = user.voiceStatusUrl;
       voiceAudioRef.current.play().catch(e => {
         console.error("Audio play failed:", e);
-        // Clean up on failure
         onVoicePlayerClose();
       });
     }
@@ -175,6 +171,14 @@ export const FirebaseProvider: React.FC<FirebaseProviderProps> = ({
     return doc(firestore, 'users', callerId);
   }, [firestore, callerId]);
   const { data: callerProfile } = useDoc<UserProfile>(callerRef);
+  
+  const videoCallerId = videoCallHandler.incomingCall?.callerId;
+  const videoCallerRef = useMemoFirebase(() => {
+    if (!firestore || !videoCallerId) return null;
+    return doc(firestore, 'users', videoCallerId);
+  }, [firestore, videoCallerId]);
+  const { data: videoCallerProfile } = useDoc<UserProfile>(videoCallerRef);
+
 
   const remoteUserId = activeCall?.participantIds?.find(id => id !== userAuthState.user?.uid);
   const remoteUserRef = useMemoFirebase(() => {
@@ -182,6 +186,14 @@ export const FirebaseProvider: React.FC<FirebaseProviderProps> = ({
       return doc(firestore, 'users', remoteUserId);
   }, [firestore, remoteUserId]);
   const { data: remoteUserProfile } = useDoc<UserProfile>(remoteUserRef);
+  
+  const remoteVideoUserId = videoCallHandler.activeCall?.participantIds?.find(id => id !== userAuthState.user?.uid);
+  const remoteVideoUserRef = useMemoFirebase(() => {
+    if (!firestore || !remoteVideoUserId) return null;
+    return doc(firestore, 'users', remoteVideoUserId);
+  }, [firestore, remoteVideoUserId]);
+  const { data: remoteVideoUserProfile } = useDoc<UserProfile>(remoteVideoUserRef);
+
 
   // Backfill username for existing users
   useEffect(() => {
@@ -191,7 +203,6 @@ export const FirebaseProvider: React.FC<FirebaseProviderProps> = ({
 
       updateDoc(userDocRef, { username: username })
         .then(() => {
-          // Optimistically update the local profile state as well
           setLoggedInUserProfile(currentProfile => {
             if (!currentProfile) return null;
             return { ...currentProfile, username: username };
@@ -209,11 +220,10 @@ export const FirebaseProvider: React.FC<FirebaseProviderProps> = ({
     const currentUserId = userAuthState.user.uid;
     const userDocRef = doc(firestore, 'users', currentUserId);
 
-    // Optimistic update of local state before async call
     setLoggedInUserProfile(currentProfile => {
         if (!currentProfile) return null;
         const { voiceStatusUrl, voiceStatusTimestamp, ...rest } = currentProfile;
-        return rest as WithId<UserProfile>; // Cast after removing fields
+        return rest as WithId<UserProfile>;
     });
 
     try {
@@ -223,10 +233,7 @@ export const FirebaseProvider: React.FC<FirebaseProviderProps> = ({
         });
         toast({ title: "Voice Status Deleted" });
     } catch (error) {
-        // Revert optimistic update on error by re-fetching or using a backup
-        // For simplicity, we refetch here by invalidating the doc hook,
-        // but a better UX might restore the previous state instantly.
-        const originalProfile = loggedInUserProfile; // closure capture
+        const originalProfile = loggedInUserProfile;
         setLoggedInUserProfile(originalProfile);
         
         console.error("Failed to delete voice status on server:", error);
@@ -243,7 +250,6 @@ export const FirebaseProvider: React.FC<FirebaseProviderProps> = ({
 
   // Effect to manage the global audio element
   useEffect(() => {
-    // This effect runs only on the client, creating the audio element safely.
     const audio = new Audio();
     audio.className = 'hidden';
     document.body.appendChild(audio);
@@ -257,7 +263,6 @@ export const FirebaseProvider: React.FC<FirebaseProviderProps> = ({
     audio.addEventListener('pause', handlePause);
     audio.addEventListener('ended', handleEnded);
 
-    // Cleanup function to remove the element and listeners
     return () => {
       audio.removeEventListener('play', handlePlay);
       audio.removeEventListener('pause', handlePause);
@@ -268,7 +273,7 @@ export const FirebaseProvider: React.FC<FirebaseProviderProps> = ({
       voiceAudioRef.current = null;
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []); // Empty dependency array ensures this runs only once on the client
+  }, []);
 
 
   // Effect to subscribe to Firebase auth state changes and manage presence
@@ -313,15 +318,14 @@ export const FirebaseProvider: React.FC<FirebaseProviderProps> = ({
 
         }
       },
-      (error) => { // Auth listener error
+      (error) => {
         console.error("FirebaseProvider: onAuthStateChanged error:", error);
         setUserAuthState({ user: null, isUserLoading: false, userError: error });
       }
     );
-    return () => unsubscribe(); // Cleanup
+    return () => unsubscribe();
   }, [auth, database, firestore]);
 
-  // Memoize the context value
   const contextValue = useMemo((): FirebaseContextState => {
     const servicesAvailable = !!(firebaseApp && firestore && auth && database);
     return {
@@ -340,7 +344,7 @@ export const FirebaseProvider: React.FC<FirebaseProviderProps> = ({
       showVoiceStatusPlayer,
       isVoicePlayerPlaying,
       handleDeleteVoiceStatus,
-      // Call state
+      // Voice Call
       startCall,
       activeCall,
       incomingCall,
@@ -348,11 +352,19 @@ export const FirebaseProvider: React.FC<FirebaseProviderProps> = ({
       acceptCall,
       declineCall,
       hangUp,
+      // Video Call
+      startVideoCall: videoCallHandler.startCall,
+      activeVideoCall: videoCallHandler.activeCall,
+      incomingVideoCall: videoCallHandler.incomingCall,
+      videoCallStatus: videoCallHandler.callStatus,
+      acceptVideoCall: videoCallHandler.acceptCall,
+      declineVideoCall: videoCallHandler.declineCall,
+      hangUpVideoCall: videoCallHandler.hangUp,
     };
-  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [
       firebaseApp, firestore, auth, database, userAuthState, userProfile, isUserProfileLoading, isVoicePlayerPlaying, 
-      setLoggedInUserProfile, startCall, activeCall, incomingCall, callStatus, acceptCall, declineCall, hangUp
+      setLoggedInUserProfile, startCall, activeCall, incomingCall, callStatus, acceptCall, declineCall, hangUp,
+      videoCallHandler
   ]);
 
   return (
@@ -369,25 +381,37 @@ export const FirebaseProvider: React.FC<FirebaseProviderProps> = ({
           }}
           onDelete={async () => {
             await handleDeleteVoiceStatus();
-            onVoicePlayerClose(); // Close the player after deletion is initiated
+            onVoicePlayerClose();
           }}
           isVoicePlayerPlaying={isVoicePlayerPlaying}
         />
       )}
       {incomingCall && <IncomingCallView caller={callerProfile} onAccept={acceptCall} onDecline={declineCall} />}
       {activeCall && callStatus !== 'ended' && callStatus !== 'declined' && callStatus !== 'missed' && (
-        <OnCallView remoteUser={remoteUserProfile} status={callStatus} onHangUp={hangUp} isMuted={isMuted} toggleMute={toggleMute} />
+        <OnCallView remoteUser={remoteUserProfile} status={callStatus} onHangUp={hangUp} isMuted={false} toggleMute={() => {}} />
       )}
+      
+      {videoCallHandler.incomingCall && <IncomingVideoCallView caller={videoCallerProfile} onAccept={videoCallHandler.acceptCall} onDecline={videoCallHandler.declineCall} />}
+      {videoCallHandler.activeCall && videoCallHandler.callStatus && !['ended', 'declined', 'missed'].includes(videoCallHandler.callStatus) && (
+        <VideoCallView 
+            remoteUser={remoteVideoUserProfile} 
+            status={videoCallHandler.callStatus}
+            onHangUp={videoCallHandler.hangUp}
+            isMuted={videoCallHandler.isMuted}
+            toggleMute={videoCallHandler.toggleMute}
+            isVideoEnabled={videoCallHandler.isVideoEnabled}
+            toggleVideo={videoCallHandler.toggleVideo}
+            localStream={videoCallHandler.localStream}
+            remoteStream={videoCallHandler.remoteStream}
+        />
+      )}
+
       {isMounted && <audio ref={remoteAudioRef} autoPlay playsInline className="hidden" />}
       {children}
     </FirebaseContext.Provider>
   );
 };
 
-/**
- * Hook to access core Firebase services and user authentication state.
- * Throws error if core services are not available or used outside provider.
- */
 export const useFirebase = (): FirebaseServicesAndUser => {
   const context = useContext(FirebaseContext);
 
@@ -399,45 +423,19 @@ export const useFirebase = (): FirebaseServicesAndUser => {
     throw new Error('Firebase core services not available. Check FirebaseProvider props.');
   }
 
-  return {
-    firebaseApp: context.firebaseApp,
-    firestore: context.firestore,
-    database: context.database,
-    auth: context.auth,
-    user: context.user,
-    isUserLoading: context.isUserLoading,
-    userError: context.userError,
-    userProfile: context.userProfile,
-    isUserProfileLoading: context.isUserProfileLoading,
-    setUserProfile: context.setUserProfile,
-    setActiveUserProfile: context.setActiveUserProfile,
-    showVoiceStatusPlayer: context.showVoiceStatusPlayer,
-    isVoicePlayerPlaying: context.isVoicePlayerPlaying,
-    handleDeleteVoiceStatus: context.handleDeleteVoiceStatus,
-    // Call state
-    startCall: context.startCall,
-    activeCall: context.activeCall,
-    incomingCall: context.incomingCall,
-    callStatus: context.callStatus,
-    acceptCall: context.acceptCall,
-    declineCall: context.declineCall,
-    hangUp: context.hangUp,
-  };
+  return context as FirebaseServicesAndUser;
 };
 
-/** Hook to access Firebase Auth instance. */
 export const useAuth = (): Auth => {
   const { auth } = useFirebase();
   return auth;
 };
 
-/** Hook to access Firestore instance. */
 export const useFirestore = (): Firestore => {
   const { firestore } = useFirebase();
   return firestore;
 };
 
-/** Hook to access Firebase App instance. */
 export const useFirebaseApp = (): FirebaseApp => {
   const { firebaseApp } = useFirebase();
   return firebaseApp;
