@@ -152,9 +152,15 @@ export const FirebaseProvider: React.FC<FirebaseProviderProps> = ({
   }, []);
   
   useEffect(() => {
-    if (isMounted && remoteStream && remoteAudioRef.current) {
-        remoteAudioRef.current.srcObject = remoteStream;
-        remoteAudioRef.current.play().catch(e => console.error("Error playing remote audio:", e));
+    if (remoteAudioRef.current) {
+      if (isMounted && remoteStream) {
+        if (remoteAudioRef.current.srcObject !== remoteStream) {
+            remoteAudioRef.current.srcObject = remoteStream;
+            remoteAudioRef.current.play().catch(e => console.error("Error playing remote audio:", e));
+        }
+      } else {
+        remoteAudioRef.current.srcObject = null;
+      }
     }
   }, [isMounted, remoteStream]);
   
