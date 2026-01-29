@@ -1,4 +1,5 @@
 
+
 'use client';
 
 import { useParams, useRouter } from 'next/navigation';
@@ -891,14 +892,16 @@ export default function RoomChatPage() {
                             </TabsContent>
                         </Tabs>
                     ) : (
-                        <RoomMessages 
-                            messages={messages} 
-                            isLoading={areMessagesLoading} 
-                            room={room} 
-                            onSetReply={handleSetReply} 
-                            onForward={handleForward} 
-                            emptyMessage={<p className="text-center text-muted-foreground py-10">No messages yet.</p>}
-                        />
+                        <div className="pt-14">
+                            <RoomMessages 
+                                messages={messages} 
+                                isLoading={areMessagesLoading} 
+                                room={room} 
+                                onSetReply={handleSetReply} 
+                                onForward={handleForward} 
+                                emptyMessage={<p className="text-center text-muted-foreground py-10">No messages yet.</p>}
+                            />
+                        </div>
                     )}
                 </div>
                 {room && <MessageInput room={room} replyingTo={replyingTo} onCancelReply={handleCancelReply} />}
