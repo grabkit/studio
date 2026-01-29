@@ -110,8 +110,8 @@ function AnswersSheet({ isOpen, onOpenChange, room, message }: { isOpen: boolean
             <SheetContent side="bottom" className="h-[90dvh] flex flex-col p-0">
                 <SheetHeader className="p-4 border-b">
                     <SheetTitle>Answers</SheetTitle>
-                    <SheetDescription>
-                        <p className="text-sm text-muted-foreground line-clamp-2">{message.text}</p>
+                    <SheetDescription className="line-clamp-2">
+                        {message.text}
                     </SheetDescription>
                 </SheetHeader>
                 <ScrollArea className="flex-grow px-4">
@@ -294,9 +294,9 @@ function RoomMessageBubble({ message, showAvatarAndName, onSetReply, onForward, 
     }
 
     const handleUnsend = () => {
-        if (!firestore || !isOwnMessage) return;
+        if (!firestore || !isOwnMessage || !room) return;
         setIsSheetOpen(false);
-        const messageRef = doc(firestore, 'rooms', message.roomId, 'messages', message.id);
+        const messageRef = doc(firestore, 'rooms', room.id, 'messages', message.id);
         deleteDoc(messageRef).catch(serverError => {
             const permissionError = new FirestorePermissionError({
                 path: messageRef.path,
@@ -312,9 +312,9 @@ function RoomMessageBubble({ message, showAvatarAndName, onSetReply, onForward, 
     }
 
     const handleDeleteForMe = () => {
-        if (!firestore || !currentUser) return;
+        if (!firestore || !room || !currentUser) return;
         setIsSheetOpen(false);
-        const messageRef = doc(firestore, 'rooms', message.roomId, 'messages', message.id);
+        const messageRef = doc(firestore, 'rooms', room.id, 'messages', message.id);
         updateDoc(messageRef, {
             deletedFor: arrayUnion(currentUser.uid)
         }).catch(serverError => {
@@ -420,7 +420,7 @@ function RoomMessageBubble({ message, showAvatarAndName, onSetReply, onForward, 
          <div className="inline-flex flex-col items-start">
              <SheetTrigger asChild>
                 <div className={cn(
-                    "rounded-2xl w-fit",
+                    "rounded-2xl",
                     (isPostShare || isLinkShare) ? 'w-64' : 'max-w-full',
                     isOwnMessage ? "bg-primary text-primary-foreground rounded-br-none" : "bg-secondary text-foreground rounded-bl-none",
                 )}>
@@ -827,3 +827,5 @@ export default function RoomChatPage() {
         </AppLayout>
     )
 }
+
+    
