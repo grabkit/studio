@@ -334,9 +334,8 @@ function RoomMessageBubble({ message, showAvatarAndName, onSetReply, onForward, 
                     </SheetTrigger>
                      {roomId === 'ask_space' && !isOwnMessage && message.text && (
                         <div className="mt-1 flex justify-start">
-                            <Button variant="ghost" size="sm" className="rounded-full text-muted-foreground hover:bg-secondary hover:text-primary">
-                                <Tag className="h-4 w-4 mr-1" />
-                                Tag
+                             <Button variant="ghost" size="sm" className="rounded-[10px] border border-secondary bg-secondary/10 text-muted-foreground hover:bg-secondary/20 hover:text-primary px-3">
+                                Answers
                             </Button>
                         </div>
                     )}
