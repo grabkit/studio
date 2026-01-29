@@ -1,4 +1,5 @@
 
+
 'use client';
 
 import { useParams, useRouter } from 'next/navigation';
@@ -111,7 +112,7 @@ function AnswersSheet({ isOpen, onOpenChange, room, message }: { isOpen: boolean
         defaultValues: { content: "" },
     });
 
-    const onSubmit = async (values: z.infer<typeof answerFormSchema>>) => {
+    const onSubmit = async (values: z.infer<typeof answerFormSchema>) => {
         if (!firestore || !user) return;
 
         const messageRef = doc(firestore, 'rooms', room.id, 'messages', message.id);
@@ -448,7 +449,7 @@ function RoomMessageBubble({ message, showAvatarAndName, onSetReply, onForward, 
     );
 
     const bubbleAndButtonContainer = (
-        <div className={cn("flex flex-col max-w-[80%]")}>
+        <div className={cn("flex flex-col max-w-[80%]", isOwnMessage ? 'items-end' : 'items-start' )}>
              <SheetTrigger asChild>
                 <div className={cn(
                     "rounded-2xl",
@@ -670,7 +671,7 @@ function MessageInput({ room, replyingTo, onCancelReply }: { room: WithId<Room>,
     };
 
 
-    const onSubmit = (values: z.infer<typeof messageFormSchema>>) => {
+    const onSubmit = (values: z.infer<typeof messageFormSchema>) => {
         if (!firestore || !user || !room) return;
 
         const messageRef = doc(collection(firestore, 'rooms', room.id, 'messages'));
@@ -861,15 +862,17 @@ export default function RoomChatPage() {
                 transition={{ duration: 0.3 }}
                 className="flex flex-col h-screen"
             >
-                <div className="sticky top-0 z-20 bg-background">
+                 <div className="sticky top-0 z-20 bg-background flex flex-col">
                     <RoomHeader room={room} />
                     {isAskSpace && (
-                        <Tabs defaultValue="all" className="w-full">
-                             <TabsList variant="underline" className="grid w-full grid-cols-2">
-                                <TabsTrigger value="all" variant="underline">All Questions</TabsTrigger>
-                                <TabsTrigger value="mine" variant="underline">My Questions</TabsTrigger>
-                            </TabsList>
-                        </Tabs>
+                         <div className="px-4">
+                             <Tabs defaultValue="all" className="w-full">
+                                <TabsList variant="underline" className="grid w-full grid-cols-2">
+                                    <TabsTrigger value="all" variant="underline">All Questions</TabsTrigger>
+                                    <TabsTrigger value="mine" variant="underline">My Questions</TabsTrigger>
+                                </TabsList>
+                            </Tabs>
+                         </div>
                     )}
                 </div>
                  
