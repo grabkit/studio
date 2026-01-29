@@ -96,11 +96,10 @@ service cloud.firestore {
     }
 
     match /calls/{callId} {
-      allow get: if isSignedIn() && request.auth.uid in resource.data.participantIds;
+      allow get, delete: if isSignedIn() && request.auth.uid in resource.data.participantIds;
       allow list: if isSignedIn();
-      allow create: if isSignedIn() && request.auth.uid in request.resource.data.participantIds && request.resource.data.callerId == request.auth.uid;
-      allow update: if isSignedIn() && request.auth.uid in resource.data.participantIds && request.resource.data.diff(resource.data).hasOnly(['status', 'answer', 'offer']);
-      allow delete: if isSignedIn() && request.auth.uid in resource.data.participantIds;
+      allow create: if isSignedIn() && request.auth.uid == request.resource.data.callerId;
+      allow update: if isSignedIn() && request.auth.uid in resource.data.participantIds;
       
       match /callerCandidates/{candidateId} {
         allow read, list, create: if isSignedIn() && request.auth.uid in get(/databases/$(database)/documents/calls/$(callId)).data.participantIds;
@@ -114,11 +113,10 @@ service cloud.firestore {
     }
 
     match /videoCalls/{videoCallId} {
-      allow get: if isSignedIn() && request.auth.uid in resource.data.participantIds;
+      allow get, delete: if isSignedIn() && request.auth.uid in resource.data.participantIds;
       allow list: if isSignedIn();
-      allow create: if isSignedIn() && request.auth.uid in request.resource.data.participantIds && request.resource.data.callerId == request.auth.uid;
-      allow update: if isSignedIn() && request.auth.uid in resource.data.participantIds && request.resource.data.diff(resource.data).hasOnly(['status', 'answer', 'offer']);
-      allow delete: if isSignedIn() && request.auth.uid in resource.data.participantIds;
+      allow create: if isSignedIn() && request.auth.uid == request.resource.data.callerId;
+      allow update: if isSignedIn() && request.auth.uid in resource.data.participantIds;
       
       match /callerCandidates/{candidateId} {
         allow read, list, create: if isSignedIn() && request.auth.uid in get(/databases/$(database)/documents/videoCalls/$(videoCallId)).data.participantIds;
