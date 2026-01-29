@@ -1,3 +1,4 @@
+
 'use client';
 
 import React, { DependencyList, createContext, useContext, ReactNode, useMemo, useState, useEffect, useRef } from 'react';
@@ -111,6 +112,7 @@ export const FirebaseProvider: React.FC<FirebaseProviderProps> = ({
   const [isVoicePlayerPlaying, setIsVoicePlayerPlaying] = useState(false);
   const voiceAudioRef = useRef<HTMLAudioElement | null>(null);
   const remoteAudioRef = useRef<HTMLAudioElement>(null);
+  const [isMounted, setIsMounted] = useState(false);
   
   const {
       startCall,
@@ -146,13 +148,17 @@ export const FirebaseProvider: React.FC<FirebaseProviderProps> = ({
       });
     }
   };
+
+  useEffect(() => {
+    setIsMounted(true);
+  }, []);
   
   useEffect(() => {
-    if (remoteStream && remoteAudioRef.current) {
+    if (isMounted && remoteStream && remoteAudioRef.current) {
         remoteAudioRef.current.srcObject = remoteStream;
         remoteAudioRef.current.play().catch(e => console.error("Error playing remote audio:", e));
     }
-  }, [remoteStream]);
+  }, [isMounted, remoteStream]);
   
   const loggedInUserProfileRef = useMemoFirebase(() => {
     if (!firestore || !userAuthState.user) return null;
@@ -372,7 +378,7 @@ export const FirebaseProvider: React.FC<FirebaseProviderProps> = ({
       {activeCall && callStatus !== 'ended' && callStatus !== 'declined' && callStatus !== 'missed' && (
         <OnCallView remoteUser={remoteUserProfile} status={callStatus} onHangUp={hangUp} isMuted={isMuted} toggleMute={toggleMute} />
       )}
-      <audio ref={remoteAudioRef} autoPlay playsInline className="hidden" />
+      {isMounted && <audio ref={remoteAudioRef} autoPlay playsInline className="hidden" />}
       {children}
     </FirebaseContext.Provider>
   );
