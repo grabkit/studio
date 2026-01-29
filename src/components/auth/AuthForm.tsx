@@ -177,7 +177,7 @@ export default function AuthForm() {
 
   return (
     <div className="w-full space-y-6">
-        <div className="text-center -mt-40">
+        <div className="text-center">
             <h1 className="text-2xl font-headline">
               {authMode === "login" ? "Login" : "Sign Up"}
             </h1>
