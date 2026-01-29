@@ -142,7 +142,7 @@ function AnswersSheet({ isOpen, onOpenChange, room, message }: { isOpen: boolean
             <SheetContent side="bottom" className="h-[90dvh] flex flex-col p-0">
                 <SheetHeader className="p-4 border-b">
                     <SheetTitle>Answers</SheetTitle>
-                    <SheetDescription className="line-clamp-2">
+                    <SheetDescription>
                         {message.text}
                     </SheetDescription>
                 </SheetHeader>
@@ -454,7 +454,7 @@ function RoomMessageBubble({ message, showAvatarAndName, onSetReply, onForward, 
                 <div className={cn(
                     "rounded-2xl",
                     isOwnMessage ? "bg-primary text-primary-foreground rounded-br-none" : "bg-secondary text-foreground rounded-bl-none",
-                    (isPostShare || isLinkShare) ? 'w-64' : 'max-w-[80%]'
+                    (isPostShare || isLinkShare) ? 'w-64' : 'max-w-full'
                 )}>
                     {bubbleContent}
                 </div>
@@ -489,7 +489,7 @@ function RoomMessageBubble({ message, showAvatarAndName, onSetReply, onForward, 
                         </Link>
                     )}
                     <div className={cn(
-                        "flex flex-col",
+                        "flex flex-col max-w-[80%]",
                         isOwnMessage ? 'items-end' : 'items-start',
                         !isOwnMessage && !showAvatarAndName && "ml-10",
                     )}>
