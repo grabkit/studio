@@ -1,5 +1,3 @@
-
-
 'use client';
 
 import { useState, useEffect, useCallback, useRef } from 'react';
@@ -67,32 +65,6 @@ export function useCallHandler(
         offerSignaledRef.current = false;
         answerSignaledRef.current = false;
     }, [localStream, toast]);
-
-    const startCall = async (calleeId: string) => {
-        if (!firestore || !user) return;
-        cleanup();
-
-        try {
-            const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
-            setLocalStream(stream);
-
-            const callDocRef = doc(collection(firestore, 'calls'));
-            const callData: Omit<Call, 'id' | 'createdAt'> = {
-                callerId: user.uid,
-                calleeId: calleeId,
-                participantIds: [user.uid, calleeId].sort(),
-                status: 'offering',
-            };
-            await setDoc(callDocRef, { ...callData, createdAt: serverTimestamp() });
-            
-            const callWithId = { id: callDocRef.id, ...callData, createdAt: new Date() } as WithId<Call>;
-            setActiveCall(callWithId);
-            setCallStatus('offering');
-        } catch (err) {
-            console.error("Could not get user media or start call", err);
-            toast({ variant: 'destructive', title: 'Call Failed', description: 'Could not access your microphone.'});
-        }
-    };
     
     const declineCall = useCallback(async () => {
         if (incomingCall && firestore) {
@@ -124,6 +96,32 @@ export function useCallHandler(
             declineCall();
         }
     }, [firestore, incomingCall, toast, declineCall]);
+
+    const startCall = async (calleeId: string) => {
+        if (!firestore || !user) return;
+        cleanup();
+
+        try {
+            const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+            setLocalStream(stream);
+
+            const callDocRef = doc(collection(firestore, 'calls'));
+            const callData: Omit<Call, 'id' | 'createdAt'> = {
+                callerId: user.uid,
+                calleeId: calleeId,
+                participantIds: [user.uid, calleeId].sort(),
+                status: 'offering',
+            };
+            await setDoc(callDocRef, { ...callData, createdAt: serverTimestamp() });
+            
+            const callWithId = { id: callDocRef.id, ...callData, createdAt: new Date() } as WithId<Call>;
+            setActiveCall(callWithId);
+            setCallStatus('offering');
+        } catch (err) {
+            console.error("Could not get user media or start call", err);
+            toast({ variant: 'destructive', title: 'Call Failed', description: 'Could not access your microphone.'});
+        }
+    };
 
     const setupPeerConnection = useCallback((call: WithId<Call>, stream: MediaStream) => {
         if (!firestore || !user) return;
@@ -170,10 +168,18 @@ export function useCallHandler(
         });
 
         peer.on('close', cleanup);
+        
         peer.on('error', (err) => {
-            console.error("Peer error:", err);
+            // This error is often expected when the other user hangs up abruptly.
+            // We can safely ignore it as the 'close' event will also trigger cleanup.
+            if (err.message.includes('User-Initiated Abort')) {
+                // Don't log this as an error, it's a normal part of hang-up
+            } else {
+                console.error("Peer error:", err);
+            }
             cleanup();
         });
+
 
         // Listen for answer/offer
         callUnsubscribeRef.current = onSnapshot(callRef, (docSnap) => {
