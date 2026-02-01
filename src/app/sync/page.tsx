@@ -2,7 +2,7 @@
 
 import { useFirebase } from "@/firebase";
 import AppLayout from "@/components/AppLayout";
-import { useEffect } from "react";
+import { useEffect, useRef } from "react";
 import { useRouter } from "next/navigation";
 import { Loader2 } from "lucide-react";
 import { motion } from "framer-motion";
@@ -10,18 +10,22 @@ import { motion } from "framer-motion";
 export default function SyncPage() {
     const { findOrStartSyncCall, activeSyncCall, leaveSyncQueue } = useFirebase();
     const router = useRouter();
+    const isRedirecting = useRef(false);
 
     useEffect(() => {
+        isRedirecting.current = false;
         findOrStartSyncCall();
 
-        // Cleanup function to leave the queue if the user navigates away
         return () => {
-            leaveSyncQueue();
+            if (!isRedirecting.current) {
+                leaveSyncQueue();
+            }
         };
     }, [findOrStartSyncCall, leaveSyncQueue]);
 
     useEffect(() => {
         if (activeSyncCall) {
+            isRedirecting.current = true;
             router.replace(`/sync/${activeSyncCall.id}`);
         }
     }, [activeSyncCall, router]);
