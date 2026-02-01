@@ -27,16 +27,21 @@ export function useSyncHandler(firestore: Firestore | null, user: User | null) {
   const [syncCallStatus, setSyncCallStatus] = useState<SyncCallStatus | null>(null);
   const [syncCallMessages, setSyncCallMessages] = useState<WithId<SyncMessage>[]>([]);
 
+  // Refs to hold latest values without causing re-renders in effects
   const callUnsubscribeRef = useRef<() => void>(() => {});
   const messagesUnsubscribeRef = useRef<() => void>(() => {});
   const queueRef = useRef<string | null>(null);
+  const activeSyncCallRef = useRef(activeSyncCall);
+  activeSyncCallRef.current = activeSyncCall;
 
 
   const cleanup = useCallback(() => {
     console.log("Cleaning up Sync call handler...");
     callUnsubscribeRef.current();
     messagesUnsubscribeRef.current();
-    setActiveSyncCall(null);
+    if (activeSyncCallRef.current) {
+        setActiveSyncCall(null);
+    }
     setSyncCallStatus(null);
     setSyncCallMessages([]);
   }, []);
@@ -56,6 +61,7 @@ export function useSyncHandler(firestore: Firestore | null, user: User | null) {
 
   const findOrStartSyncCall = useCallback(async () => {
     if (!firestore || !user) return;
+    cleanup(); // Clean up any previous state before starting a new search
 
     try {
       const queueQuery = query(collection(firestore, 'syncQueue'), limit(2));
@@ -107,11 +113,13 @@ export function useSyncHandler(firestore: Firestore | null, user: User | null) {
         console.error("Error starting sync call:", err);
       }
     }
-  }, [firestore, user]);
+  }, [firestore, user, cleanup]);
 
   // Listen for newly created or ongoing calls where this user is a participant
   useEffect(() => {
-    if (!firestore || !user) return;
+    if (!firestore || !user) {
+        return;
+    }
     
     const q = query(
       collection(firestore, 'syncCalls'),
@@ -119,30 +127,34 @@ export function useSyncHandler(firestore: Firestore | null, user: User | null) {
       where('status', '==', 'active')
     );
 
-    const unsubscribe = onSnapshot(q, (snapshot) => {
+    // This is the main listener for the call document itself.
+    callUnsubscribeRef.current = onSnapshot(q, (snapshot) => {
       if (!snapshot.empty) {
         const callDoc = snapshot.docs[0];
         const activeCallFound = { id: callDoc.id, ...callDoc.data() } as WithId<SyncCall>;
         
-        if (!activeSyncCall || activeSyncCall.id !== activeCallFound.id) {
-            setActiveSyncCall(activeCallFound);
-            setSyncCallStatus(activeCallFound.status);
+        // Only update if the call is new or different
+        if (activeSyncCallRef.current?.id !== activeCallFound.id) {
+          setActiveSyncCall(activeCallFound);
+          setSyncCallStatus(activeCallFound.status);
         }
       } else {
-        if (activeSyncCall) {
+        // If the query is empty, it means there are no active calls for this user.
+        // If we previously thought there was a call, we should clean up.
+        if (activeSyncCallRef.current) {
           cleanup();
         }
       }
     });
 
-    return () => unsubscribe();
-  }, [firestore, user, activeSyncCall, cleanup]);
+    return () => callUnsubscribeRef.current();
+  }, [firestore, user, cleanup]);
   
    // Listen for chat messages for the active call
   useEffect(() => {
     if (!firestore || !activeSyncCall) {
         setSyncCallMessages([]);
-        messagesUnsubscribeRef.current(); // Clean up old listener
+        if (messagesUnsubscribeRef.current) messagesUnsubscribeRef.current();
         return;
     };
     
@@ -173,8 +185,9 @@ export function useSyncHandler(firestore: Firestore | null, user: User | null) {
   }
 
   const hangUpSyncCall = useCallback(async () => {
-    const callToHangup = activeSyncCall;
+    const callToHangup = activeSyncCallRef.current;
     
+    // Clean up local state immediately
     cleanup();
 
     if (callToHangup && firestore) {
@@ -185,7 +198,7 @@ export function useSyncHandler(firestore: Firestore | null, user: User | null) {
         console.error("Error hanging up sync call:", err);
       }
     }
-  }, [activeSyncCall, firestore, cleanup]);
+  }, [firestore, cleanup]);
 
   return {
     findOrStartSyncCall,

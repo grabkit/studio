@@ -45,17 +45,13 @@ export default function SyncCallPage() {
     const chatContainerRef = useRef<HTMLDivElement>(null);
     const [chatMessage, setChatMessage] = useState("");
 
+    // This effect ensures that if the user leaves the page for any reason,
+    // the call is properly terminated. It only runs once on mount and unmount.
     useEffect(() => {
-        // This is the cleanup function that runs when the component unmounts
-        // (e.g., user navigates back, closes tab, or is redirected).
         return () => {
-            // Check if the call is still considered active in our local state
-            // when the user leaves. If so, initiate the hang-up process.
-            if (activeSyncCall) {
-                hangUpSyncCall();
-            }
+            hangUpSyncCall();
         };
-    }, [activeSyncCall, hangUpSyncCall]);
+    }, [hangUpSyncCall]);
 
     useEffect(() => {
         if (chatContainerRef.current) {
@@ -63,8 +59,9 @@ export default function SyncCallPage() {
         }
     }, [syncCallMessages]);
     
+    // This effect handles redirecting the user away from the page
+    // once the call state becomes null (e.g., after hanging up).
     useEffect(() => {
-        // When activeSyncCall becomes null (call ended by self or other), redirect to messages.
         if (!activeSyncCall && callId) {
              router.replace('/messages');
         }
@@ -72,12 +69,12 @@ export default function SyncCallPage() {
 
 
     const handleHangUp = () => {
-        hangUpSyncCall();
+        // Just navigate. The cleanup effect will handle the hangup logic.
         router.replace('/messages');
     };
     
     const handleNext = () => {
-        hangUpSyncCall();
+        // Just navigate. The cleanup effect will handle ending the current call.
         router.replace('/sync');
     }
 
