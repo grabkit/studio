@@ -72,8 +72,6 @@ export interface FirebaseContextState {
   sendSyncChatMessage: (text: string) => void;
   activeSyncCall: WithId<SyncCall> | null;
   syncCallStatus: SyncCallStatus | null;
-  localSyncStream: MediaStream | null;
-  remoteSyncStream: MediaStream | null;
   syncCallMessages: WithId<SyncMessage>[];
 }
 

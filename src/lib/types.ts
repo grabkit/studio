@@ -265,8 +265,6 @@ export interface SyncCall {
   id: string;
   participantIds: string[];
   status: SyncCallStatus;
-  offer?: any;
-  answer?: any;
   createdAt: Timestamp;
 }
 
