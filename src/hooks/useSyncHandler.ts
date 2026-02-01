@@ -24,7 +24,6 @@ import { WithId } from '@/firebase';
 
 export function useSyncHandler(firestore: Firestore | null, user: User | null) {
   const [activeSyncCall, setActiveSyncCall] = useState<WithId<SyncCall> | null>(null);
-  const [syncCallStatus, setSyncCallStatus] = useState<SyncCallStatus | null>(null);
   const [syncCallMessages, setSyncCallMessages] = useState<WithId<SyncMessage>[]>([]);
 
   // Refs to hold latest values without causing re-renders in effects
@@ -36,13 +35,9 @@ export function useSyncHandler(firestore: Firestore | null, user: User | null) {
 
 
   const cleanup = useCallback(() => {
-    console.log("Cleaning up Sync call handler...");
     callUnsubscribeRef.current();
     messagesUnsubscribeRef.current();
-    if (activeSyncCallRef.current) {
-        setActiveSyncCall(null);
-    }
-    setSyncCallStatus(null);
+    setActiveSyncCall(null);
     setSyncCallMessages([]);
   }, []);
   
@@ -51,29 +46,24 @@ export function useSyncHandler(firestore: Firestore | null, user: User | null) {
     const userInQueueRef = doc(firestore, 'syncQueue', queueRef.current);
     try {
         await deleteDoc(userInQueueRef);
-        console.log("User removed from sync queue.");
     } catch (error) {
-        console.error("Error removing user from sync queue:", error);
+        // This is okay, it might have been deleted by a matching transaction
     }
     queueRef.current = null;
   }, [firestore]);
 
 
   const findOrStartSyncCall = useCallback(async () => {
-    if (!firestore || !user) return;
-    cleanup(); // Clean up any previous state before starting a new search
+    if (!firestore || !user || activeSyncCallRef.current) return;
+    
+    // Leave any old queue entry before starting
+    await leaveSyncQueue();
 
     try {
       const queueQuery = query(collection(firestore, 'syncQueue'), limit(2));
       const queueSnapshot = await getDocs(queueQuery);
       
-      let peerInQueueDoc = null;
-      for (const doc of queueSnapshot.docs) {
-          if (doc.id !== user.uid) {
-              peerInQueueDoc = doc;
-              break;
-          }
-      }
+      const peerInQueueDoc = queueSnapshot.docs.find(doc => doc.id !== user.uid);
       
       if (peerInQueueDoc) {
         const peerId = peerInQueueDoc.id;
@@ -81,9 +71,7 @@ export function useSyncHandler(firestore: Firestore | null, user: User | null) {
 
         await runTransaction(firestore, async (transaction) => {
           const peerDoc = await transaction.get(peerInQueueRef);
-          if (!peerDoc.exists()) {
-            throw new Error("Peer was already matched");
-          }
+          if (!peerDoc.exists()) throw new Error("Peer was already matched");
 
           transaction.delete(peerInQueueRef);
           
@@ -94,32 +82,23 @@ export function useSyncHandler(firestore: Firestore | null, user: User | null) {
             createdAt: serverTimestamp(),
           };
           transaction.set(callDocRef, newCallData);
-          console.log(`Matched with ${peerId}, created call ${callDocRef.id}`);
         });
       } else {
         const userInQueueRef = doc(firestore, 'syncQueue', user.uid);
-        await setDoc(userInQueueRef, {
-          userId: user.uid,
-          timestamp: serverTimestamp(),
-        });
+        await setDoc(userInQueueRef, { userId: user.uid, timestamp: serverTimestamp() });
         queueRef.current = user.uid;
-        console.log("Added/updated user in queue.");
       }
     } catch (err) {
+      console.error("Error in findOrStartSyncCall:", err);
       if ((err as Error).message === "Peer was already matched") {
-        console.log("Peer was already matched. Retrying to find another match...");
-        setTimeout(() => findOrStartSyncCall(), 300 + Math.random() * 500);
-      } else {
-        console.error("Error starting sync call:", err);
+        setTimeout(() => findOrStartSyncCall(), 300 + Math.random() * 300);
       }
     }
-  }, [firestore, user, cleanup]);
+  }, [firestore, user, leaveSyncQueue]);
 
   // Listen for newly created or ongoing calls where this user is a participant
   useEffect(() => {
-    if (!firestore || !user) {
-        return;
-    }
+    if (!firestore || !user) return;
     
     const q = query(
       collection(firestore, 'syncCalls'),
@@ -127,28 +106,18 @@ export function useSyncHandler(firestore: Firestore | null, user: User | null) {
       where('status', '==', 'active')
     );
 
-    // This is the main listener for the call document itself.
     callUnsubscribeRef.current = onSnapshot(q, (snapshot) => {
       if (!snapshot.empty) {
         const callDoc = snapshot.docs[0];
-        const activeCallFound = { id: callDoc.id, ...callDoc.data() } as WithId<SyncCall>;
-        
-        // Only update if the call is new or different
-        if (activeSyncCallRef.current?.id !== activeCallFound.id) {
-          setActiveSyncCall(activeCallFound);
-          setSyncCallStatus(activeCallFound.status);
-        }
+        const callData = { id: callDoc.id, ...callDoc.data() } as WithId<SyncCall>;
+        setActiveSyncCall(callData);
       } else {
-        // If the query is empty, it means there are no active calls for this user.
-        // If we previously thought there was a call, we should clean up.
-        if (activeSyncCallRef.current) {
-          cleanup();
-        }
+        setActiveSyncCall(null);
       }
     });
 
     return () => callUnsubscribeRef.current();
-  }, [firestore, user, cleanup]);
+  }, [firestore, user]);
   
    // Listen for chat messages for the active call
   useEffect(() => {
@@ -187,7 +156,7 @@ export function useSyncHandler(firestore: Firestore | null, user: User | null) {
   const hangUpSyncCall = useCallback(async () => {
     const callToHangup = activeSyncCallRef.current;
     
-    // Clean up local state immediately
+    // Cleanup local state immediately to trigger UI changes (like redirect)
     cleanup();
 
     if (callToHangup && firestore) {
@@ -206,7 +175,6 @@ export function useSyncHandler(firestore: Firestore | null, user: User | null) {
     hangUpSyncCall,
     sendSyncChatMessage,
     activeSyncCall,
-    syncCallStatus,
     syncCallMessages,
   };
 }
