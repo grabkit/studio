@@ -35,7 +35,6 @@ export default function SyncCallPage() {
         user,
         activeSyncCall, 
         hangUpSyncCall,
-        findOrStartSyncCall,
         syncCallMessages,
         sendSyncChatMessage
     } = useFirebase();
@@ -53,8 +52,9 @@ export default function SyncCallPage() {
     }, [syncCallMessages]);
     
     useEffect(() => {
+        // When activeSyncCall becomes null (call ended by self or other), redirect to messages.
         if (!activeSyncCall && callId) {
-             router.replace('/sync');
+             router.replace('/messages');
         }
     }, [activeSyncCall, callId, router]);
 
