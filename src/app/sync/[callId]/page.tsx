@@ -46,6 +46,18 @@ export default function SyncCallPage() {
     const [chatMessage, setChatMessage] = useState("");
 
     useEffect(() => {
+        // This is the cleanup function that runs when the component unmounts
+        // (e.g., user navigates back, closes tab, or is redirected).
+        return () => {
+            // Check if the call is still considered active in our local state
+            // when the user leaves. If so, initiate the hang-up process.
+            if (activeSyncCall) {
+                hangUpSyncCall();
+            }
+        };
+    }, [activeSyncCall, hangUpSyncCall]);
+
+    useEffect(() => {
         if (chatContainerRef.current) {
             chatContainerRef.current.scrollTop = chatContainerRef.current.scrollHeight;
         }

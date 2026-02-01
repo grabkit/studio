@@ -56,7 +56,6 @@ export function useSyncHandler(firestore: Firestore | null, user: User | null) {
 
   const findOrStartSyncCall = useCallback(async () => {
     if (!firestore || !user) return;
-    cleanup();
 
     try {
       const queueQuery = query(collection(firestore, 'syncQueue'), limit(2));
@@ -108,7 +107,7 @@ export function useSyncHandler(firestore: Firestore | null, user: User | null) {
         console.error("Error starting sync call:", err);
       }
     }
-  }, [firestore, user, cleanup]);
+  }, [firestore, user]);
 
   // Listen for newly created or ongoing calls where this user is a participant
   useEffect(() => {
@@ -116,29 +115,23 @@ export function useSyncHandler(firestore: Firestore | null, user: User | null) {
     
     const q = query(
       collection(firestore, 'syncCalls'),
-      where('participantIds', 'array-contains', user.uid)
+      where('participantIds', 'array-contains', user.uid),
+      where('status', '==', 'active')
     );
 
     const unsubscribe = onSnapshot(q, (snapshot) => {
-      let activeCallFound: WithId<SyncCall> | null = null;
-      for (const doc of snapshot.docs) {
-          const callData = doc.data() as SyncCall;
-          // A call is only truly active if the status is 'active' AND it has 2 participants.
-          if (callData.status === 'active' && callData.participantIds.length === 2) {
-            activeCallFound = { id: doc.id, ...callData };
-            break;
-          }
-      }
-
-      if (activeCallFound) {
+      if (!snapshot.empty) {
+        const callDoc = snapshot.docs[0];
+        const activeCallFound = { id: callDoc.id, ...callDoc.data() } as WithId<SyncCall>;
+        
         if (!activeSyncCall || activeSyncCall.id !== activeCallFound.id) {
-          setActiveSyncCall(activeCallFound);
+            setActiveSyncCall(activeCallFound);
+            setSyncCallStatus(activeCallFound.status);
         }
-        setSyncCallStatus(activeCallFound.status);
-
-      } else if (activeSyncCall) {
-        // No active calls found in DB, but we have one in state. Clean it up.
-        cleanup();
+      } else {
+        if (activeSyncCall) {
+          cleanup();
+        }
       }
     });
 
