@@ -179,16 +179,21 @@ export function useSyncHandler(firestore: Firestore | null, user: User | null) {
   }
 
   const hangUpSyncCall = useCallback(async () => {
-    if (activeSyncCall && firestore) {
-      const callRef = doc(firestore, 'syncCalls', activeSyncCall.id);
+    const callToHangup = activeSyncCall;
+    
+    // Cleanup local state immediately for instant feedback
+    cleanup();
+
+    if (callToHangup && firestore) {
+      const callRef = doc(firestore, 'syncCalls', callToHangup.id);
       try {
         await updateDoc(callRef, { status: 'ended' });
       } catch (err) {
         console.error("Error hanging up sync call:", err);
       }
     }
-    // Cleanup will be triggered by the onSnapshot listener when status changes to 'ended'
-  }, [activeSyncCall, firestore]);
+    // The other user's onSnapshot listener will handle their cleanup.
+  }, [activeSyncCall, firestore, cleanup]);
 
   return {
     findOrStartSyncCall,
