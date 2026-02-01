@@ -1,4 +1,3 @@
-
 'use client';
 
 import { useFirebase } from "@/firebase";

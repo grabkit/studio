@@ -258,3 +258,21 @@ export interface VideoIceCandidate {
     sdpMLineIndex: number;
     usernameFragment?: string;
 }
+
+export type SyncCallStatus = 'searching' | 'active' | 'ended';
+
+export interface SyncCall {
+  id: string;
+  participantIds: string[];
+  status: SyncCallStatus;
+  offer?: any;
+  answer?: any;
+  createdAt: Timestamp;
+}
+
+export interface SyncMessage {
+    id: string;
+    senderId: string;
+    text: string;
+    timestamp: Timestamp;
+}

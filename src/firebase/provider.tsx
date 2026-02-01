@@ -8,7 +8,7 @@ import { Auth, User, onAuthStateChanged } from 'firebase/auth';
 import { Database, ref, onValue, onDisconnect, set, serverTimestamp as dbServerTimestamp } from 'firebase/database';
 import { FirebaseErrorListener } from '@/components/FirebaseErrorListener';
 import { useDoc, type WithId } from './firestore/use-doc';
-import type { User as UserProfile, Call, CallStatus, VideoCall, VideoCallStatus } from '@/lib/types';
+import type { User as UserProfile, Call, CallStatus, VideoCall, VideoCallStatus, SyncCall, SyncCallStatus, SyncMessage } from '@/lib/types';
 import { VoiceStatusPlayer } from '@/components/VoiceStatusPlayer';
 import { useToast } from '@/hooks/use-toast';
 import { FirestorePermissionError } from './errors';
@@ -20,6 +20,7 @@ import { OnCallView } from '@/components/OnCallView';
 import { useVideoCallHandler } from '@/hooks/useVideoCallHandler';
 import { IncomingVideoCallView } from '@/components/IncomingVideoCallView';
 import { VideoCallView } from '@/components/VideoCallView';
+import { useSyncHandler } from '@/hooks/useSyncHandler';
 
 
 // Internal state for user authentication
@@ -64,6 +65,16 @@ export interface FirebaseContextState {
   acceptVideoCall: () => void;
   declineVideoCall: () => void;
   hangUpVideoCall: () => void;
+  // Sync Call (Stranger Chat)
+  findOrStartSyncCall: () => void;
+  leaveSyncQueue: () => void;
+  hangUpSyncCall: () => void;
+  sendSyncChatMessage: (text: string) => void;
+  activeSyncCall: WithId<SyncCall> | null;
+  syncCallStatus: SyncCallStatus | null;
+  localSyncStream: MediaStream | null;
+  remoteSyncStream: MediaStream | null;
+  syncCallMessages: WithId<SyncMessage>[];
 }
 
 // Return type for useFirebase()
@@ -133,6 +144,9 @@ export const FirebaseProvider: React.FC<FirebaseProviderProps> = ({
   
   // Video Call Hook
   const videoCallHandler = useVideoCallHandler(firestore, userAuthState.user);
+  
+  // Sync Call (Stranger Chat) Hook
+  const syncHandler = useSyncHandler(firestore, userAuthState.user);
 
   
   const onVoicePlayerClose = () => {
@@ -377,11 +391,13 @@ export const FirebaseProvider: React.FC<FirebaseProviderProps> = ({
       acceptVideoCall: videoCallHandler.acceptCall,
       declineVideoCall: videoCallHandler.declineCall,
       hangUpVideoCall: videoCallHandler.hangUp,
+      // Sync Call
+      ...syncHandler,
     };
   }, [
       firebaseApp, firestore, auth, database, userAuthState, userProfile, isUserProfileLoading, isVoicePlayerPlaying, 
       setLoggedInUserProfile, startCall, activeCall, incomingCall, callStatus, acceptCall, declineCall, hangUp,
-      videoCallHandler
+      videoCallHandler, syncHandler
   ]);
 
   return (

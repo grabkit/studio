@@ -83,7 +83,7 @@ export default function SyncCallPage() {
 
     const handleHangUp = () => {
         hangUpSyncCall();
-        router.replace('/home');
+        router.replace('/messages');
     };
     
     const handleNext = () => {

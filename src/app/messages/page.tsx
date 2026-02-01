@@ -683,6 +683,11 @@ export default function MessagesPage() {
             >
                 <div className="fixed top-0 left-0 right-0 z-10 flex items-center justify-between p-2 bg-background h-14 max-w-2xl mx-auto sm:px-4">
                     <h1 className="text-2xl font-bold font-headline">Messages</h1>
+                    <Link href="/sync" passHref>
+                        <Button variant="ghost" size="icon">
+                            <Radio className="h-6 w-6" />
+                        </Button>
+                    </Link>
                 </div>
                 <div className="relative h-full overflow-y-auto pt-14">
                     <AnimatePresence>
