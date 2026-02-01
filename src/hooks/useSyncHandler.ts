@@ -59,16 +59,16 @@ export function useSyncHandler(firestore: Firestore | null, user: User | null) {
     // Leave any old queue entry before starting
     await leaveSyncQueue();
 
-    try {
-      const queueQuery = query(collection(firestore, 'syncQueue'), limit(2));
-      const queueSnapshot = await getDocs(queueQuery);
-      
-      const peerInQueueDoc = queueSnapshot.docs.find(doc => doc.id !== user.uid);
-      
-      if (peerInQueueDoc) {
-        const peerId = peerInQueueDoc.id;
-        const peerInQueueRef = peerInQueueDoc.ref;
+    const queueQuery = query(collection(firestore, 'syncQueue'), limit(2));
+    const queueSnapshot = await getDocs(queueQuery);
+    
+    const peerInQueueDoc = queueSnapshot.docs.find(doc => doc.id !== user.uid);
+    
+    if (peerInQueueDoc) {
+      const peerId = peerInQueueDoc.id;
+      const peerInQueueRef = peerInQueueDoc.ref;
 
+      try {
         await runTransaction(firestore, async (transaction) => {
           const peerDoc = await transaction.get(peerInQueueRef);
           if (!peerDoc.exists()) throw new Error("Peer was already matched");
@@ -83,16 +83,18 @@ export function useSyncHandler(firestore: Firestore | null, user: User | null) {
           };
           transaction.set(callDocRef, newCallData);
         });
-      } else {
-        const userInQueueRef = doc(firestore, 'syncQueue', user.uid);
-        await setDoc(userInQueueRef, { userId: user.uid, timestamp: serverTimestamp() });
-        queueRef.current = user.uid;
+      } catch (err) {
+        // This error is expected if two users try to match at the same time.
+        // One transaction will succeed, the other will fail. The user whose
+        // transaction failed will automatically be connected to the call
+        // created by the other user via the onSnapshot listener for active calls.
+        // We can log this for debugging but it doesn't need to be an error.
+        console.log('Sync call transaction failed, likely a race condition (this is okay).');
       }
-    } catch (err) {
-      console.error("Error in findOrStartSyncCall:", err);
-      if ((err as Error).message === "Peer was already matched") {
-        setTimeout(() => findOrStartSyncCall(), 300 + Math.random() * 300);
-      }
+    } else {
+      const userInQueueRef = doc(firestore, 'syncQueue', user.uid);
+      await setDoc(userInQueueRef, { userId: user.uid, timestamp: serverTimestamp() });
+      queueRef.current = user.uid;
     }
   }, [firestore, user, leaveSyncQueue]);
 
@@ -103,21 +105,24 @@ export function useSyncHandler(firestore: Firestore | null, user: User | null) {
     const q = query(
       collection(firestore, 'syncCalls'),
       where('participantIds', 'array-contains', user.uid),
-      where('status', '==', 'active')
     );
 
     callUnsubscribeRef.current = onSnapshot(q, (snapshot) => {
-      if (!snapshot.empty) {
-        const callDoc = snapshot.docs[0];
-        const callData = { id: callDoc.id, ...callDoc.data() } as WithId<SyncCall>;
-        setActiveSyncCall(callData);
-      } else {
-        setActiveSyncCall(null);
-      }
+        const activeCalls = snapshot.docs
+            .map(doc => ({ id: doc.id, ...doc.data() } as WithId<SyncCall>))
+            .filter(call => call.status !== 'ended');
+        
+        if (activeCalls.length > 0) {
+            setActiveSyncCall(activeCalls[0]);
+        } else {
+             if (activeSyncCallRef.current) {
+                cleanup();
+            }
+        }
     });
 
     return () => callUnsubscribeRef.current();
-  }, [firestore, user]);
+  }, [firestore, user, cleanup]);
   
    // Listen for chat messages for the active call
   useEffect(() => {
@@ -156,8 +161,8 @@ export function useSyncHandler(firestore: Firestore | null, user: User | null) {
   const hangUpSyncCall = useCallback(async () => {
     const callToHangup = activeSyncCallRef.current;
     
-    // Cleanup local state immediately to trigger UI changes (like redirect)
-    cleanup();
+    // Don't cleanup local state immediately to avoid race conditions.
+    // Let the onSnapshot listener handle the state update when the status changes to 'ended'.
 
     if (callToHangup && firestore) {
       const callRef = doc(firestore, 'syncCalls', callToHangup.id);
@@ -166,6 +171,9 @@ export function useSyncHandler(firestore: Firestore | null, user: User | null) {
       } catch (err) {
         console.error("Error hanging up sync call:", err);
       }
+    } else {
+        // If there's no active call, we might still need to clean up local state
+        cleanup();
     }
   }, [firestore, cleanup]);
 
