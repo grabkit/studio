@@ -45,13 +45,27 @@ export default function SyncCallPage() {
     const chatContainerRef = useRef<HTMLDivElement>(null);
     const [chatMessage, setChatMessage] = useState("");
 
-    // This effect ensures that if the user leaves the page for any reason,
-    // the call is properly terminated. It only runs once on mount and unmount.
+    // Ref to track intentional unmount vs. StrictMode re-render unmount
+    const unmountRef = useRef(false);
+    // Ref to hold the latest hangup function without causing effect re-runs
+    const hangupCallRef = useRef(hangUpSyncCall);
+    hangupCallRef.current = hangUpSyncCall;
+
     useEffect(() => {
+        unmountRef.current = false; // Component has mounted (or re-mounted)
         return () => {
-            hangUpSyncCall();
+            unmountRef.current = true; // Component is unmounting
+            // In development with StrictMode, this cleanup runs, then the component
+            // remounts immediately, resetting unmountRef to false.
+            // In production, or with a real navigation, it runs once and stays unmounted.
+            setTimeout(() => {
+                if (unmountRef.current) {
+                    // If after 100ms the component is still unmounted, it was a real navigation.
+                    hangupCallRef.current();
+                }
+            }, 100);
         };
-    }, [hangUpSyncCall]);
+    }, []); // Empty dependency array ensures this runs only on mount/unmount.
 
     useEffect(() => {
         if (chatContainerRef.current) {
