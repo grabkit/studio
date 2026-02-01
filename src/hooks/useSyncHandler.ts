@@ -123,7 +123,8 @@ export function useSyncHandler(firestore: Firestore | null, user: User | null) {
       let activeCallFound: WithId<SyncCall> | null = null;
       for (const doc of snapshot.docs) {
           const callData = doc.data() as SyncCall;
-          if (callData.status !== 'ended') {
+          // A call is only truly active if the status is 'active' AND it has 2 participants.
+          if (callData.status === 'active' && callData.participantIds.length === 2) {
             activeCallFound = { id: doc.id, ...callData };
             break;
           }
@@ -136,7 +137,7 @@ export function useSyncHandler(firestore: Firestore | null, user: User | null) {
         setSyncCallStatus(activeCallFound.status);
 
       } else if (activeSyncCall) {
-        // If there are no active calls but we had one in state, it means it has ended.
+        // No active calls found in DB, but we have one in state. Clean it up.
         cleanup();
       }
     });
@@ -181,7 +182,6 @@ export function useSyncHandler(firestore: Firestore | null, user: User | null) {
   const hangUpSyncCall = useCallback(async () => {
     const callToHangup = activeSyncCall;
     
-    // Cleanup local state immediately for instant feedback
     cleanup();
 
     if (callToHangup && firestore) {
@@ -192,7 +192,6 @@ export function useSyncHandler(firestore: Firestore | null, user: User | null) {
         console.error("Error hanging up sync call:", err);
       }
     }
-    // The other user's onSnapshot listener will handle their cleanup.
   }, [activeSyncCall, firestore, cleanup]);
 
   return {
