@@ -329,9 +329,11 @@ function PostDetailItem({ post, updatePost }: { post: WithId<Post>, updatePost: 
   const hasViewed = useMemo(() => user && post.viewedBy?.includes(user.uid), [post.viewedBy, user]);
 
   const handleReveal = () => {
-    if (!user || !firestore || hasViewed) return;
+    if (!user || !firestore) return;
     
     setIsRevealed(true);
+    
+    if (hasViewed) return;
 
     const postRef = doc(firestore, 'posts', post.id);
     updateDoc(postRef, {
@@ -566,7 +568,12 @@ function PostDetailItem({ post, updatePost }: { post: WithId<Post>, updatePost: 
                         <PostContent />
                     </div>
                     <div className="absolute inset-0 flex items-center justify-center bg-black/30">
-                        <Button onClick={handleReveal} disabled={showPermanentlyViewed}>
+                        <Button
+                            onClick={handleReveal}
+                            disabled={showPermanentlyViewed}
+                            variant="outline"
+                            className="rounded-[10px] bg-background/20 backdrop-blur-sm"
+                        >
                             <Eye className="mr-2 h-4 w-4" />
                             {showPermanentlyViewed ? 'Viewed Once' : 'View Once'}
                         </Button>
@@ -651,17 +658,17 @@ function PostDetailItem({ post, updatePost }: { post: WithId<Post>, updatePost: 
   );
 }
 
-const CommentFormSchema = z.object({
+const commentFormSchema = z.object({
   content: z.string().min(1, "Comment cannot be empty.").max(280),
 });
 
-type CommentFormValues = z.infer<typeof CommentFormSchema>;
+type CommentFormValues = z.infer<typeof commentFormSchema>;
 
 function CommentForm({ post, commentsAllowed }: { post: WithId<Post>, commentsAllowed?: boolean }) {
   const { user, userProfile, firestore } = useFirebase();
   const { toast } = useToast();
   const form = useForm<CommentFormValues>({
-    resolver: zodResolver(CommentFormSchema),
+    resolver: zodResolver(commentFormSchema),
     defaultValues: { content: "" },
   });
   
@@ -671,7 +678,7 @@ function CommentForm({ post, commentsAllowed }: { post: WithId<Post>, commentsAl
   }, [firestore, post]);
   const { data: postAuthorProfile } = useDoc<UserProfile>(postAuthorRef);
 
-  const onSubmit = async (values: CommentFormValues) => {
+  const onSubmit = async (values: z.infer<typeof commentFormSchema>) => {
     if (!user || !firestore) {
       toast({ variant: "destructive", title: "You must be logged in to comment." });
       return;
@@ -1180,5 +1187,6 @@ export default function PostDetailPage() {
     </AppLayout>
   );
 }
+
 
 

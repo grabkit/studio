@@ -324,9 +324,11 @@ function InnerPostItem({ post, bookmarks, updatePost, onDelete, onPin, showPinSt
   const hasViewed = useMemo(() => user && post.viewedBy?.includes(user.uid), [post.viewedBy, user]);
 
   const handleReveal = () => {
-    if (!user || !firestore || hasViewed) return;
+    if (!user || !firestore) return;
     
     setIsRevealed(true);
+
+    if (hasViewed) return;
 
     const postRef = doc(firestore, 'posts', post.id);
     updateDoc(postRef, {
@@ -603,7 +605,12 @@ function InnerPostItem({ post, bookmarks, updatePost, onDelete, onPin, showPinSt
                         <PostContent isClickable={false} />
                     </div>
                     <div className="absolute inset-0 flex items-center justify-center bg-black/30">
-                        <Button onClick={(e) => { e.preventDefault(); e.stopPropagation(); handleReveal(); }} disabled={showPermanentlyViewed}>
+                        <Button
+                            onClick={(e) => { e.preventDefault(); e.stopPropagation(); handleReveal(); }}
+                            disabled={showPermanentlyViewed}
+                            variant="outline"
+                            className="rounded-[10px] bg-background/20 backdrop-blur-sm"
+                        >
                             <Eye className="mr-2 h-4 w-4" />
                             {showPermanentlyViewed ? 'Viewed Once' : 'View Once'}
                         </Button>
@@ -946,5 +953,3 @@ export default function HomePage() {
     </AppLayout>
   );
 }
-
-    
