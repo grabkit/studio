@@ -52,7 +52,8 @@ service cloud.firestore {
           (request.resource.data.diff(resource.data).affectedKeys().hasAll(['likes', 'likeCount'])) ||
           (request.resource.data.diff(resource.data).affectedKeys().hasOnly(['commentCount'])) ||
           (request.resource.data.diff(resource.data).affectedKeys().hasOnly(['repostCount'])) ||
-          (request.resource.data.diff(resource.data).affectedKeys().hasAll(['pollOptions', 'voters']) && !resource.data.voters.keys().hasAny([request.auth.uid]))
+          (request.resource.data.diff(resource.data).affectedKeys().hasAll(['pollOptions', 'voters']) && !resource.data.voters.keys().hasAny([request.auth.uid])) ||
+          (resource.data.isTapToReveal == true && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['viewedBy']) && request.resource.data.viewedBy.size() == resource.data.viewedBy.size() + 1 && request.auth.uid in request.resource.data.viewedBy)
       );
 
        match /comments/{commentId} {
@@ -176,18 +177,32 @@ service cloud.firestore {
 
     function isNewEventPost() {
         let data = request.resource.data;
-        let allowedKeys = ['id', 'authorId', 'type', 'content', 'timestamp', 'likes', 'likeCount', 'commentCount', 'repostCount', 'commentsAllowed', 'eventDetails', 'isPinned', 'expiresAt'];
+        let allowedKeysWithViewedBy = ['id', 'authorId', 'type', 'content', 'timestamp', 'likes', 'likeCount', 'commentCount', 'repostCount', 'commentsAllowed', 'eventDetails', 'isPinned', 'expiresAt', 'isTapToReveal', 'viewedBy'];
+        let allowedKeysWithoutViewedBy = ['id', 'authorId', 'type', 'content', 'timestamp', 'likes', 'likeCount', 'commentCount', 'repostCount', 'commentsAllowed', 'eventDetails', 'isPinned', 'expiresAt', 'isTapToReveal'];
+
+        let hasValidKeys = (data.isTapToReveal == true && data.keys().hasOnly(allowedKeysWithViewedBy)) ||
+                           (data.isTapToReveal == false && data.keys().hasOnly(allowedKeysWithoutViewedBy));
+        
+        let validTapToRevealData = (data.isTapToReveal == false) || (data.isTapToReveal == true && data.viewedBy is list && data.viewedBy.size() == 0);
+
         return data.type == 'event'
             && data.authorId == request.auth.uid
             && data.eventDetails is map
             && data.eventDetails.keys().hasAll(['id', 'name', 'eventTimestamp', 'location'])
             && (data.content is string || !data.keys().has('content'))
-            && data.keys().hasOnly(allowedKeys);
+            && hasValidKeys && validTapToRevealData;
     }
 
     function isNewAudioPost() {
       let data = request.resource.data;
-      let allowedKeys = ['id', 'authorId', 'type', 'content', 'timestamp', 'likes', 'likeCount', 'commentCount', 'repostCount', 'commentsAllowed', 'isPinned', 'expiresAt', 'audioUrl', 'audioWaveform', 'audioDuration'];
+      let allowedKeysWithViewedBy = ['id', 'authorId', 'type', 'content', 'timestamp', 'likes', 'likeCount', 'commentCount', 'repostCount', 'commentsAllowed', 'isPinned', 'expiresAt', 'audioUrl', 'audioWaveform', 'audioDuration', 'isTapToReveal', 'viewedBy'];
+      let allowedKeysWithoutViewedBy = ['id', 'authorId', 'type', 'content', 'timestamp', 'likes', 'likeCount', 'commentCount', 'repostCount', 'commentsAllowed', 'isPinned', 'expiresAt', 'audioUrl', 'audioWaveform', 'audioDuration', 'isTapToReveal'];
+      
+      let hasValidKeys = (data.isTapToReveal == true && data.keys().hasOnly(allowedKeysWithViewedBy)) ||
+                         (data.isTapToReveal == false && data.keys().hasOnly(allowedKeysWithoutViewedBy));
+
+      let validTapToRevealData = (data.isTapToReveal == false) || (data.isTapToReveal == true && data.viewedBy is list && data.viewedBy.size() == 0);
+
       return data.type == 'audio'
         && data.authorId == request.auth.uid
         && data.audioUrl is string
@@ -195,7 +210,7 @@ service cloud.firestore {
         && data.audioDuration is number
         && (data.content is string || !data.keys().has('content')) 
         && !data.keys().hasAny(['pollOptions', 'voters', 'repostOf', 'quotedPost'])
-        && data.keys().hasOnly(allowedKeys);
+        && hasValidKeys && validTapToRevealData;
     }
 
     function isValidNewReport(reportId) {
@@ -235,19 +250,35 @@ service cloud.firestore {
 
     function isNewQuotePost() {
         let data = request.resource.data;
-        let allowedKeys = ['id', 'authorId', 'type', 'content', 'timestamp', 'likes', 'likeCount', 'commentCount', 'repostCount', 'commentsAllowed', 'quotedPost', 'isPinned', 'expiresAt'];
+        let allowedKeysWithViewedBy = ['id', 'authorId', 'type', 'content', 'timestamp', 'likes', 'likeCount', 'commentCount', 'repostCount', 'commentsAllowed', 'quotedPost', 'isPinned', 'expiresAt', 'isTapToReveal', 'viewedBy'];
+        let allowedKeysWithoutViewedBy = ['id', 'authorId', 'type', 'content', 'timestamp', 'likes', 'likeCount', 'commentCount', 'repostCount', 'commentsAllowed', 'quotedPost', 'isPinned', 'expiresAt', 'isTapToReveal'];
+        
+        let hasValidKeys = (data.isTapToReveal == true && data.keys().hasOnly(allowedKeysWithViewedBy)) ||
+                           (data.isTapToReveal == false && data.keys().hasOnly(allowedKeysWithoutViewedBy));
+                           
+        let validTapToRevealData = (data.isTapToReveal == false) || (data.isTapToReveal == true && data.viewedBy is list && data.viewedBy.size() == 0);
+
         return data.type == 'quote'
             && data.authorId == request.auth.uid
             && data.content is string
             && data.quotedPost is map
             && data.quotedPost.keys().hasAll(['id', 'authorId', 'content'])
             && !data.keys().hasAny(['pollOptions', 'voters', 'repostOf'])
-            && data.keys().hasOnly(allowedKeys);
+            && hasValidKeys && validTapToRevealData;
     }
 
     function isNewTextPost() {
       let data = request.resource.data;
-      let allowedKeys = ['id', 'authorId', 'type', 'content', 'timestamp', 'likes', 'likeCount', 'commentCount', 'repostCount', 'commentsAllowed', 'isPinned', 'linkMetadata', 'expiresAt'];
+      let allowedKeysWithViewedBy = ['id', 'authorId', 'type', 'content', 'timestamp', 'likes', 'likeCount', 'commentCount', 'repostCount', 'commentsAllowed', 'isPinned', 'linkMetadata', 'expiresAt', 'isTapToReveal', 'viewedBy'];
+      let allowedKeysWithoutViewedBy = ['id', 'authorId', 'type', 'content', 'timestamp', 'likes', 'likeCount', 'commentCount', 'repostCount', 'commentsAllowed', 'isPinned', 'linkMetadata', 'expiresAt', 'isTapToReveal'];
+
+      let hasValidKeys = (
+        (data.isTapToReveal == true && data.keys().hasOnly(allowedKeysWithViewedBy)) ||
+        (data.isTapToReveal == false && data.keys().hasOnly(allowedKeysWithoutViewedBy))
+      );
+      
+      let validTapToRevealData = (data.isTapToReveal == false) || (data.isTapToReveal == true && data.viewedBy is list && data.viewedBy.size() == 0);
+      
       return (data.type == 'text' || !data.keys().has('type')) 
         && data.authorId == request.auth.uid
         && (data.content is string && data.content.size() > 0 && data.content.size() <= 560 || data.keys().has('linkMetadata'))
@@ -258,12 +289,21 @@ service cloud.firestore {
         && data.repostCount == 0
         && data.likes is list && data.likes.size() == 0
         && !data.keys().hasAny(['pollOptions', 'voters', 'repostOf', 'quotedPost'])
-        && data.keys().hasOnly(allowedKeys);
+        && hasValidKeys && validTapToRevealData;
     }
 
     function isNewPollPost() {
       let data = request.resource.data;
-      let allowedKeys = ['id', 'authorId', 'type', 'content', 'timestamp', 'likes', 'likeCount', 'commentCount', 'repostCount', 'commentsAllowed', 'isPinned', 'pollOptions', 'voters', 'expiresAt'];
+      let allowedKeysWithViewedBy = ['id', 'authorId', 'type', 'content', 'timestamp', 'likes', 'likeCount', 'commentCount', 'repostCount', 'commentsAllowed', 'isPinned', 'pollOptions', 'voters', 'expiresAt', 'isTapToReveal', 'viewedBy'];
+      let allowedKeysWithoutViewedBy = ['id', 'authorId', 'type', 'content', 'timestamp', 'likes', 'likeCount', 'commentCount', 'repostCount', 'commentsAllowed', 'isPinned', 'pollOptions', 'voters', 'expiresAt', 'isTapToReveal'];
+
+      let hasValidKeys = (
+        (data.isTapToReveal == true && data.keys().hasOnly(allowedKeysWithViewedBy)) ||
+        (data.isTapToReveal == false && data.keys().hasOnly(allowedKeysWithoutViewedBy))
+      );
+      
+      let validTapToRevealData = (data.isTapToReveal == false) || (data.isTapToReveal == true && data.viewedBy is list && data.viewedBy.size() == 0);
+
       return data.type == 'poll'
         && data.authorId == request.auth.uid
         && data.content is string && data.content.size() > 0 && data.content.size() <= 560
@@ -277,7 +317,7 @@ service cloud.firestore {
         && data.pollOptions[0].votes == 0
         && data.voters is map && data.voters.size() == 0
         && !data.keys().hasAny(['repostOf', 'quotedPost'])
-        && data.keys().hasOnly(allowedKeys);
+        && hasValidKeys && validTapToRevealData;
     }
 
 
