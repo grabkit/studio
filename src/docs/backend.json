@@ -1,5 +1,4 @@
 
-
 {
   "entities": {
     "User": {
@@ -286,6 +285,15 @@
         "eventDetails": {
             "$ref": "#/backend/entities/EventDetails",
             "description": "Denormalized data of the event, if this is an event post."
+        },
+        "isTapToReveal": {
+            "type": "boolean",
+            "description": "If true, the post content is hidden until the user taps to reveal it once."
+        },
+        "viewedBy": {
+            "type": "array",
+            "description": "An array of user IDs who have viewed a 'tap to reveal' post.",
+            "items": { "type": "string" }
         }
       },
       "required": [
@@ -480,22 +488,9 @@
             "senderId": { "type": "string" },
             "text": { "type": "string" },
             "timestamp": { "type": "string", "format": "date-time" },
-            "deletedFor": { "type": "array", "items": { "type": "string" } },
-            "answerCount": { "type": "number" }
+            "deletedFor": { "type": "array", "items": { "type": "string" } }
         },
         "required": ["id", "senderId", "timestamp"]
-    },
-    "Answer": {
-        "title": "Answer",
-        "type": "object",
-        "description": "Represents an answer to a message in an Ask Space room.",
-        "properties": {
-          "id": { "type": "string" },
-          "authorId": { "type": "string" },
-          "content": { "type": "string" },
-          "timestamp": { "type": "string", "format": "date-time" }
-        },
-        "required": ["id", "authorId", "content", "timestamp"]
     },
     "ProblemReport": {
         "$schema": "http://json-schema.org/draft-07/schema#",
@@ -583,32 +578,6 @@
             "sdpMLineIndex": { "type": "number" },
             "usernameFragment": { "type": "string" }
         }
-    },
-    "SyncCall": {
-        "$schema": "http://json-schema.org/draft-07/schema#",
-        "title": "Sync Call",
-        "type": "object",
-        "description": "Represents a stranger chat session.",
-        "properties": {
-          "id": { "type": "string" },
-          "participantIds": { "type": "array", "items": { "type": "string" } },
-          "status": { "type": "string", "enum": ["searching", "active", "ended"] },
-          "createdAt": { "type": "string", "format": "date-time" }
-        },
-        "required": ["id", "participantIds", "status", "createdAt"]
-    },
-    "SyncMessage": {
-      "$schema": "http://json-schema.org/draft-07/schema#",
-      "title": "Sync Message",
-      "type": "object",
-      "description": "Represents a single message within a stranger chat session.",
-      "properties": {
-        "id": { "type": "string" },
-        "senderId": { "type": "string" },
-        "text": { "type": "string" },
-        "timestamp": { "type": "string", "format": "date-time" }
-      },
-      "required": ["id", "senderId", "text", "timestamp"]
     }
   },
   "auth": {
@@ -766,19 +735,6 @@
           }
       },
       {
-          "path": "/rooms/{roomId}/messages/{messageId}/answers/{answerId}",
-          "definition": {
-              "entityName": "Answer",
-              "schema": { "$ref": "#/backend/entities/Answer" },
-              "description": "Stores all answers for a given message in a room.",
-              "params": [
-                  { "name": "roomId", "description": "The ID of the parent room." },
-                  { "name": "messageId", "description": "The ID of the parent message." },
-                  { "name": "answerId", "description": "The unique ID for the answer." }
-              ]
-          }
-      },
-      {
         "path": "/conversations/{conversationId}",
         "definition": {
           "entityName": "Conversation",
@@ -911,36 +867,10 @@
                   { "name": "candidateId", "description": "Unique ID for the ICE candidate." }
               ]
           }
-      },
-      {
-        "path": "/syncQueue/{userId}",
-        "definition": {
-          "schema": { "type": "object", "properties": { "timestamp": { "type": "string", "format": "date-time" } } },
-          "description": "A queue for users waiting for a stranger chat."
-        }
-      },
-      {
-        "path": "/syncCalls/{callId}",
-        "definition": {
-          "entityName": "SyncCall",
-          "schema": { "$ref": "#/backend/entities/SyncCall" },
-          "description": "Stores stranger chat signaling data.",
-          "params": [ { "name": "callId", "description": "Unique ID for the sync call." } ]
-        }
-      },
-      {
-        "path": "/syncCalls/{callId}/messages/{messageId}",
-        "definition": {
-          "entityName": "SyncMessage",
-          "schema": { "$ref": "#/backend/entities/SyncMessage" },
-          "description": "Stores messages for a stranger chat session.",
-          "params": [
-            { "name": "callId", "description": "The ID of the parent sync call." },
-            { "name": "messageId", "description": "Unique ID for the message." }
-          ]
-        }
       }
     ],
     "reasoning": "The Firestore structure is designed for a public, social-media-style application. User profiles are stored in a `/users` collection, while all posts are stored in a single top-level `/posts` collection. This global `posts` collection allows any user to easily query and view all public posts. Security rules are configured to enforce that while all authenticated user can read posts, only the original author (`authorId` must match `request.auth.uid`) can write, update, or delete their own posts. Comments are stored in a subcollection under each post for clear organization. User-specific data like bookmarks and notifications are stored in subcollections under the respective user's document for security and scalability. Messaging is handled through a top-level `conversations` collection, with messages stored in a subcollection. This allows for efficient querying of conversations a user is part of, while keeping the actual message data separate. A `reports` collection is added for moderation purposes, allowing users to report content or other users. A `calls` collection with `callerCandidates` and `answerCandidates` subcollections is added to facilitate WebRTC voice call signaling. A separate `videoCalls` collection with its own candidate subcollections is added for the new video call functionality to keep it isolated from the existing voice call feature."
   }
 }
+
+    

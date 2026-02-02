@@ -28,7 +28,7 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Form, FormControl, FormField, FormItem, FormMessage, FormLabel } from "@/components/ui/form";
-import { Loader2, X, ListOrdered, Plus, Link as LinkIcon, Image as ImageIcon, CalendarClock, Mic, Play, Square, RefreshCw, Send, Pause, StopCircle, Check, Circle, Undo2, CalendarDays, MapPin, Clock, DollarSign, Info, AlignLeft } from "lucide-react";
+import { Loader2, X, ListOrdered, Plus, Link as LinkIcon, Image as ImageIcon, CalendarClock, Mic, Play, Square, RefreshCw, Send, Pause, StopCircle, Check, Circle, Undo2, CalendarDays, MapPin, Clock, DollarSign, Info, AlignLeft, Eye } from "lucide-react";
 import { errorEmitter } from "@/firebase/error-emitter";
 import { FirestorePermissionError } from "@/firebase/errors";
 import { Switch } from "@/components/ui/switch";
@@ -79,6 +79,7 @@ const eventDetailsSchema = z.object({
 const baseSchema = z.object({
   content: z.string().max(560, "Post is too long.").optional(),
   commentsAllowed: z.boolean().default(true),
+  isTapToReveal: z.boolean().default(false),
   linkMetadata: linkMetadataSchema,
   quotedPost: quotedPostSchema,
   expiration: z.number().optional(),
@@ -744,6 +745,7 @@ function PostPageComponent() {
     defaultValues: {
       content: "",
       commentsAllowed: true,
+      isTapToReveal: false,
       isPoll: false,
     },
   });
@@ -775,6 +777,7 @@ function PostPageComponent() {
             content: postData.content,
             commentsAllowed: postData.commentsAllowed,
             isPoll: postData.type === 'poll',
+            isTapToReveal: postData.isTapToReveal,
             quotedPost: postData.quotedPost,
             linkMetadata: postData.linkMetadata,
             expiration: expirationInSeconds,
@@ -891,6 +894,7 @@ function PostPageComponent() {
       const updatedData: Partial<Post> = {
         content: processedValues.content,
         commentsAllowed: processedValues.commentsAllowed,
+        isTapToReveal: processedValues.isTapToReveal,
         linkMetadata: processedValues.linkMetadata,
         quotedPost: processedValues.quotedPost,
         eventDetails: finalEventDetails as EventDetails,
@@ -928,6 +932,8 @@ function PostPageComponent() {
           repostCount: 0,
           commentsAllowed: processedValues.commentsAllowed,
           isPinned: false,
+          isTapToReveal: processedValues.isTapToReveal,
+          ...(processedValues.isTapToReveal && { viewedBy: [] }),
           type: type,
           ...(processedValues.linkMetadata && { linkMetadata: processedValues.linkMetadata }),
           ...(processedValues.quotedPost && { quotedPost: processedValues.quotedPost }),
@@ -1121,7 +1127,7 @@ function PostPageComponent() {
                                       </div>
                                    )}
 
-                                  <div className="p-4 border-t bg-background w-full fixed bottom-0 left-0 right-0">
+                                  <div className="p-4 border-t bg-background w-full fixed bottom-0 left-0 right-0 space-y-2">
                                       <div className="flex items-center space-x-1">
                                           <Button type="button" variant="ghost" size="icon" onClick={() => setShowLinkInput(!showLinkInput)} disabled={!!linkMetadata || isEditMode || !!audioUrl || !!eventDetails?.name}>
                                               <LinkIcon className="h-5 w-5 text-muted-foreground" />
@@ -1141,12 +1147,23 @@ function PostPageComponent() {
                                               </Button>
                                               <span className="text-xs text-muted-foreground whitespace-nowrap">{expirationLabel}</span>
                                           </div>
-                                              <FormField control={form.control} name="commentsAllowed" render={({ field }) => (
-                                                  <FormItem className="flex items-center space-x-2 space-y-0 pl-2">
-                                                      <Switch id="comments-allowed" checked={field.value} onCheckedChange={field.onChange}/>
-                                                      <FormLabel htmlFor="comments-allowed" className="text-sm">Replies</FormLabel>
-                                                  </FormItem>
-                                              )}/>
+                                      </div>
+                                      <div className="flex items-center justify-start space-x-4">
+                                         <FormField control={form.control} name="commentsAllowed" render={({ field }) => (
+                                            <FormItem className="flex items-center space-x-2 space-y-0">
+                                                <Switch id="comments-allowed" checked={field.value} onCheckedChange={field.onChange}/>
+                                                <FormLabel htmlFor="comments-allowed" className="text-sm font-normal">Replies</FormLabel>
+                                            </FormItem>
+                                          )}/>
+                                          <FormField control={form.control} name="isTapToReveal" render={({ field }) => (
+                                            <FormItem className="flex items-center space-x-2 space-y-0">
+                                                <Switch id="tap-to-reveal" checked={field.value} onCheckedChange={field.onChange}/>
+                                                <FormLabel htmlFor="tap-to-reveal" className="text-sm font-normal flex items-center gap-1">
+                                                  <Eye className="h-4 w-4"/>
+                                                  Tap to Reveal
+                                                </FormLabel>
+                                            </FormItem>
+                                          )}/>
                                       </div>
                                   </div>
                               </form>
@@ -1184,7 +1201,5 @@ export default function PostPage() {
     </Suspense>
   );
 }
-
-    
 
     

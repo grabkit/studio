@@ -38,7 +38,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { Button, buttonVariants } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { Form, FormControl, FormField, FormItem, FormMessage } from "@/components/ui/form";
-import { Heart, MessageCircle, ArrowUpRight, Trash2, MoreHorizontal, Edit, ArrowLeft, Repeat, Check, AlertTriangle, Slash, Loader2, Send, CheckCircle2, Clock } from "lucide-react";
+import { Heart, MessageCircle, ArrowUpRight, Trash2, MoreHorizontal, Edit, ArrowLeft, Repeat, Check, AlertTriangle, Slash, Loader2, Send, CheckCircle2, Clock, Eye } from "lucide-react";
 import { cn, formatTimestamp, getAvatar, formatCount, formatUserId, formatExpiry } from "@/lib/utils";
 import { useToast } from "@/hooks/use-toast";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -315,6 +315,7 @@ function PostDetailItem({ post, updatePost }: { post: WithId<Post>, updatePost: 
   const [isDeleteSheetOpen, setIsDeleteSheetOpen] = useState(false);
   const [isLiking, setIsLiking] = useState(false);
   const [likeDirection, setLikeDirection] = useState<'up' | 'down'>('up');
+  const [isRevealed, setIsRevealed] = useState(false);
 
   const isOwner = user?.uid === post.authorId;
   const repliesAllowed = post.commentsAllowed !== false;
@@ -323,6 +324,30 @@ function PostDetailItem({ post, updatePost }: { post: WithId<Post>, updatePost: 
 
   const avatar = getAvatar({id: post.authorId});
   const isAvatarUrl = avatar.startsWith('http');
+  
+  const isTapToRevealPost = post.isTapToReveal === true;
+  const hasViewed = useMemo(() => user && post.viewedBy?.includes(user.uid), [post.viewedBy, user]);
+
+  const handleReveal = () => {
+    if (!user || !firestore || hasViewed) return;
+    
+    setIsRevealed(true);
+
+    const postRef = doc(firestore, 'posts', post.id);
+    updateDoc(postRef, {
+        viewedBy: arrayUnion(user.uid)
+    }).catch(err => {
+        // Could revert UI here, but for now, just log it.
+        console.error("Failed to update viewedBy:", err);
+    });
+
+    if (updatePost) {
+        updatePost({
+            viewedBy: [...(post.viewedBy || []), user.uid]
+        });
+    }
+  };
+
 
   const handleLike = async () => {
     if (!user || !firestore || isLiking) {
@@ -462,6 +487,32 @@ function PostDetailItem({ post, updatePost }: { post: WithId<Post>, updatePost: 
     router.push(`/post?postId=${post.id}`);
   };
 
+  const showBlurredView = isTapToRevealPost && !isRevealed && !hasViewed;
+  const showPermanentlyViewed = isTapToRevealPost && hasViewed;
+
+  const PostContent = () => (
+    <>
+        {post.content && <p className="text-foreground text-base whitespace-pre-wrap">{post.content}</p>}
+
+        {post.type === 'event' && post.eventDetails && (
+            <EventCard eventDetails={post.eventDetails} />
+        )}
+
+        {post.type === 'quote' && post.quotedPost && (
+          <div className="mt-2">
+            <QuotedPostCard post={post.quotedPost} />
+          </div>
+        )}
+        
+        {post.linkMetadata && <LinkPreview metadata={post.linkMetadata} />}
+        
+        {post.type === 'poll' && post.pollOptions && (
+          <PollComponent post={post} user={user} onVote={(updatedData) => updatePost(updatedData)} />
+        )}
+    </>
+  );
+
+
   return (
     <>
     <Card className="w-full shadow-none rounded-none border-x-0 border-t-0">
@@ -516,22 +567,20 @@ function PostDetailItem({ post, updatePost }: { post: WithId<Post>, updatePost: 
               </div>
             </div>
 
-            {post.content && <p className="text-foreground text-base whitespace-pre-wrap">{post.content}</p>}
-
-            {post.type === 'event' && post.eventDetails && (
-                <EventCard eventDetails={post.eventDetails} />
-            )}
-
-            {post.type === 'quote' && post.quotedPost && (
-              <div className="mt-2">
-                <QuotedPostCard post={post.quotedPost} />
-              </div>
-            )}
-            
-            {post.linkMetadata && <LinkPreview metadata={post.linkMetadata} />}
-            
-            {post.type === 'poll' && post.pollOptions && (
-              <PollComponent post={post} user={user} onVote={(updatedData) => updatePost(updatedData)} />
+            {(showBlurredView || showPermanentlyViewed) ? (
+                <div className="relative mt-2 rounded-lg overflow-hidden">
+                    <div className="blur-md pointer-events-none">
+                        <PostContent />
+                    </div>
+                    <div className="absolute inset-0 flex items-center justify-center bg-black/30">
+                        <Button onClick={handleReveal} disabled={showPermanentlyViewed}>
+                            <Eye className="mr-2 h-4 w-4" />
+                            {showPermanentlyViewed ? 'Viewed Once' : 'View Once'}
+                        </Button>
+                    </div>
+                </div>
+            ) : (
+                <PostContent />
             )}
 
             <div className="mt-2 py-3">
@@ -627,7 +676,7 @@ function CommentForm({ post, commentsAllowed }: { post: WithId<Post>, commentsAl
   }, [firestore, post]);
   const { data: postAuthorProfile } = useDoc<UserProfile>(postAuthorRef);
 
-  const onSubmit = async (values: z.infer<typeof CommentFormSchema>) => {
+  const onSubmit = async (values: z.infer<typeof CommentFormSchema>>) => {
     if (!user || !firestore) {
       toast({ variant: "destructive", title: "You must be logged in to comment." });
       return;
@@ -1136,12 +1185,5 @@ export default function PostDetailPage() {
     </AppLayout>
   );
 }
-
-    
-
-
-
-
-
 
     

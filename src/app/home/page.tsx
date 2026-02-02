@@ -10,7 +10,7 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Skeleton } from "@/components/ui/skeleton";
 import type { Post, Bookmark, PollOption, Notification, User, LinkMetadata, QuotedPost } from "@/lib/types";
-import { Heart, MessageCircle, Repeat, ArrowUpRight, MoreHorizontal, Edit, Trash2, Bookmark as BookmarkIcon, CheckCircle2, Slash, Pin, Clock } from "lucide-react";
+import { Heart, MessageCircle, Repeat, ArrowUpRight, MoreHorizontal, Edit, Trash2, Bookmark as BookmarkIcon, CheckCircle2, Slash, Pin, Clock, Eye } from "lucide-react";
 import { cn, formatTimestamp, getAvatar, formatCount, formatUserId, formatExpiry } from "@/lib/utils";
 import { useToast } from "@/hooks/use-toast";
 import { FirestorePermissionError } from "@/firebase/errors";
@@ -298,6 +298,7 @@ function InnerPostItem({ post, bookmarks, updatePost, onDelete, onPin, showPinSt
   const [isMoreOptionsSheetOpen, setIsMoreOptionsSheetOpen] = useState(false);
   const [isRepostSheetOpen, setIsRepostSheetOpen] = useState(false);
   const [isLiking, setIsLiking] = useState(false);
+  const [isRevealed, setIsRevealed] = useState(false);
   
   const isOwner = user?.uid === post.authorId;
   const isBookmarked = useMemo(() => bookmarks?.some(b => b.postId === post.id), [bookmarks, post.id]);
@@ -319,6 +320,28 @@ function InnerPostItem({ post, bookmarks, updatePost, onDelete, onPin, showPinSt
     return post.likes?.includes(user.uid);
   }, [post.likes, user]);
 
+  const isTapToRevealPost = post.isTapToReveal === true;
+  const hasViewed = useMemo(() => user && post.viewedBy?.includes(user.uid), [post.viewedBy, user]);
+
+  const handleReveal = () => {
+    if (!user || !firestore || hasViewed) return;
+    
+    setIsRevealed(true);
+
+    const postRef = doc(firestore, 'posts', post.id);
+    updateDoc(postRef, {
+        viewedBy: arrayUnion(user.uid)
+    }).catch(err => {
+        // Could revert UI here, but for now, just log it.
+        console.error("Failed to update viewedBy:", err);
+    });
+
+    if (updatePost) {
+        updatePost(post.id, {
+            viewedBy: [...(post.viewedBy || []), user.uid]
+        });
+    }
+  };
 
   const handleLike = async () => {
     if (!user || !firestore || !updatePost || isLiking) {
@@ -488,7 +511,38 @@ function InnerPostItem({ post, bookmarks, updatePost, onDelete, onPin, showPinSt
   };
   
   const CommentButtonWrapper = repliesAllowed ? Link : 'div';
+  
+  const showBlurredView = isTapToRevealPost && !isRevealed && !hasViewed;
+  const showPermanentlyViewed = isTapToRevealPost && hasViewed;
 
+  const PostContent = ({ isClickable = true }: { isClickable?: boolean }) => {
+    const linkClassName = cn("block", !isClickable && "pointer-events-none");
+    return (
+        <>
+            {post.content && (
+                <Link href={`/post/${post.id}`} className={linkClassName}>
+                    <p className="text-foreground text-sm whitespace-pre-wrap">{post.content}</p>
+                </Link>
+            )}
+
+            {post.type === 'event' && post.eventDetails && (
+                <EventCard eventDetails={post.eventDetails} />
+            )}
+
+            {post.type === 'quote' && post.quotedPost && (
+                <div className="mt-2">
+                    <QuotedPostCard post={post.quotedPost} />
+                </div>
+            )}
+            
+            {post.linkMetadata && <LinkPreview metadata={post.linkMetadata} />}
+
+            {post.type === 'poll' && post.pollOptions && (
+                <PollComponent post={post} user={user} onVote={(updatedData) => updatePost?.(post.id, updatedData)} />
+            )}
+        </>
+    );
+};
 
   return (
     <>
@@ -549,25 +603,24 @@ function InnerPostItem({ post, bookmarks, updatePost, onDelete, onPin, showPinSt
                </div>
             </div>
 
-            <Link href={`/post/${post.id}`} className="block">
-                {post.content && <p className="text-foreground text-sm whitespace-pre-wrap">{post.content}</p>}
-            </Link>
-
-            {post.type === 'event' && post.eventDetails && (
-                <EventCard eventDetails={post.eventDetails} />
-            )}
-
-            {post.type === 'quote' && post.quotedPost && (
+            {(showBlurredView || showPermanentlyViewed) ? (
+                <div className="relative mt-2 rounded-lg overflow-hidden">
+                    <div className="blur-md pointer-events-none">
+                        <PostContent isClickable={false} />
+                    </div>
+                    <div className="absolute inset-0 flex items-center justify-center bg-black/30">
+                        <Button onClick={(e) => { e.preventDefault(); e.stopPropagation(); handleReveal(); }} disabled={showPermanentlyViewed}>
+                            <Eye className="mr-2 h-4 w-4" />
+                            {showPermanentlyViewed ? 'Viewed Once' : 'View Once'}
+                        </Button>
+                    </div>
+                </div>
+            ) : (
                 <div className="mt-2">
-                    <QuotedPostCard post={post.quotedPost} />
+                    <PostContent />
                 </div>
             )}
             
-            {post.linkMetadata && <LinkPreview metadata={post.linkMetadata} />}
-
-            {post.type === 'poll' && post.pollOptions && (
-                <PollComponent post={post} user={user} onVote={(updatedData) => updatePost?.(post.id, updatedData)} />
-            )}
 
             <div className="mt-4 flex items-center justify-around">
                 <button onClick={handleLike} disabled={isLiking} className={cn("flex items-center space-x-1 p-2 -m-2", hasLiked && "text-pink-500")}>
@@ -899,11 +952,5 @@ export default function HomePage() {
     </AppLayout>
   );
 }
-
-    
-
-    
-
-
 
     

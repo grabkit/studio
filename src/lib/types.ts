@@ -61,6 +61,8 @@ export interface Post {
     commentsAllowed?: boolean;
     isPinned?: boolean;
     expiresAt?: Timestamp;
+    isTapToReveal?: boolean;
+    viewedBy?: string[];
 
     type?: 'text' | 'poll' | 'repost' | 'quote' | 'audio' | 'event';
 
@@ -274,3 +276,5 @@ export interface SyncMessage {
     text: string;
     timestamp: Timestamp;
 }
+
+    
