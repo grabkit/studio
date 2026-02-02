@@ -492,7 +492,7 @@ function PostDetailItem({ post, updatePost }: { post: WithId<Post>, updatePost: 
                         </Button>
                         </SheetTrigger>
                         <SheetContent side="bottom" className="rounded-t-[10px]">
-                             <SheetHeader className="sr-only">
+                             <SheetHeader className="text-center">
                                 <SheetTitle>Options for post</SheetTitle>
                                 <SheetDescription>Manage your post.</SheetDescription>
                             </SheetHeader>

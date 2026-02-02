@@ -1,4 +1,5 @@
 
+
 "use client";
 
 import { useParams, useRouter } from "next/navigation";
@@ -768,6 +769,9 @@ export default function UserProfilePage() {
                     </div>
 
                     <SheetContent side="bottom" className="rounded-t-2xl p-0">
+                        <SheetHeader className="text-center p-4 border-b">
+                            <SheetTitle>Options</SheetTitle>
+                        </SheetHeader>
                         <div className="p-4 space-y-6 overflow-y-auto">
                             <div>
                                 <h3 className="px-2 mb-1 text-sm font-semibold text-muted-foreground">Interaction</h3>
