@@ -335,12 +335,6 @@ function InnerPostItem({ post, bookmarks, updatePost, onDelete, onPin, showPinSt
         // Could revert UI here, but for now, just log it.
         console.error("Failed to update viewedBy:", err);
     });
-
-    if (updatePost) {
-        updatePost(post.id, {
-            viewedBy: [...(post.viewedBy || []), user.uid]
-        });
-    }
   };
 
   const handleLike = async () => {

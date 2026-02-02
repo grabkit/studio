@@ -337,15 +337,8 @@ function PostDetailItem({ post, updatePost }: { post: WithId<Post>, updatePost: 
     updateDoc(postRef, {
         viewedBy: arrayUnion(user.uid)
     }).catch(err => {
-        // Could revert UI here, but for now, just log it.
         console.error("Failed to update viewedBy:", err);
     });
-
-    if (updatePost) {
-        updatePost({
-            viewedBy: [...(post.viewedBy || []), user.uid]
-        });
-    }
   };
 
 
@@ -1187,4 +1180,5 @@ export default function PostDetailPage() {
     </AppLayout>
   );
 }
+
 
