@@ -662,10 +662,12 @@ const CommentFormSchema = z.object({
   content: z.string().min(1, "Comment cannot be empty.").max(280),
 });
 
+type CommentFormValues = z.infer<typeof CommentFormSchema>;
+
 function CommentForm({ post, commentsAllowed }: { post: WithId<Post>, commentsAllowed?: boolean }) {
   const { user, userProfile, firestore } = useFirebase();
   const { toast } = useToast();
-  const form = useForm<z.infer<typeof CommentFormSchema>>({
+  const form = useForm<CommentFormValues>({
     resolver: zodResolver(CommentFormSchema),
     defaultValues: { content: "" },
   });
@@ -676,7 +678,7 @@ function CommentForm({ post, commentsAllowed }: { post: WithId<Post>, commentsAl
   }, [firestore, post]);
   const { data: postAuthorProfile } = useDoc<UserProfile>(postAuthorRef);
 
-  const onSubmit = async (values: z.infer<typeof CommentFormSchema>>) => {
+  const onSubmit = async (values: CommentFormValues) => {
     if (!user || !firestore) {
       toast({ variant: "destructive", title: "You must be logged in to comment." });
       return;
@@ -1186,4 +1188,3 @@ export default function PostDetailPage() {
   );
 }
 
-    
