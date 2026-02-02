@@ -1,5 +1,4 @@
 
-
 "use client";
 
 import AppLayout from "@/components/AppLayout";
@@ -609,9 +608,9 @@ function InnerPostItem({ post, bookmarks, updatePost, onDelete, onPin, showPinSt
                             onClick={(e) => { e.preventDefault(); e.stopPropagation(); handleReveal(); }}
                             disabled={showPermanentlyViewed}
                             variant="outline"
-                            className="rounded-[10px] bg-background/20 backdrop-blur-sm"
+                            className="rounded-[10px] bg-transparent border-white/50 text-white backdrop-blur-sm"
                         >
-                            <Eye className="mr-2 h-4 w-4" />
+                            <Eye className="mr-1 h-4 w-4" />
                             {showPermanentlyViewed ? 'Viewed Once' : 'View Once'}
                         </Button>
                     </div>
