@@ -1,5 +1,3 @@
-
-
 "use client";
 
 import React, { useState, useRef, useEffect, useCallback, useMemo } from 'react';
@@ -103,6 +101,11 @@ export function AudioPostCard({ post, bookmarks, updatePost, onDelete, onPin }: 
 
         const ctx = canvas.getContext('2d');
         if (!ctx) return;
+        
+        const computedStyle = getComputedStyle(document.documentElement);
+        const primaryColor = `hsl(${computedStyle.getPropertyValue('--primary').trim()})`;
+        const mutedForegroundColor = `hsl(${computedStyle.getPropertyValue('--muted-foreground').trim()})`;
+        const isDarkMode = document.documentElement.classList.contains('dark');
 
         const dpr = window.devicePixelRatio || 1;
         canvas.width = canvas.clientWidth * dpr;
@@ -124,7 +127,11 @@ export function AudioPostCard({ post, bookmarks, updatePost, onDelete, onPin }: 
             const x = i * (barWidth + gap);
 
             const isPlayed = (x / width) * 100 < progress;
-            ctx.fillStyle = isPlayed ? 'hsl(var(--primary))' : 'hsl(var(--muted-foreground))';
+            if (isPlayed) {
+                ctx.fillStyle = primaryColor;
+            } else {
+                ctx.fillStyle = isDarkMode ? '#FFFFFF' : mutedForegroundColor;
+            }
             ctx.fillRect(x, (height - barHeight) / 2, barWidth, barHeight);
         }
     }, [post.audioWaveform]);
@@ -357,8 +364,3 @@ export function AudioPostCard({ post, bookmarks, updatePost, onDelete, onPin }: 
         </>
     );
 }
-
-    
-
-    
-
