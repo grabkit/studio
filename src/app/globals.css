@@ -316,4 +316,40 @@
   .animate-slide-out-right {
       animation: slide-out-right 0.3s ease-in forwards;
   }
+
+  @keyframes vibgyor-circulate {
+    0% {
+      transform: rotate(0deg);
+    }
+    100% {
+      transform: rotate(360deg);
+    }
+  }
+
+  .bg-vibgyor-blur {
+    position: relative;
+    overflow: hidden;
+    background-color: hsl(var(--background));
+  }
+
+  .bg-vibgyor-blur::before {
+    content: '';
+    position: absolute;
+    left: -25%;
+    top: -25%;
+    width: 150%;
+    height: 150%;
+    background: conic-gradient(
+      from 180deg at 50% 50%,
+      #ef4444, #f97316, #eab308, #22c55e, #3b82f6, #6366f1, #a855f7, #ef4444
+    );
+    animation: vibgyor-circulate 10s linear infinite;
+    filter: blur(20px);
+    z-index: 1;
+  }
+
+  .blur-score-content {
+      position: relative;
+      z-index: 2;
+  }
 }

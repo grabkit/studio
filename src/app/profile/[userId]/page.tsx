@@ -636,13 +636,15 @@ export default function UserProfilePage() {
                                 </SheetTrigger>
                             </div>
 
-                            <div className="bg-card rounded-b-xl p-4 text-center h-24 flex flex-col justify-end">
-                                {isLoading ? (
-                                    <Skeleton className="h-6 w-8 mx-auto" />
-                                ) : (
-                                    <div className="font-bold text-lg">{filteredPosts?.length ?? 0}</div>
-                                )}
-                                <p className="text-sm text-muted-foreground">Posts</p>
+                            <div className="bg-vibgyor-blur rounded-b-xl h-24 flex flex-col justify-end">
+                                <div className="blur-score-content p-4 text-center text-white drop-shadow-md">
+                                    {isLoading ? (
+                                        <Skeleton className="h-6 w-8 mx-auto bg-white/30" />
+                                    ) : (
+                                        <div className="font-bold text-lg">{filteredPosts?.length ?? 0}</div>
+                                    )}
+                                    <p className="text-sm opacity-90">Blur Score</p>
+                                </div>
                             </div>
 
                             <div className="px-4">
@@ -850,5 +852,3 @@ export default function UserProfilePage() {
         </AppLayout>
     );
 }
-
-    
