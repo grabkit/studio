@@ -313,17 +313,6 @@ export default function AccountPage() {
   const avatar = useMemo(() => getAvatar(userProfile), [userProfile]);
   const isAvatarUrl = avatar.startsWith('http');
   
-    const getBlurScoreAnimationClass = (score: number): string => {
-        if (score <= 50) {
-            return 'wolf-animation';
-        } else if (score <= 200) {
-            return 'eagle-animation';
-        } else {
-            return 'lion-animation';
-        }
-    };
-
-
   return (
     <AppLayout showTopBar={false}>
        <div className="relative h-full">
@@ -367,14 +356,14 @@ export default function AccountPage() {
                     </div>
                 </div>
 
-                <div className={cn("blur-score-card rounded-b-xl h-24 flex flex-col justify-end", getBlurScoreAnimationClass(filteredPosts?.length ?? 0))}>
-                    <div className="blur-score-content p-4 text-center text-white drop-shadow-md">
+                <div className="bg-secondary rounded-b-xl h-24 flex flex-col justify-end">
+                    <div className="p-4 text-center">
                         {isLoading ? (
-                            <Skeleton className="h-6 w-8 mx-auto bg-white/30" />
+                            <Skeleton className="h-6 w-8 mx-auto" />
                         ) : (
-                            <div className="font-bold text-lg">{filteredPosts?.length ?? 0}</div>
+                            <div className="font-bold text-lg text-secondary-foreground">{filteredPosts?.length ?? 0}</div>
                         )}
-                        <p className="text-sm opacity-90">Blur Score</p>
+                        <p className="text-sm text-secondary-foreground/90">Blur Score</p>
                     </div>
                 </div>
                 
