@@ -331,30 +331,47 @@
     top: 0;
     width: 100%;
     height: 100%;
-    background-size: cover;
-    background-position: center;
-    filter: blur(8px) brightness(0.7);
     z-index: -1;
-    transform: scale(1.1); /* To avoid hard edges from blur */
-    transition: background-image 0.5s ease-in-out;
   }
 
   .blur-score-content {
       position: relative;
       z-index: 2;
   }
-  
+
+  @keyframes wolf-animation-bg {
+    0% { background-position: 0% 50%; }
+    50% { background-position: 100% 50%; }
+    100% { background-position: 0% 50%; }
+  }
   .wolf-animation::before {
-    background-image: url('https://blogger.googleusercontent.com/img/b/R29vZ2xl/AVvXsEg5a5wJ2g-Yl_Jm5V_3C-A2v9B_1D-0_E-Z_8f7g-6_H-5_I-4_J-3/s320/wolf-run-cycle.gif');
+    background: linear-gradient(-45deg, #232a44, #4a4d6b, #1e223d, #0f101c);
+    background-size: 400% 400%;
+    animation: wolf-animation-bg 15s ease infinite;
+    filter: blur(8px) brightness(0.7);
   }
 
+  @keyframes eagle-animation-bg {
+    0% { background-position: 50% 0%; }
+    50% { background-position: 50% 100%; }
+    100% { background-position: 50% 0%; }
+  }
   .eagle-animation::before {
-    background-image: url('https://blogger.googleusercontent.com/img/b/R29vZ2xl/AVvXsEi2c3b4d5e6f7g8h9i0j1k2l3m4n5o6p7q8r9s0t1u2v3w4x5y6z7A8B9C0D1E2F3/s320/eagle-fly.gif');
+      background: linear-gradient(0deg, #d4e0ff, #f0f4ff, #a8c0ff, #ffffff);
+      background-size: 200% 200%;
+      animation: eagle-animation-bg 12s ease infinite;
+      filter: blur(8px) brightness(1);
   }
 
+  @keyframes lion-animation-bg {
+    0% { background-position: 0% 50%; }
+    50% { background-position: 100% 50%; }
+    100% { background-position: 0% 50%; }
+  }
   .lion-animation::before {
-    background-image: url('https://blogger.googleusercontent.com/img/b/R29vZ2xl/AVvXsEgk_l2m3n4o5p6q7r8s9t0u1v2w3x4y5z6A7B8C9D0E1F2G3H4I5J6K7L8M9N0/s320/lion-roar.gif');
+      background: linear-gradient(-45deg, #ffcf40, #ff8c00, #ffb84d, #e96d00);
+      background-size: 400% 400%;
+      animation: lion-animation-bg 10s ease infinite;
+      filter: blur(10px) brightness(1.1);
   }
 }
-
-    
