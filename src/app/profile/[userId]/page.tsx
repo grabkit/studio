@@ -638,12 +638,12 @@ export default function UserProfilePage() {
 
                              <div className="bg-secondary rounded-b-xl h-24 flex flex-col justify-center">
                                 <div className="text-center">
+                                    <p className="text-sm text-secondary-foreground/90">Blur Score</p>
                                     {isLoading ? (
-                                        <Skeleton className="h-6 w-8 mx-auto mb-1" />
+                                        <Skeleton className="h-6 w-8 mx-auto mt-1" />
                                     ) : (
                                         <div className="font-bold text-lg text-secondary-foreground">{10 + (filteredPosts?.length ?? 0) * 5}</div>
                                     )}
-                                    <p className="text-sm text-secondary-foreground/90">Blur Score</p>
                                 </div>
                             </div>
 
