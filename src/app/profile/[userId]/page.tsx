@@ -1,5 +1,4 @@
 
-
 "use client";
 
 import { useParams, useRouter } from "next/navigation";
@@ -623,7 +622,7 @@ export default function UserProfilePage() {
                         className="relative h-full overflow-y-auto"
                     >
                         <div>
-                            <div className="flex items-center justify-between h-14 px-4 bg-background">
+                             <div className="flex items-center justify-between h-14 px-4 bg-background">
                                 <Button variant="ghost" size="icon" onClick={handleBackNavigation}>
                                     <ArrowLeft className="h-6 w-6" />
                                 </Button>
@@ -636,11 +635,30 @@ export default function UserProfilePage() {
                                     </Button>
                                 </SheetTrigger>
                             </div>
-                            <div className="px-4 pt-4">
-                                <div className="flex items-center justify-between space-x-5 mb-4">
+
+                            <div className="bg-card rounded-b-xl p-4 text-center h-24 flex flex-col justify-end">
+                                {isLoading ? (
+                                    <Skeleton className="h-6 w-8 mx-auto" />
+                                ) : (
+                                    <div className="font-bold text-lg">{filteredPosts?.length ?? 0}</div>
+                                )}
+                                <p className="text-sm text-muted-foreground">Posts</p>
+                            </div>
+
+                            <div className="px-4">
+                                <div className="flex items-end justify-between -mt-12 relative">
+                                    <Link href={`/profile/${userId}/social?tab=followers`} className="text-center w-1/4">
+                                        {isLoading ? (
+                                        <Skeleton className="h-6 w-8 mx-auto" />
+                                        ) : (
+                                        <div className="font-bold text-lg">{user?.followersCount || 0}</div>
+                                        )}
+                                        <p className="text-sm text-muted-foreground">Followers</p>
+                                    </Link>
+
                                     <div className="flex-shrink-0">
                                         <div className="relative inline-block">
-                                            <Avatar className="h-20 w-20 md:h-24 md:w-24">
+                                            <Avatar className="h-24 w-24 border-4 border-background">
                                                 <AvatarImage
                                                     src={isAvatarUrl ? avatar : undefined}
                                                     alt={user?.name || "User"}
@@ -650,7 +668,7 @@ export default function UserProfilePage() {
                                                 </AvatarFallback>
                                             </Avatar>
                                             {hasVoiceStatus && (
-                                                <div className="absolute bottom-0 right-0 bg-background p-1 rounded-full border-2 cursor-pointer" onClick={handleAvatarClick} role="button">
+                                                <div className="absolute bottom-1 right-1 bg-background p-1 rounded-full border-2 cursor-pointer" onClick={handleAvatarClick} role="button">
                                                     <div className="flex items-center justify-center h-4 w-4 gap-0.5">
                                                         <div className="audio-wave-bar-avatar" />
                                                         <div className="audio-wave-bar-avatar" />
@@ -662,44 +680,29 @@ export default function UserProfilePage() {
                                             )}
                                         </div>
                                     </div>
-                                    <div className="flex-1 flex justify-around text-center">
-                                        <div>
-                                            {isLoading ? (
-                                                <div className="font-bold text-lg"><Skeleton className="h-6 w-8 mx-auto" /></div>
-                                            ) : (
-                                                <div className="font-bold text-lg">{filteredPosts?.length ?? 0}</div>
-                                            )}
-                                            <p className="text-sm text-muted-foreground">Posts</p>
-                                        </div>
-                                        <Link href={`/profile/${userId}/social?tab=followers`} className="cursor-pointer hover:bg-secondary/50 rounded-md p-1 -m-1">
-                                            {isLoading ? (
-                                            <div className="font-bold text-lg"><Skeleton className="h-6 w-8 mx-auto" /></div>
-                                            ) : (
-                                            <div className="font-bold text-lg">{user?.followersCount || 0}</div>
-                                            )}
-                                            <p className="text-sm text-muted-foreground">Followers</p>
-                                        </Link>
-                                        <Link href={`/profile/${userId}/social?tab=following`} className="cursor-pointer hover:bg-secondary/50 rounded-md p-1 -m-1">
-                                            {isLoading ? (
-                                            <div className="font-bold text-lg"><Skeleton className="h-6 w-8 mx-auto" /></div>
-                                            ) : (
-                                            <div className="font-bold text-lg">{user?.followingCount || 0}</div>
-                                            )}
-                                            <p className="text-sm text-muted-foreground">Following</p>
-                                        </Link>
-                                    </div>
+
+                                    <Link href={`/profile/${userId}/social?tab=following`} className="text-center w-1/4">
+                                        {isLoading ? (
+                                        <Skeleton className="h-6 w-8 mx-auto" />
+                                        ) : (
+                                        <div className="font-bold text-lg">{user?.followingCount || 0}</div>
+                                        )}
+                                        <p className="text-sm text-muted-foreground">Following</p>
+                                    </Link>
                                 </div>
-                                <div className="mb-4 space-y-1">
-                                    <p className="font-semibold font-headline">{formatUserId(user?.id)}</p>
-                                    <p className="text-sm">{user?.bio || "Hey there! I’m using Blur."}</p>
+                                
+                                <div className="text-center mt-4 space-y-1">
+                                    <p className="font-semibold font-headline text-xl">{formatUserId(user?.id)}</p>
+                                    <p className="text-sm text-muted-foreground">{user?.bio || "Hey there! I’m using Blur."}</p>
                                     {user?.website && (
-                                        <a href={user.website} target="_blank" rel="noopener noreferrer" className="flex items-center gap-2 text-sm text-blue-500 hover:underline">
+                                        <a href={user.website} target="_blank" rel="noopener noreferrer" className="flex items-center justify-center gap-2 text-sm text-blue-500 hover:underline">
                                             <LinkIcon className="h-4 w-4" />
                                             <span>{user.website.replace(/^(https?:\/\/)?(www\.)?/, '')}</span>
                                         </a>
                                     )}
                                 </div>
-                                <div className="mb-4 flex items-center space-x-2">
+
+                                <div className="mt-4 mb-4 flex items-center space-x-2">
                                      {isFollowing ? (
                                         <Sheet open={isUnfollowSheetOpen} onOpenChange={setIsUnfollowSheetOpen}>
                                             <SheetTrigger asChild>
@@ -847,3 +850,5 @@ export default function UserProfilePage() {
         </AppLayout>
     );
 }
+
+    
