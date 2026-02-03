@@ -356,7 +356,7 @@ export default function AccountPage() {
                     </div>
                 </div>
 
-                <div className="bg-secondary rounded-b-xl h-24 flex flex-col justify-start pt-4">
+                <div className="bg-secondary rounded-b-xl h-24 flex flex-col justify-start pt-2">
                     <div className="text-center">
                         <p className="text-sm text-secondary-foreground/90">Blur Score</p>
                         {isLoading ? (
