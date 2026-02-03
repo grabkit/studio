@@ -332,6 +332,10 @@
     width: 100%;
     height: 100%;
     z-index: -1;
+    background-size: cover;
+    background-position: center;
+    filter: blur(5px) brightness(0.6);
+    transform: translateZ(0);
   }
 
   .blur-score-content {
@@ -339,39 +343,23 @@
       z-index: 2;
   }
 
-  @keyframes wolf-animation-bg {
+  @keyframes slow-pan {
     0% { background-position: 0% 50%; }
     50% { background-position: 100% 50%; }
     100% { background-position: 0% 50%; }
   }
+
   .wolf-animation::before {
-    background: linear-gradient(-45deg, #232a44, #4a4d6b, #1e223d, #0f101c);
-    background-size: 400% 400%;
-    animation: wolf-animation-bg 15s ease infinite;
-    filter: blur(8px) brightness(0.7);
+    background-image: url('https://blogger.googleusercontent.com/img/b/R29vZ2xl/AVvXsEjT5e5u-c2p_N5nQJg8rP1dO5eG8bX-c3B8A8sL9dO4tY7pQfA9jW2kR0eL6mX-s7N7vP5sL3dO2tY9rQ8fA-jW4kR1eL7mX-s8N8vP6sL4dO3tY-r/s1600/wolf_walk_loop_black_transparent.gif');
+    animation: slow-pan 20s linear infinite;
   }
-
-  @keyframes eagle-animation-bg {
-    0% { background-position: 50% 0%; }
-    50% { background-position: 50% 100%; }
-    100% { background-position: 50% 0%; }
-  }
+  
   .eagle-animation::before {
-      background: linear-gradient(0deg, #d4e0ff, #f0f4ff, #a8c0ff, #ffffff);
-      background-size: 200% 200%;
-      animation: eagle-animation-bg 12s ease infinite;
-      filter: blur(8px) brightness(1);
+    background-image: url('https://blogger.googleusercontent.com/img/b/R29vZ2xl/AVvXsEhoX-z9iFQ_oZMCHDbsgRsPcztHHRUbMbD8GXNN109hzQpxLQRndngO1LoZEe2j3GkFEXrJGxfrk6UUR_dFUo5cBiz7I3tZ4n-lROEcWNLCsr3SuB_eeOh-BR8gTUUmX6B34PY_tcbf0wA35tOHa2lVDjzm2n8J6pawYy9Qm4i/s1600/eagle_soar_loop_black_transparent.gif');
+    animation: slow-pan 25s linear infinite reverse;
   }
-
-  @keyframes lion-animation-bg {
-    0% { background-position: 0% 50%; }
-    50% { background-position: 100% 50%; }
-    100% { background-position: 0% 50%; }
-  }
+  
   .lion-animation::before {
-      background: linear-gradient(-45deg, #ffcf40, #ff8c00, #ffb84d, #e96d00);
-      background-size: 400% 400%;
-      animation: lion-animation-bg 10s ease infinite;
-      filter: blur(10px) brightness(1.1);
+    background-image: url('https://blogger.googleusercontent.com/img/b/R29vZ2xl/AVvXsEgSIOQYwoQ_D8LcS9OlsMjXOlBws0OSrPnxh7nqq_wHdmqQ9PlIRvrtOni6EwDf68sAofpaFhvfA4wK58PpYu6HV4JeLsFbj61-ryJZUGPsGed4dswZSblL09Huc3Fd4-nmSln8MybhJVeWIMSoudR_U6Pe0IiCuiJ4ucEqFn6i0zNdTqNwM6goO8pbOaOR/s1600/lion_roar_loop_black_transparent.gif');
   }
 }
