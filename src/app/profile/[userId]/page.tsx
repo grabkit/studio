@@ -636,7 +636,7 @@ export default function UserProfilePage() {
                                 </SheetTrigger>
                             </div>
 
-                             <div className="bg-secondary rounded-b-xl h-24 flex flex-col justify-center">
+                             <div className="bg-secondary rounded-b-xl h-24 flex flex-col justify-start pt-4">
                                 <div className="text-center">
                                     <p className="text-sm text-secondary-foreground/90">Blur Score</p>
                                     {isLoading ? (
