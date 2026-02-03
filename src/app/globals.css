@@ -317,47 +317,43 @@
       animation: slide-out-right 0.3s ease-in forwards;
   }
 
-  @keyframes slow-pan {
-    0% {
-      background-position: 0% 50%;
-    }
-    50% {
-      background-position: 100% 50%;
-    }
-    100% {
-      background-position: 0% 50%;
-    }
-  }
-
-  .bg-vibgyor-blur {
+  .blur-score-card {
     position: relative;
     overflow: hidden;
     background-color: hsl(var(--background));
+    z-index: 1;
   }
 
-  .bg-vibgyor-blur::before {
+  .blur-score-card::before {
     content: '';
     position: absolute;
     left: 0;
     top: 0;
     width: 100%;
     height: 100%;
-    background: linear-gradient(
-      -45deg,
-      #a7c5eb,
-      #f4cfdf,
-      #d6d2f5,
-      #a7c5eb
-    );
-    background-size: 400% 400%;
-    animation: slow-pan 15s ease infinite;
-    filter: blur(40px);
-    z-index: 1;
+    background-size: cover;
+    background-position: center;
+    filter: blur(8px) brightness(0.7);
+    z-index: -1;
+    transform: scale(1.1); /* To avoid hard edges from blur */
+    transition: background-image 0.5s ease-in-out;
   }
 
   .blur-score-content {
       position: relative;
       z-index: 2;
+  }
+  
+  .wolf-animation::before {
+    background-image: url('https://blogger.googleusercontent.com/img/b/R29vZ2xl/AVvXsEg5a5wJ2g-Yl_Jm5V_3C-A2v9B_1D-0_E-Z_8f7g-6_H-5_I-4_J-3/s320/wolf-run-cycle.gif');
+  }
+
+  .eagle-animation::before {
+    background-image: url('https://blogger.googleusercontent.com/img/b/R29vZ2xl/AVvXsEi2c3b4d5e6f7g8h9i0j1k2l3m4n5o6p7q8r9s0t1u2v3w4x5y6z7A8B9C0D1E2F3/s320/eagle-fly.gif');
+  }
+
+  .lion-animation::before {
+    background-image: url('https://blogger.googleusercontent.com/img/b/R29vZ2xl/AVvXsEgk_l2m3n4o5p6q7r8s9t0u1v2w3x4y5z6A7B8C9D0E1F2G3H4I5J6K7L8M9N0/s320/lion-roar.gif');
   }
 }
 
