@@ -1,5 +1,3 @@
-
-
 import { clsx, type ClassValue } from "clsx"
 import { twMerge } from "tailwind-merge"
 import { formatDistanceToNowStrict, isToday, isYesterday, format, isThisWeek, fromUnixTime, formatDistanceStrict, differenceInMinutes } from "date-fns";
@@ -24,17 +22,41 @@ const ADMIN_USER_ID = 'e9ZGHMjgnmO3ueSbf1ao3Crvlr02';
 
 function getUsername(uid: string): string {
   const hash = Math.abs(hashCode(uid));
-  const adjIndex = hash % adjectives.length;
-  const nounIndex = (hash >> 8) % nouns.length;
-  const number = (hash >> 16) % 10000;
-  const adjective = adjectives[adjIndex];
-  const noun = nouns[nounIndex];
-  let combined = `${adjective}${noun}`;
-  if (combined.length > 12) {
-    combined = combined.substring(0, 12);
+  const formatSelector = hash % 2;
+
+  let firstWord: string;
+  let secondWord: string;
+
+  if (formatSelector === 0) {
+    // Format: Adjective + Noun
+    const adjIndex = (hash >> 1) % adjectives.length;
+    const nounIndex = (hash >> 8) % nouns.length;
+    firstWord = adjectives[adjIndex];
+    secondWord = nouns[nounIndex];
+  } else {
+    // Format: Noun + Noun
+    let nounIndex1 = (hash >> 1) % nouns.length;
+    let nounIndex2 = (hash >> 8) % nouns.length;
+
+    // Avoid repeating the same noun, e.g., "WolfWolf"
+    if (nounIndex1 === nounIndex2) {
+      nounIndex2 = (nounIndex2 + 1) % nouns.length;
+    }
+    firstWord = nouns[nounIndex1];
+    secondWord = nouns[nounIndex2];
   }
-  return (`${combined}-${String(number).padStart(4, '0')}`).toLowerCase();
+  
+  // No numbers, no dashes. Just combine the words.
+  let combined = `${firstWord}${secondWord}`;
+
+  // Keep names short and sweet as requested
+  if (combined.length > 15) {
+      combined = combined.substring(0, 15);
+  }
+
+  return combined.toLowerCase();
 }
+
 
 export function getFormattedUserIdString(uid: string | undefined): string {
     if (!uid) return "Anonymous-User-0000";
