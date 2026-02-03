@@ -665,7 +665,7 @@ export default function UserProfilePage() {
                                                     src={isAvatarUrl ? avatar : undefined}
                                                     alt={user?.name || "User"}
                                                 />
-                                                <AvatarFallback className="text-3xl font-headline bg-secondary">
+                                                <AvatarFallback className="text-3xl font-headline">
                                                     {!isAvatarUrl ? avatar : ''}
                                                 </AvatarFallback>
                                             </Avatar>
@@ -852,3 +852,5 @@ export default function UserProfilePage() {
         </AppLayout>
     );
 }
+
+    

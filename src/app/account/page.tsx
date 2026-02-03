@@ -386,7 +386,7 @@ export default function AccountPage() {
                                         src={isAvatarUrl ? avatar : undefined}
                                         alt={userProfile?.name || "User"}
                                     />
-                                    <AvatarFallback className="text-3xl font-headline bg-secondary">
+                                    <AvatarFallback className="text-3xl font-headline">
                                         {!isAvatarUrl ? avatar : ''}
                                     </AvatarFallback>
                                 </Avatar>
@@ -487,5 +487,7 @@ export default function AccountPage() {
     </AppLayout>
   )
 }
+
+    
 
     
