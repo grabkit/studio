@@ -356,14 +356,14 @@ export default function AccountPage() {
                     </div>
                 </div>
 
-                <div className="bg-secondary rounded-b-xl h-24 flex flex-col justify-end">
-                    <div className="p-4 text-center">
+                <div className="bg-secondary rounded-b-xl h-24 flex flex-col justify-center">
+                    <div className="text-center">
+                        <p className="text-sm text-secondary-foreground/90">Blur Score</p>
                         {isLoading ? (
-                            <Skeleton className="h-6 w-8 mx-auto" />
+                            <Skeleton className="h-6 w-8 mx-auto mt-1" />
                         ) : (
                             <div className="font-bold text-lg text-secondary-foreground">{filteredPosts?.length ?? 0}</div>
                         )}
-                        <p className="text-sm text-secondary-foreground/90">Blur Score</p>
                     </div>
                 </div>
                 
